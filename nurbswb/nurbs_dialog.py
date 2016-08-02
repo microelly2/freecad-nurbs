@@ -2,7 +2,7 @@
 #-------------------------------------------------
 #-- nurbs editor -
 #--
-#-- microelly 2016 v 0.1
+#-- microelly 2016 v 0.2
 #--
 #-- GNU Lesser General Public License (LGPL)
 #-------------------------------------------------
@@ -18,7 +18,7 @@ VerticalLayoutTab:
 	VerticalLayout:
 
 		QtGui.QLabel:
-			setText:"***   N U R B S     E D I T O R   ***"
+			setText:"***   N U R B S     E D I T O R   v 0.2 ***"
 
 		QtGui.QLabel:
 
@@ -704,7 +704,7 @@ class MyApp(object):
 
 def mydialog(obj):
 
-	import reconstruction.miki as miki
+	import nurbswb.miki as miki
 	reload(miki)
 
 	app=MyApp()
