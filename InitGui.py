@@ -26,7 +26,88 @@ __title__="FreeCAD Nurbs Library"
 
 
 import FreeCAD, FreeCADGui
+##-
 
+# from workfeature macro
+global get_SelectedObjects
+def get_SelectedObjects(info=0, printError=True):
+    """ Return selected objects as
+        Selection = (Number_of_Points, Number_of_Edges, Number_of_Planes,
+                    Selected_Points, Selected_Edges, Selected_Planes)
+    """
+    def storeShapeType(Object, Selected_Points, Selected_Edges, Selected_Planes):
+        if Object.ShapeType == "Vertex":
+            Selected_Points.append(Object)
+            return True
+        if Object.ShapeType == "Edge":
+            Selected_Edges.append(Object)
+            return True 
+        if Object.ShapeType == "Face":
+            Selected_Planes.append(Object)
+            return True
+        return False
+            
+    m_actDoc=FreeCAD.ActiveDocument
+    
+    if m_actDoc.Name:    
+        # Return a list of SelectionObjects for a given document name.
+        # "getSelectionEx" Used for selecting subobjects
+        m_selEx = Gui.Selection.getSelectionEx(m_actDoc.Name)
+ 
+        m_num = len(m_selEx)
+        if info != 0:
+            print_msg("m_selEx : " + str(m_selEx))
+            print_msg("m_num   : " + str(m_num))
+            
+        if m_num >= 1: 
+            Selected_Points = []
+            Selected_Edges = []
+            Selected_Planes = []
+            Selected_Objects = []
+            for Sel_i_Object in m_selEx:
+                if info != 0:
+                    print_msg("Processing : " + str(Sel_i_Object.ObjectName))
+                                
+                if Sel_i_Object.HasSubObjects:                
+                    for Object in Sel_i_Object.SubObjects:
+                        if info != 0:
+                            print_msg("SubObject : " + str(Object)) 
+                        if hasattr(Object, 'ShapeType'):
+                            storeShapeType(Object, Selected_Points, Selected_Edges, Selected_Planes)
+                        if hasattr(Object, 'Shape'):
+                            Selected_Objects.append(Object)
+                else:
+                    if info != 0:
+                        print_msg("Object : " + str(Sel_i_Object))
+                    if hasattr(Sel_i_Object, 'Object'):
+                        if hasattr(Sel_i_Object.Object, 'ShapeType'):
+                            storeShapeType(Sel_i_Object.Object, Selected_Points, Selected_Edges, Selected_Planes)
+                        if hasattr(Sel_i_Object.Object, 'Shape'):
+                            if hasattr(Sel_i_Object.Object.Shape, 'ShapeType'):
+                                if not storeShapeType(Sel_i_Object.Object.Shape, Selected_Points, Selected_Edges, Selected_Planes):
+                                    Selected_Objects.append(Sel_i_Object.Object)
+                    
+                    
+            Number_of_Points = len(Selected_Points)
+            Number_of_Edges = len(Selected_Edges)
+            Number_of_Planes = len(Selected_Planes)
+            Selection = (Number_of_Points, Number_of_Edges, Number_of_Planes,
+                    Selected_Points, Selected_Edges, Selected_Planes, Selected_Objects)
+            if info != 0:
+                print_msg("Number_of_Points, Number_of_Edges, Number_of_Planes," +
+                           "Selected_Points, Selected_Edges, Selected_Planes , Selected_Objects = " + str(Selection))
+            return Selection
+        else:
+            if info != 0:
+                print_msg("No Object selected !")
+            if printError:
+                printError_msg("Select at least one object !")
+            return None
+    else:
+        printError_msg("No active document !")
+    return 
+
+##-
 
 class nurbsEditor:
 
@@ -35,6 +116,11 @@ class nurbsEditor:
 		reload(nurbswb.nurbs)
 		nurbswb.nurbs.runtest()
 
+	def IsActive(self):
+		if FreeCADGui.ActiveDocument:
+			return True
+		else:
+			return False
 
 	def GetResources(self):
 		return {
@@ -46,29 +132,69 @@ class nurbsEditor:
 FreeCADGui.addCommand('Nurbs Editor', nurbsEditor())
 
 
+#----------------------
+class addUline:
+
+	def IsActive(self):
+		if App.ActiveDocument.Nurbs: return True
+
+	def GetResources(self):
+		return {
+			'Pixmap'  : FreeCAD.ConfigGet('UserAppData')+"/Mod/freecad-nurbs/icons/"+'adduline.svg', 
+			'MenuText': 'Add U Line of Poles', 
+			'ToolTip': 'creates a new list of poles above the selected U line'
+		}
+
+	def Activated(self):
+		print "addUline is not implemented"
+
+
+FreeCADGui.addCommand('add U line',addUline())
+#----------------
+
+class addVline:
+
+	def IsActive(self):
+		if App.ActiveDocument.Nurbs: return True
+
+	def GetResources(self):
+		return {
+			'Pixmap'  : FreeCAD.ConfigGet('UserAppData')+"/Mod/freecad-nurbs/icons/"+'addvline.svg', 
+			'MenuText': 'Add V Line of Poles', 
+			'ToolTip': 'creates a new list of poles right to the selected V line'
+		}
+
+	def Activated(self):
+		print "addVline is not implemented"
+
+
+FreeCADGui.addCommand('add V line',addVline())
+#----------------
+
+
+
 import nurbswb
 import nurbswb.configuration
 
+def makemaster(command):
+	pass
 
 
 def createcmd2(cmd='CV',pixmap='Std_Tool1',menutext=None,tooltip=None):
 	pass
 
-#	global makeCV_master2
 #	try:
-#		FreeCADGui.addCommand(cmd, makeCV_master2(cmd))
+#		FreeCADGui.addCommand(cmd, make_master(cmd))
 #		cvCmds.append(cmd)
 #	except:
 #		pass
 
 
 #----------------------------------------
+modes=["addUline","addVLine"]
 
-#
-# neue version
-#
-
-for m in nurbswb.configuration.modes:
+#for m in nurbswb.configuration.modes:
+for m in modes:
 	createcmd2(m)
 
 #------------------------------------------
@@ -86,7 +212,7 @@ class NurbsWorkbench(Workbench):
 
 	def Initialize(self):
 		global cvCmds
-		cmds= ['Nurbs Editor' ]
+		cmds= ['Nurbs Editor', 'add U line' ,'add V line' ]
 		self.appendToolbar("Nurbs", cmds )
 		self.appendMenu("Nurbs", cmds)
 		Log ("Loading Nurbs Workbench ... done\n")

@@ -6,7 +6,7 @@
 #--
 #-- GNU Lesser General Public License (LGPL)
 #-------------------------------------------------
-
+__version__='0.3'
 
 # idea from  FreeCAD TemplatePyMod module by (c) 2013 Werner Mayer LGPL
 
@@ -50,6 +50,20 @@ class PartFeature:
 		obj.Proxy = self
 		self.obj2=obj
 
+# grundmethoden zum sichern
+
+	def attach(self,vobj):
+		self.Object = vobj.Object
+
+	def claimChildren(self):
+		return self.Object.Group
+
+	def __getstate__(self):
+		return None
+
+	def __setstate__(self,state):
+		return None
+
 
 class Nurbs(PartFeature):
 	def __init__(self, obj,uc=5,vc=5):
@@ -60,8 +74,8 @@ class Nurbs(PartFeature):
 
 		obj.addProperty("App::PropertyInteger","degree_u","Nurbs","").degree_u=2
 		obj.addProperty("App::PropertyInteger","degree_v","Nurbs","").degree_v=2
-		obj.addProperty("App::PropertyInteger","nNodes_u","Nurbs","").nNodes_u=uc
-		obj.addProperty("App::PropertyInteger","nNodes_v","Nurbs","").nNodes_v=vc
+		obj.addProperty("App::PropertyInteger","nNodes_u","Generator","").nNodes_u=uc
+		obj.addProperty("App::PropertyInteger","nNodes_v","Generator","").nNodes_v=vc
 		obj.addProperty("App::PropertyFloatList","knot_u","Nurbs","").knot_u=[0,0,0,0.33,0.67,1,1,1]
 		obj.addProperty("App::PropertyFloatList","knot_v","Nurbs","").knot_v=[0,0,0,0.33,0.67,1,1,1]
 		obj.addProperty("App::PropertyFloatList","weights","Nurbs","").weights=[1]*(uc*vc)
@@ -78,32 +92,135 @@ class Nurbs(PartFeature):
 		obj.addProperty("App::PropertyLink","gridobj","XYZ","")
 		obj.addProperty("App::PropertyLink","polselection","XYZ","")
 		obj.addProperty("App::PropertyLink","polgrid","XYZ","")
-		obj.addProperty("App::PropertyBool","grid","Base","create a grid object in 3D").grid=True
-		obj.addProperty("App::PropertyInteger","gridCount","Base","").gridCount=20
-		obj.addProperty("App::PropertyBool","solid","Base","close the surface by a bottom plane").solid=True
-		obj.addProperty("App::PropertyBool","base","Base","create a base cuboid under the surface").base=True
-		obj.addProperty("App::PropertyBool","polpoints","Base","display Poles as separate Points").polpoints=False
-		obj.addProperty("App::PropertyFloat","baseHeight","Base", "height of the base cuboid").baseHeight=100
-		obj.addProperty("App::PropertyFloat","stepU","Base", "size of cell in u direction").stepU=100
-		obj.addProperty("App::PropertyFloat","stepV","Base", "size of cell in u direction").stepV=100
+		obj.addProperty("App::PropertyBool","grid","Helper","create a grid object in 3D").grid=True
+		obj.addProperty("App::PropertyInteger","gridCount","Helper","").gridCount=20
+		obj.addProperty("App::PropertyBool","solid","Shape","close the surface by a bottom plane").solid=True
+		obj.addProperty("App::PropertyBool","base","Shape","create a base cuboid under the surface").base=True
+		obj.addProperty("App::PropertyBool","polpoints","Helper","display Poles as separate Points").polpoints=False
+		obj.addProperty("App::PropertyFloat","baseHeight","Shape", "height of the base cuboid").baseHeight=100
+		obj.addProperty("App::PropertyFloat","stepU","Generator", "size of cell in u direction").stepU=100
+		obj.addProperty("App::PropertyFloat","stepV","Generator", "size of cell in u direction").stepV=100
+		obj.addProperty("App::PropertyBool","generatePoles","Generator","generate Poles from model").generatePoles=True
+		obj.addProperty("App::PropertyBool","expertMode","XYZ","generate Poles from model").expertMode=False
 
 		obj.degree_u=3
 		obj.degree_v=3
 
+		if not obj.expertMode:
+			# not gui editable
+			for a in ['degree_u','degree_v','poles','knot_u','knot_v','nNodes_u','nNodes_v','weights']:
+				obj.setEditorMode(a, 2)
+
+		for a in ['polnumber','Height','polselection','gridobj','polgrid','polobj']:
+			obj.setEditorMode(a, 2)
+
+		if obj.generatePoles:
+			for a in ['nNodes_u','nNodes_v']:
+				obj.setEditorMode(a, 0)
+
+
+	def attach(self,vobj):
+		print "attach -------------------------------------"
+		self.Object = vobj.Object
+		self.obj2 = vobj.Object
+
+
 
 	def onChanged(self, fp, prop):
+		#print "changed ",prop
 
-		if  prop== "Height":
-			if hasattr(fp,"polobj"):
-				if fp.polobj<>None: App.ActiveDocument.removeObject(fp.polobj.Name) 
-				fp.polobj=self.createSurface(fp,fp.poles)
-				if fp.polobj<>None:
-					fp.polobj.ViewObject.PointSize=4
-					fp.polobj.ViewObject.PointColor=(1.0,0.0,0.0)
+		if prop == 'nNodes_u' and  fp.nNodes_u <= fp.degree_u:
+			fp.nNodes_u = fp.degree_u + 1
+		if prop == 'nNodes_v' and  fp.nNodes_v <= fp.degree_v:
+			fp.nNodes_v = fp.degree_v + 1
+
+
+		if prop=="expertMode":
+			if not fp.expertMode:
+				v=2
+			else: 
+				v=0
+			for a in ['degree_u','degree_v','poles','knot_u','knot_v','nNodes_u','nNodes_v','weights']:
+				try: fp.setEditorMode(a, v)
+				except:  pass
+
+		if prop=="generatePoles":
+			if fp.generatePoles: v = 0
+			else: v = 2
+			for a in ['nNodes_u','nNodes_v','stepU','stepV']:
+				try: fp.setEditorMode(a, v)
+				except: pass
+
+		if prop == 'stepU' or prop  == 'stepV' or prop == 'nNodes_u' or  prop == 'nNodes_v':
+
+			a=App.ActiveDocument.Nurbs
+			a.Proxy.obj2=a
+			try:
+				ps=a.Proxy.getPoints()
+				a.Proxy.togrid(ps)
+	#			a.Proxy.elevateVline(2,100)
+
+				a.Proxy.updatePoles()
+				a.Proxy.showGriduv()
+				a.Proxy.update(fp)
+			except: pass
+
+		return
+
+#		if  prop== "Height":
+#			if hasattr(fp,"polobj"):
+#				if fp.polobj<>None: App.ActiveDocument.removeObject(fp.polobj.Name) 
+#				fp.polobj=self.createSurface(fp,fp.poles)
+#				if fp.polobj<>None:
+#					fp.polobj.ViewObject.PointSize=4
+#					fp.polobj.ViewObject.PointColor=(1.0,0.0,0.0)
+
+	def update(self, fp):
+		if hasattr(fp,"polobj"):
+			if fp.polobj<>None: App.ActiveDocument.removeObject(fp.polobj.Name) 
+			fp.polobj=self.createSurface(fp,fp.poles)
+			if fp.polobj<>None:
+				fp.polobj.ViewObject.PointSize=4
+				fp.polobj.ViewObject.PointColor=(1.0,0.0,0.0)
 
 
 	def execute(self, fp):
+		print "execute"
+		self.obj2=fp
+		a=fp
+		a.Proxy.obj2=a
+
 		pass
+
+	def onDocumentRestored(self, fp):
+		say(["onDocumentRestored",str(fp.Label)+ ": "+str(fp.Proxy.__class__.__name__)])
+		a=App.ActiveDocument.Nurbs
+		a.Proxy.obj2=a
+
+		ps=a.Proxy.getPoints()
+		 
+		a.Proxy.togrid(ps)
+		a.Proxy.elevateVline(2,100)
+		
+
+		a.Proxy.updatePoles()
+		a.Proxy.showGriduv()
+		a.Proxy.update(fp)
+
+
+		if not fp.expertMode: v=2
+		else:  v=0
+		for a in ['degree_u','degree_v','poles','knot_u','knot_v','nNodes_u','nNodes_v','weights']:
+				fp.setEditorMode(a, v)
+
+		if fp.generatePoles: v = 0
+		else: v = 2
+		for a in ['nNodes_u','nNodes_v','stepU','stepV']:
+			fp.setEditorMode(a, v)
+
+		for a in ['polnumber','Height','polselection','gridobj','polgrid','polobj']:
+			fp.setEditorMode(a, 2)
+
 
 
 
@@ -468,10 +585,14 @@ class Nurbs(PartFeature):
 		if obj.solid: obj.Shape=self.create_solid(bs)
 		else: obj.Shape=bs.toShape()
 
+		vis=True
 		if obj.grid:
-			if obj.gridobj<>None: App.ActiveDocument.removeObject(obj.gridobj.Name)
+			if obj.gridobj<>None: 
+				vis=obj.gridobj.ViewObject.Visibility
+				App.ActiveDocument.removeObject(obj.gridobj.Name)
 			obj.gridobj=self.create_grid(bs,obj.gridCount)
 			obj.gridobj.Label="Nurbs Grid"
+			obj.gridobj.ViewObject.Visibility=vis
 
 
 		if obj.base:
@@ -528,10 +649,14 @@ class Nurbs(PartFeature):
 
 
 		# create a pole grid with spines
-		try: App.ActiveDocument.removeObject(obj.polgrid.Name)
+		vis=True
+		try: 
+			vis=obj.polgrid.ViewObject.Visibility
+			App.ActiveDocument.removeObject(obj.polgrid.Name)
 		except: pass
 		obj.polgrid=self.create_uv_grid()
 		obj.polgrid.Label="Pole Grid"
+		obj.polgrid.ViewObject.Visibility=vis
 
 		nurbstime=time.time()
 
@@ -559,24 +684,27 @@ class Nurbs(PartFeature):
 
 		endtime=time.time()
 
-		print ("create Nurbs time",nurbstime-starttime)
-		print ("create helper time",endtime-nurbstime)
-		print ("create comp time",comptime-nurbstime)
-		print ("create Surface time",endtime-comptime)
+		print ("create Nurbs time",round(nurbstime-starttime,2))
+#		print ("create helper time",round(endtime-nurbstime,2))
+		print ("create comp time",round(comptime-nurbstime,2))
+		print ("create Surface time",round(endtime-comptime,2))
 
 		return polesobj
 
 
 	def getPoints(self):
 		''' generic point set for grid'''
-		ps=[]
-		vc=self.obj2.nNodes_v
-		uc=self.obj2.nNodes_u
-		for v in range(vc):
-			for u in range(uc):
-				ps.append(FreeCAD.Vector(u*self.obj2.stepU,v*self.obj2.stepV,0))
-		return ps
-
+		if self.obj2.generatePoles:
+			ps=[]
+			vc=self.obj2.nNodes_v
+			uc=self.obj2.nNodes_u
+			for v in range(vc):
+				for u in range(uc):
+					ps.append(FreeCAD.Vector(u*self.obj2.stepU,v*self.obj2.stepV,0))
+			return ps
+		else:
+			t=eval(str(self.obj2.poles))
+			return eval(t[0])
 
 
 	def togrid(self,ps):
@@ -914,7 +1042,8 @@ class Nurbs(PartFeature):
 		ll ="[" + ll + "]"
 
 		self.obj2.poles=ll
-		self.onChanged(self.obj2,"Height")
+		#self.onChanged(self.obj2,"Height")
+		self.update(self.obj2)
 
 	def showSelection(self,pole1,pole2):
 		''' show the pole grid '''
@@ -949,6 +1078,8 @@ class ViewProviderNurbs:
 
 	def attach(self, obj):
 		''' Setup the scene sub-graph of the view provider, this method is mandatory '''
+		obj.Proxy = self
+		self.Object = obj
 		return
 
 	def updateData(self, fp, prop):
@@ -971,6 +1102,23 @@ class ViewProviderNurbs:
 
 	def onChanged(self, vp, prop):
 		pass
+
+	def showVersion(self):
+		cl=self.Object.Proxy.__class__.__name__
+		PySide.QtGui.QMessageBox.information(None, "About ", "Nurbs"  +"\nVersion " + __version__)
+
+
+	def setupContextMenu(self, obj, menu):
+		cl=self.Object.Proxy.__class__.__name__
+		action = menu.addAction("About " + cl)
+		action.triggered.connect(self.showVersion)
+
+		action = menu.addAction("Edit ...")
+		action.triggered.connect(self.edit)
+
+#		for m in self.cmenu + self.anims():
+#			action = menu.addAction(m[0])
+#			action.triggered.connect(m[1])
 
 	def getIcon(self):
 
@@ -1008,10 +1156,12 @@ class ViewProviderNurbs:
 	def __setstate__(self,state):
 		return None
 
-
 	def edit(self):
 		import nurbs_dialog
 		reload (nurbs_dialog)
+		FreeCAD.tt=self
+		self.Object.Object.generatePoles=False
+		self.Object.Object.Label="Nurbs individual"
 		self.miki=nurbs_dialog.mydialog(self.Object)
 
 	def setEdit(self,vobj,mode=0):
@@ -1029,6 +1179,7 @@ class ViewProviderNurbs:
 def makeNurbs(uc=5,vc=7):
 
 	a=FreeCAD.ActiveDocument.addObject("Part::FeaturePython","Nurbs")
+	a.Label="Nurbs generated"
 	Nurbs(a,uc,vc)
 	ViewProviderNurbs(a.ViewObject)
 	a.ViewObject.ShapeColor=(0.00,1.00,1.00)

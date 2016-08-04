@@ -17,10 +17,9 @@ VerticalLayoutTab:
 
 	VerticalLayout:
 
-		QtGui.QLabel:
-			setText:"***   N U R B S     E D I T O R   v 0.2 ***"
+#		QtGui.QLabel:
+#			setText:"***   N U R B S     E D I T O R   ***"
 
-		QtGui.QLabel:
 
 		QtGui.QCheckBox:
 			id: 'polegrid' 
@@ -40,19 +39,22 @@ VerticalLayoutTab:
 
 		QtGui.QComboBox:
 			id: 'focusmode'
-			addItem: "single Pole"
-			addItem: "VLine"
-			addItem: "ULine"
-			addItem: "UV Cross"
+#			addItem: "single Pole"
+#			addItem: "VLine"
+#			addItem: "ULine"
+#			addItem: "UV Cross"
 			addItem: "Rectangle"
 			currentIndexChanged.connect: app.setFocusMode
+			
 
-		QtGui.QLabel:
-			id: 'pole1'
-			setText: " pole1: "
-		QtGui.QLabel:
-			id: 'pole2'
-			setText: " pole2: "
+		HorizontalLayout:
+
+			QtGui.QLabel:
+				id: 'pole1'
+				setText: " pole1: "
+			QtGui.QLabel:
+				id: 'pole2'
+				setText: " pole2: "
 
 
 
@@ -73,26 +75,12 @@ VerticalLayoutTab:
 				addItem: "set absolute Height and Weight"
 				addItem: "Add VLine"
 				addItem: "Add ULine"
-				addItem: "Elevate VLine"
-				addItem: "Elevate ULine"
-				addItem: "Elevate Rectangle"
-				addItem: "Elevate Circle"
+#				addItem: "Elevate VLine"
+#				addItem: "Elevate ULine"
+#				addItem: "Elevate Rectangle"
+#				addItem: "Elevate Circle"
 				currentIndexChanged.connect: app.setActionMode
 
-		HorizontalLayout:
-			QtGui.QPushButton:
-				id: "runbutton"
-				setText: "Execute"
-				clicked.connect: app.run
-
-			QtGui.QPushButton:
-				setText: "Recompute"
-				clicked.connect: app.recompute
-
-
-			QtGui.QPushButton:
-				setText: "Close"
-				clicked.connect: app.resetEdit
 
 	VerticalLayout:
 
@@ -100,16 +88,22 @@ VerticalLayoutTab:
 			setText: "    S E L E C T I O N"
  
 		HorizontalLayout:
+			addSpacing: 0
 
 			QtGui.QLabel:
 				setText: "u"
+				
 
 			QtGui.QLineEdit:
 				setText: "1"
 				setMaxLength: 3
-
-
+				editingFinished: app.getInfo
 				id: 'u'
+
+			QtGui.QComboBox:
+				id: 'ucombo'
+				currentIndexChanged.connect: app.processUcombo
+
 
 			QtGui.QDial:
 				setValue: 2
@@ -118,6 +112,8 @@ VerticalLayoutTab:
 				setMaximum: 7
 				setTickInterval: 1
 				valueChanged.connect: app.getDataFromNurbs
+#			QtGui.QSpacerItem:
+#				is:'spacer'
 
 
 			QtGui.QLabel:
@@ -126,6 +122,13 @@ VerticalLayoutTab:
 			QtGui.QLineEdit:
 				setText:"1"
 				id: 'v'
+				returnPressed.connect: app.vFinished
+
+
+			QtGui.QComboBox:
+				id: 'vcombo'
+				currentIndexChanged.connect: app.processVcombo
+
 
 			QtGui.QDial:
 				setValue: 2
@@ -134,6 +137,7 @@ VerticalLayoutTab:
 				setMaximum: 5
 				setTickInterval: 1
 				valueChanged.connect: app.getDataFromNurbs
+
 
 		HorizontalLayout:
 			QtGui.QPushButton:
@@ -153,18 +157,18 @@ VerticalLayoutTab:
 				setText: "v --"
 				clicked.connect: app.vmm
 
-		HorizontalLayout:
-			QtGui.QPushButton:
-				setText: "edit selected pole"
-				clicked.connect: app.getselection
+#		HorizontalLayout:
+#			QtGui.QPushButton:
+#				setText: "edit selected pole"
+#				clicked.connect: app.getselection
 
-			QtGui.QPushButton:
-				setText: "set pole 1"
-				clicked.connect: app.setPole1
+#			QtGui.QPushButton:
+#				setText: "set pole 1"
+#				clicked.connect: app.setPole1
 
-			QtGui.QPushButton:
-				setText: "set pole 2"
-				clicked.connect: app.setPole2
+#			QtGui.QPushButton:
+#				setText: "set pole 2"
+#				clicked.connect: app.setPole2
 
 		QtGui.QCheckBox:
 			id: 'pole1active' 
@@ -185,6 +189,7 @@ VerticalLayoutTab:
 			setText: "    C O N F I G U R E"
 
 		HorizontalLayout:
+			addSpacing: 0
 
 			QtGui.QLabel:
 				setText: "height"
@@ -193,12 +198,19 @@ VerticalLayoutTab:
 				setText: "10"
 				id: 'h'
 
+			QtGui.QComboBox:
+				id: 'hcombo'
+				currentIndexChanged.connect: app.processHcombo
+
+
 			QtGui.QDial:
 				setValue: 0
 				setMinimum: -100
 				setMaximum: 100
 				id: 'hd'
 				valueChanged.connect: app.modHeight
+			QtGui.QLabel:
+			QtGui.QLabel:
 
 		HorizontalLayout:
 
@@ -209,12 +221,35 @@ VerticalLayoutTab:
 				setText:"10"
 				id: 'w'
 
+			QtGui.QComboBox:
+				id: 'wcombo'
+				currentIndexChanged.connect: app.processWcombo
+
 			QtGui.QDial:
 				setValue: 1
 				setMinimum: 1
 				setMaximum: 20
 				id: 'wd'
 				valueChanged.connect: app.modHeight
+			QtGui.QLabel:
+			QtGui.QLabel:
+
+
+		HorizontalLayout:
+			QtGui.QPushButton:
+				id: "runbutton"
+				setText: "Execute"
+				clicked.connect: app.run
+
+			QtGui.QPushButton:
+				setText: "Recompute"
+				clicked.connect: app.recompute
+
+
+			QtGui.QPushButton:
+				setText: "Close"
+				clicked.connect: app.resetEdit
+
 
 #		QtGui.QPushButton:
 #			setText: "Commit relative values"
@@ -230,11 +265,18 @@ class MyApp(object):
 	def __init__(self):
 		self.pole1=[1,5]
 		self.pole2=[3,1]
+		self.lock=False
 
 
 	def resetEdit(self):
 		Gui.ActiveDocument.resetEdit()
-		self.root.ids['main'].hide()
+#		self.root.ids['main'].hide()
+		import nurbswb.miki as miki
+		reload(miki)
+		mw=miki.getMainWindow()
+		miki.getComboView(mw).removeTab(2)
+		miki.getComboView(mw).setCurrentIndex(0)
+
 
 	def updateDialog(self):
 		self.root.ids['ud'].setMaximum(self.obj.Object.nNodes_u-2)
@@ -637,6 +679,9 @@ class MyApp(object):
 
 		self.root.ids['u'].setText(str(u+1))
 		self.root.ids['v'].setText(str(v+1))
+		start=2
+		self.root.ids['vcombo'].setCurrentIndex(int(v)-1)
+		self.root.ids['ucombo'].setCurrentIndex(int(u)-1)
 
 		# wenn nicht rechteckmode setze pole
 		rc=self.root.ids['focusmode'].currentText()
@@ -660,6 +705,10 @@ class MyApp(object):
 #		print "hole weight von ",((v)*uc+u)
 #		print "hole weight von ",((v)*uc+u,"uc,vc",uc,vc)
 #		print self.obj.Object.weights
+
+		
+
+
 
 		w=self.obj.Object.weights[(v)*uc+u]
 		
@@ -685,6 +734,8 @@ class MyApp(object):
 		v=int(self.root.ids['vd'].value())
 		h=int(round(self.root.ids['hd'].value()))
 
+		self.root.ids['hcombo'].setCurrentIndex(100+int(h))
+
 		self.update()
 
 
@@ -700,6 +751,76 @@ class MyApp(object):
 		print "shape .."
 		print self.obj.Object.Proxy.g.shape
 
+
+	def vFinished(self):
+		self.lock=False
+		print "vFinished"
+
+	def processVcombo(self):
+		if self.lock: return
+		self.lock=True
+		vc=self.root.ids['vcombo']
+		rc=self.root.ids['vcombo'].currentText()
+		print "set vcombo Mode is ", rc 
+		vc.clear()
+		start=2
+		ende=self.obj.Object.nNodes_v
+		items=[str(n) for n in range(start,ende)]
+		vc.addItems(items)
+		vc.setCurrentIndex(int(rc)-start)
+		self.root.ids['v'].setText(rc)
+		self.root.ids['vd'].setValue(int(rc)-1)
+		self.lock=False
+
+	def processUcombo(self):
+		if self.lock: return
+		self.lock=True
+		uc=self.root.ids['ucombo']
+		rc=self.root.ids['ucombo'].currentText()
+		print "set ucombo Mode is ", rc 
+		uc.clear()
+		start=2
+		ende=self.obj.Object.nNodes_u
+		items=[str(n) for n in range(start,ende)]
+		uc.addItems(items)
+		uc.setCurrentIndex(int(rc)-start)
+		self.root.ids['u'].setText(rc)
+		self.root.ids['ud'].setValue(int(rc)-1)
+		self.lock=False
+
+	def processHcombo(self):
+		if self.lock: return
+		self.lock=True
+		uc=self.root.ids['hcombo']
+		rc=self.root.ids['hcombo'].currentText()
+		print "set hcombo Mode is ", rc 
+		uc.clear()
+		start=2
+		ende=self.obj.Object.nNodes_u
+		start=-100
+		ende=100
+		items=[str(n) for n in range(start,ende)]
+		uc.addItems(items)
+		uc.setCurrentIndex(int(rc)-start)
+		self.root.ids['h'].setText(rc)
+		self.root.ids['hd'].setValue(int(rc))
+		self.lock=False
+
+	def processWcombo(self):
+		if self.lock: return
+		self.lock=True
+		uc=self.root.ids['wcombo']
+		rc=self.root.ids['wcombo'].currentText()
+		print "set wcombo Mode is ", rc 
+		uc.clear()
+		start=1
+		ende=20
+		items=[str(n) for n in range(start,ende)]
+		uc.addItems(items)
+		uc.setCurrentIndex(int(rc)-start)
+		self.root.ids['w'].setText(rc)
+		self.root.ids['wd'].setValue(int(rc))
+		self.lock=False
 
 
 def mydialog(obj):
@@ -721,7 +842,19 @@ def mydialog(obj):
 	miki.ids['vd'].setMaximum(obj.Object.nNodes_v-2)
 	for k in ['u','v','h','w']:
 		miki.ids[k].setMaximumSize(50,40)
-	
+
+	start=2
+	ende=obj.Object.nNodes_v
+	items=[str(n) for n in range(start,ende)]
+	miki.ids['vcombo'].addItems(items)
+
+	start=2
+	ende=obj.Object.nNodes_u
+	items=[str(n) for n in range(start,ende)]
+	miki.ids['ucombo'].addItems(items)
+
+	miki.ids['hcombo'].addItems([str(n) for n in range(100,-100,-1)])
+	miki.ids['wcombo'].addItems([str(n) for n in range(1,21)])
 	app.getDataFromNurbs()
 	
 	return miki

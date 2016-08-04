@@ -42,7 +42,7 @@ def ComboViewShowWidget(widget,tabMode=False):
 		tab.removeTab(i)
 
 	# start the requested tab
-	tab.addTab(widget,"Reconstruction Tool")
+	tab.addTab(widget,"Nurbs Editor")
 	tab.setCurrentIndex(2)
 
 	print "ComboViewShowWidget done"
@@ -86,7 +86,8 @@ def  fv2(name="vertical",title=''):
 	''' create as a dock widget '''
 
 	t=QtGui.QLabel("my widget")
-	w=MyDockWidget(t,"Reconstruction WB")
+#	w=MyDockWidget(t,"Reconstruction WB")
+	w=MyWidget(t,"Reconstruction WB")
 
 	if title <>'': w.setWindowTitle(title)
 
@@ -139,8 +140,8 @@ def  fv3(name="vertical",title=''):
 	#w.layout=layout
 	#w.setLayout(layout)
 
-	w.setWindowFlags(QtCore.Qt.WindowStaysOnTopHint)
-	w.show()
+#	w.setWindowFlags(QtCore.Qt.WindowStaysOnTopHint)
+#	w.show()
 
 	try: FreeCAD.w5.append(w)
 	except: FreeCAD.w5=[w]
@@ -306,8 +307,8 @@ class Miki():
 					depth += 1
 				elif d[depth]>l:
 					depth -= 1
-				print d
-				print depth
+#				print d
+#				print depth
 				try:
 					d[depth]=l
 				except:
@@ -377,7 +378,7 @@ class Miki():
 
 
 
-		debug = 1
+		debug = 0
 		if debug:
 			print
 			print "lines parsed ..."
@@ -677,13 +678,23 @@ class Miki():
 
 from PySide import QtGui, QtCore
 
+class MyWidget(QtGui.QWidget):
+
+	def __init__(self, title_widget,objectname):
+
+		QtGui.QWidget.__init__(self)
+		self.title_widget = title_widget
+		self.setWindowTitle(objectname)
+		self.setObjectName(objectname)
+		layout = QtGui.QVBoxLayout()
+		self.setLayout(layout)
+		self.layout=layout
+
 class MyDockWidget(QtGui.QDockWidget):
 
 	def __init__(self, title_widget,objectname):
-		
+
 		QtGui.QDockWidget.__init__(self)
-		
-		
 
 		self.title_widget = title_widget
 		self.setWindowTitle(objectname)
