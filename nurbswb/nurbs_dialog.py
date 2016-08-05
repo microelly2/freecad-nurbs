@@ -21,44 +21,37 @@ VerticalLayoutTab:
 #			setText:"***   N U R B S     E D I T O R   ***"
 
 
-		QtGui.QCheckBox:
-			id: 'polegrid' 
-			setText: 'calculate PoleGrid'
-			stateChanged.connect: app.calculatePoleGrid
-
-		QtGui.QCheckBox:
-			id: 'setmode' 
-			setText: 'Pole only'
-			setVisible: False
-
-		QtGui.QCheckBox:
-			id: 'relativemode' 
-			setText: 'Height relative'
-			stateChanged.connect: app.relativeMode
-			setChecked: True
-
-		QtGui.QComboBox:
-			id: 'focusmode'
-#			addItem: "single Pole"
-#			addItem: "VLine"
-#			addItem: "ULine"
-#			addItem: "UV Cross"
-			addItem: "Rectangle"
-			currentIndexChanged.connect: app.setFocusMode
-			
-
 		HorizontalLayout:
 
-			QtGui.QLabel:
-				id: 'pole1'
-				setText: " pole1: "
-			QtGui.QLabel:
-				id: 'pole2'
-				setText: " pole2: "
+			QtGui.QCheckBox:
+				id: 'polegrid' 
+				setText: 'calculate PoleGrid'
+				stateChanged.connect: app.calculatePoleGrid
+				visibility: False
 
+			QtGui.QCheckBox:
+				id: 'setmode' 
+				setText: 'Pole only'
+				setVisible: False
 
+			QtGui.QCheckBox:
+				id: 'relativemode' 
+				setText: 'Height relative'
+				stateChanged.connect: app.relativeMode
+				setChecked: True
+
+			QtGui.QComboBox:
+				id: 'focusmode'
+	#			addItem: "single Pole"
+	#			addItem: "VLine"
+	#			addItem: "ULine"
+	#			addItem: "UV Cross"
+				addItem: "Rectangle"
+				currentIndexChanged.connect: app.setFocusMode
 
 	VerticalLayout:
+
+
 
 		QtGui.QLabel:
 			setText: "    A C T I O N "
@@ -86,7 +79,17 @@ VerticalLayoutTab:
 
 		QtGui.QLabel:
 			setText: "    S E L E C T I O N"
- 
+
+		HorizontalLayout:
+
+			QtGui.QLabel:
+				id: 'pole1'
+				setText: " pole1: "
+			QtGui.QLabel:
+				id: 'pole2'
+				setText: " pole2: "
+
+
 		HorizontalLayout:
 			addSpacing: 0
 
@@ -139,23 +142,24 @@ VerticalLayoutTab:
 				valueChanged.connect: app.getDataFromNurbs
 
 
-		HorizontalLayout:
-			QtGui.QPushButton:
-				setText: "u++"
-				clicked.connect: app.upp
+#		HorizontalLayout:
+#			QtGui.QPushButton:
+#				setText: "u++"
+#				clicked.connect: app.upp
 
-			QtGui.QPushButton:
-				setText: "u --"
-				clicked.connect: app.umm
+#			QtGui.QPushButton:
+#				setText: "u --"
+#				clicked.connect: app.umm
 
-			QtGui.QPushButton:
-				setText: "v++"
-				clicked.connect: app.vpp
+#			QtGui.QPushButton:
+#				setText: "v++"
+#				clicked.connect: app.vpp
 
 
-			QtGui.QPushButton:
-				setText: "v --"
-				clicked.connect: app.vmm
+#			QtGui.QPushButton:
+#				setText: "v --"
+#				clicked.connect: app.vmm
+#				clicked.connect: app.vmm
 
 #		HorizontalLayout:
 #			QtGui.QPushButton:
@@ -230,7 +234,7 @@ VerticalLayoutTab:
 				setMinimum: 1
 				setMaximum: 20
 				id: 'wd'
-				valueChanged.connect: app.modHeight
+				valueChanged.connect: app.modWeight
 			QtGui.QLabel:
 			QtGui.QLabel:
 
@@ -558,12 +562,13 @@ class MyApp(object):
 		self.setDataToNurbs()
 
 
-	def update(self):
+	def update(self,force=False):
 		''' setDataToNurbs for update '''
-		try:
-			# dont setDataToNurbs during a locked transaction
-			if self.lock: return
-		except: pass
+		if not force:
+			try:
+				# dont setDataToNurbs during a locked transaction
+				if self.lock: return
+			except: pass
 		print "setDataToNurbs2"
 		if not self.root.ids['setmode'].isChecked():
 			print "setze setmode"
@@ -584,6 +589,7 @@ class MyApp(object):
 			print "setze setmode"
 			self.root.ids['setmode'].click()
 			self.setDataToNurbs(True)
+			
 			self.obj.Object.Proxy.showSelection(self.pole1,self.pole2)
 
 #			id: 'updateRelative'
@@ -632,14 +638,17 @@ class MyApp(object):
 			for v in range(v1,v2+1):
 
 				if  self.root.ids['setmode'].isChecked():
-					print "AKTUALISIERE"
+					print ("AKTUALISIERE",u,v)
 					if  self.root.ids['relativemode'].isChecked():
-						print "set relative values ..."
+						print "!! set relative values ..."
 						self.obj.Object.Proxy.setpointRelativeZ(u,v,h,w)
 						if updateRelative:
 							self.obj.Object.Proxy.setpointRelativeZ(u,v,h,w,updateRelative)
+							h=0
 							self.root.ids['h'].setText(str(0))
 							self.root.ids['hd'].setValue(0)
+						#else:
+						#	self.obj.Object.Proxy.setpointRelativeZ(u,v,h,w)
 
 					else:
 						print "set absoliute "
@@ -733,12 +742,17 @@ class MyApp(object):
 		u=int(self.root.ids['ud'].value())
 		v=int(self.root.ids['vd'].value())
 		h=int(round(self.root.ids['hd'].value()))
-
 		self.root.ids['hcombo'].setCurrentIndex(100+int(h))
-
 		self.update()
 
 
+	def modWeight(self):
+		''' dialog has changed -> modify object '''
+		u=int(self.root.ids['ud'].value())
+		v=int(self.root.ids['vd'].value())
+		w=int(round(self.root.ids['wd'].value()))
+		self.root.ids['wcombo'].setCurrentIndex(int(w)-1)
+		self.update()
 
 	def getInfo(self):
 		return
@@ -793,6 +807,7 @@ class MyApp(object):
 		self.lock=True
 		uc=self.root.ids['hcombo']
 		rc=self.root.ids['hcombo'].currentText()
+		if rc=='': rc='0'
 		print "set hcombo Mode is ", rc 
 		uc.clear()
 		start=2
@@ -804,7 +819,12 @@ class MyApp(object):
 		uc.setCurrentIndex(int(rc)-start)
 		self.root.ids['h'].setText(rc)
 		self.root.ids['hd'].setValue(int(rc))
+		print "rufe modHeight"
+		self.modHeight()
+		self.update(True)
+		print "done"
 		self.lock=False
+		
 
 	def processWcombo(self):
 		if self.lock: return
@@ -814,10 +834,10 @@ class MyApp(object):
 		print "set wcombo Mode is ", rc 
 		uc.clear()
 		start=1
-		ende=20
+		ende=20+1
 		items=[str(n) for n in range(start,ende)]
 		uc.addItems(items)
-		uc.setCurrentIndex(int(rc)-start)
+		uc.setCurrentIndex(int(rc)-1)
 		self.root.ids['w'].setText(rc)
 		self.root.ids['wd'].setValue(int(rc))
 		self.lock=False
@@ -856,6 +876,16 @@ def mydialog(obj):
 	miki.ids['hcombo'].addItems([str(n) for n in range(100,-100,-1)])
 	miki.ids['wcombo'].addItems([str(n) for n in range(1,21)])
 	app.getDataFromNurbs()
+	
+	miki.ids['polegrid'].hide()
+	miki.ids['focusmode'].hide()
+	miki.ids['relativemode'].hide()
+	miki.ids['w'].hide()
+	miki.ids['wd'].hide()
+	miki.ids['h'].hide()
+	miki.ids['u'].hide()
+	miki.ids['v'].hide()
+	
 	
 	return miki
 

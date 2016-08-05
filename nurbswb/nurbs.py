@@ -93,7 +93,7 @@ class Nurbs(PartFeature):
 		obj.addProperty("App::PropertyLink","polselection","XYZ","")
 		obj.addProperty("App::PropertyLink","polgrid","XYZ","")
 		obj.addProperty("App::PropertyBool","grid","Helper","create a grid object in 3D").grid=True
-		obj.addProperty("App::PropertyInteger","gridCount","Helper","").gridCount=20
+		obj.addProperty("App::PropertyInteger","gridCount","Helper","").gridCount=6
 		obj.addProperty("App::PropertyBool","solid","Shape","close the surface by a bottom plane").solid=True
 		obj.addProperty("App::PropertyBool","base","Shape","create a base cuboid under the surface").base=True
 		obj.addProperty("App::PropertyBool","polpoints","Helper","display Poles as separate Points").polpoints=False
@@ -585,7 +585,7 @@ class Nurbs(PartFeature):
 		if obj.solid: obj.Shape=self.create_solid(bs)
 		else: obj.Shape=bs.toShape()
 
-		vis=True
+		vis=False
 		if obj.grid:
 			if obj.gridobj<>None: 
 				vis=obj.gridobj.ViewObject.Visibility
@@ -1243,7 +1243,7 @@ def testRandomB():
 	a.solid=False
 	a.base=False
 	#a.grid=False
-	a.gridCount=80
+	a.gridCount=6
 	
 	ps=a.Proxy.getPoints()
 
@@ -1311,4 +1311,17 @@ def runtest():
 		Gui.ActiveDocument=Gui.getDocument("Unnamed")
 
 #	createnurbs()
-	testRandomB()
+#	testRandomB()
+
+
+	na=8
+	b=12
+
+	a=makeNurbs(b,na)
+
+	a.solid=False
+	a.base=False
+	ps=a.Proxy.getPoints()
+	a.Proxy.togrid(ps)
+	a.Proxy.updatePoles()
+	a.Proxy.showGriduv()
