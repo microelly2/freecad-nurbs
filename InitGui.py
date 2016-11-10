@@ -124,7 +124,7 @@ class nurbsEditor:
 
 	def GetResources(self):
 		return {
-			'Pixmap'  : 'Std_Tool1', 
+#			'Pixmap'  : 'Std_Tool1', 
 			'MenuText': 'Nurbs Editor', 
 			'ToolTip': 'creates a test nurbs'
 		}
@@ -171,6 +171,134 @@ class addVline:
 FreeCADGui.addCommand('add V line',addVline())
 #----------------
 
+class uvgridGenerator:
+	def IsActive(self):
+		return FreeCADGui.Selection.getSelection() <> []
+
+	def GetResources(self):
+		return {
+#			'Pixmap'  : FreeCAD.ConfigGet('UserAppData')+"/Mod/freecad-nurbs/icons/"+'addvline.svg', 
+			'MenuText': 'UV grid of Part', 
+			'ToolTip': ''
+		}
+
+
+	def Activated(self):
+		import nurbswb.uvgrid_generator
+		reload(nurbswb.uvgrid_generator)
+		nurbswb.uvgrid_generator.runSel()
+
+
+FreeCADGui.addCommand('UV Grid Generator',uvgridGenerator())
+
+
+class Helper:
+	def IsActive(self):
+		return FreeCADGui.Selection.getSelection() <> []
+
+	def GetResources(self):
+		return {
+#			'Pixmap'  : FreeCAD.ConfigGet('UserAppData')+"/Mod/freecad-nurbs/icons/"+'addvline.svg', 
+			'MenuText': 'Nurbs Helper', 
+			'ToolTip': ''
+		}
+
+	def Activated(self):
+		import nurbswb.helper
+		reload(nurbswb.helper)
+		nurbswb.helper.makeHelperSel()
+
+FreeCADGui.addCommand('Surface Helper',Helper())
+
+#----------------
+
+class randomTorus:
+
+	def Activated(self):
+		import nurbswb.nurbs
+		reload(nurbswb.nurbs)
+		nurbswb.nurbs.testRandomTorus()
+
+	def IsActive(self):
+		if FreeCADGui.ActiveDocument:
+			return True
+		else:
+			return False
+
+	def GetResources(self):
+		return {
+#			'Pixmap'  : 'Std_Tool1', 
+			'MenuText': 'Test Random Torus', 
+		}
+
+FreeCADGui.addCommand('Random Torus',randomTorus())
+
+
+class randomCylinder:
+
+	def Activated(self):
+		import nurbswb.nurbs
+		reload(nurbswb.nurbs)
+		nurbswb.nurbs.testRandomCylinder()
+
+	def IsActive(self):
+		if FreeCADGui.ActiveDocument:
+			return True
+		else:
+			return False
+
+	def GetResources(self):
+		return {
+#			'Pixmap'  : 'Std_Tool1', 
+			'MenuText': 'Test Random Cylinder', 
+		}
+
+FreeCADGui.addCommand('Random Cylinder',randomCylinder())
+
+class randomSphere:
+
+	def Activated(self):
+		import nurbswb.nurbs
+		reload(nurbswb.nurbs)
+		nurbswb.nurbs.testRandomSphere()
+
+	def IsActive(self):
+		if FreeCADGui.ActiveDocument:
+			return True
+		else:
+			return False
+
+	def GetResources(self):
+		return {
+#			'Pixmap'  : 'Std_Tool1', 
+			'MenuText': 'Test Random Sphere', 
+		}
+
+FreeCADGui.addCommand('Random Sphere',randomSphere())
+
+class randomPlane:
+
+	def Activated(self):
+		import nurbswb.nurbs
+		reload(nurbswb.nurbs)
+		nurbswb.nurbs.testRandomB()
+
+	def IsActive(self):
+		if FreeCADGui.ActiveDocument:
+			return True
+		else:
+			return False
+
+	def GetResources(self):
+		return {
+#			'Pixmap'  : 'Std_Tool1', 
+			'MenuText': 'Test Random Plane', 
+		}
+
+FreeCADGui.addCommand('Random Plane',randomPlane())
+
+#----------------
+
 
 
 import nurbswb
@@ -201,6 +329,9 @@ for m in modes:
 
 
 
+
+
+
 class NurbsWorkbench(Workbench):
 	'''Nurbs'''
 	
@@ -212,7 +343,11 @@ class NurbsWorkbench(Workbench):
 
 	def Initialize(self):
 		global cvCmds
-		cmds= ['Nurbs Editor', 'add U line' ,'add V line' ]
+		# cmds= ['Nurbs Editor', 'add U line' ,'add V line', 'UV Grid Generator' ]
+		cmds= ['Nurbs Editor', 
+				# 'add U line' ,'add V line','UV Grid Generator' ,'Surface Helper',
+				'Random Plane','Random Torus','Random Sphere','Random Cylinder',
+			]
 		self.appendToolbar("Nurbs", cmds )
 		self.appendMenu("Nurbs", cmds)
 		Log ("Loading Nurbs Workbench ... done\n")

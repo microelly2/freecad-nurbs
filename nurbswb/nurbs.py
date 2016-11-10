@@ -2,7 +2,7 @@
 #-------------------------------------------------
 #-- nurbs editor -
 #--
-#-- microelly 2016 v 0.1
+#-- microelly 2016
 #--
 #-- GNU Lesser General Public License (LGPL)
 #-------------------------------------------------
@@ -80,12 +80,11 @@ class Nurbs(PartFeature):
 		obj.addProperty("App::PropertyFloatList","knot_v","Nurbs","").knot_v=[0,0,0,0.33,0.67,1,1,1]
 		obj.addProperty("App::PropertyFloatList","weights","Nurbs","").weights=[1]*(uc*vc)
 
-		obj.addProperty("App::PropertyEnumeration","model","Base","").model=["NurbsSuface","NurbsCylinder","NurbsSphere"]
+		obj.addProperty("App::PropertyEnumeration","model","Base","").model=["NurbsSuface","NurbsCylinder","NurbsSphere","NurbsTorus"]
 
 		obj.addProperty("App::PropertyFloat","Height","XYZ", "Height of the Nurbs").Height=1.0
 		obj.addProperty("App::PropertyStringList","poles","Nurbs","")
 
-		#obj.setEditorMode("poles", 2)
 
 		#the poles and surface helper object link
 		obj.addProperty("App::PropertyLink","polobj","XYZ","")
@@ -108,7 +107,7 @@ class Nurbs(PartFeature):
 
 		if not obj.expertMode:
 			# not gui editable
-			for a in ['degree_u','degree_v','poles','knot_u','knot_v','nNodes_u','nNodes_v','weights']:
+			for a in ['degree_u','degree_v','poles','knot_u','knot_v','nNodes_u','nNodes_v','weights','solid']:
 				obj.setEditorMode(a, 2)
 
 		for a in ['polnumber','Height','polselection','gridobj','polgrid','polobj']:
@@ -167,13 +166,6 @@ class Nurbs(PartFeature):
 
 		return
 
-#		if  prop== "Height":
-#			if hasattr(fp,"polobj"):
-#				if fp.polobj<>None: App.ActiveDocument.removeObject(fp.polobj.Name) 
-#				fp.polobj=self.createSurface(fp,fp.poles)
-#				if fp.polobj<>None:
-#					fp.polobj.ViewObject.PointSize=4
-#					fp.polobj.ViewObject.PointColor=(1.0,0.0,0.0)
 
 	def update(self, fp):
 		if hasattr(fp,"polobj"):
@@ -185,11 +177,6 @@ class Nurbs(PartFeature):
 
 
 	def execute(self, fp):
-		print "execute"
-		self.obj2=fp
-		a=fp
-		a.Proxy.obj2=a
-
 		pass
 
 	def onDocumentRestored(self, fp):
@@ -198,23 +185,20 @@ class Nurbs(PartFeature):
 		a.Proxy.obj2=a
 
 		ps=a.Proxy.getPoints()
-		 
 		a.Proxy.togrid(ps)
-		a.Proxy.elevateVline(2,100)
-		
-
 		a.Proxy.updatePoles()
 		a.Proxy.showGriduv()
 		a.Proxy.update(fp)
 
-
 		if not fp.expertMode: v=2
 		else:  v=0
+
 		for a in ['degree_u','degree_v','poles','knot_u','knot_v','nNodes_u','nNodes_v','weights']:
 				fp.setEditorMode(a, v)
 
 		if fp.generatePoles: v = 0
 		else: v = 2
+
 		for a in ['nNodes_u','nNodes_v','stepU','stepV']:
 			fp.setEditorMode(a, v)
 
@@ -224,9 +208,11 @@ class Nurbs(PartFeature):
 
 
 
-	def create_grid(self,bs,ct=20):
+	def create_grid_shape(self,ct=20):
 		''' create a grid of BSplineSurface bs with ct lines and rows '''
 
+		ct=ct
+		bs=self.bs
 		sss=[]
 
 		st=1.0/ct
@@ -240,39 +226,58 @@ class Nurbs(PartFeature):
 			ss=tt.toShape()
 			sss.append(ss)
 
-		for iv in range(ct+1):
+		for iv in range(1,ct+1):
 			pps=[]
-			for iu in range(ct+1):
-	#			p=f.valueAt(st*iu,st*iv)
+			for iu in range(0,ct+1):
+				
 				p=bs.value(st*iu,st*iv)
+				# print (iv,iu,st*iu,st*iv)
 				pps.append(p)
 			tt=Part.BSplineCurve()
 			tt.interpolate(pps)
 			ss=tt.toShape()
+			
+			# Hack
+			ss=Part.makePolygon(pps)
 			sss.append(ss)
 
-		comp=Part.Compound(sss)
 
+		comp=Part.Compound(sss)
+		return comp
+
+	def create_grid(self,bs,ct=20):
+
+		comp=self.create_grid_shape(ct)
 		Part.show(comp)
 		return App.ActiveDocument.ActiveObject
 
-	def create_uv_grid(self):
+
+
+
+
+
+	def create_uv_grid_shape(self):
 		''' create a grid of the poles '''
 
-		print "create uv grid"
 		bs=self.bs
 		sss=[]
 
 		nNodes_u=self.obj2.nNodes_u
 		nNodes_v=self.obj2.nNodes_v
 
+		print "poles and knots"
+		print(nNodes_u,nNodes_v)
+		print (bs.NbUPoles,bs.NbVPoles)
+		nNodes_u=bs.NbUPoles
+		nNodes_v=bs.NbVPoles
+
 		for iu in range(nNodes_u):
+			# meridiane
 			pps=[]
 			p=bs.getPole(1+iu,1)
 			pps=[p.add(FreeCAD.Vector(0,-20,0))]
 
 			for iv in range(nNodes_v):
-#				print (iu,iv)
 				p=bs.getPole(1+iu,1+iv)
 				pps.append(p)
 
@@ -280,12 +285,15 @@ class Nurbs(PartFeature):
 			pps.append(p.add(FreeCAD.Vector(0,20,0)))
 
 
-			tt=Part.BSplineCurve()
-			tt.interpolate(pps)
-			ss=tt.toShape()
+			ss=Part.makePolygon(pps)
+
+			# fuer geschlossenes
+			ss=Part.makePolygon(pps[1:-1])
+			#if iu==nNodes_u-1:
 			sss.append(ss)
 
 		for iv in range(nNodes_v):
+			# breitengrade
 			p=bs.getPole(1,1+iv)
 			pps=[p.add(FreeCAD.Vector(-20,0,0))]
 			for iu in range(nNodes_u):
@@ -296,18 +304,31 @@ class Nurbs(PartFeature):
 			pps.append(p.add(FreeCAD.Vector(20,0,0)))
 
 
-			tt=Part.BSplineCurve()
-			tt.interpolate(pps)
-			ss=tt.toShape()
-			sss.append(ss)
+			ss=Part.makePolygon(pps)
+
+			# fuer geschlossenes
+			pps2=pps[1:-1]
+			pps2.append(pps[1])
+			try:
+				ss=Part.makePolygon(pps2)
+				## horizontale
+				#if iv<>1:
+				sss.append(ss)
+			except:
+				print "kein polygon fuer",pps2
 
 		comp=Part.Compound(sss)
+		return comp
 
+
+
+	def create_uv_grid(self):
+		
+		comp=self.create_uv_grid_shape()
 		Part.show(comp)
 		App.ActiveDocument.ActiveObject.ViewObject.LineColor=(1.0,0.0,1.0)
 		App.ActiveDocument.ActiveObject.ViewObject.LineWidth=1
 		return App.ActiveDocument.ActiveObject
-
 
 	def create_solid(self,bs):
 		''' create a solid part with the surface as top'''
@@ -355,6 +376,74 @@ class Nurbs(PartFeature):
 		# solid ...
 		sh=Part.makeShell([s1,bs.toShape()])
 		return Part.makeSolid(sh)
+
+	def CylinderCoords(self,obj,coor):
+		''' calculate coord for cylinder '''
+
+		coor=np.array(coor)
+		print coor
+		l,d=coor.shape
+		xs=coor[:,0]
+		ys=coor[:,1]
+		zs=coor[:,2]
+
+		xs -= xs.min()
+		xs /= xs.max()
+		xs *= (2*3.14)
+		print xs
+
+		ys -= ys.min()
+		ys /= ys.max()
+
+		zs -= zs.min()
+		zs /= zs.max()
+
+		print ys
+		coor=[]
+		h=2000
+		for i in range(l):
+			r=400+200*zs[i]
+			coor.append([r*np.cos(xs[i]),r*np.sin(xs[i]),h*ys[i]])
+
+		return coor
+
+
+	def SphereCoords(self,obj,coor):
+		''' calculate coord for cylinder '''
+
+		coor=np.array(coor)
+		print coor
+		l,d=coor.shape
+		xs=coor[:,0]
+		ys=coor[:,1]
+		zs=coor[:,2]
+
+		xs -= xs.min()
+		xs /= xs.max()
+		xs *= (2*3.1)
+		print xs
+
+		ys -= ys.min()
+		ys /= ys.max()
+		ys -= 0.5
+		ys *= 3.14
+
+		zs -= zs.min()
+		zs /= zs.max()
+
+		print ys
+		coor=[]
+		r=400
+		h=4000
+		for i in range(l):
+			r=400+400*zs[i]
+			coor.append([r*np.cos(xs[i])*np.cos(ys[i]),
+						r*np.sin(xs[i])*np.cos(ys[i]),
+						r*np.sin(ys[i])])
+
+		return coor
+
+
 
 
 	def createSurface(self,obj,poles=None):
@@ -417,139 +506,40 @@ class Nurbs(PartFeature):
 			coor=eval(cc)
 
 
-# EXPERIMENTAL START
-#--------------------------------
-		if 0 and obj.model=="NurbsCylinder":
-			# create cylinder face
-			coor=[]
-			ws=[]
-			zl=[0,100,200,300,400]
-			rl=[1,1.5,2,1,1] 
-			rl=[1,1,2,1,1] 
-#			rl=[1,1,1,1,1] 
-			import random
-			for iz in range(5):
-				z=zl[iz]
-				r=rl[iz]
-				zs=[[0,-100*r,z],[100*r,-100*r,z],[100*r,0,z],[100*r,100*r,z],
-						[0,100*r,z],[-100*r,100*r,z],[-100*r,0,z],[-100*r,-100*r,z],[0,-100*r,z]]
+		if obj.model=="NurbsCylinder":
 
-#				if iz==2:
-#					zs=[[0,-100*r,z],[100*r,-100*r,z],[100*r+60,0,z],[100*r,100*r,z],
-#						[0,100*r,z],[-100*r,100*r,z],[-100*r-40,0,z],[-100*r,-100*r,z],[0,-100*r,z]]
-
-				w=[1,0.7,1,0.7,1,0.7,1,0.7,1]
-				coor += zs
-				ws += w
-			print "coord"
-			print coor
-			weights=np.array(ws)
-#			weights=np.ones(9*5)
-			weights=weights.reshape(5,9)
-			
-			print len(weights)
-			print weights
-			weights=weights.reshape(5,9)
-			
-			nNodes_u=9
-			nNodes_v=5
-			
-			knot_u=[0,0,0, 0.2,0.200001,0.4,0.400001,0.6,0.600001, 1,1,1]
-#			knot_u=[0,0.,0., 0.2,0.2,0.4,0.4,0.6,0.9, 0.9,0.9]
-#			knot_u=[0,0.,0.1, 0.2,0.2,0.4,0.4,0.6,0.9, 0.9,0.9]
-#			knot_u=[0.0,0.0,0.1,0.1,0.2,0.2,0.4,0.4,0.6,0.6,0.96, 0.96]
-			knot_v=[0,0,0,0.3,0.7,1,1,1]
-
-			obj.knot_v= knot_v
-			obj.knot_u= knot_u
-
-			obj.weights=list(np.ravel(weights))
-#--------------------------------------
-
-#--------------------------------
-		if 10 and obj.model=="NurbsCylinder":
-			# create cylinder face
-			
-			nNodes_u=5
-			nNodes_v=5
-			
-			
-
-			coor=[]
-			ws=[]
-			yl=[0,100,200,300,400]
-			rl=[1,1.5,2,1,1] 
-#			rl=[1,1,1,1,1] 
-#			rl=[1,1,1,1,1] 
-			r=1
-			y=-100
-#			zs2=[[-100*r,y,0],[-100*r+1,y,0],[0,y,0],[100*r-1,y,0],[100*r,y,0]]
-#			coor +=zs2
-			import random
-			for iz in range(5):
-				y=yl[iz]
-				r=rl[iz]
-				if iz==0 or iz==4:
-					zs=[[-100*r,y,0],[-100*r+0.0001,y,0*r],[0,y,0*r],[100*r-0.0001,y,0*r],[100*r,y,0]]
-				else:
-					#zs=[[-100*r,y,0],[-100*r,y,100*r+60*random.random()],[0,y,100*r+60*random.random()],[100*r,y,100*r+60*random.random()],[100*r,y,0]]
-					zs=[[-100*r,y,0],[-100*r,y,100*r],[0,y,100*r],[100*r,y,100*r],[100*r,y,0]]
+			coor=self.CylinderCoords(obj,coor)
 
 
-				w=[1,0.7,1,0.7,1]
-				t=3.5
-				t=3.0
-				t=2
-				t=1.41
-				w=[t,1,t,1,t]
-				coor += zs
-				ws += w
-			
-			y=600
-			r=1
-			
-#			zs2=[[-100*r,y,0],[-100*r+1,y,0],[0,y,0],[100*r-1,y,0],[100*r,y,0]]
-#			ws += w
-#			ws += w
-#			coor +=zs2
-			print "coord"
-			print coor
-			weights=np.array(ws)
-#			weights=np.ones(9*5)
-			
-			
-			print len(weights)
-			print weights
-			weights=weights.reshape(5,5)
-			#weights=weights.reshape(5,5)
-			
-			
-			knot_u=[0,0,0, 0.33,0.67, 1,1,1]
-			knot_u=[0,0,0, 0.49,0.51, 1,1,1]
-			knot_u=[0,0,0, 0.499,0.501, 1,1,1]
-			knot_u=[0,0,0, 0.499,0.501, 0.9,1,1,1]
-			# works
-			knot_u=[0,0,0, 0.4999999,0.5000001, 1,1,1]
-			# fails
-			# knot_u=[0,0,0, 0.49999999,0.50000001, 1,1,1]
-			
-#			knot_u=[0,0.,0., 0.2,0.2,0.4,0.4,0.6,0.9, 0.9,0.9]
-#			knot_u=[0,0.,0.1, 0.2,0.2,0.4,0.4,0.6,0.9, 0.9,0.9]
-#			knot_u=[0.0,0.0,0.1,0.1,0.2,0.2,0.4,0.4,0.6,0.6,0.96, 0.96]
-			knot_v=[0,0,0,0.3,0.5,0.8,0.9, 1,1,1]
-			knot_v=[0,0,0,0.3,0.7,1,1,1]
+		if obj.model=="NurbsSphere":
 
-			obj.knot_v= knot_v
-			obj.knot_u= knot_u
+			coor=self.SphereCoords(obj,coor)
 
-			obj.weights=list(np.ravel(weights))
-#--------------------------------------
-# EXPERIMENTAL END
+			if obj.degree_u==399999:
+				l=[1.0/(uc-3)*i for i in range(uc-2)]
+				obj.knot_u=[0,0,0,0]+ l + [1,1,1,1]
 
+			if obj.degree_v==3:
+				l=[1.0/(vc-3)*i for i in range(vc-2)]
+				obj.knot_v=[0,0,0,0]+ l + [1,1,1,1]
+
+
+
+#----------------------------------------------------------------------------------
+		print "len A coor " ,len(coor)
+
+#		knot_u=[0,0,0.2,0.4,0.6,0.8,1,1]
+#		knot_u=[0,0,0.2, 0.4,0.4, 0.6,0.8,1,1]
+
+#		knot_v=[0,0.5,1]
+#		knot_v=[0,0,0.5,1,1]
 
 		obj.poles=str(coor)
 
+
 		bs=Part.BSplineSurface()
+
+		#bs.setUPeriodic()
 		self.bs=bs
 
 
@@ -559,7 +549,19 @@ class Nurbs(PartFeature):
 		if obj.model=="NurbsCylinder":
 			# cylinder - experimental  play with periodic nurbs 
 			pass
-			# bs.setUPeriodic()
+			bs.setUPeriodic()
+
+		if obj.model=="NurbsSphere":
+			pass
+			bs.setUPeriodic()
+
+
+#		bs.setVPeriodic()
+#		bs.setUPeriodic()
+
+		print ("poles u count", bs.NbUKnots)
+		print ("poles v count", bs.NbVKnots)
+
 
 		#+#+ todo split knot vectors in single values vector and multiplicity vector
 		for i in range(0,len(knot_u)):
@@ -570,20 +572,93 @@ class Nurbs(PartFeature):
 				#if knot_v[i+1] > knot_v[i]:
 						 bs.insertVKnot(knot_v[i],1,0.0000001)
 
-		# set the poles
-		i=0
-		for jj in range(0,nNodes_v):
-			for ii in range(0,nNodes_u):
-				try:
-					bs.setPole(ii+1,jj+1,FreeCAD.Vector((coor[i][0],coor[i][1],coor[i][2])),weights[jj,ii])
-				except:
+		print ("dim nodes",nNodes_v,nNodes_u)
+		print "len coor " ,len(coor)
+		print ("knot_u",knot_u)
+		print ("knot_v",knot_v)
+		print ("poles u count", bs.NbUPoles)
+		print ("poles v count", bs.NbVPoles)
+		print bs.getUKnots()
+		print bs.getVKnots()
+		print bs.getUMultiplicities()
+		print bs.getVMultiplicities()
+
+		
+		t=bs.getPoles()
+		print("shape poles", len(t),len(t[0]))
+		#return
+
+		# nNodes_v,nNodes_u=nNodes_u,nNodes_v
+
+		if obj.model=="NurbsSuface":
+			poles2=np.array(coor).reshape(nNodes_v,nNodes_u,3)
+			print poles2.shape
+
+			vc=nNodes_v
+			kv=[1.0/(nNodes_v-1)*i for i in range(nNodes_v)]
+			ku=[1.0/(nNodes_u-1)*i for i in range(nNodes_u)]
+			
+			bs.buildFromPolesMultsKnots(poles2,[3] +[1]*(nNodes_v-2) +[3],[3]+[1]*(nNodes_u-2)+[3],
+				kv,
+				ku,
+				False,False,3,3,1.0*np.ones(nNodes_v*(nNodes_u-1)))
+
+
+		if obj.model=="NurbsSphere" or  obj.model=="NurbsCylinder" :
+			poles2=np.array(coor).reshape(nNodes_v,nNodes_u,3)
+			print poles2.shape
+
+			vc=nNodes_v
+			kv=[1.0/(nNodes_v-1)*i for i in range(nNodes_v)]
+			ku=[1.0/(nNodes_u-1)*i for i in range(nNodes_u)]
+			
+			bs.buildFromPolesMultsKnots(poles2,[3] +[1]*(nNodes_v-2) +[3],[2]+[1]*(nNodes_u-2)+[2],
+				kv,
+				ku,
+				False,True,3,3,1.0*np.ones(nNodes_v*(nNodes_u-1)))
+
+
+		# irgendwas vertauscht beim torus
+		if obj.model=="NurbsTorus":
+
+			coor=[
+					[20.0,0,-40],[60,0,-40],[30,0,50],[0,0,-40],
+					[20,10,-40],[40,10,-40],[40,10,55],[0,10,-40],
+					[20,15,-40],[65,15,-40],[60,15,75],[35,15,-40],
+					[0,20,10],[0,40,20],[0,45,65],[0,20,20],
+					[-20,0,0],[-40,0,20],[-70,0,75],[-20,0,40],
+					[-30,-10,5],[-40,-10,20],[-40,-10,55],[-20,-20,40],
+					[5,-20,5],[0,-40,30],[0,-45,65],[5,-20,10],
+			]
+			tt=10*np.array(coor)
+			poles2=tt.reshape(7,4,3)
+			bs.buildFromPolesMultsKnots(poles2,[2,1,1,1,1,1,2],[2,1,1,2],[0,0.2,0.4,0.5,0.7,0.8,1],[0,0.4,0.6,1],True,True,3,3,1.0*np.ones(28))
+
+		'''
+		else:
+			i=0
+			for jj in range(0,nNodes_v):
+				for ii in range(0,nNodes_u):
+					
+					try:
+						#print("getpole",bs.getPole(jj+1,ii+1))
+						bs.setPole(jj+1,ii+1,FreeCAD.Vector((coor[i][0],coor[i][1],coor[i][2])),weights[jj,ii])
+						bs.setWeight(jj+1,ii+1,4)
+						# print i,FreeCAD.Vector((coor[i][0],coor[i][1],coor[i][2]))
 						print([ii+1,jj+1,FreeCAD.Vector((coor[i][0],coor[i][1],coor[i][2])),weights[jj,ii]])
-						sayexc("setPols ii,jj:"+str([ii,jj]))
-				i=i+1;
+					except:
+							print([ii+1,jj+1,FreeCAD.Vector((coor[i][0],coor[i][1],coor[i][2])),weights[jj,ii]])
+							
+							sayexc("error setPols ii,jj:"+str([ii+1,jj+1]))
+							print("getpole exc reverse --",bs.getPole(jj+1,ii+1))
+							print("getpole exc --",bs.getPole(ii+1,jj+1))
+					i=i+1;
+		'''
 
 		# create aux parts
 		if obj.solid: obj.Shape=self.create_solid(bs)
 		else: obj.Shape=bs.toShape()
+		print "XAA"
 
 		vis=False
 		if obj.grid:
@@ -591,9 +666,10 @@ class Nurbs(PartFeature):
 				vis=obj.gridobj.ViewObject.Visibility
 				App.ActiveDocument.removeObject(obj.gridobj.Name)
 			obj.gridobj=self.create_grid(bs,obj.gridCount)
+			
 			obj.gridobj.Label="Nurbs Grid"
 			obj.gridobj.ViewObject.Visibility=vis
-
+		print "XA"
 
 		if obj.base:
 			# create the socket box 
@@ -649,6 +725,12 @@ class Nurbs(PartFeature):
 
 
 		# create a pole grid with spines
+		
+		#--- hack
+		#print "ABBRUCH Zeile 661"
+		#return None
+		#---
+
 		vis=True
 		try: 
 			vis=obj.polgrid.ViewObject.Visibility
@@ -660,7 +742,8 @@ class Nurbs(PartFeature):
 
 		nurbstime=time.time()
 
-
+		print "XB"
+		
 		polesobj=None
 		comptime=time.time()
 		
@@ -684,13 +767,25 @@ class Nurbs(PartFeature):
 
 		endtime=time.time()
 
-		print ("create Nurbs time",round(nurbstime-starttime,2))
-#		print ("create helper time",round(endtime-nurbstime,2))
-		print ("create comp time",round(comptime-nurbstime,2))
-		print ("create Surface time",round(endtime-comptime,2))
+		print ("create nurbs components, surface time ",
+				round(nurbstime-starttime,2),
+				round(comptime-nurbstime,2),
+				round(endtime-comptime,2))
 
 		return polesobj
 
+
+
+	def getBS(self):
+		try:
+			rc=self.bs
+		except:
+			sayexc("BSpline nicht mehr vorhanden, muss neu berechnet werden ....")
+			uc=self.obj2.nNodes_v
+			vc=self.obj2.nNodes_u
+			self.createSurface(self.obj2,self.obj2.poles)
+			rc=self.bs
+		return  rc
 
 	def getPoints(self):
 		''' generic point set for grid'''
@@ -757,49 +852,36 @@ class Nurbs(PartFeature):
 	def setpointZ(self,u,v,h=0,w=20):
 		''' set height and weight of a pole point '''
 
-		##FreeCAD.ActiveDocument.openTransaction("set Point " +str((u,v,h,w)))
-
-		self.g[v][u][2]=h
-		uc=self.obj2.nNodes_u
-		vc=self.obj2.nNodes_v
+		u,v=v,u
+		# self.g[v][u][2]=h
+		self.g[v][u][2] = 100*np.tan(0.5*np.pi*h/101)
 		try:
 			wl=self.obj2.weights
-			wl[v*uc+u]=w
+			wl[v*self.obj2.nNodes_u+u]=w
 			self.obj2.weights=wl
 		except:
 			sayexc()
 
-		##self.updatePoles()
-		##self.showGriduv()
-		##FreeCAD.ActiveDocument.commitTransaction()
 
 	def setpointRelativeZ(self,u,v,h=0,w=0,update=False):
-
 		''' set relative height and weight of a pole point '''
-#		if update:
-#			FreeCAD.ActiveDocument.openTransaction("set Point relative " + str((u,v,h,w)))
 
-		print self.g[v][u]
-		print "realtive ",h
-		print "updae Flag",update
-		self.g[v][u][2] = self.gBase[v][u][2] + h
-		
-		print self.g[v][u]
-		
+		u,v=v,u
+		#self.g[v][u][2] = self.gBase[v][u][2] + h
+		# unrestricted
+		self.g[v][u][2] = self.gBase[v][u][2] + 100* np.tan(0.5*np.pi*h/101)
+		sayW(("set  rel h, height",h,self.g[v][u][2]))
+				
 		if update:
 			self.gBase=self.g.copy()
 
-		uc=self.obj2.nNodes_u
-		vc=self.obj2.nNodes_v
 		try:
 			wl=self.obj2.weights
-			wl[v*uc+u]=w
+			wl[v*self.obj2.nNodes_u+u]=w
 			self.obj2.weights=wl
 		except:
 			sayexc()
 
-#		if update:
-#			FreeCAD.ActiveDocument.commitTransaction()
 
 
 
@@ -1234,7 +1316,7 @@ def createnurbs():
 
 def testRandomB():
 
-	
+
 	na=20
 	b=10
 
@@ -1296,6 +1378,224 @@ def testRandomB():
 	Gui.SendMsgToActiveView("ViewFit")
 
 
+def testRandomCylinder():
+
+	try:
+		App.closeDocument("Unnamed")
+	except:
+		pass
+
+	if App.ActiveDocument==None:
+		App.newDocument("Unnamed")
+		App.setActiveDocument("Unnamed")
+		App.ActiveDocument=App.getDocument("Unnamed")
+		Gui.ActiveDocument=Gui.getDocument("Unnamed")
+
+
+	na=30
+	b=30
+
+	a=makeNurbs(b,na)
+	a.model="NurbsCylinder"
+
+	a.solid=False
+	a.base=False
+	#a.grid=False
+	a.gridCount=20
+	
+	ps=a.Proxy.getPoints()
+	print "points ps",len(ps)
+
+	if 0:
+		print "random .."
+		ps=np.array(FreeCAD.ps).swapaxes(0,1)
+		temp,ct=ps.shape
+		ps[2] += 100*np.random.random(ct)
+		ps=ps.swapaxes(0,1)
+	#	ps[0:3]
+
+	ps=np.array(ps)
+	ps.resize(na,b,3)
+	
+	for k0 in range(25):
+		k=random.randint(0,na-3)
+		l=random.randint(1,b-1)
+		for j in range(1):
+			ps[k+j][l][2] += 100*random.random()
+		rj=random.randint(0,1)
+		print (k,rj)
+		for j in range(rj):
+			ps[k+j][l][2] += 100*random.random()
+
+	for k0 in range(10):
+		k=random.randint(0,na-3)
+		l=random.randint(1,b-1)
+
+		for j in range(1):
+			ps[k+j][l][2] += 200*random.random()
+		rj=random.randint(0,1)
+		print (k,rj)
+		for j in range(rj):
+			ps[k+j][l][2] += 200*random.random()
+
+
+	ps.resize(na*b,3)
+
+
+	a.Proxy.togrid(ps)
+#	a.Proxy.elevateVline(2,0)
+
+	a.Proxy.updatePoles()
+	a.Proxy.showGriduv()
+	
+	FreeCAD.a=a
+	FreeCAD.ps=ps
+
+	Gui.activeDocument().activeView().viewAxonometric()
+	Gui.SendMsgToActiveView("ViewFit")
+
+def testRandomSphere():
+
+
+	na=17
+	b=15
+
+	a=makeNurbs(b,na)
+	a.model="NurbsSphere"
+
+	a.solid=False
+	a.base=False
+	#a.grid=False
+	a.gridCount=20
+	
+	ps=a.Proxy.getPoints()
+	print "points ps",len(ps)
+
+	if 0:
+		print "random .."
+		ps=np.array(FreeCAD.ps).swapaxes(0,1)
+		temp,ct=ps.shape
+		ps[2] += 100*np.random.random(ct)
+		ps=ps.swapaxes(0,1)
+	#	ps[0:3]
+
+	ps=np.array(ps)
+	ps.resize(na,b,3)
+	
+	for k0 in range(15):
+		k=random.randint(2,na-3)
+		l=random.randint(1,b-1)
+		for j in range(1):
+			ps[k+j][l][2] += 100*random.random()
+		rj=random.randint(0,1)
+		print (k,rj)
+		for j in range(rj):
+			ps[k+j][l][2] += 100*random.random()
+
+	for k0 in range(10):
+		k=random.randint(2,na-3)
+		l=random.randint(1,b-1)
+
+		for j in range(1):
+			ps[k+j][l][2] += 200*random.random()
+		rj=random.randint(0,1)
+		print (k,rj)
+		for j in range(rj):
+			ps[k+j][l][2] += 200*random.random()
+
+
+	ps.resize(na*b,3)
+
+
+	a.Proxy.togrid(ps)
+#	a.Proxy.elevateVline(2,0)
+
+	a.Proxy.updatePoles()
+	a.Proxy.showGriduv()
+	
+	FreeCAD.a=a
+	FreeCAD.ps=ps
+
+	Gui.activeDocument().activeView().viewAxonometric()
+	Gui.SendMsgToActiveView("ViewFit")
+
+def testRandomTorus():
+
+
+	na=7
+	b=4
+
+
+	a=makeNurbs(b,na)
+	a.model="NurbsTorus"
+
+	a.solid=False
+	a.base=False
+	#a.grid=False
+	a.gridCount=20
+	
+	ps=a.Proxy.getPoints()
+	print "points ps",len(ps)
+
+	ps=a.Proxy.getPoints()
+	print "A"
+	a.Proxy.togrid(ps)
+	print "B"
+	a.Proxy.updatePoles()
+	print "C"
+	a.Proxy.showGriduv()
+
+
+	'''
+	if 0:
+		print "random .."
+		ps=np.array(FreeCAD.ps).swapaxes(0,1)
+		temp,ct=ps.shape
+		ps[2] += 100*np.random.random(ct)
+		ps=ps.swapaxes(0,1)
+	#	ps[0:3]
+	
+	ps=np.array(ps)
+	ps.resize(na,b,3)
+
+	
+	for k0 in range(15):
+		k=random.randint(2,na-3)
+		l=random.randint(1,b-1)
+		for j in range(1):
+			ps[k+j][l][2] += 100*random.random()
+		rj=random.randint(0,1)
+		print (k,rj)
+		for j in range(rj):
+			ps[k+j][l][2] += 100*random.random()
+
+	for k0 in range(10):
+		k=random.randint(2,na-3)
+		l=random.randint(1,b-1)
+
+		for j in range(1):
+			ps[k+j][l][2] += 200*random.random()
+		rj=random.randint(0,1)
+		print (k,rj)
+		for j in range(rj):
+			ps[k+j][l][2] += 200*random.random()
+	
+
+	ps.resize(na*b,3)
+
+
+	a.Proxy.togrid(ps)
+#	a.Proxy.elevateVline(2,0)
+
+	'''
+
+
+	FreeCAD.a=a
+	FreeCAD.ps=ps
+
+	Gui.activeDocument().activeView().viewAxonometric()
+	Gui.SendMsgToActiveView("ViewFit")
+
 
 def runtest():
 	global createnurbs
@@ -1311,11 +1611,11 @@ def runtest():
 		Gui.ActiveDocument=Gui.getDocument("Unnamed")
 
 #	createnurbs()
-#	testRandomB()
 
 
-	na=8
-	b=12
+
+	na=10
+	b=10
 
 	a=makeNurbs(b,na)
 
@@ -1325,3 +1625,23 @@ def runtest():
 	a.Proxy.togrid(ps)
 	a.Proxy.updatePoles()
 	a.Proxy.showGriduv()
+
+
+
+def runtest2():
+	#testRandomB()
+	testRandomCylinder()
+	#testRandomSphere()
+	#testRandomTorus()
+
+'''
+
+import nurbswb.nurbs
+
+nurbswb.nurbs.testRandomB()
+nurbswb.nurbs.testRandomCylinder()
+nurbswb.nurbs.testRandomSphere()
+nurbswb.nurbs.testRandomTorus()
+
+
+'''

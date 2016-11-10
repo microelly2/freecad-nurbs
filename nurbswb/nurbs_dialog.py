@@ -208,7 +208,7 @@ VerticalLayoutTab:
 
 
 			QtGui.QDial:
-				setValue: 0
+				setValue: -100
 				setMinimum: -100
 				setMaximum: 100
 				id: 'hd'
@@ -874,6 +874,7 @@ def mydialog(obj):
 	miki.ids['ucombo'].addItems(items)
 
 	miki.ids['hcombo'].addItems([str(n) for n in range(100,-100,-1)])
+	miki.ids['hcombo'].setCurrentIndex(100)
 	miki.ids['wcombo'].addItems([str(n) for n in range(1,21)])
 	app.getDataFromNurbs()
 	
