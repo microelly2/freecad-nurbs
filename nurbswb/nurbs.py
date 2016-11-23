@@ -591,6 +591,7 @@ class Nurbs(PartFeature):
 		# nNodes_v,nNodes_u=nNodes_u,nNodes_v
 
 		if obj.model=="NurbsSuface":
+			print "Nurbs surface !!!"
 			poles2=np.array(coor).reshape(nNodes_v,nNodes_u,3)
 			print poles2.shape
 
@@ -598,6 +599,13 @@ class Nurbs(PartFeature):
 			kv=[1.0/(nNodes_v-1)*i for i in range(nNodes_v)]
 			ku=[1.0/(nNodes_u-1)*i for i in range(nNodes_u)]
 			
+			print ku
+			print kv
+			print len(ku)
+			print len(kv)
+			print nNodes_u
+			print nNodes_v
+
 			bs.buildFromPolesMultsKnots(poles2,[3] +[1]*(nNodes_v-2) +[3],[3]+[1]*(nNodes_u-2)+[3],
 				kv,
 				ku,
