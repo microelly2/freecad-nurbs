@@ -253,6 +253,13 @@ def array2Nurbs(arr,a,b,c,d,label="MyArrayNurbs",borderPoles=False):
 		ku=[1.0/(NbUPoles-1)*i for i in range(NbUPoles)]
 		mv=[3] +[1]*(NbVPoles-2) +[3]
 		mu=[3]+[1]*(NbUPoles-2)+[3]
+		
+		kv=[1.0/(NbVPoles-3)*i for i in range(NbVPoles-2)]
+		ku=[1.0/(NbUPoles-3)*i for i in range(NbUPoles-2)]
+		mv=[4] +[1]*(NbVPoles-4) +[4]
+		mu=[4]+[1]*(NbUPoles-4)+[4]
+
+
 	else:
 		kv=[1.0/(NbVPoles+3)*i for i in range(NbVPoles+4)]
 		ku=[1.0/(NbUPoles+3)*i for i in range(NbUPoles+4)]
@@ -262,15 +269,21 @@ def array2Nurbs(arr,a,b,c,d,label="MyArrayNurbs",borderPoles=False):
 	print (ps.shape,ku,kv)
 	bs.buildFromPolesMultsKnots(ps, mv, mu, kv, ku, False,False ,3,3)
 
-# fehler,wenn tolerance kleiner #+#
-#	bs.insertUKnot(0.2,1,0.1)
-#	bs.insertVKnot(0.2,1,0.1)
+
+#	bs.insertVKnot(0.51,1,0.0)
+#	print "B4xxx5"
+# fehler,wenn tolerance kleiner #+# warum bei u=0.2 ??
+#	bs.insertUKnot(0.2,1,0.0)
+#	bs.insertVKnot(0.2,1,0.0)
+
+
 
 	sha=bs.toShape()
 	sp=App.ActiveDocument.addObject("Part::Spline",label)
 	sp.Shape=sha
 	sp.ViewObject.ControlPoints = True
 	sp.ViewObject.ShapeColor = (random.random(),random.random(),random.random())
+	return sp
 
 
 
@@ -280,7 +293,7 @@ def array2Nurbs(arr,a,b,c,d,label="MyArrayNurbs",borderPoles=False):
 #
 #
 
-if __name__=='__main__':
+if 0 and __name__=='__main__':
 	ss1=createSpreadsheet(label='MySpreadsheet')
 	gendata(ss1)
 	table2Nurbs(ss1,"simpe gen data")
@@ -291,7 +304,6 @@ if __name__=='__main__':
 	App.activeDocument().recompute()
 	table2Nurbs(ss1,"E15")
 
-
 	#--------------------------------------------
 
 
@@ -299,6 +311,7 @@ if __name__=='__main__':
 	pps.shape
 	array2Nurbs(pps,1,9,1,11)
 
+'''
 	array2Nurbs(pps,3,9,2,11)
 
 	array2Nurbs(pps,1,11,3,11)
@@ -355,3 +368,17 @@ if __name__=='__main__':
 
 
 
+'''
+
+
+
+'''
+ss1=createSpreadsheet(label='MySpreadsheet')
+gendata(ss1)
+table2Nurbs(ss1,"simpe gen data")
+
+
+pps=table2array(ss1)
+pps.shape
+array2Nurbs(pps,1,9,1,11)
+'''
