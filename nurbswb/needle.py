@@ -48,8 +48,9 @@ def Myarray2NurbsD3(arr,label="MyWall"):
 
 	sh=bs.toShape()
 
-	if 0:
-		sp=App.ActiveDocument.addObject("Part::Spline",label)
+	if 1:
+		try: sp=App.ActiveDocument.Poles
+		except: sp=App.ActiveDocument.addObject("Part::Spline","Poles")
 		sp.Shape=sh
 		sp.ViewObject.ControlPoints=True
 		sp.ViewObject.hide()
@@ -127,31 +128,52 @@ def toUVMesh(bs, uf=5, vf=5):
 
 
 
-def scaleAndExtrude(profile,scaler=None,path=None):
+def scale(profile,scaler=None):
 	c=np.array(profile)
 	if scaler == None: scaler= [1]*10
-	if path == None: path= [[0,0,10*i] for i in range(len(scaler))]
-
-	assert(len(path)==len(scaler))
-	#poles=np.array([c*scaler[i]]+path[i] for i in  range(len(path))])
-	poles=np.array([c*[scaler[i,0],scaler[i,0],scaler[i,1]]+path[i] for i in  range(len(path))])
+	poles=np.array([c*[scaler[i,0],scaler[i,0],scaler[i,1]] for i in  range(len(scaler))])
 	return poles
 
-def twist(profile,twister):
+
+def extrude(profile,path=None):
 	c=np.array(profile)
 	vc,uc,_t=c.shape
-	# assert len(twister) == c.shape[0]
+	for v in range(vc):
+		c[v] += path[v]
+	return c
+
+def myrot(v,twister):
+	v=FreeCAD.Vector(v)
+	xa=0
+	ya=0
+	za=10
+	[xa,ya,za]=twister
+	p2=FreeCAD.Placement()
+	p2.Rotation=FreeCAD.Rotation(FreeCAD.Vector(0,0,1),za).multiply(FreeCAD.Rotation(FreeCAD.Vector(0,1,0),ya).multiply(FreeCAD.Rotation(FreeCAD.Vector(1,0,0),xa)))
+#	print ("Rotation Euler",p2.Rotation.toEuler())
+
+	p=FreeCAD.Placement()
+	p.Base=v
+	rc=p2.multiply(p)
+#	print v
+#	print rc.Base
+	return rc.Base
+
+
+def twist(profile,twister):
+	print "twister"
+	c=np.array(profile)
+	vc,uc,_t=c.shape
 	rc=[]
 	for v in range(vc):
 		cv=[]
+		print twister[v]
 		for u in range(uc):
 			sp=c[v,u]
-			tw=twister[v]*np.pi/180 
-			tpp=[np.cos(tw)*sp[0] - np.sin(tw)*sp[1],np.sin(tw)*sp[0] + np.cos(tw)*sp[1],sp[2]]
+			tpp=myrot(sp,twister[v])
 			cv.append(tpp)
 		c[v]=cv
 	return c
-
 
 
 
@@ -175,7 +197,7 @@ def cellname(col,row):
 
 
 
-def npa2ssa(arr,spreadsheet,c1,r1):
+def npa2ssa(arr,spreadsheet,c1,r1,color=None):
 	''' write 2s array into spreadsheet '''
 	ss=spreadsheet
 	arr=np.array(arr)
@@ -190,12 +212,14 @@ def npa2ssa(arr,spreadsheet,c1,r1):
 		for r in range(r1,r2):
 			cn=cellname(c1,r)
 			ss.set(cn,str(arr[r-r1]))
+			if color<>None: ss.setBackground(cn,color)
 	else:
 		for r in range(r1,r2):
 			for c in range(c1,c2):
 				cn=cellname(c,r)
 	#			print (cn,c,r,)
 				ss.set(cn,str(arr[r-r1,c-c1]))
+				if color<>None: ss.setBackground(cn,color)
 
 def gendata(ss):
 	print ("gendata",ss.Label)
@@ -205,22 +229,73 @@ def gendata(ss):
 	# profil blatt
 	curve=[[0,0,0],[5,-5,10],[30,-10,-0],[20,-5,-10],[0,10,0],[-20,-5,-0],[-30,-10,0],[-5,-5,0]]
 
+	curve=[
+			[0,0,0],
+			[0,29,0],[0,30,0],[0,31,0],
+			[100,30,25],
+			[100,180,25],
+			[-20,180,-5],
+			[-20,-30,-5],
+			[-100,-30,-25],[-99,-30,-25],
+			[-100,-129,-25],[-100,-130,-25],[-99,-130,-25],
+			[0,-40,-0]
+		]
+
 	# backbone
-	bb= [[0,0,0],[10,5,20],[5,-5,40],[5,-10,170],[-3,20,300]]
+	bb= [[0,0,0],[0,0,100],[0,-5,40],[5,-10,170],[-3,20,300]]
+	bb= [[0,0,0],[0,0,50],[0,0,100],[0,0,200],[0,0,400],[0,0,500],[0,0,600]]
+
+
+
+
 
 	#scaling
 	sc=[[1,0],[1.5,1],[1,-5],[0.7,1],[3.05,0]]
 	sc=[[1,0],[1,0],[1,0],[1,0],[3,0]]
+	sc=[[1,0],[1,2],[2,0],[1,-2],[4,0]]
+
+	sc=[[1,0],[1,0],[1,0],[1,0],[1,0],[1.3,0],[1.,0]]
+
 
 	#twist along the z-axis
-	twister=[0,30,70,-20,20]
+	twister=[[0,0,0],[0,0,90],[30,0,-70],[0,30,-90],[0,0,0]]
+	twister=[[0,0,0],[0,0,0],[0,0,0],[0,0,0],[0,0,0],[0,0,0],[0,0,0]]
 
-	npa2ssa(curve,ss,2,3)
-	npa2ssa(bb,ss,7,3)
-	npa2ssa(sc,ss,10,3)
-	npa2ssa(twister,ss,12,3)
+	twister=[[0,0,0],[0,0,90],[0,0,20],[0,0,-20],[0,0,30],[0,0,0],[0,0,-50]]
+	twister=[[0,0,0],[0,0,0],[35,0,0],[00,0,0],[-35,0,0],[-35,0,0],[0,0,0]]
+	twister=[[0,0,0],[0,45,0],[0,0,0],[00,0,0],[0,45,0],[0,-45,0],[0,0,0]]
+
+
+	# halbscharfe kante
+	bb= [[0,0,0],[0,0,50],[0,0,100],[0,0,200],[0,0,400],[0,0,499],[0,0,500],[0,0,600]]
+	twister=[[0,0,0],[0,-25,0],[0,0,0],[00,0,0],[0,-25,0],[0,25,0],[0,25,0],[0,0,0]]
+	sc=[[1,0],[1,0],[1,0],[1,0],[1,0],[1.3,0],[1.3,0],[1.,0]]
+
+
+
+	bb= [[0,0,0],[0,0,50],[0,0,100],[0,0,200],[0,0,400],[0,0,499],[0,0,500],[0,0,501],[0,0,800]]
+	twister=[[0,0,0],[0,-25,0],[0,0,0],[00,0,0],[0,-25,0],[0,25,0],[0,25,0],[0,25,0],[20,30,40]]
+	sc=[[1,0],[1,0],[1,0],[1,0],[1,0],[1.3,0],[1.3,0],[1.3,0],[1.5,0]]
+
+
+
+	npa2ssa(curve,ss,2,3,(1.0,1.0,0.5))
+	npa2ssa(bb,ss,7,3,(1.0,.5,1.0))
+	npa2ssa(sc,ss,10,3,(0.5,1.0,1.0))
+	npa2ssa(twister,ss,13,3,(1.0,.5,0.5))
 	ss.set('B1',str(len(curve)))
-	ss.set('H1',str(len(bb)))
+	ss.set('G1',str(len(bb)))
+	ss.set('G2','Backbone x')
+	ss.set('H2','y')
+	ss.set('I2','z')
+	ss.set('J2','Scale xy')
+	ss.set('K2','z')
+	ss.set('M2','Rotation x')
+	ss.set('N2','y')
+	ss.set('O2','z')
+	ss.set('B2','Rib x')
+	ss.set('C2','y')
+	ss.set('D2','z')
 	App.activeDocument().recompute()
 
 
@@ -304,10 +379,13 @@ class Needle(PartFeature):
 		obj.addProperty("App::PropertyInteger","MeshUCount","Mesh").MeshUCount=5
 		obj.addProperty("App::PropertyInteger","MeshVCount","Mesh").MeshVCount=5
 
-		obj.ViewObject.LineColor=(1.0,0.0,1.0)
+		# obj.ViewObject.LineColor=(1.0,0.0,1.0)
+		#obj.ViewObject.DisplayMode = "Shaded"
+		obj.ViewObject.Transparency = 30
 		obj.addProperty("App::PropertyLink","ribtemplateSource","Spreadsheet")
 		obj.addProperty("App::PropertyLink","backboneSource","Spreadsheet")
 		obj.addProperty("App::PropertyBool","externSourcesOff" ,"Spreadsheet")
+		ViewProvider(obj.ViewObject)
 
 	def onChanged(self, fp, prop):
 		
@@ -315,6 +393,7 @@ class Needle(PartFeature):
 			if fp.useSpreadsheet:
 				if fp.Spreadsheet == None:
 					fp.Spreadsheet = App.activeDocument().addObject('Spreadsheet::Sheet','Spreadsheet')
+					gendata(fp.Spreadsheet)
 			return
 		if prop in ["Shape", 'Spreadsheet']: return
 		print ("onChanged",prop)
@@ -356,15 +435,16 @@ class Needle(PartFeature):
 			print "update backbone",bb
 
 		else:
-			bl=int(ss.get('H1'))
+			bl=int(ss.get('G1'))
 			bb=ssa2npa(ss,7,3,9,3+bl-1)
 
 
 		scaler=ssa2npa(ss,10,3,11,3+bl-1,default=1.0)
-		twister=ssa2npa(ss,12,3,12,3+bl-1,default=0.0)
+		twister=ssa2npa(ss,13,3,15,3+bl-1,default=0.0)
 
-		poles= scaleAndExtrude(curve,scaler,bb)
+		poles= scale(curve,scaler)
 		poles= twist(poles,twister)
+		poles= extrude(poles,bb)
 
 		(nn,bs)=Myarray2NurbsD3(poles,"Nadelhuelle")
 		obj.Shape=nn
@@ -398,11 +478,19 @@ class Needle(PartFeature):
 			obj.Mesh=toUVMesh(bs,obj.MeshUCount,obj.MeshVCount)
 
 	def createRibCage(proxy,obj,bs):
-		ribs=[]
 		rc=obj.RibCount
-		for i in range(rc+1):
-			f=bs.uIso(1.0/rc*i)
-			ribs.append(f.toShape())
+		if rc>0:
+			ribs=[]
+			for i in range(rc+1):
+				f=bs.uIso(1.0/rc*i)
+				ribs.append(f.toShape())
+		else:
+			ribs=[]
+			for i,j in enumerate(bs.getUKnots()):
+				f=bs.uIso(j)
+				ribs.append(f.toShape())
+
+
 		comp=Part.Compound(ribs)
 		if obj.RibCage == None:
 			obj.RibCage=App.ActiveDocument.addObject('Part::Feature','Ribs')
@@ -443,6 +531,14 @@ def importCurves(obj):
 		npa2ssa(bb,ss,7,3)
 		print "update backbone",bb
 
+def createNeedle(label="MyNeedle"):
+	a=FreeCAD.ActiveDocument.addObject("Part::FeaturePython",label)
+	n=Needle(a)
+	a.useSpreadsheet=True
+	# gendata(a.Spreadsheet)
+	a.ViewObject.DisplayMode="Shaded"
+	return a
+
 
 #-----------------------------------------
 # TEST CASE
@@ -464,83 +560,83 @@ if  __name__=='__main__':
 	App.ActiveDocument=App.getDocument("Unnamed")
 	Gui.ActiveDocument=Gui.getDocument("Unnamed")
 
-	points=[FreeCAD.Vector(192.694291746,-129.634476444,0.0),FreeCAD.Vector(130.429397583,-0.657173752785,0.0),FreeCAD.Vector(-52.807308197,-112.73400116,0.0),FreeCAD.Vector(-127.525184631,-71.8170700073,0.0),FreeCAD.Vector(-205.801071167,-274.622741699,0.0),FreeCAD.Vector(28.1370697021,-262.169769287,0.0),FreeCAD.Vector(125.981895447,-187.451873779,0.0)]
-	Draft.makeBSpline(points,closed=True,face=True,support=None)
-	# BSpline
+	if 0:
+		points=[FreeCAD.Vector(192.694291746,-129.634476444,0.0),FreeCAD.Vector(130.429397583,-0.657173752785,0.0),FreeCAD.Vector(-52.807308197,-112.73400116,0.0),FreeCAD.Vector(-127.525184631,-71.8170700073,0.0),FreeCAD.Vector(-205.801071167,-274.622741699,0.0),FreeCAD.Vector(28.1370697021,-262.169769287,0.0),FreeCAD.Vector(125.981895447,-187.451873779,0.0)]
+		Draft.makeBSpline(points,closed=True,face=True,support=None)
+		# BSpline
 
-	points=[FreeCAD.Vector(-37.2293014526,1.68375661825e-08,0.28248746792),FreeCAD.Vector(132.959136963,6.57217134591e-06,110.262731687),FreeCAD.Vector(149.817367554,1.45151301104e-05,243.523458616),FreeCAD.Vector(-69.3403015137,2.18838984602e-05,367.150869505),FreeCAD.Vector(-182.531646729,2.7960740423e-05,469.103353635),FreeCAD.Vector(-256.549041748,5.67015768864e-05,951.294546262)]
-	Draft.makeBSpline(points,closed=False,face=True,support=None)
-	# Bspline001
+		points=[FreeCAD.Vector(-37.2293014526,1.68375661825e-08,0.28248746792),FreeCAD.Vector(132.959136963,6.57217134591e-06,110.262731687),FreeCAD.Vector(149.817367554,1.45151301104e-05,243.523458616),FreeCAD.Vector(-69.3403015137,2.18838984602e-05,367.150869505),FreeCAD.Vector(-182.531646729,2.7960740423e-05,469.103353635),FreeCAD.Vector(-256.549041748,5.67015768864e-05,951.294546262)]
+		Draft.makeBSpline(points,closed=False,face=True,support=None)
+		# Bspline001
 
 
-	points=[FreeCAD.Vector(-73.5499812578,-192.458589192,0.0),FreeCAD.Vector(-35.2118430692,-245.401746512,0.0),FreeCAD.Vector(-148.400562353,-232.622317741,0.0),FreeCAD.Vector(-115.539281652,-172.376687886,0.0)]
-	Draft.makeBSpline(points,closed=True,face=True,support=FreeCAD.ActiveDocument.getObject("BSpline"))
-	# Bspline002
+		points=[FreeCAD.Vector(-73.5499812578,-192.458589192,0.0),FreeCAD.Vector(-35.2118430692,-245.401746512,0.0),FreeCAD.Vector(-148.400562353,-232.622317741,0.0),FreeCAD.Vector(-115.539281652,-172.376687886,0.0)]
+		Draft.makeBSpline(points,closed=True,face=True,support=FreeCAD.ActiveDocument.getObject("BSpline"))
+		# Bspline002
 
-	points=[FreeCAD.Vector(-37.2293014526,1.68375661825e-08,-10),FreeCAD.Vector(132.959136963,6.57217134591e-06,110.262731687),FreeCAD.Vector(149.817367554,1.45151301104e-05,243.523458616),FreeCAD.Vector(-69.3403015137,2.18838984602e-05,367.150869505),FreeCAD.Vector(-182.531646729,2.7960740423e-05,469.103353635),FreeCAD.Vector(-256.549041748,5.67015768864e-05,1200)]
-	Draft.makeBSpline(points,closed=False,face=True,support=None)
-	# Bspline003
+		points=[FreeCAD.Vector(-37.2293014526,1.68375661825e-08,-10),FreeCAD.Vector(132.959136963,6.57217134591e-06,110.262731687),FreeCAD.Vector(149.817367554,1.45151301104e-05,243.523458616),FreeCAD.Vector(-69.3403015137,2.18838984602e-05,367.150869505),FreeCAD.Vector(-182.531646729,2.7960740423e-05,469.103353635),FreeCAD.Vector(-256.549041748,5.67015768864e-05,1200)]
+		Draft.makeBSpline(points,closed=False,face=True,support=None)
+		# Bspline003
 
-	a=FreeCAD.ActiveDocument.addObject("Part::FeaturePython","MyNeedle")
-	n=needle.Needle(a)
 
-	'''
-	a.useBackbone=True
-	a.useRibTemplate=True
+	import nurbswb
+	import nurbswb.needle as needle
+
+	a=needle.createNeedle()
+
+	#a.useBackbone=True
+	#a.useRibTemplate=True
 	a.useRibCage=True
 	a.useMesh=True
-	'''
-	a.useSpreadsheet=True
 
 
-	ss=a.Spreadsheet
-	needle.gendata(ss)
 
-	a.ribtemplateSource=App.ActiveDocument.BSpline
-	a.backboneSource=App.ActiveDocument.BSpline001
+#	a.ribtemplateSource=App.ActiveDocument.BSpline
+#	a.backboneSource=App.ActiveDocument.BSpline001
 
 	App.activeDocument().recompute()
 
-	vp=needle.ViewProvider(a.ViewObject)
+#	vp=needle.ViewProvider(a.ViewObject)
 	App.activeDocument().recompute()
 
+	if 0:
+
+		# zweiter koerper
+
+		b=FreeCAD.ActiveDocument.addObject("Part::FeaturePython","MyNeedle")
+		bn=needle.Needle(b)
 
 
-	# zweiter koerper
-
-	b=FreeCAD.ActiveDocument.addObject("Part::FeaturePython","MyNeedle")
-	bn=needle.Needle(b)
-
-
-	'''
-	b.useBackbone=True
-	b.useRibTemplate=True
-	b.useRibCage=True
-	b.useMesh=True
-	'''
-	b.useSpreadsheet=True
+		'''
+		b.useBackbone=True
+		b.useRibTemplate=True
+		b.useRibCage=True
+		b.useMesh=True
+		'''
+		b.useSpreadsheet=True
 
 
-	# b.Spreeadsheet=App.activeDocument().addObject('Spreadsheet::Sheet','huhu')
-	bss=b.Spreadsheet
-	needle.gendata(bss)
+		# b.Spreeadsheet=App.activeDocument().addObject('Spreadsheet::Sheet','huhu')
+		bss=b.Spreadsheet
+		needle.gendata(bss)
 
-	b.ribtemplateSource=App.ActiveDocument.BSpline002
-	b.backboneSource=App.ActiveDocument.BSpline003
+		b.ribtemplateSource=App.ActiveDocument.BSpline002
+		b.backboneSource=App.ActiveDocument.BSpline003
+		App.activeDocument().recompute()
+
+
+		vp=needle.ViewProvider(b.ViewObject)
+
+
+		Gui.SendMsgToActiveView("ViewFit")
+		print "fertig"
+		 
+
+
+		needle.importCurves(a)
+		needle.importCurves(b)
+		
 	App.activeDocument().recompute()
-
-
-	vp=needle.ViewProvider(b.ViewObject)
-
-
+	App.activeDocument().recompute()
 	Gui.SendMsgToActiveView("ViewFit")
-	print "fertig"
-	 
-
-
-	needle.importCurves(a)
-	needle.importCurves(b)
-	
-	App.activeDocument().recompute()
-	App.activeDocument().recompute()
 
