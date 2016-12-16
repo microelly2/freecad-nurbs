@@ -297,6 +297,40 @@ class randomPlane:
 
 FreeCADGui.addCommand('Random Plane',randomPlane())
 
+
+class needle:
+
+	def Activated(self):
+		import nurbswb.nurbs
+		import nurbswb.needle as needle
+		reload( nurbswb.needle)
+
+		a=needle.createNeedle()
+
+		a.useBackbone=True
+		a.useRibTemplate=True
+		a.useRibCage=True
+		a.useMesh=True
+
+		App.activeDocument().recompute()
+		Gui.SendMsgToActiveView("ViewFit")
+		App.activeDocument().recompute()
+
+	def IsActive(self):
+		if FreeCADGui.ActiveDocument:
+			return True
+		else:
+			return False
+
+	def GetResources(self):
+		return {
+#			'Pixmap'  : 'Std_Tool1', 
+			'MenuText': 'Test Needle', 
+		}
+
+FreeCADGui.addCommand('Create Needle', needle())
+
+
 #----------------
 
 
@@ -347,6 +381,7 @@ class NurbsWorkbench(Workbench):
 		cmds= ['Nurbs Editor', 
 				# 'add U line' ,'add V line','UV Grid Generator' ,'Surface Helper',
 				'Random Plane','Random Torus','Random Sphere','Random Cylinder',
+				'Create Needle'
 			]
 		self.appendToolbar("Nurbs", cmds )
 		self.appendMenu("Nurbs", cmds)
