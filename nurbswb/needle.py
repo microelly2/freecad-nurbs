@@ -161,13 +161,13 @@ def myrot(v,twister):
 
 
 def twist(profile,twister):
-	print "twister"
+#	print "twister"
 	c=np.array(profile)
 	vc,uc,_t=c.shape
 	rc=[]
 	for v in range(vc):
 		cv=[]
-		print twister[v]
+#		print twister[v]
 		for u in range(uc):
 			sp=c[v,u]
 			tpp=myrot(sp,twister[v])
@@ -279,6 +279,7 @@ def gendata(ss):
 
 
 
+
 	npa2ssa(curve,ss,2,3,(1.0,1.0,0.5))
 	npa2ssa(bb,ss,7,3,(1.0,.5,1.0))
 	npa2ssa(sc,ss,10,3,(0.5,1.0,1.0))
@@ -339,6 +340,7 @@ if 0 and __name__=='__main__':
 class PartFeature:
 	def __init__(self, obj):
 		obj.Proxy = self
+		self.Object=obj
 
 # grundmethoden zum sichern
 
@@ -387,6 +389,7 @@ class Needle(PartFeature):
 		obj.addProperty("App::PropertyBool","externSourcesOff" ,"Spreadsheet")
 		ViewProvider(obj.ViewObject)
 
+
 	def onChanged(self, fp, prop):
 		
 		if prop == 'useSpreadsheet':
@@ -396,18 +399,18 @@ class Needle(PartFeature):
 					gendata(fp.Spreadsheet)
 			return
 		if prop in ["Shape", 'Spreadsheet']: return
-		print ("onChanged",prop)
+#		print ("onChanged",prop)
 
 
 	def execute(proxy,obj):
-		print("execute ")
+#		print("execute ")
 		if obj.noExecute: return
 		try: 
 			if proxy.lock: return
 		except:
 			print("except proxy lock")
 		proxy.lock=True
-		print("myexecute")
+#		print("myexecute")
 		proxy.myexecute(obj)
 		proxy.lock=False
 
@@ -461,7 +464,7 @@ class Needle(PartFeature):
 
 		vob=obj.Backbone.ViewObject
 		vob.LineColor=(0.,1.,1.)
-		vob.LineWidth = 10.00
+		vob.LineWidth = 5.00
 
 	def createRibTemplate(proxy,obj,curve):
 		if obj.RibTemplate == None:
@@ -469,16 +472,21 @@ class Needle(PartFeature):
 		obj.RibTemplate.Shape=Part.makePolygon([FreeCAD.Vector(c) for c in curve])
 
 		vob=obj.RibTemplate.ViewObject
-		vob.LineColor=(0.,1.,0.)
-		vob.LineWidth = 10.00
+		vob.LineColor=(1.,0.6,.0)
+		vob.LineWidth = 5.00
 
 	def createMesh(proxy,obj,bs):
+			vb=True
 			if obj.Mesh <> None:
+				vb=obj.Mesh.ViewObject.Visibility
 				App.ActiveDocument.removeObject(obj.Mesh.Name)
 			obj.Mesh=toUVMesh(bs,obj.MeshUCount,obj.MeshVCount)
+			obj.Mesh.ViewObject.Visibility=vb
 
 	def createRibCage(proxy,obj,bs):
 		rc=obj.RibCount
+
+
 		if rc>0:
 			ribs=[]
 			for i in range(rc+1):
@@ -497,7 +505,7 @@ class Needle(PartFeature):
 		obj.RibCage.Shape=comp
 		vob=App.ActiveDocument.ActiveObject.ViewObject
 		vob.LineColor=(1.,1.,0.)
-		vob.LineWidth = 10.00
+		vob.LineWidth = 5.00
 
 		mers=[]
 		for i,j in enumerate(bs.getVKnots()):
@@ -509,7 +517,37 @@ class Needle(PartFeature):
 		obj.Meridians.Shape=comp
 		vob=App.ActiveDocument.ActiveObject.ViewObject
 		vob.LineColor=(1.,0.,0.4)
-		vob.LineWidth = 10.00
+		vob.LineWidth = 5.00
+
+
+	def updateSS(self,curve,bb,sc,twister):
+
+			ss=self.Object.Spreadsheet
+			ss.clearAll()
+			npa2ssa(curve,ss,2,3,(1.0,1.0,0.5))
+			npa2ssa(bb,ss,7,3,(1.0,.5,1.0))
+			npa2ssa(sc,ss,10,3,(0.5,1.0,1.0))
+			npa2ssa(twister,ss,13,3,(1.0,.5,0.5))
+			ss.set('B1',str(len(curve)))
+			ss.set('G1',str(len(bb)))
+			ss.set('G2','Backbone x')
+			ss.set('H2','y')
+			ss.set('I2','z')
+			ss.set('J2','Scale xy')
+			ss.set('K2','z')
+			ss.set('M2','Rotation x')
+			ss.set('N2','y')
+			ss.set('O2','z')
+			ss.set('B2','Rib x')
+			ss.set('C2','y')
+			ss.set('D2','z')
+			App.activeDocument().recompute()
+
+	def getExampleModel(self,model):
+		print "getExampleModel"
+		m=model()
+		# print model().curve
+		self.updateSS(m.curve,m.bb,m.sc,m.twister)
 
 
 
@@ -538,6 +576,140 @@ def createNeedle(label="MyNeedle"):
 	# gendata(a.Spreadsheet)
 	a.ViewObject.DisplayMode="Shaded"
 	return a
+
+
+
+#--------------------------------------
+# spreadsheet events
+#
+
+
+from PySide import QtGui
+
+global table
+
+
+def dumpix(index):
+	# PySide.QtCore.QModelIndex
+	print (index.row(),index.column())
+	print (getdata(index))
+	show(getdata(index))
+	print 
+
+def clicked(index):
+    print "Clicked",index
+    dumpix(index)
+    print (getdata(index))
+    
+
+def entered(index):
+    print "Entered",index
+    dumpix(index)
+    print (getdata(index))
+
+def pressed(index):
+    print "Pressed",index
+    dumpix(index)
+
+
+
+'''
+table.clicked.disconnect(clicked)
+table.entered.disconnect(entered)
+'''
+
+
+global globdat
+globdat=None
+
+def commitData(editor):
+    print "commit data"
+    global globdat
+    show(globdat)
+
+
+def startssevents():
+	global table
+
+	mw=FreeCADGui.getMainWindow()
+	mdiarea=mw.findChild(QtGui.QMdiArea)
+
+	App.ActiveDocument.Spreadsheet.ViewObject.startEditing(0)
+	subw=mdiarea.subWindowList()
+	print len(subw)
+	for i in subw:
+		print i.widget().metaObject().className()
+		if i.widget().metaObject().className() == "SpreadsheetGui::SheetView":
+			sheet = i.widget()
+			table=sheet.findChild(QtGui.QTableView)
+
+
+
+	table.clicked.connect(clicked)
+	table.entered.connect(entered)
+	table.pressed.connect(pressed)
+
+	table.itemDelegate().commitData.connect(commitData)
+
+
+'''
+
+
+from PySide import QtCore
+class SheetFilter(QtCore.QObject):
+    def eventFilter(self,obj,event):
+        print type(event)
+        return False
+
+filter=SheetFilter()
+table.installEventFilter(filter)
+table.removeEventFilter(filter)
+ 
+'''
+
+
+
+
+def getdata(index):
+	r=index.row()
+	c=index.column()
+
+	if c in range(1,4):
+		sel="rib"
+		ci=c-1
+	elif c in range(6,9):
+		sel="bb"
+		ci=c-6
+	else:
+		sel=None
+		ci=-1
+
+	ri=r-2
+
+	return sel,ci,ri,index.data()
+
+
+
+def showRib(ri):
+	Gui.Selection.clearSelection()
+	Gui.Selection.addSelection(App.ActiveDocument.Ribs,"Edge" +str(ri+1))
+
+def showMeridian(ri):
+	Gui.Selection.clearSelection()
+	Gui.Selection.addSelection(App.ActiveDocument.Meridians,"Edge" +str(ri+1))
+
+
+def show(dat):
+	global globdat
+	globdat=dat
+	sel,ci,ri,data=dat
+	if sel=="bb":
+		showRib(ri)
+	elif sel=="rib":
+		showMeridian(ri)
+	else:
+		Gui.Selection.clearSelection()
+
 
 
 #-----------------------------------------

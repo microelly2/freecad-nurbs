@@ -315,6 +315,8 @@ class needle:
 		App.activeDocument().recompute()
 		Gui.SendMsgToActiveView("ViewFit")
 		App.activeDocument().recompute()
+		needle.startssevents()
+
 
 	def IsActive(self):
 		if FreeCADGui.ActiveDocument:
