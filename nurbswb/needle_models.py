@@ -337,9 +337,12 @@ class model():
 
 class modelBanana(model):
 	def __init__(self):
-		model.__init__(self,9)
+		model.__init__(self)
 
-		self.curve=[[0,0,0], [100,100,0],[-100,100,0],[-30,0,0]]
+		# 3 edges model
+		# self.curve=[[0,0,0], [100,100,0],[-100,100,0],[-30,0,0]]
+
+		# 4 edges model
 		self.curve=[
 					[0,0,0], 
 					[60,0,0],[65,0,0],
