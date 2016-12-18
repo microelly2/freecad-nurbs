@@ -16,35 +16,47 @@ import Part,Mesh,Draft
 
 import numpy as np
 
-def Myarray2NurbsD3(arr,label="MyWall"):
+def Myarray2NurbsD3(arr,label="MyWall",degree=3):
 
 	cylinder=True
 
 	pst=np.array(arr)
 	NbVPoles,NbUPoles,_t1 =pst.shape
 
+	#degree=3
+	#degree=1
+	
+	if degree == 1: cylinder = False
+	
 	ps=[[FreeCAD.Vector(pst[v,u,0],pst[v,u,1],pst[v,u,2]) for u in range(NbUPoles)] for v in range(NbVPoles)]
 
 	kv=[1.0/(NbVPoles-3)*i for i in range(NbVPoles-2)]
 	mv=[4] +[1]*(NbVPoles-4) +[4]
 
+	if degree == 1:
+		kv=[1.0/(NbVPoles-1)*i for i in range(NbVPoles)]
+		mv=[2] +[1]*(NbVPoles-2) +[2]
+
+
 	if cylinder:
 		ku=[1.0/(NbUPoles-1)*i for i in range(NbUPoles)]
 		mu=[2]+[1]*(NbUPoles-2)+[2]
+		if degree == 1:
+			ku=[1.0/(NbUPoles-1)*i for i in range(NbUPoles)]
+			mu=[1]*(NbUPoles)
+
 	else:
 		ku=[1.0/(NbUPoles-3)*i for i in range(NbUPoles-2)]
 		mu=[4]+[1]*(NbUPoles-4)+[4]
+		if degree == 1:
+			ku=[1.0/(NbUPoles-1)*i for i in range(NbUPoles)]
+			mu=[2] +[1]*(NbUPoles-2) +[2]
+
+
+
 
 	bs=Part.BSplineSurface()
-	bs.buildFromPolesMultsKnots(ps, mv, mu, kv, ku, False,cylinder ,3,3)
-
-	fa=bs.uIso(0)
-	sha1 = Part.Wire(fa.toShape())
-	sha = Part.Face(sha1)
-
-	fb=bs.uIso(1)
-	shb1 = Part.Wire(fb.toShape())
-	shb = Part.Face(shb1)
+	bs.buildFromPolesMultsKnots(ps, mv, mu, kv, ku, False,cylinder ,degree,degree)
 
 	sh=bs.toShape()
 
@@ -55,7 +67,18 @@ def Myarray2NurbsD3(arr,label="MyWall"):
 		sp.ViewObject.ControlPoints=True
 		sp.ViewObject.hide()
 
-	sol=Part.Solid(Part.Shell([sha.Face1,shb.Face1,sh.Face1]))
+	try:
+		fa=bs.uIso(0)
+		sha1 = Part.Wire(fa.toShape())
+		sha = Part.Face(sha1)
+
+		fb=bs.uIso(1)
+		shb1 = Part.Wire(fb.toShape())
+		shb = Part.Face(shb1)
+
+		sol=Part.Solid(Part.Shell([sha.Face1,shb.Face1,sh.Face1]))
+	except:
+		sol=None
 
 	return (sol,bs)
 
@@ -318,6 +341,7 @@ def ssa2npa(spreadsheet,c1,r1,c2,r2,default=None):
 			except:
 				z.append(default)
 
+
 	z=np.array(z)
 #	print z
 	ps=np.array(z).reshape(r2-r1,c2-c1)
@@ -376,6 +400,7 @@ class Needle(PartFeature):
 			setattr(obj,"use"+l,False)
 
 		obj.addProperty("App::PropertyBool","noExecute" ,"Base")
+		obj.addProperty("App::PropertyInteger","Degree","Base").Degree=3
 		obj.addProperty("App::PropertyLink","Meridians","RibCage")
 		obj.addProperty("App::PropertyInteger","RibCount","RibCage").RibCount=10
 		obj.addProperty("App::PropertyInteger","MeshUCount","Mesh").MeshUCount=5
@@ -428,6 +453,9 @@ class Needle(PartFeature):
 		else:
 			cl=int(ss.get('B1'))
 			curve=ssa2npa(ss,2,3,4,3+cl-1)
+			if obj.Degree == 1:
+				curve=list(curve)
+				curve.append(curve[1])
 
 
 		if obj.backboneSource <> None and not obj.externSourcesOff:
@@ -445,11 +473,14 @@ class Needle(PartFeature):
 		scaler=ssa2npa(ss,10,3,11,3+bl-1,default=1.0)
 		twister=ssa2npa(ss,13,3,15,3+bl-1,default=0.0)
 
+
+
+
 		poles= scale(curve,scaler)
 		poles= twist(poles,twister)
 		poles= extrude(poles,bb)
 
-		(nn,bs)=Myarray2NurbsD3(poles,"Nadelhuelle")
+		(nn,bs)=Myarray2NurbsD3(poles,"Nadelhuelle",degree=obj.Degree)
 		obj.Shape=nn
 
 		if obj.useBackbone: proxy.createBackbone(obj,bb)
@@ -636,9 +667,9 @@ def startssevents():
 
 	App.ActiveDocument.Spreadsheet.ViewObject.startEditing(0)
 	subw=mdiarea.subWindowList()
-	print len(subw)
+#	print len(subw)
 	for i in subw:
-		print i.widget().metaObject().className()
+#		print i.widget().metaObject().className()
 		if i.widget().metaObject().className() == "SpreadsheetGui::SheetView":
 			sheet = i.widget()
 			table=sheet.findChild(QtGui.QTableView)

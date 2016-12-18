@@ -9,7 +9,7 @@ import PySide
 from PySide import QtCore, QtGui
 
 import FreeCAD
-import Draft, Part, Animation
+import Draft, Part
 
 import numpy as np
 import matplotlib
