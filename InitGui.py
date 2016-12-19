@@ -307,10 +307,11 @@ class needle:
 
 		a=needle.createNeedle()
 
-		a.useBackbone=True
-		a.useRibTemplate=True
+		#a.useBackbone=True
+		#a.useRibTemplate=True
 		a.useRibCage=True
 		a.useMesh=True
+		a.RibCount=0
 
 		App.activeDocument().recompute()
 		Gui.SendMsgToActiveView("ViewFit")

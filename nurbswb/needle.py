@@ -120,9 +120,10 @@ def toUVMesh(bs, uf=5, vf=5):
 
 		# print ss
 		# print faces
-		FreeCAD.Console.PrintMessage(str(("size of the mesh:",uc,vc))+"\n")
-		FreeCAD.Console.PrintMessage(str(("number of points" ,len(ss)))+"\n")
-		FreeCAD.Console.PrintMessage(str(("faces:",len(faces)))+"\n")
+		if 0:
+			FreeCAD.Console.PrintMessage(str(("size of the mesh:",uc,vc))+"\n")
+			FreeCAD.Console.PrintMessage(str(("number of points" ,len(ss)))+"\n")
+			FreeCAD.Console.PrintMessage(str(("faces:",len(faces)))+"\n")
 
 
 
@@ -132,7 +133,7 @@ def toUVMesh(bs, uf=5, vf=5):
 			App.ActiveDocument.ActiveObject.ViewObject.Lighting="Two side"
 			App.ActiveDocument.ActiveObject.ViewObject.DisplayMode = u"Wireframe"
 			App.ActiveDocument.ActiveObject.ViewObject.LineColor = (.70,.00,0.00)
-			FreeCAD.Console.PrintMessage(str(t))
+			#FreeCAD.Console.PrintMessage(str(t))
 			return App.ActiveDocument.ActiveObject
 		else:
 			raise Exception("big mesh not implemented")
@@ -580,6 +581,18 @@ class Needle(PartFeature):
 		# print model().curve
 		self.updateSS(m.curve,m.bb,m.sc,m.twister)
 
+	def Model(self):
+		ss=self.Object.Spreadsheet
+		cl=int(ss.get('B1'))
+		curve=ssa2npa(ss,2,3,4,3+cl-1)
+		bl=int(ss.get('G1'))
+		bb=ssa2npa(ss,7,3,9,3+bl-1)
+		scaler=ssa2npa(ss,10,3,11,3+bl-1,default=1.0)
+		twister=ssa2npa(ss,13,3,15,3+bl-1,default=0.0)
+		return(curve,bb,scaler,twister)
+
+	def setModel(self,curve,bb,scaler,twister):
+		self.updateSS(curve,bb,scaler,twister)
 
 
 def importCurves(obj):
@@ -620,29 +633,29 @@ from PySide import QtGui
 global table
 
 
-def dumpix(index):
-	# PySide.QtCore.QModelIndex
-	print (index.row(),index.column())
-	print (getdata(index))
+def dumpix(index): 
+	print ("dumpix", index.row(),index.column(),(getdata(index)))
 	show(getdata(index))
-	print 
 
 def clicked(index):
-    print "Clicked",index
-    dumpix(index)
-    print (getdata(index))
-    
+	print "Clicked",index
+	dumpix(index)
+	print (getdata(index))
+	
 
 def entered(index):
-    print "Entered",index
-    dumpix(index)
-    print (getdata(index))
+	print "Entered"
+	dumpix(index)
 
 def pressed(index):
-    print "Pressed",index
-    dumpix(index)
+	import nurbswb.needle_cmds
+	reload(nurbswb.needle_cmds)
+	nurbswb.needle_cmds.pressed(index,App.ActiveDocument.MyNeedle)
+	print "Pressed"
 
-
+def changed(index):
+	print "Changed"
+	dumpix(index)
 
 '''
 table.clicked.disconnect(clicked)
@@ -654,9 +667,16 @@ global globdat
 globdat=None
 
 def commitData(editor):
-    print "commit data"
-    global globdat
-    show(globdat)
+#	print ("commit data",editor)
+
+	import nurbswb.needle_cmds
+	reload(nurbswb.needle_cmds)
+	global globdat
+#	print globdat
+	if globdat[0]=='ccmd':
+		cn=cellname(int(globdat[1])+1,int(globdat[2])+3)
+		old=globdat[3]
+		nurbswb.needle_cmds.runCmd(old,cn,globdat[2],App.ActiveDocument.Spreadsheet)
 
 
 def startssevents():
@@ -674,27 +694,26 @@ def startssevents():
 			sheet = i.widget()
 			table=sheet.findChild(QtGui.QTableView)
 
-
-
 	table.clicked.connect(clicked)
-	table.entered.connect(entered)
+#	table.entered.connect(entered)
 	table.pressed.connect(pressed)
 
-	table.itemDelegate().commitData.connect(commitData)
+
+
+
+#	table.itemDelegate().commitData.connect(commitData)
 
 
 '''
+	from PySide import QtCore
+	class SheetFilter(QtCore.QObject):
+		def eventFilter(self,obj,event):
+			print type(event)
+			return False
 
-
-from PySide import QtCore
-class SheetFilter(QtCore.QObject):
-    def eventFilter(self,obj,event):
-        print type(event)
-        return False
-
-filter=SheetFilter()
-table.installEventFilter(filter)
-table.removeEventFilter(filter)
+	filter=SheetFilter()
+	table.installEventFilter(filter)
+	# table.removeEventFilter(filter)
  
 '''
 
@@ -704,6 +723,19 @@ table.removeEventFilter(filter)
 def getdata(index):
 	r=index.row()
 	c=index.column()
+
+	if c == 0: # command fuer curve
+		sel="ccmd"
+		ri=r-2
+		ci=0
+		return sel,ci,ri,index.data()
+
+	if c == 5: # command fuer curve
+		sel="bcmd"
+		ri=r-2
+		ci=0
+		return sel,ci,ri,index.data()
+
 
 	if c in range(1,4):
 		sel="rib"
@@ -734,12 +766,10 @@ def show(dat):
 	global globdat
 	globdat=dat
 	sel,ci,ri,data=dat
-	if sel=="bb":
-		showRib(ri)
-	elif sel=="rib":
-		showMeridian(ri)
-	else:
-		Gui.Selection.clearSelection()
+	print ("show",dat)
+	if sel=="bb" or sel=="bcmd": showRib(ri)
+	elif sel=="rib" or sel=="ccmd": showMeridian(ri)
+	else: Gui.Selection.clearSelection()
 
 
 

@@ -343,33 +343,52 @@ class modelBanana(model):
 		# self.curve=[[0,0,0], [100,100,0],[-100,100,0],[-30,0,0]]
 
 		# 4 edges model
-		self.curve=[
+		self.curve=np.array([
 					[0,0,0], 
 					[60,0,0],[65,0,0],
 					[80,120,0],[77,125,0],
-					[-70,150,0],[-80,150,0],[-80,140,0],
-					[-100,0,0],
+					[-70,150,0],[-80,150,0],[-80,140,0], # very strong edge
+					[-100,0,0], # very soft edge
 					[-30,0,0]
-				]
+				])
 
-		self.sc=[
-					[0.8,0.8],[1,1],[1,1], 
-					[4,4],[5,5],[4,3],
-					[1,1],[1,1.4],[1.3,1.3]
-			]
+		self.sc=np.array([
+					[0.8,0.8],[1,1],[1,1], # blossom
+					[4,4],[5,5],[4,3], # belly
+					[1,1],[1,1.4],[1.3,1.3] # stalk
+			])
 
-		self.bb=[
-					[0,-40,100],[0,-30,110],[0,0,120],
-					[0,0,140],[0,100,600],[0,0,1200],
-					[0,0,1250],[0,0,1290],[0,-200,1450]
-			]
+		self.bb=np.array([
+					[0,-40,100],[0,-30,110],[0,0,120], # blossom
+					[0,0,140],[0,100,600],[0,0,1200], # belly
+					[0,0,1250],[0,0,1290],[0,-200,1450]  # stalk
+			])
 
 		self.twister=np.array([
-				[-30,-15,-10,-10,15,30,40,50,80],
-				[0,0,0,0,-30,0,0,20,20],
+				[-30,-15,-10,-10,15,30,40,50,80], # Crooked banana y
+				[0,0,0,0,-30,0,0,20,20], # some torsion of blossom and stalk: y,z
 				[15,10,0,0,0,10,0,0,30]
 			]).swapaxes(0,1)
 
+'''
+class modelMiniBanana(modelBanana):
+	def __init__(self):
+		modelBanana.__init__(self)
+		self.curve *= 0.1
+		self.bb *= 0.1
+
+App.ActiveDocument.MyNeedle.Proxy.getExampleModel(modelMiniBanana)
+App.ActiveDocument.MyNeedle.Shape.BoundBox.DiagonalLength
+
+class modelMiniBanana(modelBanana):
+	def __init__(self):
+		modelBanana.__init__(self)
+		self.curve *= 0.02
+		self.bb *= 0.02
+
+App.ActiveDocument.MyNeedle.Proxy.getExampleModel(modelMiniBanana)
+App.ActiveDocument.MyNeedle.Shape.BoundBox.DiagonalLength
+'''
 
 
 if __name__=='__main__':

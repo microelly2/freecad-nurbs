@@ -220,6 +220,16 @@ def table2Nurbs(ss,label="MyNurbs"):
 
 	ps=np.array(ps).reshape(NbVPoles,NbUPoles,3)
 
+#-hack for 0.16
+	ps=[]
+	for v in range(NbVPoles):
+		psl=[]
+		for u in range(NbUPoles):
+			p=(x[u],y[v],z[v*NbUPoles+u])
+			psl.append(FreeCAD.Vector(p))
+		ps.append(psl)
+#- end hack
+
 	bs=Part.BSplineSurface()
 
 	kv=[1.0/(NbVPoles-1)*i for i in range(NbVPoles)]
