@@ -62,10 +62,13 @@ def Myarray2NurbsD3(arr,label="MyWall",degree=3):
 	sh=bs.toShape()
 
 	if 1:
-		try: sp=App.ActiveDocument.Poles
+		vcp=True
+		try:
+			sp=App.ActiveDocument.Poles
+			vcp=sp.ViewObject.ControlPoints
 		except: sp=App.ActiveDocument.addObject("Part::Spline","Poles")
 		sp.Shape=sh
-		sp.ViewObject.ControlPoints=True
+		sp.ViewObject.ControlPoints=vcp
 		sp.ViewObject.hide()
 
 	try:
@@ -641,11 +644,11 @@ class Needle(PartFeature):
 
 	def showRib(self,ri):
 		Gui.Selection.clearSelection()
-		Gui.Selection.addSelection(App.ActiveDocument.Ribs,"Edge" +str(ri+1))
+		Gui.Selection.addSelection(App.ActiveDocument.Ribs,"Edge" +str(ri))
 
 	def showMeridian(self,ri):
 		Gui.Selection.clearSelection()
-		Gui.Selection.addSelection(App.ActiveDocument.Meridians,"Edge" +str(ri+1))
+		Gui.Selection.addSelection(App.ActiveDocument.Meridians,"Edge" +str(ri))
 
 
 	def show(self,dat):

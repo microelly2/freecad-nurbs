@@ -335,6 +335,24 @@ class model():
 		self.bb=[[0,0,100*i] for i in range(bbl)]
 
 
+
+class modelS():
+
+	def __init__(self,bbl=7):
+		self.curve=[
+#				[0,0,0], 
+				[200,0,0],[200,400,0],
+				[-200,400,0],[-200,0,0],
+#				[-0,0,-0]
+			]
+
+		self.sc=[[1,1]]*bbl
+		self.twister=[[0,0,0]]*bbl
+		self.bb=[[0,0,100*i] for i in range(bbl)]
+
+
+
+
 class modelBanana(model):
 	def __init__(self):
 		model.__init__(self)

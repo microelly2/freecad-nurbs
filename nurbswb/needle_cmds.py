@@ -39,7 +39,8 @@ def getdata(index):
 
 def initmodel():
 	App.ActiveDocument.MyNeedle.Proxy.lock=False
-	App.ActiveDocument.MyNeedle.Proxy.getExampleModel(nurbswb.needle_models.modelBanana)
+	App.ActiveDocument.MyNeedle.Proxy.getExampleModel(nurbswb.needle_models.modelS)
+	#App.ActiveDocument.MyNeedle.Proxy.getExampleModel(nurbswb.needle_models.modelBanana)
 	#App.ActiveDocument.MyNeedle.Proxy.getExampleModel(nurbswb.needle_models.modelEd4)
 
 
@@ -49,15 +50,18 @@ def addRib(dialog):
 
 	# modifications 
 	i=dialog.pos
+	if i == 0:
+		print "kann keine ripee vroschieben"
+		return
 
-	t=(bb[i]+bb[i+1])*0.5
-	b=np.concatenate([bb[0:i+1],[t],bb[i+1:]])
+	t=(bb[i-1]+bb[i])*0.5
+	b=np.concatenate([bb[0:i],[t],bb[i:]])
 	bb=b
-	t=(scaler[i]+scaler[i+1])*0.5
-	b=np.concatenate([scaler[0:i+1],[t],scaler[i+1:]])
+	t=(scaler[i-1]+scaler[i])*0.5
+	b=np.concatenate([scaler[0:i],[t],scaler[i:]])
 	scaler=b
-	t=(twister[i]+twister[i+1])*0.5
-	b=np.concatenate([twister[0:i+1],[t],twister[i+1:]])
+	t=(twister[i-1]+twister[i])*0.5
+	b=np.concatenate([twister[0:i],[t],twister[i:]])
 	twister=b
 
 	# write back
@@ -93,8 +97,8 @@ def addMeridian(dialog):
 
 	# modifications 
 	i=dialog.pos
-	t=(curve[i]+curve[i+1])*0.5
-	c=np.concatenate([curve[0:i+1],[t],curve[i+1:]])
+	t=(curve[i-1]+curve[i])*0.5
+	c=np.concatenate([curve[0:i],[t],curve[i:]])
 	curve=c
 
 	# write back
@@ -108,6 +112,59 @@ def CaddMeridian(obj,i):
 	(curve,bb,scaler,twister)=obj.Proxy.Model()
 	t=(curve[i]+curve[i+1])*0.5
 	c=np.concatenate([curve[0:i+1],[t],curve[i+1:]])
+	curve=c
+	obj.Proxy.lock=False
+	obj.Proxy.setModel(curve,bb,scaler,twister)
+	obj.Proxy.showMeridian(i)
+
+
+def addStrongMeridianEdge(dialog):
+	obj=dialog.obj
+	i=dialog.pos
+	CaddStrongMeridianEdge(obj,i+1)
+	dialog.close()
+
+
+def CaddStrongRibEdge(obj,i):
+	(curve,bb,scaler,twister)=obj.Proxy.Model()
+	st=0.98
+
+	if bb.shape[0]==i:
+		print "Keine verlaengerung uebers einde hinaus moegliche"
+		return
+
+	t=bb[i-1]*st+bb[i]*(1-st)
+	b=np.concatenate([bb[0:i],[t],bb[i:]])
+	bb=b
+	t=scaler[i-1]*st+scaler[i]*(1-st)
+	b=np.concatenate([scaler[0:i],[t],scaler[i:]])
+	scaler=b
+	t=twister[i-1]*st+twister[i]*(1-st)
+	b=np.concatenate([twister[0:i],[t],twister[i:]])
+	twister=b
+
+
+	obj.Proxy.lock=False
+	obj.Proxy.setModel(curve,bb,scaler,twister)
+	obj.Proxy.showRib(i)
+
+
+
+# sharp and round edge -- strong edge p -> 2p oder p -> 3p 
+
+def addStrongRibEdge(dialog):
+	obj=dialog.obj
+	i=dialog.pos
+	CaddStrongRibEdge(obj,i+1)
+	dialog.close()
+
+
+def CaddStrongMeridianEdge(obj,i):
+	(curve,bb,scaler,twister)=obj.Proxy.Model()
+	st=0.98
+	if curve.shape[0]==i:i=0
+	t=curve[i-1]*st +curve[i]*(1-st)
+	c=np.concatenate([curve[0:i],[t],curve[i:]])
 	curve=c
 	obj.Proxy.lock=False
 	obj.Proxy.setModel(curve,bb,scaler,twister)
@@ -191,7 +248,7 @@ class RibEditor(QtGui.QWidget):
 
 	def initUI(self):      
 
-		self.btn = QtGui.QPushButton('Init Model', self)
+		self.btn = QtGui.QPushButton('Init A Model', self)
 		self.btn.move(20, 20)
 		self.btn.clicked.connect(initmodel)
 
@@ -216,13 +273,26 @@ class RibEditor(QtGui.QWidget):
 		self.btn2.clicked.connect(self.close)
 
 
+		self.btn = QtGui.QPushButton('Add strong rib', self)
+		self.btn.move(20, 140)
+		f=lambda:addStrongRibEdge(self)
+		self.btn.clicked.connect(f)
+
+
+
+
+
 		self.le = QtGui.QLineEdit(self)
 		self.le.setText("pos "+ str(self.pos))
 		self.le.move(150, 22)
 
-		self.setGeometry(300, 300, 290, 150)
+		self.setGeometry(50, 30, 390, 250)
 		self.setWindowTitle(self.title)
 		self.show()
+		try: self.obj.Proxy.dialog.hide()
+		except: pass
+		self.obj.Proxy.dialog=self
+
 
 	def showDialog(self):
 		text, ok = QtGui.QInputDialog.getText(self, 'Input Dialog', 
@@ -264,13 +334,22 @@ class BackboneEditor(QtGui.QWidget):
 		self.btn2.move(20, 110)
 		self.btn2.clicked.connect(self.close)
 
+		self.btn = QtGui.QPushButton('Add strong meridian', self)
+		self.btn.move(20, 140)
+		f=lambda:addStrongMeridianEdge(self)
+		self.btn.clicked.connect(f)
+
+
 		self.le = QtGui.QLineEdit(self)
 		self.le.setText("pos "+ str(self.pos))
 		self.le.move(150, 22)
 
-		self.setGeometry(50, 30, 290, 150)
+		self.setGeometry(50, 30, 390, 250)
 		self.setWindowTitle(self.title)
 		self.show()
+		try: self.obj.Proxy.dialog.hide()
+		except: pass
+		self.obj.Proxy.dialog=self
 
 	def showDialog(self):
 		text, ok = QtGui.QInputDialog.getText(self, 'Input Dialog', 

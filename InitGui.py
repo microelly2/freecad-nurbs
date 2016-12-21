@@ -330,7 +330,9 @@ class needle:
 		a.RibCount=0
 		try:
 			import nurbswb.needle_models
-			a.Proxy.getExampleModel(nurbswb.needle_models.modelBanana)
+			reload (nurbswb.needle_models)
+			# a.Proxy.getExampleModel(nurbswb.needle_models.modelBanana)
+			a.Proxy.getExampleModel(nurbswb.needle_models.modelS)
 		except: pass
 
 		App.activeDocument().recompute()
