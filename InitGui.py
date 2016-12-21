@@ -136,17 +136,20 @@ FreeCADGui.addCommand('Nurbs Editor', nurbsEditor())
 class addUline:
 
 	def IsActive(self):
+		return len(FreeCADGui.Selection.getSelectionEx())==1
 		if App.ActiveDocument.Nurbs: return True
 
 	def GetResources(self):
 		return {
-			'Pixmap'  : FreeCAD.ConfigGet('UserAppData')+"/Mod/freecad-nurbs/icons/"+'adduline.svg', 
-			'MenuText': 'Add U Line of Poles', 
+			'Pixmap'  : FreeCAD.ConfigGet('UserAppData')+"/Mod/freecad-nurbs/icons/"+'add_edge.svg', 
+			'MenuText': 'Add  Meridian or Rib', 
 			'ToolTip': 'creates a new list of poles above the selected U line'
 		}
 
 	def Activated(self):
-		print "addUline is not implemented"
+		import nurbswb.needle_cmds
+		reload(nurbswb.needle_cmds)
+		nurbswb.needle_cmds.cmdAdd()
 
 
 FreeCADGui.addCommand('add U line',addUline())
@@ -155,17 +158,21 @@ FreeCADGui.addCommand('add U line',addUline())
 class addVline:
 
 	def IsActive(self):
+		return len(FreeCADGui.Selection.getSelectionEx())==1
+		return True
 		if App.ActiveDocument.Nurbs: return True
 
 	def GetResources(self):
 		return {
-			'Pixmap'  : FreeCAD.ConfigGet('UserAppData')+"/Mod/freecad-nurbs/icons/"+'addvline.svg', 
-			'MenuText': 'Add V Line of Poles', 
-			'ToolTip': 'creates a new list of poles right to the selected V line'
+			'Pixmap'  : FreeCAD.ConfigGet('UserAppData')+"/Mod/freecad-nurbs/icons/"+'delete_edge.svg', 
+			'MenuText': 'Delete Meridian or Rib', 
+			'ToolTip': ''
 		}
 
 	def Activated(self):
-		print "addVline is not implemented"
+		import nurbswb.needle_cmds
+		reload(nurbswb.needle_cmds)
+		nurbswb.needle_cmds.cmdDel()
 
 
 FreeCADGui.addCommand('add V line',addVline())
@@ -305,18 +312,32 @@ class needle:
 		import nurbswb.needle as needle
 		reload( nurbswb.needle)
 
+		try: App.closeDocument("Unnamed")
+		except: pass
+
+		App.newDocument("Unnamed")
+		App.setActiveDocument("Unnamed")
+		App.ActiveDocument=App.getDocument("Unnamed")
+		Gui.ActiveDocument=Gui.getDocument("Unnamed")
+
 		a=needle.createNeedle()
+
 
 		#a.useBackbone=True
 		#a.useRibTemplate=True
 		a.useRibCage=True
-		a.useMesh=True
+		#a.useMesh=True
 		a.RibCount=0
+		try:
+			import nurbswb.needle_models
+			a.Proxy.getExampleModel(nurbswb.needle_models.modelBanana)
+		except: pass
 
 		App.activeDocument().recompute()
 		Gui.SendMsgToActiveView("ViewFit")
 		App.activeDocument().recompute()
-		needle.startssevents()
+		a.Proxy.startssevents()
+		a.ViewObject.Selectable=False
 
 
 	def IsActive(self):
@@ -382,7 +403,7 @@ class NurbsWorkbench(Workbench):
 		global cvCmds
 		# cmds= ['Nurbs Editor', 'add U line' ,'add V line', 'UV Grid Generator' ]
 		cmds= ['Nurbs Editor', 
-				# 'add U line' ,'add V line','UV Grid Generator' ,'Surface Helper',
+				'add U line' , 'add V line', #'UV Grid Generator' ,'Surface Helper',
 				'Random Plane','Random Torus','Random Sphere','Random Cylinder',
 				'Create Needle'
 			]

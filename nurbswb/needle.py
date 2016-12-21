@@ -12,6 +12,7 @@ import FreeCAD,FreeCADGui
 App=FreeCAD
 Gui=FreeCADGui
 
+from PySide import QtGui
 import Part,Mesh,Draft
 
 import numpy as np
@@ -594,6 +595,69 @@ class Needle(PartFeature):
 	def setModel(self,curve,bb,scaler,twister):
 		self.updateSS(curve,bb,scaler,twister)
 
+	def startssevents(self):
+#		global table
+
+		mw=FreeCADGui.getMainWindow()
+		mdiarea=mw.findChild(QtGui.QMdiArea)
+
+		App.ActiveDocument.Spreadsheet.ViewObject.startEditing(0)
+		subw=mdiarea.subWindowList()
+	#	print len(subw)
+		for i in subw:
+	#		print i.widget().metaObject().className()
+			if i.widget().metaObject().className() == "SpreadsheetGui::SheetView":
+				sheet = i.widget()
+				table=sheet.findChild(QtGui.QTableView)
+
+		table.clicked.connect(self.clicked)
+	#	table.entered.connect(entered)
+		table.pressed.connect(self.pressed)
+		self.table=table
+
+	def clicked(self,index):
+		print "Clicked",index
+		self.dumpix(index)
+		print (getdata(index))
+
+	def entered(self,index):
+		print "Entered"
+		self.dumpix(index)
+
+	def pressed(self,index):
+		import nurbswb.needle_cmds
+		reload(nurbswb.needle_cmds)
+		nurbswb.needle_cmds.pressed(index,App.ActiveDocument.MyNeedle)
+		print "Pressed"
+
+	def changed(self,index):
+		print "Changed"
+		self.dumpix(index)
+
+	def dumpix(self,index): 
+		print ("dumpix", index.row(),index.column(),(getdata(index)))
+		self.show(getdata(index))
+
+
+	def showRib(self,ri):
+		Gui.Selection.clearSelection()
+		Gui.Selection.addSelection(App.ActiveDocument.Ribs,"Edge" +str(ri+1))
+
+	def showMeridian(self,ri):
+		Gui.Selection.clearSelection()
+		Gui.Selection.addSelection(App.ActiveDocument.Meridians,"Edge" +str(ri+1))
+
+
+	def show(self,dat):
+		sel,ci,ri,data=dat
+		print ("show",dat)
+		if sel=="bb" or sel=="bcmd": self.showRib(ri)
+		elif sel=="rib" or sel=="ccmd": self.showMeridian(ri)
+		else: Gui.Selection.clearSelection()
+
+
+
+
 
 def importCurves(obj):
 	ss=obj.Spreadsheet
@@ -623,48 +687,14 @@ def createNeedle(label="MyNeedle"):
 
 
 
-#--------------------------------------
-# spreadsheet events
-#
-
-
-from PySide import QtGui
-
-global table
-
-
-def dumpix(index): 
-	print ("dumpix", index.row(),index.column(),(getdata(index)))
-	show(getdata(index))
-
-def clicked(index):
-	print "Clicked",index
-	dumpix(index)
-	print (getdata(index))
-	
-
-def entered(index):
-	print "Entered"
-	dumpix(index)
-
-def pressed(index):
-	import nurbswb.needle_cmds
-	reload(nurbswb.needle_cmds)
-	nurbswb.needle_cmds.pressed(index,App.ActiveDocument.MyNeedle)
-	print "Pressed"
-
-def changed(index):
-	print "Changed"
-	dumpix(index)
-
 '''
 table.clicked.disconnect(clicked)
 table.entered.disconnect(entered)
 '''
 
 
-global globdat
-globdat=None
+#global globdat
+#globdat=None
 
 def commitData(editor):
 #	print ("commit data",editor)
@@ -679,7 +709,7 @@ def commitData(editor):
 		nurbswb.needle_cmds.runCmd(old,cn,globdat[2],App.ActiveDocument.Spreadsheet)
 
 
-def startssevents():
+def startssevents2():
 	global table
 
 	mw=FreeCADGui.getMainWindow()
@@ -751,25 +781,6 @@ def getdata(index):
 
 	return sel,ci,ri,index.data()
 
-
-
-def showRib(ri):
-	Gui.Selection.clearSelection()
-	Gui.Selection.addSelection(App.ActiveDocument.Ribs,"Edge" +str(ri+1))
-
-def showMeridian(ri):
-	Gui.Selection.clearSelection()
-	Gui.Selection.addSelection(App.ActiveDocument.Meridians,"Edge" +str(ri+1))
-
-
-def show(dat):
-	global globdat
-	globdat=dat
-	sel,ci,ri,data=dat
-	print ("show",dat)
-	if sel=="bb" or sel=="bcmd": showRib(ri)
-	elif sel=="rib" or sel=="ccmd": showMeridian(ri)
-	else: Gui.Selection.clearSelection()
 
 
 
