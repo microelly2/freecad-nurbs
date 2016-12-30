@@ -385,10 +385,17 @@ class PartFeature:
 	def __setstate__(self,state):
 		return None
 
+
 class ViewProvider:
 	def __init__(self, obj):
 		obj.Proxy = self
 		self.Object=obj
+
+	def __getstate__(self):
+		return None
+
+	def __setstate__(self,state):
+		return None
 
 
 
@@ -418,6 +425,11 @@ class Needle(PartFeature):
 		obj.addProperty("App::PropertyLink","backboneSource","Spreadsheet")
 		obj.addProperty("App::PropertyBool","externSourcesOff" ,"Spreadsheet")
 		ViewProvider(obj.ViewObject)
+
+	def onDocumentRestored(self, fp):
+		print "onDocumentRestored "
+		print fp.Label
+		self.Object=fp
 
 
 	def onChanged(self, fp, prop):
@@ -496,7 +508,11 @@ class Needle(PartFeature):
 	def createBackbone(proxy,obj,bb):
 		if obj.Backbone == None:
 			obj.Backbone=App.ActiveDocument.addObject('Part::Feature','Backbone')
-		obj.Backbone.Shape=Part.makePolygon([FreeCAD.Vector(b) for b in bb])
+		
+		#obj.Backbone.Shape=Part.makePolygon([FreeCAD.Vector(b) for b in bb])
+		bs=Part.BSplineCurve()
+		bs.buildFromPoles(bb)
+		obj.Backbone.Shape=bs.toShape()
 
 		vob=obj.Backbone.ViewObject
 		vob.LineColor=(0.,1.,1.)
@@ -505,7 +521,14 @@ class Needle(PartFeature):
 	def createRibTemplate(proxy,obj,curve):
 		if obj.RibTemplate == None:
 			obj.RibTemplate=App.ActiveDocument.addObject('Part::Feature','Rib template')
-		obj.RibTemplate.Shape=Part.makePolygon([FreeCAD.Vector(c) for c in curve])
+		#obj.RibTemplate.Shape=Part.makePolygon([FreeCAD.Vector(c) for c in curve])
+
+		bs=Part.BSplineCurve()
+		c=curve
+		ms=[2] +[1]*(len(c)-2) +[2]
+		ks=[1.0/(len(c)-1)*i for i in range(len(c))]
+		bs.buildFromPolesMultsKnots(c,ms,ks,True,3)
+		obj.RibTemplate.Shape=bs.toShape()
 
 		vob=obj.RibTemplate.ViewObject
 		vob.LineColor=(1.,0.6,.0)
@@ -577,7 +600,12 @@ class Needle(PartFeature):
 			ss.set('B2','Rib x')
 			ss.set('C2','y')
 			ss.set('D2','z')
-			App.activeDocument().recompute()
+			try:
+				App.activeDocument().recompute()
+			except:
+				print "recompute jack "
+				App.getDocument("Unnamed").recompute()
+				pass
 
 	def getExampleModel(self,model):
 		print "getExampleModel"
@@ -603,6 +631,7 @@ class Needle(PartFeature):
 
 		mw=FreeCADGui.getMainWindow()
 		mdiarea=mw.findChild(QtGui.QMdiArea)
+
 
 		App.ActiveDocument.Spreadsheet.ViewObject.startEditing(0)
 		subw=mdiarea.subWindowList()

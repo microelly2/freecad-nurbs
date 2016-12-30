@@ -150,12 +150,10 @@ def CaddStrongRibEdge(obj,i):
 
 
 
-# sharp and round edge -- strong edge p -> 2p oder p -> 3p 
+# sharp and round edge -- strong edge p -> 2p oder p ->git commit - 3p 
 
 def addStrongRibEdge(dialog):
-	obj=dialog.obj
-	i=dialog.pos
-	CaddStrongRibEdge(obj,i+1)
+	CaddStrongRibEdge(dialog.obj,dialog.pos+1)
 	dialog.close()
 
 
@@ -165,9 +163,8 @@ def CaddStrongMeridianEdge(obj,i):
 	if curve.shape[0]==i:i=0
 	t=curve[i-1]*st +curve[i]*(1-st)
 	c=np.concatenate([curve[0:i],[t],curve[i:]])
-	curve=c
 	obj.Proxy.lock=False
-	obj.Proxy.setModel(curve,bb,scaler,twister)
+	obj.Proxy.setModel(c,bb,scaler,twister)
 	obj.Proxy.showMeridian(i)
 
 
@@ -415,5 +412,6 @@ def cmdDel():
 		if s.Object.Name[0:9]=='Meridians':
 			print "meridians ..."
 			CdelMeridian(needle,int(sen[4:]))
+
 
 

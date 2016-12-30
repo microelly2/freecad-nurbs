@@ -323,8 +323,8 @@ class needle:
 		a=needle.createNeedle()
 
 
-		#a.useBackbone=True
-		#a.useRibTemplate=True
+		a.useBackbone=True
+		a.useRibTemplate=True
 		a.useRibCage=True
 		#a.useMesh=True
 		a.RibCount=0
@@ -335,9 +335,22 @@ class needle:
 			a.Proxy.getExampleModel(nurbswb.needle_models.modelS)
 		except: pass
 
+#		import Draft
+#		points=[FreeCAD.Vector(192.694291746,-129.634476444,0.0),FreeCAD.Vector(130.429397583,-0.657173752785,40.0),FreeCAD.Vector(-52.807308197,-112.73400116,0.0),FreeCAD.Vector(-127.525184631,-71.8170700073,0.0),FreeCAD.Vector(-205.801071167,-274.622741699,0.0),FreeCAD.Vector(28.1370697021,-262.169769287,0.0),FreeCAD.Vector(125.981895447,-187.451873779,0.0)]
+#		# Draft BSpline
+#		Draft.makeBSpline(points,closed=True,face=True,support=None)
+#		import Part
+#		bs=Part.BSplineCurve()
+#		bs.interpolate(points)
+#		bs.setPeriodic()
+#		mybsc=App.ActiveDocument.addObject('Part::Feature','MyBSC')
+#		mybsc.Shape=bs.toShape()
+
 		App.activeDocument().recompute()
 		Gui.SendMsgToActiveView("ViewFit")
 		App.activeDocument().recompute()
+
+
 		a.Proxy.startssevents()
 		a.ViewObject.Selectable=False
 
@@ -358,6 +371,73 @@ FreeCADGui.addCommand('Create Needle', needle())
 
 
 #----------------
+
+class editBackbone:
+
+	def Activated(self):
+		import nurbswb.wheel_event
+		reload(nurbswb.wheel_event)
+		nurbswb.wheel_event.start("Backbone")
+
+	def IsActive(self):
+		return True
+		return len(FreeCADGui.Selection.getSelectionEx())==1
+
+	def GetResources(self):
+		return {
+#			'Pixmap'  : 'Std_Tool1', 
+			'MenuText': 'Edit Backbone', 
+		}
+
+FreeCADGui.addCommand('Edit Backbone',editBackbone())
+
+
+#-------------------------
+
+#----------------
+
+class editRib:
+
+	def Activated(self):
+		import nurbswb.wheel_event
+		reload(nurbswb.wheel_event)
+		nurbswb.wheel_event.start("Rib_template")
+
+	def IsActive(self):
+		return True
+		return len(FreeCADGui.Selection.getSelectionEx())==1
+
+	def GetResources(self):
+		return {
+#			'Pixmap'  : 'Std_Tool1', 
+			'MenuText': 'Edit Rib', 
+		}
+
+FreeCADGui.addCommand('Edit Rib',editRib())
+
+#-------------------------
+
+
+#----------------
+
+class openSS:
+
+	def Activated(self):
+		import nurbswb.wheel_event
+		reload(nurbswb.wheel_event)
+		FreeCAD.ss=nurbswb.wheel_event.undock("Spreadsheet")
+
+	def IsActive(self):
+		return True
+		return len(FreeCADGui.Selection.getSelectionEx())==1
+
+	def GetResources(self):
+		return {
+#			'Pixmap'  : 'Std_Tool1', 
+			'MenuText': 'Open Spreadsheet', 
+		}
+
+FreeCADGui.addCommand('Open SS',openSS())
 
 
 
@@ -407,7 +487,9 @@ class NurbsWorkbench(Workbench):
 		cmds= ['Nurbs Editor', 
 				'add U line' , 'add V line', #'UV Grid Generator' ,'Surface Helper',
 				'Random Plane','Random Torus','Random Sphere','Random Cylinder',
-				'Create Needle'
+				'Create Needle',
+				'Edit Backbone','Edit Rib',
+				'Open SS',
 			]
 		self.appendToolbar("Nurbs", cmds )
 		self.appendMenu("Nurbs", cmds)
