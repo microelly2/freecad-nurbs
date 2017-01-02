@@ -438,7 +438,7 @@ class Needle(PartFeature):
 			if fp.useSpreadsheet:
 				if fp.Spreadsheet == None:
 					fp.Spreadsheet = App.activeDocument().addObject('Spreadsheet::Sheet','Spreadsheet')
-					gendata(fp.Spreadsheet)
+					##gendata(fp.Spreadsheet)
 			return
 		if prop in ["Shape", 'Spreadsheet']: return
 #		print ("onChanged",prop)
@@ -604,7 +604,8 @@ class Needle(PartFeature):
 				App.activeDocument().recompute()
 			except:
 				print "recompute jack "
-				App.getDocument("Unnamed").recompute()
+				dokname=FreeCAD.ParamGet('User parameter:Plugins/nurbs').GetString("Document","Needle")
+				App.getDocument(dokname).recompute()
 				pass
 
 	def getExampleModel(self,model):
@@ -673,11 +674,15 @@ class Needle(PartFeature):
 
 	def showRib(self,ri):
 		Gui.Selection.clearSelection()
-		Gui.Selection.addSelection(App.ActiveDocument.Ribs,"Edge" +str(ri))
+		dokname=FreeCAD.ParamGet('User parameter:Plugins/nurbs').GetString("Document","Needle")
+		d=App.getDocument(dokname)
+		Gui.Selection.addSelection(d.getObject('Ribs'),"Edge" +str(ri))
 
 	def showMeridian(self,ri):
 		Gui.Selection.clearSelection()
-		Gui.Selection.addSelection(App.ActiveDocument.Meridians,"Edge" +str(ri))
+		dokname=FreeCAD.ParamGet('User parameter:Plugins/nurbs').GetString("Document","Needle")
+		d=App.getDocument(dokname)
+		Gui.Selection.addSelection(d.getObject('Meridians'),"Edge" +str(ri))
 
 
 	def show(self,dat):
@@ -828,13 +833,14 @@ if  __name__=='__main__':
 	import nurbswb.needle as needle
 	reload( nurbswb.needle)
 
-	try: App.closeDocument("Unnamed")
+	dokname=FreeCAD.ParamGet('User parameter:Plugins/nurbs').GetString("Document","Needle")
+	try: App.closeDocument(dokname)
 	except: pass
 
-	App.newDocument("Unnamed")
-	App.setActiveDocument("Unnamed")
-	App.ActiveDocument=App.getDocument("Unnamed")
-	Gui.ActiveDocument=Gui.getDocument("Unnamed")
+	App.newDocument(dokname)
+	App.setActiveDocument(dokname)
+	App.ActiveDocument=App.getDocument(dokname)
+	Gui.ActiveDocument=Gui.getDocument(dokname)
 
 	if 0:
 		points=[FreeCAD.Vector(192.694291746,-129.634476444,0.0),FreeCAD.Vector(130.429397583,-0.657173752785,0.0),FreeCAD.Vector(-52.807308197,-112.73400116,0.0),FreeCAD.Vector(-127.525184631,-71.8170700073,0.0),FreeCAD.Vector(-205.801071167,-274.622741699,0.0),FreeCAD.Vector(28.1370697021,-262.169769287,0.0),FreeCAD.Vector(125.981895447,-187.451873779,0.0)]

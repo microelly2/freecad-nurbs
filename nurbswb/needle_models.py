@@ -338,18 +338,23 @@ class model():
 
 class modelS():
 
-	def __init__(self,bbl=10):
+	def __init__(self,bbl=12):
 		self.curve=[
-#				[0,0,0], 
 				[200,0,0],
 				[200,600,0],
 				[-200,400,0],[-200,0,0],
-#				[-0,0,-0]
 			]
 
 		self.sc=[[1,1]]*bbl
+
 		self.twister=[[0,0,0]]*bbl
+		self.twister[3]=[0,0,50]
+		self.twister[4]=[0,60,0]
+		self.twister[5]=[70,0,0]
+
 		self.bb=[[0,0,300*i] for i in range(bbl)]
+		self.bb[10][1]=300
+		self.bb[8][0]=300
 
 
 

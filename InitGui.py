@@ -312,13 +312,14 @@ class needle:
 		import nurbswb.needle as needle
 		reload( nurbswb.needle)
 
-		try: App.closeDocument("Unnamed")
+		dokname=FreeCAD.ParamGet('User parameter:Plugins/nurbs').GetString("Document","Needle")
+		try: App.closeDocument(dokname)
 		except: pass
 
-		App.newDocument("Unnamed")
-		App.setActiveDocument("Unnamed")
-		App.ActiveDocument=App.getDocument("Unnamed")
-		Gui.ActiveDocument=Gui.getDocument("Unnamed")
+		App.newDocument(dokname)
+		App.setActiveDocument(dokname)
+		App.ActiveDocument=App.getDocument(dokname)
+		Gui.ActiveDocument=Gui.getDocument(dokname)
 
 		a=needle.createNeedle()
 
@@ -356,6 +357,7 @@ class needle:
 
 
 	def IsActive(self):
+		return True
 		if FreeCADGui.ActiveDocument:
 			return True
 		else:
@@ -380,8 +382,13 @@ class editBackbone:
 		nurbswb.wheel_event.start("Backbone")
 
 	def IsActive(self):
-		return True
-		return len(FreeCADGui.Selection.getSelectionEx())==1
+		dokname=FreeCAD.ParamGet('User parameter:Plugins/nurbs').GetString("Document","Needle")
+		try: 
+			App.getDocument(dokname)
+			return True
+		except:
+			return False
+		#return len(FreeCADGui.Selection.getSelectionEx())==1
 
 	def GetResources(self):
 		return {
@@ -404,8 +411,13 @@ class editRib:
 		nurbswb.wheel_event.start("Rib_template")
 
 	def IsActive(self):
-		return True
-		return len(FreeCADGui.Selection.getSelectionEx())==1
+		dokname=FreeCAD.ParamGet('User parameter:Plugins/nurbs').GetString("Document","Needle")
+		try: 
+			App.getDocument(dokname)
+			return True
+		except:
+			return False
+		#return len(FreeCADGui.Selection.getSelectionEx())==1
 
 	def GetResources(self):
 		return {
@@ -428,8 +440,11 @@ class openSS:
 		FreeCAD.ss=nurbswb.wheel_event.undock("Spreadsheet")
 
 	def IsActive(self):
-		return True
-		return len(FreeCADGui.Selection.getSelectionEx())==1
+		try:
+			App.ActiveDocument.Spreadsheet
+			return True
+		except:
+			return False
 
 	def GetResources(self):
 		return {

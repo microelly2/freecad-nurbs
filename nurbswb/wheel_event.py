@@ -8,7 +8,7 @@
 #-------------------------------------------------
 
 from PySide import QtGui,QtCore
-from reconstruction.say import *
+from nurbswb.say import *
 
 import FreeCAD
 import sys,time
@@ -146,6 +146,7 @@ class EventFilter(QtCore.QObject):
 							self.dialog.modelab.setText("Direction: "+ r)
 						if r == '0':
 							self.mouseWheel = 0
+							self.mode='0'
 
 				except:
 					sayexc()
@@ -226,7 +227,8 @@ class EventFilter(QtCore.QObject):
 
 
 	def update(self):
-		self.dialog.update()
+		self.dialog.commit_noclose()
+
 
 
 
@@ -262,16 +264,32 @@ def focus():
 class MyWidget(QtGui.QWidget):
 	'''edit pole mastre dialog'''
 
+	def getNeedle(self): 
+		source=self.getsource()
+		needle=source.InList[0]
+		return needle
+
+
 	def commit_noclose(self):
 
 		self.update()
 		hd=self.helperDok()
 		poles=hd.BSpline.Shape.Edge1.Curve.getPoles()
-
+		
+		pos=self.dial.value()
 		source=self.getsource()
 		needle=source.InList[0]
 		curve,bb,scaler,twister= needle.Proxy.Model()
-		if self.source=='Backbone': bb=poles
+		self.twister=twister
+		self.scaler=scaler
+		if self.source=='Backbone': 
+			bb=poles
+			print (self.rotx,self.roty,self.rotz)
+			(rx,ry,rz)=twister[pos]
+			twister[pos]=[rx+self.rotx,ry+self.roty,rz+self.rotz]
+			self.dialx.setValue(0)
+			self.dialy.setValue(0)
+			self.dialz.setValue(0)
 		elif self.source=='Rib_template': curve=poles
 
 		needle.Proxy.updateSS(curve,bb,scaler,twister)
@@ -280,11 +298,12 @@ class MyWidget(QtGui.QWidget):
 #		App.getDocument("Unnamed").Spreadsheet.touch()
 #		App.getDocument("Unnamed").recompute()
 
-		
-		App.ActiveDocument=App.getDocument("Unnamed")
-		Gui.ActiveDocument=Gui.getDocument("Unnamed")
+		dokname=FreeCAD.ParamGet('User parameter:Plugins/nurbs').GetString("Document","Needle")
+		App.ActiveDocument=App.getDocument(dokname)
+		Gui.ActiveDocument=Gui.getDocument(dokname)
 		App.ActiveDocument.Spreadsheet.touch()
 		App.ActiveDocument.recompute()
+		self.setSelection(pos)
 
 	def commit(self):
 		''' commit data and close dialog '''
@@ -292,8 +311,13 @@ class MyWidget(QtGui.QWidget):
 		self.closeHelperDok()
 		stop()
 
+	def cancel(self):
+		self.closeHelperDok()
+		stop()
+
 	def getsource(self):
-		return App.getDocument("Unnamed").getObject(self.source)
+		dokname=FreeCAD.ParamGet('User parameter:Plugins/nurbs').GetString("Document","Needle")
+		return App.getDocument(dokname).getObject(self.source)
 
 	def update(self):
 		mode=self.imode
@@ -465,6 +489,28 @@ class MyWidget(QtGui.QWidget):
 		''' set cursor as dialer backcall'''
 		hd=self.helperDok()
 		self.cursor(hd,self.points[p])
+		self.setSelection(p)
+
+	def setSelection(self,pos):
+		obj=self.getNeedle()
+		print obj, obj.Label
+		if self.source=='Backbone':
+			obj.Proxy.showRib(pos)
+		else:
+			obj.Proxy.showMeridian(pos)
+
+	def setrotx(self,rx):
+		self.rotx=rx
+		self.settarget()
+
+	def setroty(self,r):
+		self.roty=r
+		self.settarget()
+
+	def setrotz(self,r):
+		self.rotz=r
+		self.settarget()
+
 
 	def target(self,dok,cords=(0,0,0)):
 		''' set changed pole to '''
@@ -478,8 +524,21 @@ class MyWidget(QtGui.QWidget):
 
 	def settarget(self):
 		'''set the target depending on the mouse wheel roll and mode key'''
+
+		print (self.rotx,self.roty,self.rotz)
+
 		dok=self.helperDok()
 		pl=len(self.points)
+		self.dial.setMaximum(pl-1)
+		pos=self.dial.value()
+
+		if pos==0: lpos=pl-1
+		else: lpos=pos-1
+
+		if pos==pl-1: rpos=0
+		else: rpos=pos+1
+		print ('pl,pos,lpos,rpos',pl,pos,lpos,rpos)
+
 
 		ef=self.ef
 		if ef.key in  ['x','y','z']:
@@ -490,21 +549,36 @@ class MyWidget(QtGui.QWidget):
 
 			#changed point 
 			diff=FreeCAD.Vector(kx,ky,kz)
-			t=self.points[self.dial.value()%pl] + diff
-		
+			t=self.points[pos] + diff
+		elif  ef.key=='t':
+			a=FreeCAD.Vector(self.points[lpos])-FreeCAD.Vector(self.points[rpos])
+			a.normalize()
+			diff=a.multiply(ef.mouseWheel)
+			t=self.points[pos] + diff 
+		elif  ef.key=='n' or  ef.key=='b':
+			a=FreeCAD.Vector(self.points[lpos])-FreeCAD.Vector(self.points[rpos])
+			b=FreeCAD.Vector(self.points[lpos])-FreeCAD.Vector(self.points[pos])
+			c=a.cross(b)
+			if  ef.key=='n': d=c.cross(a)
+			else: d=c
+			d.normalize()
+			diff=d.multiply(ef.mouseWheel)
+			t=self.points[pos] + diff 
+		elif  ef.key=='r':
+			d=FreeCAD.Vector(self.points[pos][0],self.points[pos][1],0).normalize()
+			diff=d.multiply(ef.mouseWheel)
+			t=self.points[pos] + diff 
 		else:
 			print ("mode not implemented ",ef.key)
-			t=self.points[self.dial.value()%pl]
+			t=self.points[pos]
 
 		self.target(dok, t)
-		self.dial.setMaximum(pl-1)
 
 		# create or get traget curve
 		try: bb=dok.TargetCurve
 		except: bb=dok.addObject('Part::Feature','TargetCurve')
 
 		pp=self.points
-		pos=self.dial.value()
 
 		if pos>0: pp2=pp[:pos]+[t]+pp[pos+1:]
 		else: pp2=[t]+pp[pos+1:]
@@ -516,17 +590,53 @@ class MyWidget(QtGui.QWidget):
 
 		# pole polygon
 		pol=Part.makePolygon(pp2 + [pp2[0]])
-		bb.Shape=pol
+#		bb.Shape=pol
+
+
+
+		pp3=[]
+
+		if self.source=='Backbone':
+			xV=FreeCAD.Vector(100,0,0)
+			yV=FreeCAD.Vector(0,100,0)
+
+			source=self.getsource()
+			needle=source.InList[0]
+			curvea,bba,scaler,twister= needle.Proxy.Model()
+
+
+			for i,p in enumerate(pp2):
+				# print (i,twister[i],scaler[i])
+				[xa,ya,za]=twister[i]
+
+				if pos  == i :
+					xa += self.rotx
+					ya += self.roty
+					za += self.rotz
+
+				p2=FreeCAD.Placement()
+				p2.Rotation=FreeCAD.Rotation(FreeCAD.Vector(0,0,1),za).multiply(FreeCAD.Rotation(FreeCAD.Vector(0,1,0),ya).multiply(FreeCAD.Rotation(FreeCAD.Vector(1,0,0),xa)))
+
+				ph=FreeCAD.Placement()
+				ph.Base=xV
+				xR=p2.multiply(ph).Base
+				ph=FreeCAD.Placement()
+				ph.Base=yV
+				yR=p2.multiply(ph).Base
+
+
+				pp3.append(Part.makePolygon([p+xR,p,p+yR]))
+
 
 		# all together 
-		bb.Shape=Part.Compound([pol,bs.toShape()])
+		bb.Shape=Part.Compound(pp3+ [pol,bs.toShape()])
 
 		dok.recompute()
 
 		bb.ViewObject.LineColor=(1.0,0.6,.0)
 		bb.ViewObject.LineWidth=1
 		bb.ViewObject.PointColor=(.8,0.4,.0)
-		bb.ViewObject.PointSize=7
+		bb.ViewObject.PointSize=3
 
 
 	def settarget2(self,p):
@@ -538,15 +648,24 @@ class MyWidget(QtGui.QWidget):
 		'''callback from list'''
 		self.imode=index
 
-def dialog():
+def dialog(source):
 	''' create dialog widget'''
 
+	
 	w=MyWidget()
 	w.setWindowFlags(QtCore.Qt.WindowStaysOnTopHint)
 
+	w.source=source
 	w.imode=-1
 	w.ef="no eventfilter defined"
 
+
+	try:
+		n=w.getNeedle()
+		n.RibTemplate.ViewObject.hide()
+		n.Backbone.ViewObject.hide()
+	except:
+		pass
 
 	mode=QtGui.QComboBox()
 	mode.addItem("move pole") #0
@@ -559,8 +678,8 @@ def dialog():
 	lab=QtGui.QLabel("Direction: x")
 	w.modelab=lab
 
-	btn=QtGui.QPushButton("Update Curve")
-	btn.clicked.connect(w.update)
+	btn=QtGui.QPushButton("Cancel")
+	btn.clicked.connect(w.cancel)
 
 	cobtn=QtGui.QPushButton("Commit and stop")
 	cobtn.clicked.connect(w.commit)
@@ -578,9 +697,50 @@ def dialog():
 	dial.valueChanged.connect(w.setcursor2)
 	w.dial=dial
 
+	if source == 'Backbone':
+		rotxl=QtGui.QLabel("Rotation X:")
+
+		dialx=QtGui.QDial() 
+		dialx.setNotchesVisible(True)
+		dialx.setMinimum(-90)
+		dialx.setMaximum(90)
+		dialx.setValue(0)
+		dialx.setSingleStep(15)
+		dialx.valueChanged.connect(w.setrotx)
+		w.dialx=dialx
+
+		rotyl=QtGui.QLabel("Rotation Y:")
+
+		dialy=QtGui.QDial() 
+		dialy.setNotchesVisible(True)
+		dialy.setMinimum(-90)
+		dialy.setMaximum(90)
+		dialy.setValue(0)
+		dialy.setSingleStep(15)
+
+		dialy.valueChanged.connect(w.setroty)
+		w.dialy=dialy
+
+		rotzl=QtGui.QLabel("Rotation Z:")
+
+		dialz=QtGui.QDial() 
+		dialz.setNotchesVisible(True)
+		dialz.setMinimum(-90)
+		dialz.setMaximum(90)
+		dialz.setValue(0)
+		dialz.setSingleStep(15)
+
+		dialz.valueChanged.connect(w.setrotz)
+		w.dialz=dialz
+		
+		rots=[rotxl,dialx,rotyl,dialy,rotzl,dialz]
+	else:
+		rots=[]
+
 	box = QtGui.QVBoxLayout()
 	w.setLayout(box)
-	for ww in [mode,lab,btn,cobtn,conbtn,cbtn,poll,dial]:
+	
+	for ww in [mode,lab,btn,cobtn,conbtn,cbtn,poll,dial] + rots:
 		box.addWidget(ww)
 
 	return w
@@ -600,9 +760,12 @@ def start(source):
 	mw.installEventFilter(ef)
 	ef.keyPressed2=False
 
-	ef.dialog=dialog()
-	ef.dialog.source=source
+	ef.dialog=dialog(source)
+	#ef.dialog.source=source
 	ef.dialog.ef=ef
+	ef.dialog.rotx=0
+	ef.dialog.roty=0
+	ef.dialog.rotz=0
 	ef.dialog.update()
 	ef.dialog.show()
 	tt=Gui.ActiveDocument.activeView()
@@ -672,3 +835,8 @@ def undock(label='Spreadsheet'):
 
 try: stop()
 except: pass
+
+'''
+
+
+'''
