@@ -454,6 +454,28 @@ class openSS:
 
 FreeCADGui.addCommand('Open SS',openSS())
 
+class zebraTool:
+
+	def Activated(self):
+		import nurbswb.zebratool
+		reload(nurbswb.zebratool)
+		# FreeCAD.ss=nurbswb.wheel_event.undock("Spreadsheet")
+
+	def IsActive(self):
+		try:
+			App.ActiveDocument.Spreadsheet
+			return True
+		except:
+			return False
+
+	def GetResources(self):
+		return {
+			'Pixmap'  : FreeCAD.ConfigGet('UserAppData')+"/Mod/freecad-nurbs/icons/"+'zebra.svg', 
+			'MenuText': 'Zebra Tool', 
+		}
+
+FreeCADGui.addCommand('ZebraTool',zebraTool())
+
 
 
 import nurbswb
@@ -504,7 +526,7 @@ class NurbsWorkbench(Workbench):
 				'Random Plane','Random Torus','Random Sphere','Random Cylinder',
 				'Create Needle',
 				'Edit Backbone','Edit Rib',
-				'Open SS',
+				'Open SS','ZebraTool'
 			]
 		self.appendToolbar("Nurbs", cmds )
 		self.appendMenu("Nurbs", cmds)
