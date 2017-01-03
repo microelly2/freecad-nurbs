@@ -358,6 +358,7 @@ class MyWidget(QtGui.QWidget):
 				points=src.Shape.Edge1.Curve.getPoles()
 				mybsc=App.ActiveDocument.addObject('Part::Feature','BSpline')
 				mybsc.Shape=src.Shape
+				mybsc.ViewObject.Selectable=False
 
 				Gui.activeDocument().activeView().viewAxonometric()
 				Gui.SendMsgToActiveView("ViewFit")
@@ -458,6 +459,7 @@ class MyWidget(QtGui.QWidget):
 			App.newDocument("Aux")
 			hd=App.getDocument("Aux")
 
+
 		App.setActiveDocument("Aux")
 		App.ActiveDocument=App.getDocument("Aux")
 		Gui.ActiveDocument=Gui.getDocument("Aux")
@@ -472,16 +474,18 @@ class MyWidget(QtGui.QWidget):
 		'''pointer to the selected pole/coords as a red quad'''
 		v=Part.Point(FreeCAD.Vector(cords)).toShape()
 		try: curs=dok.Cursor
-		except: curs=dok.addObject('Part::Feature','Cursor')
+		except: 
+			curs=dok.addObject('Part::Feature','Cursor')
+			curs.ViewObject.Selectable=False
 		curs.Shape=v
 		dok.recompute()
-		curs.ViewObject.PointSize=8
+		curs.ViewObject.PointSize=10
 		curs.ViewObject.PointColor=(1.0,1.,0.)
 		self.settarget()
 		obj=self.getNeedle()
 		curve,bb,scaler,twister= obj.Proxy.Model()
 		pos=self.dial.value()
-		if restore:
+		if restore and hasattr(self,'dialx'):
 			self.dialx.setValue(twister[pos][0])
 			self.dialy.setValue(twister[pos][1])
 			self.dialz.setValue(twister[pos][2])
@@ -526,7 +530,9 @@ class MyWidget(QtGui.QWidget):
 		''' set changed pole to '''
 		v=Part.Point(FreeCAD.Vector(cords)).toShape()
 		try: curs=dok.Target
-		except: curs=dok.addObject('Part::Feature','Target')
+		except: 
+			curs=dok.addObject('Part::Feature','Target')
+			curs.ViewObject.Selectable=False
 		curs.Shape=v
 		dok.recompute()
 		curs.ViewObject.PointSize=10
@@ -582,9 +588,25 @@ class MyWidget(QtGui.QWidget):
 
 		self.target(dok, t)
 
+#		try: dok.Sphere
+#		except:
+#			s=dok.addObject("Part::Sphere","Sphere")
+#			s.Radius=10000000
+#			s.ViewObject.Selectable=False
+#			s.ViewObject.ShapeColor=(1.,1.,1.)
+#			s.ViewObject.DisplayMode = u"Shaded"
+#			s.ViewObject.DisplayMode = u"Shaded"
+
 		# create or get traget curve
-		try: bb=dok.TargetCurve
-		except: bb=dok.addObject('Part::Feature','TargetCurve')
+		try: 
+			bb=dok.TargetCurve
+			bax=dok.TargetExtra
+		
+		except: 
+			bb=dok.addObject('Part::Feature','TargetCurve')
+			bax=dok.addObject('Part::Feature','TargetExtra')
+			
+
 
 		pp=self.points
 
@@ -603,6 +625,7 @@ class MyWidget(QtGui.QWidget):
 
 
 		pp3=[]
+		ppax=[]
 
 		if self.source=='Backbone':
 			xV=FreeCAD.Vector(100,0,0)
@@ -645,32 +668,36 @@ class MyWidget(QtGui.QWidget):
 
 				p=FreeCAD.Vector(p)
 
+				if 1:
+					pp=Part.makePolygon([p,p+xR,p+xR+yR,p])
+					ps=Part.Face(pp)
+					ppax.append(ps)
+					pp=Part.makePolygon([p,p+yR,p+xR+yR,p])
+					ppax.append(Part.Face(pp))
+					pp=Part.makePolygon([p,p+zR,p+xR+yR,p])
+					ppax.append(Part.Face(pp))
 
-				pp=Part.makePolygon([p,p+xR,p+xR+yR,p])
-				ps=Part.Face(pp)
-				pp3.append(ps)
-				pp=Part.makePolygon([p,p+yR,p+xR+yR,p])
-				pp3.append(Part.Face(pp))
-				pp=Part.makePolygon([p,p+zR,p+xR+yR,p])
-				pp3.append(Part.Face(pp))
-				
 
 		# all together 
-		bb.Shape=Part.Compound(pp3+ [pol,bs.toShape()])
+		bb.Shape=Part.Compound([pol])
+		if ppax<>[]:
+			bax.Shape=Part.Compound(ppax + [bs.toShape()])
 
 		dok.recompute()
 
 		bb.ViewObject.LineColor=(1.0,0.6,.0)
 		bb.ViewObject.LineWidth=1
 		bb.ViewObject.PointColor=(.8,0.4,.0)
-		bb.ViewObject.PointSize=3
+		bb.ViewObject.PointSize=8
+		bax.ViewObject.Selectable=False
+
 		col=[]
-		for i in range(len(bb.Shape.Faces)):
+		for i in range(len(bax.Shape.Faces)):
 			tt=i%3
 			if tt==0: col.append((1.,0.,0.))
 			elif tt==1: col.append((0.,1.,0.))
 			else: col.append((0.,0.,1.))
-		bb.ViewObject.DiffuseColor=col
+		bax.ViewObject.DiffuseColor=col
 
 
 	def settarget2(self,p):
@@ -779,6 +806,39 @@ def dialog(source):
 
 	return w
 
+class SelObserver:
+	def setPreselection(self,doc,obj,sub):
+		pass# Preselection object
+		# App.Console.PrintMessage("Pre! " +str(sub)+ "\n")          # The part of the object name
+
+	def addSelection(self,doc,obj,sub,pnt):               # Selection object
+		#App.Console.PrintMessage("addSelection"+ "\n")
+		#App.Console.PrintMessage(str(sub)+ "\n")          # The part of the object name
+		# App.Console.PrintMessage(str(pnt)+ "\n")          # Coordinates of the object
+		if str(doc) <> 'Aux': return
+		if str(obj) <> 'TargetCurve': return
+		sel=str(sub)
+		if sel.startswith('Vertex'):
+			nr=sel[6:]
+			FreeCAD.eventfilter.dialog.dial.setValue(int(nr)-1)
+		else:
+			print "no vertext"
+			return
+
+
+	def removeSelection(self,doc,obj,sub):
+		pass                # Delete the selected object
+		#App.Console.PrintMessage("removeSelection"+ "\n")
+
+	def setSelection(self,doc):                           # Selection in ComboView
+		pass
+		#App.Console.PrintMessage("setSelection"+ "\n")
+
+	def clearSelection(self,doc): 
+		pass                        # If click on the screen, clear the selection
+		#App.Console.PrintMessage("clearSelection"+ "\n")  # If click on another object, clear the previous object
+
+                # Uninstall the resident function 
 
 
 def start(source):
@@ -788,6 +848,10 @@ def start(source):
 	ef.mouseWheel=0
 	ef.mode='r'
 
+	s =SelObserver()
+	FreeCADGui.Selection.addObserver(s)                       # install the function mode resident
+	ef.selObserver=s
+	
 	FreeCAD.eventfilter=ef
 
 	mw=QtGui.qApp
@@ -826,6 +890,9 @@ def stop():
 	mw.removeEventFilter(ef)
 	ef.keyPressed2=False
 	ef.dialog.hide()
+	
+	s=ef.selObserver
+	FreeCADGui.Selection.removeObserver(s)   
 
 	for l in ("Cursor","Target","TargetCurve"):
 		delo(l)
