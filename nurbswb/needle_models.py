@@ -3,8 +3,8 @@
 import nurbswb.needle_models
 reload(nurbswb.needle_models)
 
-#App.ActiveDocument.MyNeedle.Proxy.getExampleModel(nurbswb.needle_models.modelSpoon)
-myNeedle=App.ActiveDocument.MyNeedle
+#App.activeDocument().MyNeedle.Proxy.getExampleModel(nurbswb.needle_models.modelSpoon)
+myNeedle=App.activeDocument().MyNeedle
 
 #myNeedle.Proxy.getExampleModel(nurbswb.needle_models.modelEd4)
 
@@ -293,8 +293,8 @@ class modelSpoon(model):
 
 if 0:
 
-	App.ActiveDocument.MyNeedle.Proxy.getExampleModel(nurbswb.needle_models.modelSpoon)
-	App.ActiveDocument.MyNeedle.Proxy.getExampleModel(nurbswb.needle_models.modelEd4)
+	App.activeDocument().MyNeedle.Proxy.getExampleModel(nurbswb.needle_models.modelSpoon)
+	App.activeDocument().MyNeedle.Proxy.getExampleModel(nurbswb.needle_models.modelEd4)
 
 '''
 	modelA(ss)
@@ -358,7 +358,7 @@ class modelX(model):
 
 
 
-class modelS(model):
+class modelS1(model):
 
 	def __init__(self,bbl=12):
 		model.__init__(self)
@@ -382,6 +382,25 @@ class modelS(model):
 		self.bb[8][0]=300 # move in x-direction
 		self.info="Testmodel"
 
+
+class modelS(model):
+
+	def __init__(self,bbl=12):
+		model.__init__(self)
+		self.curve=[
+				[200,0,0],
+				[200,600,0],
+				[-200,400,0],
+				[-200,0,0],
+			]
+
+		self.sc=[[1,1]]*bbl
+
+		self.twister=[[0,0,0]]*bbl
+
+
+		self.bb=[[0,0,300*i] for i in range(bbl)]
+		self.info="Testmodel simple 4 x 12"
 
 
 
@@ -429,8 +448,8 @@ class modelMiniBanana(modelBanana):
 		self.curve *= 0.1
 		self.bb *= 0.1
 
-#App.ActiveDocument.MyNeedle.Proxy.getExampleModel(modelMiniBanana)
-#App.ActiveDocument.MyNeedle.Shape.BoundBox.DiagonalLength
+#App.activeDocument().MyNeedle.Proxy.getExampleModel(modelMiniBanana)
+#App.activeDocument().MyNeedle.Shape.BoundBox.DiagonalLength
 
 class modelPicoBanana(modelBanana):
 	def __init__(self):
@@ -439,8 +458,8 @@ class modelPicoBanana(modelBanana):
 		self.curve *= 0.02
 		self.bb *= 0.02
 
-#App.ActiveDocument.MyNeedle.Proxy.getExampleModel(modelMiniBanana)
-#App.ActiveDocument.MyNeedle.Shape.BoundBox.DiagonalLength
+#App.activeDocument().MyNeedle.Proxy.getExampleModel(modelMiniBanana)
+#App.activeDocument().MyNeedle.Shape.BoundBox.DiagonalLength
 
 
 '''
@@ -462,5 +481,5 @@ if __name__=='__main__':
 	class modelY(modelBanana):
 		pass
 
-	App.ActiveDocument.MyNeedle.Proxy.lock=False
-	App.ActiveDocument.MyNeedle.Proxy.getExampleModel(modelY)
+	App.activeDocument().MyNeedle.Proxy.lock=False
+	App.activeDocument().MyNeedle.Proxy.getExampleModel(modelY)

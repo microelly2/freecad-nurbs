@@ -38,15 +38,15 @@ def getdata(index):
 	return sel,ci,ri,index.data()
 
 def initmodel():
-	App.ActiveDocument.MyNeedle.Proxy.lock=False
-	App.ActiveDocument.MyNeedle.Proxy.getExampleModel(nurbswb.needle_models.modelS)
-	#App.ActiveDocument.MyNeedle.Proxy.getExampleModel(nurbswb.needle_models.modelBanana)
-	#App.ActiveDocument.MyNeedle.Proxy.getExampleModel(nurbswb.needle_models.modelEd4)
+	App.activeDocument().MyNeedle.Proxy.lock=False
+	App.activeDocument().MyNeedle.Proxy.getExampleModel(nurbswb.needle_models.modelS)
+	#App.activeDocument().MyNeedle.Proxy.getExampleModel(nurbswb.needle_models.modelBanana)
+	#App.activeDocument().MyNeedle.Proxy.getExampleModel(nurbswb.needle_models.modelEd4)
 
 
 def addRib(dialog):
 	# read 
-	(curve,bb,scaler,twister)=App.ActiveDocument.MyNeedle.Proxy.Model()
+	(curve,bb,scaler,twister)=App.activeDocument().MyNeedle.Proxy.Model()
 
 	# modifications 
 	i=dialog.pos
@@ -65,8 +65,8 @@ def addRib(dialog):
 	twister=b
 
 	# write back
-	App.ActiveDocument.MyNeedle.Proxy.lock=False
-	App.ActiveDocument.MyNeedle.Proxy.setModel(curve,bb,scaler,twister)
+	App.activeDocument().MyNeedle.Proxy.lock=False
+	App.activeDocument().MyNeedle.Proxy.setModel(curve,bb,scaler,twister)
 	dialog.obj.Proxy.showRib(i)
 	dialog.close()
 
@@ -93,7 +93,7 @@ def CaddRib(obj,i):
 
 def addMeridian(dialog):
 	# read 
-	(curve,bb,scaler,twister)=App.ActiveDocument.MyNeedle.Proxy.Model()
+	(curve,bb,scaler,twister)=App.activeDocument().MyNeedle.Proxy.Model()
 
 	# modifications 
 	i=dialog.pos
@@ -102,8 +102,8 @@ def addMeridian(dialog):
 	curve=c
 
 	# write back
-	App.ActiveDocument.MyNeedle.Proxy.lock=False
-	App.ActiveDocument.MyNeedle.Proxy.setModel(curve,bb,scaler,twister)
+	App.activeDocument().MyNeedle.Proxy.lock=False
+	App.activeDocument().MyNeedle.Proxy.setModel(curve,bb,scaler,twister)
 	dialog.obj.Proxy.showMeridian(i)
 	dialog.close()
 
@@ -124,6 +124,40 @@ def addStrongMeridianEdge(dialog):
 	CaddStrongMeridianEdge(obj,i+1)
 	dialog.close()
 
+def addNeighborMeridians(dialog):
+	obj=dialog.obj
+	i=dialog.pos
+	CaddNeighborMeridians(obj,i+1)
+	dialog.close()
+
+def CaddNeighborRibs(obj,i):
+	(curve,bb,scaler,twister)=obj.Proxy.Model()
+	st=0.98
+	i = i-1
+	if curve.shape[0]==i:i=0
+	if curve.shape[0]==i+1:j=0
+	else: j=i+1
+
+
+	t1=bb[i]+(bb[i]-bb[j])*0.02
+	t2=bb[i]+(bb[i]-bb[i-1])*0.02
+	b=np.concatenate([bb[0:i],[t1,bb[i],t2],bb[i+1:]])
+	bb=b
+
+	t2=scaler[i]+(scaler[j]-scaler[i])*0.02
+	t1=scaler[i]+(scaler[i-1]-scaler[i])*0.02
+	b=np.concatenate([scaler[0:i],[t1,scaler[i],t2],scaler[i+1:]])
+	scaler=b
+
+	t2=twister[i]+(twister[j]-twister[i])*0.02
+	t1=twister[i]+(twister[i-1]-twister[i])*0.02
+	b=np.concatenate([twister[0:i],[t1,twister[i],t2],twister[i+1:]])
+	twister=b
+
+
+	obj.Proxy.lock=False
+	obj.Proxy.setModel(curve,bb,scaler,twister)
+	obj.Proxy.showRib(i+1)
 
 def CaddStrongRibEdge(obj,i):
 	(curve,bb,scaler,twister)=obj.Proxy.Model()
@@ -156,6 +190,13 @@ def addStrongRibEdge(dialog):
 	CaddStrongRibEdge(dialog.obj,dialog.pos+1)
 	dialog.close()
 
+def addNeighborRibs(dialog):
+	obj=dialog.obj
+	i=dialog.pos
+	CaddNeighborRibs(obj,i+1)
+	dialog.close()
+
+
 
 def CaddStrongMeridianEdge(obj,i):
 	(curve,bb,scaler,twister)=obj.Proxy.Model()
@@ -167,10 +208,24 @@ def CaddStrongMeridianEdge(obj,i):
 	obj.Proxy.setModel(c,bb,scaler,twister)
 	obj.Proxy.showMeridian(i)
 
+def CaddNeighborMeridians(obj,i):
+	(curve,bb,scaler,twister)=obj.Proxy.Model()
+	st=0.98
+	i = i-1
+	if curve.shape[0]==i:i=0
+	if curve.shape[0]==i+1:j=0
+	else: j=i+1
+	t1=curve[i]+(curve[i]-curve[j])*0.02
+	t2=curve[i]+(curve[i]-curve[i-1])*0.02
+	c=np.concatenate([curve[0:i],[t1,curve[i],t2],curve[i+1:]])
+	obj.Proxy.lock=False
+	obj.Proxy.setModel(c,bb,scaler,twister)
+	obj.Proxy.showMeridian(i+1)
+
 
 def delMeridian(dialog):
 	# read 
-	(curve,bb,scaler,twister)=App.ActiveDocument.MyNeedle.Proxy.Model()
+	(curve,bb,scaler,twister)=App.activeDocument().MyNeedle.Proxy.Model()
 
 	if curve.shape[0]<5:
 		print "zu wenig Punkte "
@@ -182,8 +237,8 @@ def delMeridian(dialog):
 	curve=c
 
 	# write back
-	App.ActiveDocument.MyNeedle.Proxy.lock=False
-	App.ActiveDocument.MyNeedle.Proxy.setModel(curve,bb,scaler,twister)
+	App.activeDocument().MyNeedle.Proxy.lock=False
+	App.activeDocument().MyNeedle.Proxy.setModel(curve,bb,scaler,twister)
 	dialog.obj.Proxy.showMeridian(i)
 	dialog.close()
 
@@ -275,6 +330,10 @@ class RibEditor(QtGui.QWidget):
 		f=lambda:addStrongRibEdge(self)
 		self.btn.clicked.connect(f)
 
+		self.btn = QtGui.QPushButton('Add 2 neighbor ribs', self)
+		self.btn.move(20, 140)
+		f=lambda:addNeighborRibs(self)
+		self.btn.clicked.connect(f)
 
 
 
@@ -335,6 +394,12 @@ class BackboneEditor(QtGui.QWidget):
 		self.btn.move(20, 140)
 		f=lambda:addStrongMeridianEdge(self)
 		self.btn.clicked.connect(f)
+
+		self.btn = QtGui.QPushButton('Add 2 neighbor meridians', self)
+		self.btn.move(20, 140)
+		f=lambda:addNeighborMeridians(self)
+		self.btn.clicked.connect(f)
+
 
 
 		self.le = QtGui.QLineEdit(self)

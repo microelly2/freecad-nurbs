@@ -64,7 +64,7 @@ def Myarray2NurbsD3(arr,label="MyWall",degree=3):
 	if 1:
 		vcp=True
 		try:
-			sp=App.ActiveDocument.Poles
+			sp=App.getDocument("Needle").Poles
 			vcp=sp.ViewObject.ControlPoints
 		except: sp=App.ActiveDocument.addObject("Part::Spline","Poles")
 		sp.Shape=sh
@@ -110,7 +110,7 @@ def toUVMesh(bs, uf=5, vf=5):
 
 #		t=Mesh.Mesh((ss,topfaces))
 #		Mesh.show(t)
-#		App.ActiveDocument.ActiveObject.ViewObject.Lighting="Two side"
+#		App.activeDocument().ActiveObject.ViewObject.Lighting="Two side"
 
 
 
@@ -134,11 +134,11 @@ def toUVMesh(bs, uf=5, vf=5):
 		if len(faces)<100000:
 			t=Mesh.Mesh((ss,faces))
 			Mesh.show(t)
-			App.ActiveDocument.ActiveObject.ViewObject.Lighting="Two side"
-			App.ActiveDocument.ActiveObject.ViewObject.DisplayMode = u"Wireframe"
-			App.ActiveDocument.ActiveObject.ViewObject.LineColor = (.70,.00,0.00)
+			App.activeDocument().ActiveObject.ViewObject.Lighting="Two side"
+			App.activeDocument().ActiveObject.ViewObject.DisplayMode = u"Wireframe"
+			App.activeDocument().ActiveObject.ViewObject.LineColor = (.70,.00,0.00)
 			#FreeCAD.Console.PrintMessage(str(t))
-			return App.ActiveDocument.ActiveObject
+			return App.activeDocument().ActiveObject
 		else:
 			raise Exception("big mesh not implemented")
 
@@ -146,9 +146,9 @@ def toUVMesh(bs, uf=5, vf=5):
 			for i in range(ks+1):
 				t=Mesh.Mesh((ss,faces[i*100000:(i+1)*100000]))
 				Mesh.show(t)
-				App.ActiveDocument.ActiveObject.ViewObject.Lighting="Two side"
-				App.ActiveDocument.ActiveObject.ViewObject.DisplayMode = u"Wireframe"
-				App.ActiveDocument.ActiveObject.ViewObject.LineColor = (.70,.00,0.00)
+				App.activeDocument().ActiveObject.ViewObject.Lighting="Two side"
+				App.activeDocument().ActiveObject.ViewObject.DisplayMode = u"Wireframe"
+				App.activeDocument().ActiveObject.ViewObject.LineColor = (.70,.00,0.00)
 				FreeCAD.Console.PrintMessage(str(t))
 
 		return t
@@ -325,7 +325,7 @@ def gendata(ss):
 	ss.set('B2','Rib x')
 	ss.set('C2','y')
 	ss.set('D2','z')
-	App.activeDocument().recompute()
+	App.activeDocument()().recompute()
 
 
 def ssa2npa(spreadsheet,c1,r1,c2,r2,default=None):
@@ -358,7 +358,7 @@ if 0 and __name__=='__main__':
 	App.ActiveDocument=None
 	Gui.ActiveDocument=None
 	FreeCAD.open(u"/home/thomas/Schreibtisch/nadel_daten.fcstd")
-	App.setActiveDocument("nadel_daten")
+	App.setactiveDocument()("nadel_daten")
 	App.ActiveDocument=App.getDocument("nadel_daten")
 	Gui.ActiveDocument=Gui.getDocument("nadel_daten")
 
@@ -507,7 +507,7 @@ class Needle(PartFeature):
 
 	def createBackbone(proxy,obj,bb):
 		if obj.Backbone == None:
-			obj.Backbone=App.ActiveDocument.addObject('Part::Feature','Backbone')
+			obj.Backbone=App.activeDocument().addObject('Part::Feature','Backbone')
 		
 		#obj.Backbone.Shape=Part.makePolygon([FreeCAD.Vector(b) for b in bb])
 		bs=Part.BSplineCurve()
@@ -520,7 +520,7 @@ class Needle(PartFeature):
 
 	def createRibTemplate(proxy,obj,curve):
 		if obj.RibTemplate == None:
-			obj.RibTemplate=App.ActiveDocument.addObject('Part::Feature','Rib template')
+			obj.RibTemplate=App.activeDocument().addObject('Part::Feature','Rib template')
 		#obj.RibTemplate.Shape=Part.makePolygon([FreeCAD.Vector(c) for c in curve])
 
 		bs=Part.BSplineCurve()
@@ -538,7 +538,7 @@ class Needle(PartFeature):
 			vb=True
 			if obj.Mesh <> None:
 				vb=obj.Mesh.ViewObject.Visibility
-				App.ActiveDocument.removeObject(obj.Mesh.Name)
+				App.activeDocument().removeObject(obj.Mesh.Name)
 			obj.Mesh=toUVMesh(bs,obj.MeshUCount,obj.MeshVCount)
 			obj.Mesh.ViewObject.Visibility=vb
 
@@ -560,9 +560,9 @@ class Needle(PartFeature):
 
 		comp=Part.Compound(ribs)
 		if obj.RibCage == None:
-			obj.RibCage=App.ActiveDocument.addObject('Part::Feature','Ribs')
+			obj.RibCage=App.activeDocument().addObject('Part::Feature','Ribs')
 		obj.RibCage.Shape=comp
-		vob=App.ActiveDocument.ActiveObject.ViewObject
+		vob=App.getDocument("Needle").ActiveObject.ViewObject
 		vob.LineColor=(1.,1.,0.)
 		vob.LineWidth = 5.00
 
@@ -572,9 +572,9 @@ class Needle(PartFeature):
 			mers.append(f.toShape())
 		comp=Part.Compound(mers)
 		if obj.Meridians == None:
-			obj.Meridians=App.ActiveDocument.addObject('Part::Feature','Meridians')
+			obj.Meridians=App.getDocument("Needle").addObject('Part::Feature','Meridians')
 		obj.Meridians.Shape=comp
-		vob=App.ActiveDocument.ActiveObject.ViewObject
+		vob=App.getDocument("Needle").ActiveObject.ViewObject
 		vob.LineColor=(1.,0.,0.4)
 		vob.LineWidth = 5.00
 
@@ -601,7 +601,7 @@ class Needle(PartFeature):
 			ss.set('C2','y')
 			ss.set('D2','z')
 			try:
-				App.activeDocument().recompute()
+				App.activeDocument()().recompute()
 			except:
 				print "recompute jack "
 				dokname=FreeCAD.ParamGet('User parameter:Plugins/nurbs').GetString("Document","Needle")
@@ -634,7 +634,7 @@ class Needle(PartFeature):
 		mdiarea=mw.findChild(QtGui.QMdiArea)
 
 
-		App.ActiveDocument.Spreadsheet.ViewObject.startEditing(0)
+		App.activeDocument().Spreadsheet.ViewObject.startEditing(0)
 		subw=mdiarea.subWindowList()
 	#	print len(subw)
 		for i in subw:
@@ -660,7 +660,7 @@ class Needle(PartFeature):
 	def pressed(self,index):
 		import nurbswb.needle_cmds
 		reload(nurbswb.needle_cmds)
-		nurbswb.needle_cmds.pressed(index,App.ActiveDocument.MyNeedle)
+		nurbswb.needle_cmds.pressed(index,App.activeDocument().MyNeedle)
 		print "Pressed"
 
 	def changed(self,index):
@@ -715,7 +715,7 @@ def importCurves(obj):
 		print "update backbone",bb
 
 def createNeedle(label="MyNeedle"):
-	a=FreeCAD.ActiveDocument.addObject("Part::FeaturePython",label)
+	a=FreeCAD.activeDocument().addObject("Part::FeaturePython",label)
 	n=Needle(a)
 	a.useSpreadsheet=True
 	# gendata(a.Spreadsheet)
@@ -743,7 +743,7 @@ def commitData(editor):
 	if globdat[0]=='ccmd':
 		cn=cellname(int(globdat[1])+1,int(globdat[2])+3)
 		old=globdat[3]
-		nurbswb.needle_cmds.runCmd(old,cn,globdat[2],App.ActiveDocument.Spreadsheet)
+		nurbswb.needle_cmds.runCmd(old,cn,globdat[2],App.activeDocument().Spreadsheet)
 
 
 def startssevents2():
@@ -752,7 +752,7 @@ def startssevents2():
 	mw=FreeCADGui.getMainWindow()
 	mdiarea=mw.findChild(QtGui.QMdiArea)
 
-	App.ActiveDocument.Spreadsheet.ViewObject.startEditing(0)
+	App.activeDocument().Spreadsheet.ViewObject.startEditing(0)
 	subw=mdiarea.subWindowList()
 #	print len(subw)
 	for i in subw:
@@ -838,7 +838,7 @@ if  __name__=='__main__':
 	except: pass
 
 	App.newDocument(dokname)
-	App.setActiveDocument(dokname)
+	App.setactiveDocument()(dokname)
 	App.ActiveDocument=App.getDocument(dokname)
 	Gui.ActiveDocument=Gui.getDocument(dokname)
 
@@ -853,7 +853,7 @@ if  __name__=='__main__':
 
 
 		points=[FreeCAD.Vector(-73.5499812578,-192.458589192,0.0),FreeCAD.Vector(-35.2118430692,-245.401746512,0.0),FreeCAD.Vector(-148.400562353,-232.622317741,0.0),FreeCAD.Vector(-115.539281652,-172.376687886,0.0)]
-		Draft.makeBSpline(points,closed=True,face=True,support=FreeCAD.ActiveDocument.getObject("BSpline"))
+		Draft.makeBSpline(points,closed=True,face=True,support=FreeCAD.activeDocument().getObject("BSpline"))
 		# Bspline002
 
 		points=[FreeCAD.Vector(-37.2293014526,1.68375661825e-08,-10),FreeCAD.Vector(132.959136963,6.57217134591e-06,110.262731687),FreeCAD.Vector(149.817367554,1.45151301104e-05,243.523458616),FreeCAD.Vector(-69.3403015137,2.18838984602e-05,367.150869505),FreeCAD.Vector(-182.531646729,2.7960740423e-05,469.103353635),FreeCAD.Vector(-256.549041748,5.67015768864e-05,1200)]
@@ -873,19 +873,19 @@ if  __name__=='__main__':
 
 
 
-#	a.ribtemplateSource=App.ActiveDocument.BSpline
-#	a.backboneSource=App.ActiveDocument.BSpline001
+#	a.ribtemplateSource=App.activeDocument().BSpline
+#	a.backboneSource=App.activeDocument().BSpline001
 
-	App.activeDocument().recompute()
+	App.activeDocument()().recompute()
 
 #	vp=needle.ViewProvider(a.ViewObject)
-	App.activeDocument().recompute()
+	App.activeDocument()().recompute()
 
 	if 0:
 
 		# zweiter koerper
 
-		b=FreeCAD.ActiveDocument.addObject("Part::FeaturePython","MyNeedle")
+		b=FreeCAD.activeDocument().addObject("Part::FeaturePython","MyNeedle")
 		bn=needle.Needle(b)
 
 
@@ -898,13 +898,13 @@ if  __name__=='__main__':
 		b.useSpreadsheet=True
 
 
-		# b.Spreeadsheet=App.activeDocument().addObject('Spreadsheet::Sheet','huhu')
+		# b.Spreeadsheet=App.activeDocument()().addObject('Spreadsheet::Sheet','huhu')
 		bss=b.Spreadsheet
 		needle.gendata(bss)
 
-		b.ribtemplateSource=App.ActiveDocument.BSpline002
-		b.backboneSource=App.ActiveDocument.BSpline003
-		App.activeDocument().recompute()
+		b.ribtemplateSource=App.activeDocument().BSpline002
+		b.backboneSource=App.activeDocument().BSpline003
+		App.activeDocument()().recompute()
 
 
 		vp=needle.ViewProvider(b.ViewObject)
@@ -918,7 +918,7 @@ if  __name__=='__main__':
 		needle.importCurves(a)
 		needle.importCurves(b)
 		
-	App.activeDocument().recompute()
-	App.activeDocument().recompute()
+	App.activeDocument()().recompute()
+	App.activeDocument()().recompute()
 	Gui.SendMsgToActiveView("ViewFit")
 
