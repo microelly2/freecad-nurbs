@@ -383,9 +383,9 @@ class modelS1(model):
 		self.info="Testmodel"
 
 
-class modelS(model):
+class modelSimple(model):
 
-	def __init__(self,bbl=12):
+	def __init__(self,bbl=4):
 		model.__init__(self)
 		self.curve=[
 				[200,0,0],
@@ -399,8 +399,102 @@ class modelS(model):
 		self.twister=[[0,0,0]]*bbl
 
 
-		self.bb=[[0,0,300*i] for i in range(bbl)]
+		self.bb=[[0,0,200*i] for i in range(bbl)]
 		self.info="Testmodel simple 4 x 12"
+
+
+
+
+
+class modelFillet(model):
+
+	def __init__(self,bbl=4):
+		model.__init__(self)
+		self.curve=[
+				[180,5,0],[210,0,0],[220,0,0],[230,0,0], [250,0,0],[260,0,0], # Tangentialuebergang  1
+				[50,50,0], # innere Form des Profiles
+				[0,150,0],[0,130,0],[0,120,0],[0,110,0],[0,105,0],[0,100,0], # Tangentialuebergang 2
+				[50,50,0],[-50,-50,0],	[100,50,0] # Form des Profils aussen
+			]
+
+		self.sc=[[1,1]]*bbl
+
+		self.twister=[[0,0,0]]*bbl
+
+
+		self.bb=[[0,0,300*i] for i in range(bbl)]
+		self.info="Testmodel Fillet"
+
+
+
+
+
+
+class modelCarRoof(model):
+
+	def __init__(self,bbl=10):
+		model.__init__(self)
+		self.curve=[
+				[0,0,0],
+				[0,-99,0],[0,-100,0],[0,-100,1],[0,-100,40],
+				#breite kante
+				[0,-70,40],	[0,-70,35],
+				
+				# mittelsteg
+				[0,-10,35],
+				[0,-10,40],
+				[0,-9,40],
+				[0,9,40],
+				[0,10,40],
+				[0,10,35],
+				
+				# schmale kante
+				[0,90,35],[0,90,40],
+				[0,100,40],[0,100,1],[0,100,0],[0,91,0]
+			]
+
+		self.sc=[[1,2]]*bbl
+
+		self.twister=[[0,90,0]]*bbl
+		self.twister[0]=[0,180,0]
+		self.twister[1]=[0,135,0]
+
+
+		self.bb=[[0,0,40*i] for i in range(bbl)]
+		self.bb[1]=[0,0,10]
+		self.bb[2]=[0,0,20]
+		self.bb[3]=[0,0,21]
+		self.sc[1]=[1,3]
+		
+		self.sc[5]=[1,1.8]
+		self.sc[6]=[1,1.8]
+		self.bb[5]=[0,0,160]
+		self.bb[6]=[0,0,280]
+		
+		self.info="Testmodel Autodach"
+
+
+
+class modelCarWindow(model):
+
+	def __init__(self,bbl=4):
+		model.__init__(self)
+		self.curve=[
+				[0,0,20],[0,-20,0],
+				[0,-100,0],[1,-100,0],[50,-100,0],
+				[40,-30,0],[40,0,20],
+			]
+
+		self.sc=[[1,1]]*bbl
+		self.twister=[[0,0,0]]*bbl
+
+		self.bb=[[0,0,1*i] for i in range(bbl)]
+		self.info="Testmodel Fenster"
+
+
+
+
+
 
 
 

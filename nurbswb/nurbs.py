@@ -412,7 +412,7 @@ class Nurbs(PartFeature):
 		''' calculate coord for cylinder '''
 
 		coor=np.array(coor)
-		print coor
+#		print coor
 		l,d=coor.shape
 		xs=coor[:,0]
 		ys=coor[:,1]
@@ -421,7 +421,7 @@ class Nurbs(PartFeature):
 		xs -= xs.min()
 		xs /= xs.max()
 		xs *= (2*3.1)
-		print xs
+#		print xs
 
 		ys -= ys.min()
 		ys /= ys.max()
@@ -431,12 +431,13 @@ class Nurbs(PartFeature):
 		zs -= zs.min()
 		zs /= zs.max()
 
-		print ys
+#		print ys
 		coor=[]
 		r=400
 		h=4000
 		for i in range(l):
 			r=400+400*zs[i]
+			r=400-60*zs[i]
 			coor.append([r*np.cos(xs[i])*np.cos(ys[i]),
 						r*np.sin(xs[i])*np.cos(ys[i]),
 						r*np.sin(ys[i])])
@@ -574,14 +575,14 @@ class Nurbs(PartFeature):
 
 		print ("dim nodes",nNodes_v,nNodes_u)
 		print "len coor " ,len(coor)
-		print ("knot_u",knot_u)
-		print ("knot_v",knot_v)
+#		print ("knot_u",knot_u)
+#		print ("knot_v",knot_v)
 		print ("poles u count", bs.NbUPoles)
 		print ("poles v count", bs.NbVPoles)
-		print bs.getUKnots()
-		print bs.getVKnots()
-		print bs.getUMultiplicities()
-		print bs.getVMultiplicities()
+#		print bs.getUKnots()
+#		print bs.getVKnots()
+#		print bs.getUMultiplicities()
+#		print bs.getVMultiplicities()
 
 		
 		t=bs.getPoles()
@@ -609,7 +610,7 @@ class Nurbs(PartFeature):
 			bs.buildFromPolesMultsKnots(poles2,[3] +[1]*(nNodes_v-2) +[3],[3]+[1]*(nNodes_u-2)+[3],
 				kv,
 				ku,
-				False,False,3,3,1.0*np.ones(nNodes_v*(nNodes_u-1)))
+				False,False,3,3,10.0*np.ones(nNodes_v*(nNodes_u-1)))
 
 
 		if obj.model=="NurbsSphere" or  obj.model=="NurbsCylinder" :
@@ -665,10 +666,13 @@ class Nurbs(PartFeature):
 
 		# create aux parts
 		if obj.solid: obj.Shape=self.create_solid(bs)
-		else: obj.Shape=bs.toShape()
+		else: 
+			if FreeCAD.ParamGet('User parameter:Plugins/nurbs').GetBool("createNurbsShape",True):
+				obj.Shape=bs.toShape()
 		print "XAA"
 
 		vis=False
+		vis=True
 		if obj.grid:
 			if obj.gridobj<>None: 
 				vis=obj.gridobj.ViewObject.Visibility
@@ -679,7 +683,7 @@ class Nurbs(PartFeature):
 			obj.gridobj.ViewObject.Visibility=vis
 		print "XA"
 
-		if obj.base:
+		if 0 and obj.base:
 			# create the socket box 
 			mx=np.array(coor).reshape(nNodes_v,nNodes_u,3)
 			print "create box"
@@ -740,6 +744,7 @@ class Nurbs(PartFeature):
 		#---
 
 		vis=True
+		vis=False
 		try: 
 			vis=obj.polgrid.ViewObject.Visibility
 			App.ActiveDocument.removeObject(obj.polgrid.Name)
@@ -1468,14 +1473,60 @@ def testRandomSphere():
 	na=17
 	b=15
 
+	pass1=15
+	pass2=10
+#	FreeCAD.ParamGet('User parameter:Plugins/nurbs').SetBool("createNurbsShape",True)
+
+	#for larger tests
+	#FreeCAD.ParamGet('User parameter:Plugins/nurbs').SetBool("createNurbsShape",False)
+
+
+#	FreeCAD.ParamGet('User parameter:Plugins/nurbs/randomSphere').SetInt("countLatitude",30)
+#	FreeCAD.ParamGet('User parameter:Plugins/nurbs/randomSphere').SetInt("countLongitude",120)
+#	FreeCAD.ParamGet('User parameter:Plugins/nurbs/randomSphere').SetInt("countRandom1",200)
+#	FreeCAD.ParamGet('User parameter:Plugins/nurbs/randomSphere').SetInt("countRandom2",100)
+
+
+
+	na=FreeCAD.ParamGet('User parameter:Plugins/nurbs/randomSphere').GetInt("countLatitude",100)
+	b=FreeCAD.ParamGet('User parameter:Plugins/nurbs/randomSphere').GetInt("countLongitude",100)
+	pass1=FreeCAD.ParamGet('User parameter:Plugins/nurbs/randomSphere').GetInt("countRandom1",100)
+	pass2=FreeCAD.ParamGet('User parameter:Plugins/nurbs/randomSphere').GetInt("countRandom2",100)
+	
+
+
+	if 0:
+		na=500
+		b=500
+		pass1=5000
+		pass2=5000
+
+	if 0:
+		na=1000
+		b=1500
+		pass1=500000
+		pass2=250000
+
+
+	if 0:
+		na=100
+		b=300
+		pass1=500
+		pass2=500
+
+
+
 	a=makeNurbs(b,na)
 	a.model="NurbsSphere"
 
 	a.solid=False
 	a.base=False
 	#a.grid=False
-	a.gridCount=20
 	
+	# a.gridCount=1000
+	
+	
+
 	ps=a.Proxy.getPoints()
 	print "points ps",len(ps)
 
@@ -1490,37 +1541,62 @@ def testRandomSphere():
 	ps=np.array(ps)
 	ps.resize(na,b,3)
 	
-	for k0 in range(15):
+	for k0 in range(pass1):
 		k=random.randint(2,na-3)
 		l=random.randint(1,b-1)
 		for j in range(1):
-			ps[k+j][l][2] += 100*random.random()
+			ps[k+j][l][2] += 1*random.random()
 		rj=random.randint(0,1)
-		print (k,rj)
+#		print (k,rj)
 		for j in range(rj):
-			ps[k+j][l][2] += 100*random.random()
+			ps[k+j][l][2] += 1*random.random()
+		if k0%1000==0:
+			print k0
+			Gui.updateGui()
 
-	for k0 in range(10):
+
+	for k0 in range(pass2):
 		k=random.randint(2,na-3)
 		l=random.randint(1,b-1)
 
 		for j in range(1):
-			ps[k+j][l][2] += 200*random.random()
+			ps[k+j][l][2] += 2*random.random()
 		rj=random.randint(0,1)
-		print (k,rj)
+#		print (k,rj)
 		for j in range(rj):
-			ps[k+j][l][2] += 200*random.random()
+			ps[k+j][l][2] += 2*random.random()
+		if k0%1000==0:
+			print k0
+			Gui.updateGui()
+
 
 
 	ps.resize(na*b,3)
+	print "A"
+	print time.time()
+	Gui.updateGui()
 
-
+	
 	a.Proxy.togrid(ps)
+	print "B"
+	print time.time()
+	Gui.updateGui()
+
 #	a.Proxy.elevateVline(2,0)
 
 	a.Proxy.updatePoles()
-	a.Proxy.showGriduv()
 	
+	print "c"
+	print time.time()
+	Gui.updateGui()
+	a.Proxy.showGriduv()
+	print "d"
+	print time.time()
+	Gui.updateGui()
+
+	FreeCAD.ActiveDocument.recompute()
+	FreeCAD.ActiveDocument.recompute()
+
 	FreeCAD.a=a
 	FreeCAD.ps=ps
 

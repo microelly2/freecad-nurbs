@@ -70,7 +70,6 @@ def Myarray2NurbsD3(arr,label="MyWall",degree=3):
 		sp.Shape=sh
 		sp.ViewObject.ControlPoints=vcp
 		sp.ViewObject.hide()
-
 	try:
 		fa=bs.uIso(0)
 		sha1 = Part.Wire(fa.toShape())
@@ -82,7 +81,12 @@ def Myarray2NurbsD3(arr,label="MyWall",degree=3):
 
 		sol=Part.Solid(Part.Shell([sha.Face1,shb.Face1,sh.Face1]))
 	except:
-		sol=None
+		try:
+			sha=Part.makeFilledFace(Part.__sortEdges__([App.ActiveDocument.Poles.Shape.Edge3, ]))
+			shb=Part.makeFilledFace(Part.__sortEdges__([App.ActiveDocument.Poles.Shape.Edge1, ]))
+			sol=Part.Solid(Part.Shell([sha.Face1,shb.Face1,sh.Face1]))
+		except:
+			sol=sh
 
 	return (sol,bs)
 

@@ -333,7 +333,9 @@ class needle:
 			import nurbswb.needle_models
 			reload (nurbswb.needle_models)
 			# a.Proxy.getExampleModel(nurbswb.needle_models.modelBanana)
-			a.Proxy.getExampleModel(nurbswb.needle_models.modelS)
+			model=FreeCAD.ParamGet('User parameter:Plugins/nurbs').GetString("NeedleModel","modelSimple")
+
+			eval("a.Proxy.getExampleModel(nurbswb.needle_models."+ model+")")
 		except: pass
 
 #		import Draft
@@ -463,7 +465,7 @@ class zebraTool:
 
 	def IsActive(self):
 		try:
-			App.ActiveDocument.Spreadsheet
+			App.ActiveDocument
 			return True
 		except:
 			return False
