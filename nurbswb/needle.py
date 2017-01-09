@@ -42,6 +42,15 @@ def Myarray2NurbsD3(arr,label="MyWall",degree=3):
 	if cylinder:
 		ku=[1.0/(NbUPoles-1)*i for i in range(NbUPoles)]
 		mu=[2]+[1]*(NbUPoles-2)+[2]
+
+		# bug 
+		ku=[1.0/(NbUPoles)*i for i in range(NbUPoles+1)]
+		mu=[1]*(NbUPoles+1)
+		print len(ps)
+		print sum(mu)
+
+
+
 		if degree == 1:
 			ku=[1.0/(NbUPoles-1)*i for i in range(NbUPoles)]
 			mu=[1]*(NbUPoles)

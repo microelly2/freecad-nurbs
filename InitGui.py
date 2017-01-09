@@ -479,6 +479,26 @@ class zebraTool:
 FreeCADGui.addCommand('ZebraTool',zebraTool())
 
 
+class DBE:
+
+	def Activated(self):
+		import nurbswb.DraftBSplineEditor
+		reload(nurbswb.DraftBSplineEditor)
+		FreeCAD.bse=nurbswb.DraftBSplineEditor.run()
+
+	def IsActive(self):
+		return len(FreeCADGui.Selection.getSelection())==1
+
+
+	def GetResources(self):
+		return {
+#			'Pixmap'  : 'Std_Tool1', 
+			'MenuText': 'DraftBSpline Editor', 
+		}
+
+FreeCADGui.addCommand('DBE',DBE())
+
+
 
 import nurbswb
 import nurbswb.configuration
@@ -528,7 +548,7 @@ class NurbsWorkbench(Workbench):
 				'Random Plane','Random Torus','Random Sphere','Random Cylinder',
 				'Create Needle',
 				'Edit Backbone','Edit Rib',
-				'Open SS','ZebraTool'
+				'Open SS','ZebraTool','DBE'
 			]
 		self.appendToolbar("Nurbs", cmds )
 		self.appendMenu("Nurbs", cmds)

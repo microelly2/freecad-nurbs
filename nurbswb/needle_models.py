@@ -475,6 +475,96 @@ class modelCarRoof(model):
 
 
 
+class modelS(model): # car 
+
+	def __init__(self,bbl=15):
+		model.__init__(self)
+		self.curve=[
+				[0,0,0],
+				[0,-199,0],[0,-200,0],[0,-200,1],[0,-200,40],
+				#breite kante
+#				[0,-70,40],	[0,-70,35],
+				
+				# mittelsteg
+#				[0,-10,35],
+#				[0,-10,40],
+				[0,-150,180],
+				[0,-140,180],
+				[0,0,180],
+				[0,140,180],
+				[0,150,180],
+#				[0,10,40],
+#				[0,10,35],
+				
+				# schmale kante
+#				[0,90,35],[0,90,40],
+				[0,200,40],[0,200,1],[0,200,0],[0,199,0]
+			]
+
+		self.sc=[[3,2]]*bbl
+
+		self.twister=[[0,90,0]]*bbl
+		self.twister[0]=[0,180,0]
+		self.twister[1]=[0,135,0]
+
+		self.twister[-1]=[0,0,0]
+		self.twister[-2]=[0,45,0]
+
+		self.bb=[[0,0,40*i] for i in range(bbl)]
+		self.bb[1]=[0,0,20]
+		self.bb[2]=[0,0,40]
+		self.bb[3]=[0,0,60]
+		self.bb[4]=[0,0,160]
+		self.bb[5]=[0,0,1200]
+		self.bb[6]=[0,0,2000]
+		self.bb[7]=[0,0,2200]
+		self.bb[8]=[0,0,3000]
+		
+		self.bb[14]=[0,0,4500]
+		self.bb[13]=[0,0,4480]
+		self.bb[12]=[0,0,4460]
+		self.bb[11]=[0,0,4300]
+		self.bb[10]=[0,0,4000]
+		self.bb[9]=[0,0,3200]
+
+		self.sc[0]=[3,3]
+		self.sc[1]=[3,3]
+		self.sc[5]=[3.2,2]
+		self.sc[6]=[4,2]
+		self.sc[7]=[4,4.8]
+		self.sc[14]=[3,3]
+		self.sc[13]=[3,3]
+		self.sc[10]=[4,2]
+		self.sc[9]=[4,4.8]
+		self.sc[8]=[4,4.8]
+
+		self.info="Testmodel Autodach"
+
+
+
+
+class modelS(model): # cyclic demo
+
+	def __init__(self,bbl=4):
+		model.__init__(self)
+		self.curve=[
+				[0,-300,0],
+				[150,-150,0],[200,100,0],
+				[10,0,0],[100,-100,0],
+				[0,-200,0],
+				[-100,-100,0],[-10,0,0],
+				[-200,100,0],[-150,-150,0],
+			]
+
+		self.bb=[[0,0,5*i] for i in range(bbl)]
+		self.sc=[[1,1]]*bbl
+		self.twister=[[0,0,0]]*bbl
+
+
+
+
+
+
 class modelCarWindow(model):
 
 	def __init__(self,bbl=4):
