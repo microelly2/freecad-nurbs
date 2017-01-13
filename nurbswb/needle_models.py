@@ -477,7 +477,8 @@ class modelCarRoof(model):
 
 class modelS(model): # car 
 
-	def __init__(self,bbl=15):
+	def __init__(self):
+		bbl=15
 		model.__init__(self)
 		self.curve=[
 				[0,0,0],
@@ -561,6 +562,29 @@ class modelS(model): # cyclic demo
 		self.twister=[[0,0,0]]*bbl
 
 
+
+class modelK(model): # coladose geknickt
+
+	def __init__(self):
+		bbl=15
+		model.__init__(self)
+		self.curve=[
+				[100,0,0],[70,00,70],[0,0,100],[-70,0,70],
+				[-100,0,0],[-70,0,-70],[0,0,-100],[70,0,-70],
+			]
+
+		self.bb=[[0,0,30*i] for i in range(bbl)]
+		self.sc=[[1,1]]*bbl
+		for i in range(4,7): 
+			self.sc[i]=[1,0.1]
+
+		self.twister=[[90,0,0]]*bbl
+		for i in range(4,7): 
+			self.sc[i]=[1,0.3]
+			self.twister[i]=[90,0,20*i]
+		for i in range(7,bbl): 
+			self.sc[i]=[0.7+1.0*i/bbl,0.3+1.9*(1.0*(bbl-i)/bbl)**1.2]
+			self.twister[i]=[90,5,20*8]
 
 
 

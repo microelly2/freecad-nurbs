@@ -11,12 +11,12 @@ import FreeCAD,FreeCADGui,Part,Draft
 
 
 # methods for the 3D object interface
-def getArr(obj):
+def getArr(obj,scale=1):
 	arr=[[p.x,p.y,p.z] for p in obj.Points]
-	return np.array(arr)
+	return np.array(arr)/scale
 
-def setArr(arr,obj):
-	obj.Points=[FreeCAD.Vector(tuple(p)) for p in arr]
+def setArr(arr,obj,scale=1):
+	obj.Points=[FreeCAD.Vector(tuple(p)) for p in arr*scale]
 	FreeCAD.ActiveDocument.recompute()
 
 
@@ -42,7 +42,7 @@ def tab2np(tab):
 def itemChanged(widget,*args):
 	arr=tab2np(widget.table)
 	widget.data=arr
-	widget.target.update(arr)
+	widget.target.update(arr,scale=widget.scale)
 	rowcol(widget)
 
 
@@ -80,8 +80,10 @@ def rowcol(w,*args):
 		print (i.row(),i.column())
 		pts.append(FreeCAD.Vector(w.data[i.row()]))
 
+	print "huhuhuhsfsdfdf u"
 	print pts
-	w.selection.update(pts)
+	print "selection changed ---------------",w.scale
+	w.selection.update(pts,scale=w.scale)
 	print "-----------------"
 
 def rowcol2(w,*args):
@@ -96,9 +98,10 @@ def rowcol2(w,*args):
 	for i in w.table.selectedItems():
 		print (i.row(),i.column())
 		pts.append(FreeCAD.Vector(w.data[i.row()]))
-
+	print "huhuhuhu"
 	print pts
-	w.selection.update(pts)
+	print "selection changed ---------------",w.scale
+	w.selection.update(pts,scale=w.scale)
 	print "-----------------"
 
 def posfromsel(w):
@@ -114,11 +117,11 @@ def posfromsel(w):
 
 def button(widget):
 	arr=tab2np(widget.table)
-	widget.setArr(arr,widget.obj)
-	widget.target.update(arr)
+	widget.setArr(arr,widget.obj,scale=widget.scale)
+	widget.target.update(arr,scale=widget.scale)
 
 def reload(widget):
-	arr=getArr(widget.obj)
+	arr=getArr(widget.obj,scale=widget.scale)
 	np2tab(arr,widget.table)
 
 def die(widget):
@@ -136,8 +139,8 @@ class MyTarget():
 		self.obj.ViewObject.PointColor=(0.,0.,1.)
 		self.obj.ViewObject.LineColor=(0.,0.,1.)
 
-	def update(self,coor=[0,0,0]):
-		pts=[FreeCAD.Vector(tuple(c)) for c in coor]
+	def update(self,coor=[0,0,0],scale=1):
+		pts=[FreeCAD.Vector(tuple(c)) for c in np.array(coor)*scale]
 		try: 
 			pol=Part.makePolygon(pts)
 			self.obj.Shape=pol
@@ -145,7 +148,8 @@ class MyTarget():
 			pol=[]
 			#vts=[Part.Vertex(pp) for pp in pts]
 			#comp=Part.makeCompound(vts)
-			self.obj.Shape=Part.Vertex(pts[0]) 
+			if len(pts)>0:
+				self.obj.Shape=Part.Vertex(pts[0]) 
 
 	def die(self):
 		try: FreeCAD.ActiveDocument.removeObject(self.obj.Name)
@@ -153,7 +157,7 @@ class MyTarget():
 
 
 
-def pointEditor(obj):
+def pointEditor(obj,scale=1):
 
 	w=QtGui.QWidget()
 	box = QtGui.QVBoxLayout()
@@ -168,14 +172,15 @@ def pointEditor(obj):
 	else: 
 		raise Exception("Unhandled type " + dt)
 
+	w.scale=scale
 	w.obj=obj
-	arr=getArr(obj)
-	w.data=arr
+	arr=getArr(obj,scale=w.scale)
+	w.data=arr/w.scale
 	rs=arr.shape[0]
 
 
 	w.target=MyTarget()
-	w.target.update(arr)
+	w.target.update(arr,scale)
 	
 	w.selection=MyTarget()
 	w.selection.obj.ViewObject.PointSize=15
@@ -221,10 +226,11 @@ def pointEditor(obj):
 	return w
 
 
-def run():
+def run(scale=1000):
+	print "RUN ---",scale
 	obj=FreeCADGui.Selection.getSelection()[0]
 	print obj
-	return pointEditor(obj)
+	return pointEditor(obj,scale=scale)
 
 
 def run2():

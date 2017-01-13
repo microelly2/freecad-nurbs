@@ -623,8 +623,9 @@ class Needle(PartFeature):
 
 	def getExampleModel(self,model):
 		print "getExampleModel"
+		print model
 		m=model()
-		# print model().curve
+		print model().curve
 		self.updateSS(m.curve,m.bb,m.sc,m.twister)
 
 	def Model(self):
