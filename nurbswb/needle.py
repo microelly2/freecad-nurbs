@@ -27,6 +27,9 @@ def Myarray2NurbsD3(arr,label="MyWall",degree=3):
 	#degree=3
 	#degree=1
 	
+	udegree=degree
+	vdegree=degree
+	
 	if degree == 1: cylinder = False
 	
 	ps=[[FreeCAD.Vector(pst[v,u,0],pst[v,u,1],pst[v,u,2]) for u in range(NbUPoles)] for v in range(NbVPoles)]
@@ -37,6 +40,12 @@ def Myarray2NurbsD3(arr,label="MyWall",degree=3):
 	if degree == 1:
 		kv=[1.0/(NbVPoles-1)*i for i in range(NbVPoles)]
 		mv=[2] +[1]*(NbVPoles-2) +[2]
+
+	if  NbVPoles == 2:
+		print "KKKK"
+		kv=[0,1]
+		mv=[2,2]
+		vdegree=1
 
 
 	if cylinder:
@@ -66,7 +75,7 @@ def Myarray2NurbsD3(arr,label="MyWall",degree=3):
 
 
 	bs=Part.BSplineSurface()
-	bs.buildFromPolesMultsKnots(ps, mv, mu, kv, ku, False,cylinder ,degree,degree)
+	bs.buildFromPolesMultsKnots(ps, mv, mu, kv, ku, False,cylinder ,vdegree,udegree)
 
 	sh=bs.toShape()
 

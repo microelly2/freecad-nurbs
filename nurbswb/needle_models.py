@@ -2,6 +2,8 @@
 
 import nurbswb.needle_models
 reload(nurbswb.needle_models)
+nurbswb.needle_models.listModels()
+
 
 #App.activeDocument().MyNeedle.Proxy.getExampleModel(nurbswb.needle_models.modelSpoon)
 myNeedle=App.activeDocument().MyNeedle
@@ -41,6 +43,7 @@ class modelA(model):
 
 	def __init__(self):
 		model.__init__(self)
+		self.info='demo soft edge'
 		self.curve=[
 				[0,0,0],
 				[0,29,0],[0,30,0],[0,31,0],
@@ -63,6 +66,7 @@ class modelB(model):
 
 	def __init__(self):
 		model.__init__(self)
+		self.info='demo slope ending face'
 		self.curve=[
 				[0,0,0],
 				[0,29,0],[0,30,0],[0,31,0],
@@ -85,6 +89,7 @@ class modelC(model):
 
 	def __init__(self):
 		model.__init__(self)
+		self.info='demo rotation along z-axis'
 		self.curve=[
 				[0,0,0],
 				[0,29,0],[0,30,0],[0,31,0],
@@ -107,6 +112,7 @@ class modelD(model):
 
 	def __init__(self):
 		model.__init__(self)
+		self.info='demo rotation along y-axis'
 		self.curve=[
 				[0,0,0],
 				[0,29,0],[0,30,0],[0,31,0],
@@ -130,6 +136,7 @@ class modelE(model):
 	''' rotate along x-axis '''
 	def __init__(self):
 		model.__init__(self)
+		self.info='demo rotation along x-axis'
 		self.curve=[
 				[0,0,0],
 				[0,29,0],[0,30,0],[0,31,0],
@@ -151,6 +158,7 @@ class modelEd0(model):
 	''' edge tests base '''
 	def __init__(self):
 		model.__init__(self)
+		self.info='edge tests base'
 		self.curve=[
 				[0,0,0],
 				[0,40,0],[80,40,0],[80,80,0],
@@ -172,6 +180,7 @@ class modelEd1(model):
 
 	def __init__(self):
 		model.__init__(self)
+		self.info='edge tests base'
 		self.curve=[
 				[0,0,0],[0,0,0],
 				[0,40,0],[80,40,0],[80,80,0],
@@ -194,6 +203,35 @@ class modelEd2(model):
 
 	def __init__(self):
 		model.__init__(self)
+		self.info='edge tests roundings'
+		self.curve=[
+				[0,0,0],[0,0,0],
+				[0,39,0],[0,40,0],[0,41,0],
+				[79,80,0],[80,80,0],[80,81,0],
+
+				[80,60,0],[80,80,0],[60,80,0],
+				[-60,80,0],[-80,80,0],[-80,60,0],
+
+				[-80,-79,0],[-80,-80,0],[-79,-80,0],
+				[79,-80,0],[80,-80,0],[80,-79,0],
+
+				[80,-60,0],[80,-80,0],[60,-80,0],
+				[0,-40,0],[0,-40,0],[0,-40,0],
+			]
+
+		self.bb=[[0,0,0],[0,0,100],[0,0,200],[0,0,300],[0,0,400]]
+		self.twister=[[0,0,0]]*5
+		self.sc=[[1,0],[1,0],[1,0],[1.,0],[1,0]]
+
+
+
+
+class modelEd2a(model):
+	''' edge tests roundings '''
+
+	def __init__(self):
+		model.__init__(self)
+		self.info='edge tests roundings 2'
 		self.curve=[
 				[0,0,0],[0,0,0],
 				[0,39,0],[0,40,0],[0,40,1],
@@ -208,7 +246,8 @@ class modelEd2(model):
 
 		self.bb=[[0,0,0],[0,0,100],[0,0,200],[0,0,300],[0,0,400]]
 		self.twister=[[0,0,0]]*5
-		self.sc=[[1,0],[1,0],[3,0],[0.3,0],[1,0]]
+		self.sc=[[1,0],[1,0],[1.2,0],[1,0],[0.2,0]]
+
 
 
 
@@ -217,6 +256,7 @@ class modelEd3(model):
 
 	def __init__(self):
 		model.__init__(self)
+		self.info='edge tests backbone'
 		self.curve=[
 				[0,0,0],[0,0,0],
 				[0,39,0],[0,40,0],[0,40,1],
@@ -239,6 +279,7 @@ class modelEd4(model):
 
 	def __init__(self):
 		model.__init__(self)
+		self.info='edge tests backbone roundings'
 		self.curve=[
 				[0,0,0],[0,0,0],
 				[0,39,0],[0,40,0],[0,40,1],
@@ -274,6 +315,7 @@ class modelSpoon(model):
 
 	def __init__(self):
 		model.__init__(self)
+		self.info='model of a half spoon'
 		self.curve=[
 				[0,0,0], 
 				[0,50,10],
@@ -288,6 +330,7 @@ class modelSpoon(model):
 		self.bb=[[0,0,0],[150,0,-20],[250,0,-10],[297,0,20],[300,0,20]]
 		self.twister=[[0,0,0],[0,45,0],[0,70,0],[0,90,0],[0,90,0]]
 		self.sc=[[1,1],[2.0,1.7],[1.3,1.],[0.8,0.02],[0.01,0.001]]
+
 
 
 
@@ -322,6 +365,7 @@ class modelXY(model):
 
 	def __init__(self):
 		model.__init__(self)
+		self.info='scaling and twisting '
 		self.curve=[
 				[0,0,0], 
 				[0,399,0],[0,400,0],
@@ -340,6 +384,7 @@ class modelX(model):
 
 	def __init__(self):
 		model.__init__(self)
+		self.info='scaling and twisting 2'
 		self.curve=[
 				[0,0,0], 
 				[0,299,-30],[0,300,-30],
@@ -362,6 +407,7 @@ class modelS1(model):
 
 	def __init__(self,bbl=12):
 		model.__init__(self)
+		self.info='rotation in 3 direction'
 		self.curve=[
 				[200,0,0],
 				[200,600,0],
@@ -380,7 +426,6 @@ class modelS1(model):
 		self.bb=[[0,0,300*i] for i in range(bbl)]
 		self.bb[10][1]=300 # move in y-direction
 		self.bb[8][0]=300 # move in x-direction
-		self.info="Testmodel"
 
 
 class modelSimple(model):
@@ -471,7 +516,7 @@ class modelCarRoof(model):
 		self.bb[5]=[0,0,160]
 		self.bb[6]=[0,0,280]
 		
-		self.info="Testmodel Autodach"
+		self.info="roof of a car"
 
 
 
@@ -563,11 +608,16 @@ class modelS(model): # cyclic demo
 
 
 
-class modelK(model): # coladose geknickt
+class modelColadose(model):
 
 	def __init__(self):
+		
+		
+		
 		bbl=15
 		model.__init__(self)
+		self.info="coladose geknickt"
+		
 		self.curve=[
 				[100,0,0],[70,00,70],[0,0,100],[-70,0,70],
 				[-100,0,0],[-70,0,-70],[0,0,-100],[70,0,-70],
@@ -587,6 +637,31 @@ class modelK(model): # coladose geknickt
 			self.twister[i]=[90,5,20*8]
 
 
+#---------------------------------------------
+
+
+import numpy as np
+
+
+class modelK(model): 
+
+	def __init__(self):
+		model.__init__(self)
+		self.info="hyperboloid 90 grad gedreht"
+		
+		# naeherung rippe als bspline ueber ein regelmaessiges  24-eck 
+		self.curve=[[100*np.sin(np.pi/24*i),100*np.cos(np.pi/24*i),0] for i in range(48)]
+		
+		# hoehe 500
+		self.bb=[[0,0,0],[0,0,500]]
+		
+		# keine skalierung
+		self.sc=[[1,1],[1,1]]
+		
+		#anfangsdrehung 90
+		self.twister=[[0,0,0],[0,0,90]]
+
+#-------------------------------------------------
 
 
 class modelCarWindow(model):
@@ -603,7 +678,7 @@ class modelCarWindow(model):
 		self.twister=[[0,0,0]]*bbl
 
 		self.bb=[[0,0,1*i] for i in range(bbl)]
-		self.info="Testmodel Fenster"
+		self.info="car window"
 
 
 
@@ -616,6 +691,7 @@ class modelBanana(model):
 
 	def __init__(self):
 		model.__init__(self)
+		self.info='art banana'
 
 		# 3 edges model
 		# self.curve=[[0,0,0], [100,100,0],[-100,100,0],[-30,0,0]]
@@ -670,24 +746,33 @@ class modelPicoBanana(modelBanana):
 #App.activeDocument().MyNeedle.Shape.BoundBox.DiagonalLength
 
 
-'''
-def listModels():
+
+def listModels(silent=False):
 	import nurbswb.needle_models
 	reload(nurbswb.needle_models)
+	l=[]
 	for m in dir(nurbswb.needle_models):
 		if m.startswith('model'):
 			mm=eval("nurbswb.needle_models."+m+"()")
-			print (m,mm)
-			print (mm.info)
+			if not silent:
+				print (m,mm.info)
+			l.append([m,mm.info])
+	return l
 
-listModels()
-'''
+
+
 
 if __name__=='__main__':
+
+
+	listModels()
+
 	# testcase
 
 	class modelY(modelBanana):
 		pass
 
 	App.activeDocument().MyNeedle.Proxy.lock=False
-	App.activeDocument().MyNeedle.Proxy.getExampleModel(modelY)
+	App.activeDocument().MyNeedle.Proxy.getExampleModel(modelK)
+
+
