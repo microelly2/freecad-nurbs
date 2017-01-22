@@ -608,6 +608,36 @@ class modelS(model): # cyclic demo
 
 
 
+
+
+class modelS(model): # Ski
+
+	def __init__(self,bbl=4):
+		model.__init__(self)
+		self.curve=[
+				[0,0,0],
+				[0,99,0],[0,100,0],[0,100,1],[0,100,19],[0,100,20],[0,99,20],
+				[0,-99,20],[0,-100,20],[0,-100,19],
+				[0,-100,1],[0,-100,0],[0,-99,0]
+				
+
+			]
+
+		self.bb=[[-600,0,0],[-500,0,0],[-200,0,80],[0,0,70],[200,0,80],[500,0,0],[600,0,0],[640,0,20],[660,0,80],[660,0,90]]
+		
+		
+		self.sc=[[0.5,1]]*len(self.bb)
+		self.sc[-2]=[0.15,0.7]
+		self.sc[-1]=[0.01,0.1]
+		self.sc[0]=[0.4,0.8]
+
+		self.twister=[[0,0,0]]*len(self.bb)
+
+
+
+
+
+
 class modelColadose(model):
 
 	def __init__(self):
@@ -758,6 +788,10 @@ def listModels(silent=False):
 				print (m,mm.info)
 			l.append([m,mm.info])
 	return l
+
+
+
+
 
 
 

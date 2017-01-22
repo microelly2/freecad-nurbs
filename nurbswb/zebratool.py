@@ -190,19 +190,19 @@ class zebra():
 
 
 
+def run():
+	dw=QtGui.QDockWidget()
+	dw.setWindowTitle("Zebra Tool")
+	centralWidget = QtGui.QWidget()
+	dw.setWidget(centralWidget)        
+	layout = QtGui.QVBoxLayout()
+	centralWidget.setLayout(layout)
+	dw.setMinimumSize(250, 305)
+	z=zebra()
+	layout.addWidget(z.zebraWidget)
 
-dw=QtGui.QDockWidget()
-dw.setWindowTitle("Zebra Tool")
-centralWidget = QtGui.QWidget()
-dw.setWidget(centralWidget)        
-layout = QtGui.QVBoxLayout()
-centralWidget.setLayout(layout)
-dw.setMinimumSize(250, 305)
-z=zebra()
-layout.addWidget(z.zebraWidget)
-
-FreeCADWindow = FreeCADGui.getMainWindow() 
-FreeCADWindow.addDockWidget(QtCore.Qt.LeftDockWidgetArea,dw) 
+	FreeCADWindow = FreeCADGui.getMainWindow() 
+	FreeCADWindow.addDockWidget(QtCore.Qt.LeftDockWidgetArea,dw) 
 
 
 

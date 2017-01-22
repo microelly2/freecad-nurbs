@@ -513,6 +513,45 @@ class Needle(PartFeature):
 		twister=ssa2npa(ss,13,3,15,3+bl-1,default=0.0)
 
 
+#----------------------------
+		#'''
+		# backbone machen
+		bbc=Part.BSplineCurve()
+		bbc.buildFromPoles(bb)
+
+		pa=bbc.LastParameter
+		ps=bbc.FirstParameter
+
+		print "-----------------------------------------------"
+		for n in range(len(bb)):
+			v=ps +(pa-ps)*n/len(bb-1)
+			print ("!!",n,v)
+			print bbc.tangent(v)
+			t=bbc.tangent(v)[0]
+			p=bbc.value(v)
+			
+			print t
+			zarc=np.arctan2(t.y,t.x)
+			zarc *=180.0/np.pi
+			zarc=0
+
+			harc=np.arcsin(t.z)
+			harc *=180.0/np.pi
+
+			print twister[n]
+			# twister[n]=[0,0,harc]
+			
+			print twister[n]
+		print "---------------------------------------ccccccccc--------"
+		print len(twister)
+		print twister
+		print "huhu"
+		#'''
+
+
+#-----------------------------
+
+
 
 
 		poles= scale(curve,scaler)

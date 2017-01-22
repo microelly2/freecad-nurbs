@@ -327,6 +327,28 @@ class needleChangeModel:
 FreeCADGui.addCommand('needle Change Model',needleChangeModel())
 
 
+
+class simpleHood:
+
+	def Activated(self):
+		import nurbswb.simplehood;
+		reload(nurbswb.simplehood);
+		nurbswb.simplehood.run()
+
+	def IsActive(self):
+		if FreeCADGui.ActiveDocument:
+			return True
+		else:
+			return False
+
+	def GetResources(self):
+		return {
+#			'Pixmap'  : 'Std_Tool1', 
+			'MenuText': 'Simple Hood', 
+		}
+
+FreeCADGui.addCommand('simple Hood',simpleHood())
+
 class needle:
 
 	def Activated(self):
@@ -483,6 +505,7 @@ class zebraTool:
 	def Activated(self):
 		import nurbswb.zebratool
 		reload(nurbswb.zebratool)
+		nurbswb.zebratool.run()
 		# FreeCAD.ss=nurbswb.wheel_event.undock("Spreadsheet")
 
 	def IsActive(self):
@@ -570,7 +593,7 @@ class NurbsWorkbench(Workbench):
 				'Random Plane','Random Torus','Random Sphere','Random Cylinder',
 				'Create Needle','needle Change Model',
 				'Edit Backbone','Edit Rib',
-				'Open SS','ZebraTool','DBE'
+				'Open SS','ZebraTool','DBE','simple Hood'
 			]
 		self.appendToolbar("Nurbs", cmds )
 		self.appendMenu("Nurbs", cmds)
