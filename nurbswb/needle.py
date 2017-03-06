@@ -524,7 +524,7 @@ class Needle(PartFeature):
 
 		print "-----------------------------------------------"
 		for n in range(len(bb)):
-			v=ps +(pa-ps)*n/len(bb-1)
+			v=ps +(pa-ps)*n/(len(bb)-1)
 			print ("!!",n,v)
 			print bbc.tangent(v)
 			t=bbc.tangent(v)[0]
