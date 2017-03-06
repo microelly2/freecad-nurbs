@@ -417,6 +417,56 @@ class needle:
 
 FreeCADGui.addCommand('Create Needle', needle())
 
+#-------------------------------------
+
+
+
+class shoe:
+
+	def Activated(self):
+
+		import nurbswb;import nurbswb.shoe as shoe;reload( nurbswb.shoe);shoe.run()
+
+
+	def IsActive(self):
+		return True
+
+	def GetResources(self):
+		return {
+#			'Pixmap'  : 'Std_Tool1', 
+			'MenuText': 'Shoe', 
+		}
+
+FreeCADGui.addCommand('Create Shoe', shoe())
+
+class scancut:
+
+	def Activated(self):
+
+		import nurbswb;import nurbswb.scancut as scut;reload( nurbswb.scancut);scut.run()
+
+
+	def IsActive(self):
+		return True
+
+	def GetResources(self):
+		return {
+#			'Pixmap'  : 'Std_Tool1', 
+			'MenuText': 'Cut Scan', 
+		}
+
+FreeCADGui.addCommand('Cut Scan', scancut())
+
+
+
+
+
+
+
+
+
+
+
 
 #----------------
 
@@ -593,7 +643,8 @@ class NurbsWorkbench(Workbench):
 				'Random Plane','Random Torus','Random Sphere','Random Cylinder',
 				'Create Needle','needle Change Model',
 				'Edit Backbone','Edit Rib',
-				'Open SS','ZebraTool','DBE','simple Hood'
+				'Open SS','ZebraTool','DBE','simple Hood',
+				'Create Shoe','Cut Scan'
 			]
 		self.appendToolbar("Nurbs", cmds )
 		self.appendMenu("Nurbs", cmds)
