@@ -15,7 +15,9 @@ import scipy as sp
 from scipy import signal
 
 
-def run():
+def run1(z0=0):
+	print ("run1 ",z0)
+
 	color=(random.random(),random.random(),random.random())
 
 	pl=FreeCAD.ActiveDocument.Plane.Placement
@@ -27,17 +29,23 @@ def run():
 
 
 	pts2=[plinv.multVec(p) for p in pts]
+	#pts2=[FreeCAD.Vector(round(p.x),round(p.y),round(p.z)) for p in pts2]
 
 	zmax=0.5
 	zmin=-zmax
 
-	pts2a=[FreeCAD.Vector(p.x,p.y,0) for p in pts2 if zmin<=p.z and p.z<=zmax]
+	#pts2a=[FreeCAD.Vector(p.x,p.y,0) for p in pts2 if zmin<=p.z and p.z<=zmax]
+
+	pts2a=[FreeCAD.Vector(round(p.x),round(p.y),round(p.z)) for p in pts2 if round(p.z)==z0]
+	
+	if len(pts2a)==0: return
 
 	p2=Points.Points(pts2a)
-	Points.show(p2)
-	FreeCAD.ActiveDocument.ActiveObject.ViewObject.ShapeColor=color
-	FreeCAD.ActiveDocument.ActiveObject.ViewObject.PointSize=5
-	FreeCAD.ActiveDocument.ActiveObject.Label="Points Map xy " +plst
+	if 0:
+		Points.show(p2)
+		FreeCAD.ActiveDocument.ActiveObject.ViewObject.ShapeColor=color
+		FreeCAD.ActiveDocument.ActiveObject.ViewObject.PointSize=5
+		FreeCAD.ActiveDocument.ActiveObject.Label="Points Map xy " +plst
 
 
 
@@ -53,19 +61,23 @@ def run():
 	kaps=aps.keys()
 	kaps.sort()
 	ptss=[aps[k] for k in kaps]
+	print ("lens ",len(ptss),len(pts2a))
 
 	l4=ptss
 
 	# window size for smoothing
-	f=31
+	f=5
 	path=np.array([l4[0]] * f + l4 + [l4[-1]]*f)
 	tt=path.swapaxes(0,1)
 	y1 = sp.signal.medfilt(tt[1],f)
-	l5=[FreeCAD.Vector(p) for p in np.array([tt[0],y1,tt[2]]).swapaxes(0,1)] 
+	y0 = sp.signal.medfilt(tt[0],f)
+	#l5=[FreeCAD.Vector(p) for p in np.array([tt[0],y1,tt[2]]).swapaxes(0,1)] 
+	l5=[FreeCAD.Vector(p) for p in np.array([y0,y1,tt[2]]).swapaxes(0,1)] 
 
-	Draft.makeWire(l5)
-	FreeCAD.ActiveDocument.ActiveObject.ViewObject.LineColor=color
-	FreeCAD.ActiveDocument.ActiveObject.Label="Median filter " + str(f)  + " " + plst
+	if 0:
+		Draft.makeWire(l5)
+		FreeCAD.ActiveDocument.ActiveObject.ViewObject.LineColor=color
+		FreeCAD.ActiveDocument.ActiveObject.Label="Median filter " + str(f)  + " " + plst
 
 
 	# place the wire back into the shoe
@@ -84,6 +96,9 @@ def run():
 
 
 
+def run():
+	for z0 in range(-15,10):
+		run1(10*z0)
 
 
 if __name__ == '__main__':
