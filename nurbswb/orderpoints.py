@@ -1,3 +1,12 @@
+# -*- coding: utf-8 -*-
+#-------------------------------------------------
+#-- radial ordering of a xy-planar point cloudc
+#-- microelly 2017 v 0.1
+#--
+#-- GNU Lesser General Public License (LGPL)
+#-------------------------------------------------
+
+
 import random
 import Draft,Part
 
@@ -9,11 +18,33 @@ import scipy as sp
 from scipy.signal import argrelextrema
 import numpy as np
 import matplotlib.pyplot as plt
+from PySide import QtGui
+import sys,traceback,random
+
+
+def showdialog(title="Fehler",text="Schau in den ReportView fuer mehr Details",detail=None):
+	msg = QtGui.QMessageBox()
+	msg.setIcon(QtGui.QMessageBox.Warning)
+	msg.setText(text)
+	msg.setWindowTitle(title)
+	if detail<>None:   msg.setDetailedText(detail)
+	msg.exec_()
+
+
+def sayexc(title='Fehler',mess=''):
+	exc_type, exc_value, exc_traceback = sys.exc_info()
+	ttt=repr(traceback.format_exception(exc_type, exc_value,exc_traceback))
+	lls=eval(ttt)
+	l=len(lls)
+	l2=lls[(l-3):]
+	FreeCAD.Console.PrintError(mess + "\n" +"-->  ".join(l2))
+	showdialog(title,text=mess,detail="--> ".join(l2))
+
 
 
 ''' punktmenge in pfad ueberfuehren '''
 
-def orderdata(obj,inner=False,plotit=False,medianfil=0):
+def orderdata(obj,inner=False,plotit=False,medianfil=0,cf=True):
 	pts=None
 	try:
 		pts=obj.Points.Points
@@ -36,8 +67,6 @@ def orderdata(obj,inner=False,plotit=False,medianfil=0):
 	pl2.Base=vm
 
 	# beschraenkende kreise
-	cf=FreeCAD.ParamGet('User parameter:Plugins/nurbs/orderpoints').GetBool("DrawCircles",True)
-	FreeCAD.ParamGet('User parameter:Plugins/nurbs/orderpoints').SetBool("DrawCircles",cf)
 	if cf:
 		if medianfil>0:
 				circle = Draft.makeCircle(radius=lea,placement=pl2,face=False)
@@ -71,46 +100,22 @@ def orderdata(obj,inner=False,plotit=False,medianfil=0):
 
 	kaps=aps.keys()
 	kaps.sort()
+
 	ptss=[aps[k] for k in kaps]
-	radss=[rads[k] for k in kaps]
-	print ("lens ",len(ptss),len(pts))
-
-
-	'''
-	l4=radss
-
-
-	# window size for smoothing
-	f=1
-	path=np.concatenate([[l4[0]] * f,l4,[l4[-1]]*f])
-	#tt=path.swapaxes(0,1)
-	y1 = sp.signal.medfilt(path,f)
-	y1=y1[f:-f]
-	len(l4)
-	len(kaps)
-	len(y1)
-	'''
-
-	radss=np.array(radss)
-
-
-
+	radss=np.array([rads[k] for k in kaps])
 
 	if medianfil>0:
 		l4=np.array(radss)
 		# window size for smoothing
 		f=medianfil
 		path=np.concatenate([[l4[0]] * f,l4,[l4[-1]]*f])
-		#tt=path.swapaxes(0,1)
 		y2 = sp.signal.medfilt(path,f)
-		pf=y2[f:-f]
+		mmaa=y2[f:-f]
 
 		if plotit:
 			plt.plot(kaps,radss, 'bx')
 			plt.plot(kaps,pf, 'r-')
 			plt.show()
-
-		mmaa=pf
 
 	else:
 
@@ -138,7 +143,6 @@ def orderdata(obj,inner=False,plotit=False,medianfil=0):
 
 		if plotit:
 			plt.plot(kaps,radss, 'r-')
-			#plt.plot(kaps,y1, 'g-')
 			plt.plot(zaps,mm, 'bo-')
 			plt.plot(kaps,mmaa, 'b-')
 			plt.show()
@@ -156,25 +160,47 @@ def orderdata(obj,inner=False,plotit=False,medianfil=0):
 
 
 def run():
-	mf=FreeCAD.ParamGet('User parameter:Plugins/nurbs/orderpoints').GetInt("MedianFilterWindow",21)
-	FreeCAD.ParamGet('User parameter:Plugins/nurbs/orderpoints').SetInt("MedianFilterWindow",mf)
-	print mf
-	dp=FreeCAD.ParamGet('User parameter:Plugins/nurbs/orderpoints').GetBool("ShowDataPlots",True)
-	FreeCAD.ParamGet('User parameter:Plugins/nurbs/orderpoints').SetBool("ShowDataPlots",dp)
 
-	inner=FreeCAD.ParamGet('User parameter:Plugins/nurbs/orderpoints').GetBool("inner",True)
-	FreeCAD.ParamGet('User parameter:Plugins/nurbs/orderpoints').SetBool("inner",inner)
+	#default parameters
+	p={
+		"MedianFilterWindow":[21,'Integer'],
+		"ShowDataPlots":[False,'Boolean'],
+		"DrawCircles":[True,'Boolean'],
+		"inner":[False,'Boolean'],
+		"outer":[False,'Boolean'],
+		"median":[False,'Boolean'],
+		"debug":[False,'Boolean'],
+	}
 
-	outer=FreeCAD.ParamGet('User parameter:Plugins/nurbs/orderpoints').GetBool("outer",True)
-	FreeCAD.ParamGet('User parameter:Plugins/nurbs/orderpoints').SetBool("outer",outer)
+	# parameter -----------------
+	t=FreeCAD.ParamGet('User parameter:Plugins/nurbs/'+'orderpoints')
+	l=t.GetContents()
+	if l==None: l=[]
+	for k in l: p[k[1]]=k[2]
+	for k in p:
+		if p[k].__class__.__name__=='list':
+			typ=p[k][1]
+			if typ=='Integer':t.SetInt(k,p[k][0]);
+			if typ=='Boolean':t.SetBool(k,p[k][0])
+			if typ=='String':t.SetString(k,p[k][0])
+			if typ=='Float':t.SetFloat(k,p[k][0])
+			p[k]=p[k][0]
+	#--------------------
 
-	median=FreeCAD.ParamGet('User parameter:Plugins/nurbs/orderpoints').GetBool("median",True)
-	FreeCAD.ParamGet('User parameter:Plugins/nurbs/orderpoints').SetBool("median",median)
+	mf=p['MedianFilterWindow']
+	dp=p["ShowDataPlots"]
+	inner=p['inner']
+	outer=p['outer']
+	median=p["median"]
+	debug=p['debug']
+	cf=p['DrawCircles']
 
+	if len( Gui.Selection.getSelection())==0:
+		showdialog('Oops','nothing selected - nothing to do for me','Plese select a point cloud')
 
 	for obj in Gui.Selection.getSelection():
 		if median:
-			orderdata(obj,medianfil=mf,plotit=dp)
+			orderdata(obj,medianfil=mf,plotit=dp,cf=cf)
 			App.ActiveDocument.ActiveObject.Label="Median " + str(mf) + " Approx for " + obj.Label
 			App.ActiveDocument.ActiveObject.ViewObject.LineColor=(0.,0.,1.)
 			Gui.updateGui()

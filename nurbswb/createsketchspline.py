@@ -1,19 +1,44 @@
+# -*- coding: utf-8 -*-
+#-------------------------------------------------
+#-- convert a draft bspline to a sketcher bspline
+#--
+#-- microelly 2017 v 0.1
+#--
+#-- GNU Lesser General Public License (LGPL)
+#-------------------------------------------------
+
 import random
-import Draft,Part
-
-import FreeCAD,FreeCADGui
-App=FreeCAD
-Gui=FreeCADGui
-
-
 from scipy.signal import argrelextrema
 import numpy as np
 import matplotlib.pyplot as plt
 
+import Draft,Part,Sketcher
+import FreeCAD,FreeCADGui
+App=FreeCAD
+Gui=FreeCADGui
+
+from PySide import QtGui
+import sys,traceback,random
 
 
+def showdialog(title="Fehler",text="Schau in den ReportView fuer mehr Details",detail=None):
+	msg = QtGui.QMessageBox()
+	msg.setIcon(QtGui.QMessageBox.Warning)
+	msg.setText(text)
+	msg.setWindowTitle(title)
+	if detail<>None:   msg.setDetailedText(detail)
+	msg.exec_()
 
-import Sketcher 
+
+def sayexc(title='Fehler',mess=''):
+	exc_type, exc_value, exc_traceback = sys.exc_info()
+	ttt=repr(traceback.format_exception(exc_type, exc_value,exc_traceback))
+	lls=eval(ttt)
+	l=len(lls)
+	l2=lls[(l-3):]
+	FreeCAD.Console.PrintError(mess + "\n" +"-->  ".join(l2))
+	showdialog(title,text=mess,detail="--> ".join(l2))
+
 
 def createSketchSpline(pts=None,label="BSpline Sketch"):
 
@@ -22,15 +47,11 @@ def createSketchSpline(pts=None,label="BSpline Sketch"):
 
 	sk=App.activeDocument().addObject('Sketcher::SketchObject','Sketch')
 	sk.Label=label
-
-#	sk.Support = (App.activeDocument().XY_Plane, [''])
-
 	sk.MapMode = 'FlatFace'
 
 	App.activeDocument().recompute()
 
-	if pts==None:
-		pass
+	if pts==None: # some test data
 		pts=[FreeCAD.Vector(a) for a in [(10,20,30), (30,60,30), (20,50,40),(50,80,90)]]
 
 	for i,p in enumerate(pts):
@@ -42,14 +63,16 @@ def createSketchSpline(pts=None,label="BSpline Sketch"):
 
 	l=[App.Vector(int(round(p.x)),int(round(p.y))) for p in pts]
 
-	# sk.addGeometry(Part.BSplineCurve(l,False),False)
-	sk.addGeometry(Part.BSplineCurve(l,True),False)
+	if 0:
+		# open spline
+		sk.addGeometry(Part.BSplineCurve(l,False),False)
+	else:
+		# periodic spline
+		sk.addGeometry(Part.BSplineCurve(l,True),False)
 
 	conList = []
-
 	for i,p in enumerate(pts):
 		conList.append(Sketcher.Constraint('InternalAlignment:Sketcher::BSplineControlPoint',i,3,k,i))
-
 	sk.addConstraint(conList)
 
 	App.activeDocument().recompute()
@@ -57,14 +80,18 @@ def createSketchSpline(pts=None,label="BSpline Sketch"):
  	sk.Placement = App.Placement(App.Vector(0,0,p.z),App.Rotation(App.Vector(1,0,0),0))
 
 	App.activeDocument().recompute()
-	print "ZZZZZZZZZZZZZZZZZZZ",p.z
-
 	return sk
 
 
 def run():
+	if len( Gui.Selection.getSelection())==0:
+		showdialog('Oops','nothing selected - nothing to do for me','Plese select a Draft Bspline or Draft Wire')
+
 	for obj in Gui.Selection.getSelection():
-		bc=obj.Shape.Edge1.Curve
-		pts=bc.getPoles()
-		l=obj.Label
-		createSketchSpline(pts,"Sketch for " + str(l))
+		try:
+			bc=obj.Shape.Edge1.Curve
+			pts=bc.getPoles()
+			l=obj.Label
+			createSketchSpline(pts,"Sketch for " + str(l))
+		except:
+			sayexc(title='Error',mess='somethinq wrong with ' + obj.Label)
