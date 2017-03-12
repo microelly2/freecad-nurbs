@@ -25,15 +25,13 @@ def run():
 	count=1000
 	ri=100
 	rm=400
-	kaps=np.random.random(count)*2*np.pi
-	mmaa=np.random.random(count)*ri*np.cos(kaps*5)*np.cos(kaps*1.3)
-	mmaa += rm
 
-	y= np.cos(kaps)
-	x=np.sin(kaps)
-	x *= mmaa
-	y *= mmaa
-	z  =  x*0
+	kaps=np.random.random(count)*2*np.pi
+	mmaa=np.random.random(count)*ri*np.cos(kaps*5)*np.cos(kaps*1.3) + rm
+
+	y= np.cos(kaps) * mmaa
+	x=np.sin(kaps) * mmaa
+	z=np.zeros(count)
 
 	pps=np.array([x,y,z]).swapaxes(0,1)
 	goods=[FreeCAD.Vector(tuple(p)) for p in pps]
