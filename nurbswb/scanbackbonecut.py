@@ -1,4 +1,4 @@
-# -*- coding: utf-8 -*-
+#-*- coding: utf-8 -*-
 #-------------------------------------------------
 #-- scan cut --- shoe last - get cut wires from a scan
 #--
@@ -17,39 +17,40 @@ from scipy import signal
 from PySide import QtGui
 import sys,traceback,random
 
-
-def showdialog(title="Fehler",text="Schau in den ReportView fuer mehr Details",detail=None):
-	msg = QtGui.QMessageBox()
-	msg.setIcon(QtGui.QMessageBox.Warning)
-	msg.setText(text)
-	msg.setWindowTitle(title)
-	if detail<>None:   msg.setDetailedText(detail)
-	msg.exec_()
+import Points
 
 
-def sayexc(title='Fehler',mess=''):
-	exc_type, exc_value, exc_traceback = sys.exc_info()
-	ttt=repr(traceback.format_exception(exc_type, exc_value,exc_traceback))
-	lls=eval(ttt)
-	l=len(lls)
-	l2=lls[(l-3):]
-	FreeCAD.Console.PrintError(mess + "\n" +"-->  ".join(l2))
-	showdialog(title,text=mess,detail="--> ".join(l2))
+# Points.export(__objs__,u"/home/thomas/Dokumente/freecad_buch/b235_shoe/shoe_last_scanned.asc")
+
+Points.insert(u"/home/thomas/Dokumente/freecad_buch/b235_shoe/shoe_last_scanned.asc","Shoe")
 
 
-def run1(z0,mesh,plane,showpointsmap=True,showmedianfilter=True):
-	print ("run1 ",z0)
+FreeCADGui.runCommand("Draft_ToggleGrid")
+
+
+import FreeCAD
+import FreeCADGui
+import Points,Part,Draft
+import numpy as np
+import random
+import scipy as sp
+from scipy import signal
+import Points
+import random
+
+def displayCut(pl,pts,showpoints=True,showwire=False,showxypoints=False,showxywire=False):
+	''' display approx cut of a plane with a point cloud '''
+	z0=0
 
 	color=(random.random(),random.random(),random.random())
 
-	
-	pl=plane.Placement
+	#pl=FreeCAD.ActiveDocument.Plane.Placement
 	plst=" Base:" + str(pl.Base) +" Rot Euler:" + str(pl.Rotation.toEuler())
+	plst="FreeCAD.Placement(FreeCAD." + str(pl.Base) +", FreeCAD.Rotation" + str(pl.Rotation.toEuler())+") "
+
 	plinv=pl.inverse()
 
-	#stl=FreeCAD.ActiveDocument.LastDIA.Mesh
-	stl=mesh
-	pts=stl.Topology[0]
+
 
 
 	pts2=[plinv.multVec(p) for p in pts]
@@ -65,11 +66,12 @@ def run1(z0,mesh,plane,showpointsmap=True,showmedianfilter=True):
 	if len(pts2a)==0: return
 
 	p2=Points.Points(pts2a)
-	if showpointsmap:
+	if showxypoints:
 		Points.show(p2)
 		FreeCAD.ActiveDocument.ActiveObject.ViewObject.ShapeColor=color
 		FreeCAD.ActiveDocument.ActiveObject.ViewObject.PointSize=5
 		FreeCAD.ActiveDocument.ActiveObject.Label="Points Map xy " +plst
+		FreeCAD.ActiveDocument.ActiveObject.Label="t=" +plst + "#"
 
 
 
@@ -98,19 +100,19 @@ def run1(z0,mesh,plane,showpointsmap=True,showmedianfilter=True):
 	#l5=[FreeCAD.Vector(p) for p in np.array([tt[0],y1,tt[2]]).swapaxes(0,1)] 
 	l5=[FreeCAD.Vector(p) for p in np.array([y0,y1,tt[2]]).swapaxes(0,1)] 
 
-	if 0 and showmedianfilter:
+	if showxywire:
 		Draft.makeWire(l5)
 		FreeCAD.ActiveDocument.ActiveObject.ViewObject.LineColor=color
 		FreeCAD.ActiveDocument.ActiveObject.Label="Median filter " + str(f)  + " " + plst
 
 
-	# place the wire back into the shoe
-	if 0:
+	if showwire:
+		# place the wire back into the shoe
 		invmin=[pl.multVec(p) for p in l5]
 		Draft.makeWire(invmin)
 		FreeCAD.ActiveDocument.ActiveObject.ViewObject.LineColor=color
 		FreeCAD.ActiveDocument.ActiveObject.Label="Wire "+ plst
-	if 0:
+	if showpoints:
 		# diusplay the used points inside the shoe
 		sels=[pl.multVec(p) for p in pts2a]
 		s2=Points.Points(sels)
@@ -118,49 +120,39 @@ def run1(z0,mesh,plane,showpointsmap=True,showmedianfilter=True):
 		FreeCAD.ActiveDocument.ActiveObject.ViewObject.ShapeColor=color
 		FreeCAD.ActiveDocument.ActiveObject.ViewObject.PointSize=5
 		FreeCAD.ActiveDocument.ActiveObject.Label="Points " +plst
-
+		
 
 
 def run():
 
-#	if len( Gui.Selection.getSelection())==0:
-#		showdialog('Oops','nothing selected - nothing to do for me','Plese select a Draft Wire or a Draft BSpline')
+	bbps=[ 
+					[255,0,13], #b
+					[250,0,11.5], #b
+					[245,0,10], #b
+					[218,0,4], #st
+					[168,0,0], # joint j
+					[132,0,6], # girth
+					[110,0,10], # waist
+					[68,0,14], # instep ik
+					[3,0,19], # heel pk
+					[15,0,110], # heel2 ph
+					[15,0,180], # wade aa
+					[15,0,190], # wade aa
+					[15,0,199], # wade aa
+			]
 
-	#default parameters
-	p={
-		"showmedianfilter":[False,'Boolean'],
-		"showpointsmap":[False,'Boolean'],
-	}
+	twister= [[0,75,0]]+[[0,0,0]]*3 + [[0,30,0]]*4 +[[0,48,0]]+ [[0,90,0]]+ [[0,90,0]]*3
 
-	# parameter -----------------
-	t=FreeCAD.ParamGet('User parameter:Plugins/nurbs/'+'scancut')
-	l=t.GetContents()
-	if l==None: l=[]
-	for k in l: p[k[1]]=k[2]
-	for k in p:
-		if p[k].__class__.__name__=='list':
-			typ=p[k][1]
-			if typ=='Integer':t.SetInt(k,p[k][0]);
-			if typ=='Boolean':t.SetBool(k,p[k][0])
-			if typ=='String':t.SetString(k,p[k][0])
-			if typ=='Float':t.SetFloat(k,p[k][0])
-			p[k]=p[k][0]
-	#--------------------
+	for i,b in enumerate(bbps):
+		# if i<>6 : continue
+		alpha=twister[i][1] 
 
+		pla=FreeCAD.Placement(FreeCAD.Vector(b),FreeCAD.Rotation(FreeCAD.Vector(0,1,0),alpha-90))
+		pcl=FreeCAD.ActiveDocument.shoe_last_scanned.Points.Points
 
-	try:
-		plane=FreeCAD.ActiveDocument.Plane
-		mesh=FreeCAD.ActiveDocument.LastDIA.Mesh
-	except:
-		sayexc(title='Error',mess='something wrong with the mesh and the helper plane ' )
-		return
+		displayCut(pla,pcl,showpoints=False,showxywire=False,showxypoints=True)
+		#displayCut(pla,pcl,showpoints=True,showxywire=False,showxypoints=True)
 
-	for z0 in range(0,3):
-		pass
+	#pla=FreeCAD.Placement()
+	#displayCut(pla,pcl,showpoints=True,showwire=True)
 
-	for z0 in range(-15,10):
-		#run1(10*z0,mesh,plane,p['showpointsmap'],p['showmedianfilter'])
-		run1(10*z0,mesh,plane,True,True)
-
-if __name__ == '__main__':
-	run()

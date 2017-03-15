@@ -67,7 +67,7 @@ def orderdata(obj,inner=False,plotit=False,medianfil=0,cf=True):
 	pl2.Base=vm
 
 	# beschraenkende kreise
-	if cf:
+	if 0 and cf:
 		if medianfil>0:
 				circle = Draft.makeCircle(radius=lea,placement=pl2,face=False)
 				circle.Label="Mean Circle"
@@ -114,7 +114,7 @@ def orderdata(obj,inner=False,plotit=False,medianfil=0,cf=True):
 
 		if plotit:
 			plt.plot(kaps,radss, 'bx')
-			plt.plot(kaps,pf, 'r-')
+			plt.plot(kaps,mmaa, 'r-')
 			plt.show()
 
 	else:
@@ -198,10 +198,13 @@ def run():
 	if len( Gui.Selection.getSelection())==0:
 		showdialog('Oops','nothing selected - nothing to do for me','Plese select a point cloud')
 
+	inner=False
+	outer=False
+
 	for obj in Gui.Selection.getSelection():
 		if median:
-			orderdata(obj,medianfil=mf,plotit=dp,cf=cf)
-			App.ActiveDocument.ActiveObject.Label="Median " + str(mf) + " Approx for " + obj.Label
+			orderdata(obj,medianfil=mf,plotit=True,cf=cf)
+			App.ActiveDocument.ActiveObject.Label=  obj.Label + " Median " + str(mf) + " Approx"
 			App.ActiveDocument.ActiveObject.ViewObject.LineColor=(0.,0.,1.)
 			Gui.updateGui()
 		if inner:

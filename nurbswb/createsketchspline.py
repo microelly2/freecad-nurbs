@@ -56,8 +56,13 @@ def createSketchSpline(pts=None,label="BSpline Sketch"):
 
 	for i,p in enumerate(pts):
 		sk.addGeometry(Part.Circle(App.Vector(int(round(p.x)),int(round(p.y)),0),App.Vector(0,0,1),10),True)
-		if i == 1: sk.addConstraint(Sketcher.Constraint('Radius',0,10.000000)) 
-		if i>0: sk.addConstraint(Sketcher.Constraint('Equal',0,i)) 
+		#if i == 1: sk.addConstraint(Sketcher.Constraint('Radius',0,10.000000)) 
+		#if i>0: sk.addConstraint(Sketcher.Constraint('Equal',0,i)) 
+
+		sk.addConstraint(Sketcher.Constraint('Radius',i,10.000000)) 
+		sk.renameConstraint(i, 'Weight ' +str(i+1))
+
+		#i=5; App.ActiveDocument.Sketch016.setDatum(i,40))
 
 	k=i+1
 
@@ -92,6 +97,7 @@ def run():
 			bc=obj.Shape.Edge1.Curve
 			pts=bc.getPoles()
 			l=obj.Label
-			createSketchSpline(pts,"Sketch for " + str(l))
+			print (l,len(pts))
+			createSketchSpline(pts,str(l) + " Sketch" )
 		except:
 			sayexc(title='Error',mess='somethinq wrong with ' + obj.Label)

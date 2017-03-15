@@ -985,7 +985,7 @@ def genrib(r=250,h=300,w=10,m=0,l=None,name="My Rib "):
 				[0,m+w,h],
 				[0,m-w,h],
 
-				[0,-0.8*l,0.9*h],
+				[0,-0.8*l,0.4*h],
 				[0,-0.95*l,0.2*h],
 
 				[0,-l,2],
@@ -1152,6 +1152,26 @@ def run():
 				[15,0,199], # wade aa
 		]
 
+
+		# ebenes modell
+		bbps=[ 
+				[255,0,13], #b
+				[250,0,11.5], #b
+				[245,0,10], #b
+				[218,0,4], #st
+				[168,0,0], # joint j
+				[132,0,6], # girth
+				[110,0,10], # waist
+				[68,0,14], # instep ik
+				[60,0,16], # heel pk
+				[45,0,17], # heel2 ph
+				[35,0,18], # wade aa
+				[20,0,19], # wade aa
+				[0,0,20], # wade aa
+		]
+
+
+
 		points=[FreeCAD.Vector(tuple(v)) for v in bbps]
 
 		Draft.makeBSpline(points,closed=False,face=True,support=None)
@@ -1195,16 +1215,22 @@ def run():
 		rf=1.0/np.cos(np.pi*28/180)
 
 		joint=genrib(r=480,l=410,h=370*rf,w=10,name="Joint ")
-		girth=genrib(r=420,l=350,h=520*rf,w=10,name="Girth ")
-		waist=genrib(r=380,l=320,h=600*rf,w=10,name="Waist ")
-		instep=genrib(r=340,l=300,h=840*rf,w=10,name="Instep ")
+		girth=genrib(r=420,l=350,h=520*rf,w=20,name="Girth ")
+		waist=genrib(r=380,l=320,h=600*rf,w=60,name="Waist ")
+		instep=genrib(r=340,l=300,h=840*rf,w=80,name="Instep ")
 
-		longheel=genribh(r=270,h=1400,w=10,name="Long Heel ")
+#		longheel=genribh(r=270,h=1400,w=10,name="Long Heel ")
 
-		heel=genribh(r=270,h=950,w=10,name="oberHeel ")
-		ankle1=genrib2(r=400,h=950*rf,w=10,name="Ankle 1 ")
-		ankle2=genrib2(r=400,h=950*rf,w=10,name="Ankle 2 ")
-		ankle3=genrib2(r=400,h=950*rf,w=10,name="Ankle 3 ")
+#		heel=genribh(r=270,h=950,w=10,name="oberHeel ")
+#		ankle1=genrib2(r=400,h=950*rf,w=10,name="Ankle 1 ")
+#		ankle2=genrib2(r=400,h=950*rf,w=10,name="Ankle 2 ")
+#		ankle3=genrib2(r=400,h=950*rf,w=10,name="Ankle 3 ")
+
+		longheel=genrib(r=370,h=930*rf,w=140,name="Long Heel ")
+		heel=genrib(r=400,h=900*rf,w=220,name="oberHeel ")
+		ankle1=genrib(r=400,h=840*rf,w=200,name="Ankle 1 ")
+		ankle2=genrib(r=300,h=840*rf,w=180,name="Ankle 2 ")
+		ankle3=genrib(r=30,h=840*rf,w=30,name="Ankle 3 ")
 
 
 	ribs=[bcurve2,bcurve1,bcurve,stcurve,joint,girth,waist,instep,longheel,heel,ankle1,ankle2,ankle3]
@@ -1212,6 +1238,10 @@ def run():
 
 	twister= [[0,75,0]]+[[0,0,0]]*3 + [[0,28,0]]*4 +[[0,45,0]]+ [[0,50,0]]+ [[0,90,0]]*3
 	twister= [[0,75,0]]+[[0,0,0]]*3 + [[0,30,0]]*4 +[[0,48,0]]+ [[0,90,0]]+ [[0,90,0]]*3
+
+	# ebenes modell
+	twister= [[0,75,0]]+[[0,0,0]]*3 + [[0,30,0]]*4 +[[0,25,0]]+ [[0,20,0]]+ [[0,10,0]]*2 + [[0,10,0]]
+	
 	sc= [[1,0.3]] + [[1,1]]*12 # + [[1,1.0],[1,1.0],[1,1.0]]+ [[1.,1.]]*3
 
 	assert len(ribs)==len(twister)
@@ -1250,8 +1280,8 @@ def run():
 
 	App.activeDocument().recompute()
 	App.activeDocument().recompute()
-	#Gui.activeDocument().activeView().viewFront()
-	Gui.activeDocument().activeView().viewBottom()
+	Gui.activeDocument().activeView().viewFront()
+	#Gui.activeDocument().activeView().viewBottom()
 
 	Gui.SendMsgToActiveView("ViewFit")
 	FreeCADGui.runCommand("Draft_ToggleGrid")
@@ -1263,7 +1293,7 @@ def run():
 	import Points
 	Points.insert(u"/home/thomas/Dokumente/freecad_buch/b235_shoe/shoe_last_scanned.asc","Shoe")
 
-	if 1:
+	if 10:
 		# flaechen erzeugen
 		try: loft=App.ActiveDocument.MeridiansLoft
 		except:loft=App.ActiveDocument.addObject('Part::Loft','MeridiansLoft')
