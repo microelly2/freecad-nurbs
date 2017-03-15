@@ -7,24 +7,8 @@
 #-- GNU Lesser General Public License (LGPL)
 #-------------------------------------------------
 import FreeCAD as App
-import FreeCADGui
-import Points,Part,Draft
-import numpy as np
-import random
-import scipy as sp
-from scipy import signal
-
-from PySide import QtGui
-import sys,traceback,random
-
-import Points
-
-
 import FreeCADGui as Gui
-import numpy as np
-import Draft
-
-
+import matplotlib.colors as colors
 
 import PySide
 from PySide import  QtGui,QtCore
@@ -41,6 +25,7 @@ def wrun(w):
 
 
 
+
 def dialog(sk=None):
 
 	if sk==None:
@@ -50,11 +35,21 @@ def dialog(sk=None):
 		w=QtGui.QWidget()
 		w.sk=sk
 
+		tc=sk.ViewObject.LineColor
+		color=colors.rgb2hex(sk.ViewObject.LineColor)    
+		invers=(1.0-tc[0],1.0-tc[1],1.0-tc[2])
+		icolor=colors.rgb2hex(invers) 
+		mcolor='#808080'   
+		w.setStyleSheet("QWidget { background-color:"+color+"}\
+			QPushButton { margin-right:0px;margin-left:0px;margin:0 px;padding:0px;;\
+			background-color:#ccc;text-align:left;;padding:6px;padding-left:4px;color:#333; }")
+
 		box = QtGui.QVBoxLayout()
 		w.setLayout(box)
 		w.setWindowFlags(QtCore.Qt.WindowStaysOnTopHint)
 
 		l=QtGui.QLabel(sk.Label)
+		l.setText( '<font color='+icolor+'>your labelcontent</font>' ) 
 		box.addWidget(l)
 
 		w.box=[]
@@ -62,6 +57,7 @@ def dialog(sk=None):
 			print (c.Name,c.Value)
 			if c.Name.startswith("Weight"):
 				l=QtGui.QLabel(c.Name)
+				l.setText( '<font color='+icolor+'>'+c.Name+'</font>' ) 
 				box.addWidget(l)
 
 				d=QtGui.QSlider(QtCore.Qt.Horizontal)
@@ -72,14 +68,12 @@ def dialog(sk=None):
 				d.setValue(c.Value)
 				d.setMaximum(100)
 				d.setMinimum(0)
-				w.box.append(d)
 				d.valueChanged.connect(lambda:wrun(w))
+				w.box.append(d)
 
 		w.r=QtGui.QPushButton("close")
 		box.addWidget(w.r)
 		w.r.pressed.connect(lambda :runex(w))
-
-
 
 		w.show()
 

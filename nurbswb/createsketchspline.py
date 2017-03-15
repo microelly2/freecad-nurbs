@@ -83,7 +83,7 @@ def createSketchSpline(pts=None,label="BSpline Sketch"):
 	App.activeDocument().recompute()
 
  	sk.Placement = App.Placement(App.Vector(0,0,p.z),App.Rotation(App.Vector(1,0,0),0))
-
+	sk.ViewObject.LineColor=(random.random(),random.random(),random.random())
 	App.activeDocument().recompute()
 	return sk
 
