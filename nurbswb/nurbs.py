@@ -669,7 +669,6 @@ class Nurbs(PartFeature):
 		else: 
 			if FreeCAD.ParamGet('User parameter:Plugins/nurbs').GetBool("createNurbsShape",True):
 				obj.Shape=bs.toShape()
-		print "XAA"
 
 		vis=False
 		vis=True
@@ -678,10 +677,8 @@ class Nurbs(PartFeature):
 				vis=obj.gridobj.ViewObject.Visibility
 				App.ActiveDocument.removeObject(obj.gridobj.Name)
 			obj.gridobj=self.create_grid(bs,obj.gridCount)
-			
 			obj.gridobj.Label="Nurbs Grid"
 			obj.gridobj.ViewObject.Visibility=vis
-		print "XA"
 
 		if 0 and obj.base:
 			# create the socket box 
@@ -1330,6 +1327,13 @@ def createnurbs():
 def testRandomB():
 
 
+
+	nd=App.newDocument("Unnamed")
+	App.setActiveDocument(nd.Name)
+	App.ActiveDocument=App.getDocument(nd.Name)
+	Gui.ActiveDocument=Gui.getDocument(nd.Name)
+
+
 	na=20
 	b=10
 
@@ -1393,16 +1397,10 @@ def testRandomB():
 
 def testRandomCylinder():
 
-	try:
-		App.closeDocument("Unnamed")
-	except:
-		pass
-
-	if App.ActiveDocument==None:
-		App.newDocument("Unnamed")
-		App.setActiveDocument("Unnamed")
-		App.ActiveDocument=App.getDocument("Unnamed")
-		Gui.ActiveDocument=Gui.getDocument("Unnamed")
+	nd=App.newDocument("Unnamed")
+	App.setActiveDocument(nd.Name)
+	App.ActiveDocument=App.getDocument(nd.Name)
+	Gui.ActiveDocument=Gui.getDocument(nd.Name)
 
 
 	na=30
@@ -1468,6 +1466,12 @@ def testRandomCylinder():
 	Gui.SendMsgToActiveView("ViewFit")
 
 def testRandomSphere():
+
+
+	nd=App.newDocument("Unnamed")
+	App.setActiveDocument(nd.Name)
+	App.ActiveDocument=App.getDocument(nd.Name)
+	Gui.ActiveDocument=Gui.getDocument(nd.Name)
 
 
 	na=17
@@ -1608,6 +1612,11 @@ def testRandomTorus():
 
 	na=7
 	b=4
+
+	nd=App.newDocument("Unnamed")
+	App.setActiveDocument(nd.Name)
+	App.ActiveDocument=App.getDocument(nd.Name)
+	Gui.ActiveDocument=Gui.getDocument(nd.Name)
 
 
 	a=makeNurbs(b,na)

@@ -1383,6 +1383,7 @@ def undock(label='Spreadsheet'):
 			w.setGeometry(50, 30, 1650, 350)
 			w.show()
 			sw.close()
+			FreeCAD.ss=w
 			return w
 
 

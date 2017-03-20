@@ -141,7 +141,7 @@ def dialog(sk=None):
 				d.i=i
 
 				box.addWidget(d)
-				d.setValue(c.Value)
+				d.setValue(c.Value-1)
 				d.setMaximum(100)
 				d.setMinimum(0)
 				d.valueChanged.connect(lambda:wrun(w))

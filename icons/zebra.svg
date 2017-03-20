@@ -13,7 +13,7 @@
    height="64px"
    id="svg2963"
    sodipodi:version="0.32"
-   inkscape:version="0.91 r13725"
+   inkscape:version="0.48.4 r9939"
    sodipodi:docname="zebra.svg"
    inkscape:output_extension="org.inkscape.output.svg.inkscape"
    version="1.1">
@@ -52,10 +52,10 @@
      showgrid="true"
      inkscape:document-units="px"
      inkscape:grid-bbox="true"
-     inkscape:window-width="1920"
-     inkscape:window-height="1008"
-     inkscape:window-x="0"
-     inkscape:window-y="0"
+     inkscape:window-width="1855"
+     inkscape:window-height="1056"
+     inkscape:window-x="65"
+     inkscape:window-y="24"
      inkscape:snap-bbox="true"
      inkscape:bbox-paths="true"
      inkscape:bbox-nodes="true"
@@ -79,7 +79,7 @@
         <dc:format>image/svg+xml</dc:format>
         <dc:type
            rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
-        <dc:title></dc:title>
+        <dc:title />
       </cc:Work>
     </rdf:RDF>
   </metadata>
@@ -89,7 +89,7 @@
      inkscape:groupmode="layer">
     <path
        sodipodi:nodetypes="scscscscs"
-       style="opacity:1;fill:#b6b8dd;stroke:#000000;stroke-width:1.5"
+       style="opacity:1;fill:#fe93ff;stroke:#000000;stroke-width:1.50000000000000000;fill-opacity:1"
        d="M 8.9841693,29.463466 C 8.8703084,20.828584 8.1774724,10.748916 6.74224,5.4166644 c 0,0 14.323777,-2.6780254 27.014365,-1.2631884 8.59279,0.9579855 21.129871,-0.097169 21.129871,-0.097169 0.0963,-0.098252 6.16473,14.972982 5.238567,27.768902 -0.562425,7.770416 -2.105151,16.314541 -4.426001,23.116681 0.278106,0.08407 -12.681813,5.200035 -25.314782,4.721542 -8.789838,-0.332933 -26.1630827,-3.976501 -26.1630827,-4.053225 0,0 4.9417549,-12.58985 4.762992,-26.146741 z"
        id="path4532"
        inkscape:connector-curvature="0" />

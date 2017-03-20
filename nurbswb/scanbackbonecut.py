@@ -22,7 +22,10 @@ import Points
 
 # Points.export(__objs__,u"/home/thomas/Dokumente/freecad_buch/b235_shoe/shoe_last_scanned.asc")
 
-Points.insert(u"/home/thomas/Dokumente/freecad_buch/b235_shoe/shoe_last_scanned.asc","Shoe")
+try: 
+	FreeCAD.ActiveDocument.shoe_last_scanned
+except: 
+	Points.insert(u"/home/thomas/Dokumente/freecad_buch/b235_shoe/shoe_last_scanned.asc","Shoe")
 
 
 FreeCADGui.runCommand("Draft_ToggleGrid")
@@ -38,7 +41,7 @@ from scipy import signal
 import Points
 import random
 
-def displayCut(pl,pts,showpoints=True,showwire=False,showxypoints=False,showxywire=False):
+def displayCut(label,pl,pts,showpoints=True,showwire=False,showxypoints=False,showxywire=False):
 	''' display approx cut of a plane with a point cloud '''
 	z0=0
 
@@ -62,8 +65,17 @@ def displayCut(pl,pts,showpoints=True,showwire=False,showxypoints=False,showxywi
 	#pts2a=[FreeCAD.Vector(p.x,p.y,0) for p in pts2 if zmin<=p.z and p.z<=zmax]
 
 	pts2a=[FreeCAD.Vector(round(p.x),round(p.y),round(p.z)) for p in pts2 if round(p.z)==z0]
+
+	#pts2a=[FreeCAD.Vector(round(p.z),round(p.y),round(p.x)) for p in pts2 if round(p.z)==z0]
 	
 	if len(pts2a)==0: return
+
+	try: scp=FreeCAD.ActiveDocument.Scanpoints
+	except: scp=FreeCAD.ActiveDocument.addObject("App::DocumentObjectGroup","Scanpoints")
+	try: scps=FreeCAD.ActiveDocument.ScanpointsSource
+	except: scps=FreeCAD.ActiveDocument.addObject("App::DocumentObjectGroup","ScanpointsSource")
+
+
 
 	p2=Points.Points(pts2a)
 	if showxypoints:
@@ -71,8 +83,9 @@ def displayCut(pl,pts,showpoints=True,showwire=False,showxypoints=False,showxywi
 		FreeCAD.ActiveDocument.ActiveObject.ViewObject.ShapeColor=color
 		FreeCAD.ActiveDocument.ActiveObject.ViewObject.PointSize=5
 		FreeCAD.ActiveDocument.ActiveObject.Label="Points Map xy " +plst
-		FreeCAD.ActiveDocument.ActiveObject.Label="t=" +plst + "#"
-
+		FreeCAD.ActiveDocument.ActiveObject.Label=label+"t=" +plst + "#"
+		#FreeCAD.ActiveDocument.ActiveObject.Placement.Rotation=FreeCAD.Rotation(FreeCAD.Vector(0,1,0),-90)
+		scp.addObject(FreeCAD.ActiveDocument.ActiveObject)
 
 
 	# create a wire from a central projection
@@ -120,7 +133,7 @@ def displayCut(pl,pts,showpoints=True,showwire=False,showxypoints=False,showxywi
 		FreeCAD.ActiveDocument.ActiveObject.ViewObject.ShapeColor=color
 		FreeCAD.ActiveDocument.ActiveObject.ViewObject.PointSize=5
 		FreeCAD.ActiveDocument.ActiveObject.Label="Points " +plst
-		
+		scps.addObject(FreeCAD.ActiveDocument.ActiveObject)
 
 
 def run():
@@ -143,16 +156,42 @@ def run():
 
 	twister= [[0,75,0]]+[[0,0,0]]*3 + [[0,30,0]]*4 +[[0,48,0]]+ [[0,90,0]]+ [[0,90,0]]*3
 
-	for i,b in enumerate(bbps):
-		# if i<>6 : continue
-		alpha=twister[i][1] 
+	print "import ............"
+	import nurbswb.shoedata
+	reload(nurbswb.shoedata)
+	bbps=nurbswb.shoedata.bbps
+	twister=nurbswb.shoedata.twister
+	labels=nurbswb.shoedata.labels
 
-		pla=FreeCAD.Placement(FreeCAD.Vector(b),FreeCAD.Rotation(FreeCAD.Vector(0,1,0),alpha-90))
+	for i,b in enumerate(bbps):
+		if i==0 : continue
+		alpha=twister[i][1]
+		beta=twister[i][2]
+
+	#p2.Rotation=FreeCAD.Rotation(FreeCAD.Vector(0,0,1),FreeCAD.Rotation(FreeCAD.Vector(0,1,0),beta).multiply(FreeCAD.Rotation(FreeCAD.Vector(1,0,0),xa)))
+
+		pla=FreeCAD.Placement(FreeCAD.Vector(b),FreeCAD.Rotation(FreeCAD.Vector(0,0,1),beta).multiply(FreeCAD.Rotation(FreeCAD.Vector(0,1,0),alpha-90)))
 		pcl=FreeCAD.ActiveDocument.shoe_last_scanned.Points.Points
 
-		displayCut(pla,pcl,showpoints=False,showxywire=False,showxypoints=True)
-		#displayCut(pla,pcl,showpoints=True,showxywire=False,showxypoints=True)
+		#displayCut(pla,pcl,showpoints=False,showxywire=False,showxypoints=True)
+		displayCut(labels[i],pla,pcl,showpoints=True,showxywire=False,showxypoints=True)
 
 	#pla=FreeCAD.Placement()
 	#displayCut(pla,pcl,showpoints=True,showwire=True)
 
+
+	App=FreeCAD
+	jj=App.ActiveDocument.Scanpoints.OutList
+
+	for i,p in enumerate(App.ActiveDocument.Scanpoints.OutList):
+
+		print p.Label
+		l2=App.ActiveDocument.Profiles.OutList[2].Label
+		print l2
+		print
+		scp=FreeCAD.ActiveDocument.addObject("App::DocumentObjectGroup","GRP "+l2)
+		scp.addObject(jj[i])
+		scp.addObject(App.ActiveDocument.Profiles.OutList[2])
+
+	for i in App.ActiveDocument.Objects:
+		i.ViewObject.hide()

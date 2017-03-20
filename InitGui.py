@@ -107,878 +107,234 @@ def get_SelectedObjects(info=0, printError=True):
         printError_msg("No active document !")
     return 
 
-##-
+#------------------------------
 
-class nurbsEditor:
+#------------------------------------------
+# fast command adder template
 
-	def Activated(self):
-		import nurbswb.nurbs
-		reload(nurbswb.nurbs)
-		nurbswb.nurbs.runtest()
+import os, nurbswb
+global __dir__
+__dir__ = os.path.dirname(nurbswb.__file__)
+
+
+global _Command
+class _Command():
+
+	def __init__(self,lib=None,name=None,icon='/../icons/eye.svg',command=None,modul='nurbswb'):
+
+		if lib==None: lmod=modul
+		else: lmod=modul+'.'+lib
+		if command==None: command=lmod+".run()"
+		else: command =lmod + "."+command
+
+		self.lmod=lmod
+		self.command=command
+		self.modul=modul
+		self.icon=  __dir__+ icon
+
+		if name==None: name=command
+		self.name=name
+
+
+	def GetResources(self): 
+		return {'Pixmap' : self.icon, 'MenuText': self.name, 'ToolTip': self.name } 
 
 	def IsActive(self):
-		if FreeCADGui.ActiveDocument:
+		if FreeCADGui.ActiveDocument: return True
+		else: return False
+
+	def Activated(self):
+		#FreeCAD.ActiveDocument.openTransaction("create " + self.name)
+		if self.command <> '':
+			if self.modul <>'': modul=self.modul
+			else: modul=self.name
+			FreeCADGui.doCommand("import " + modul)
+			FreeCADGui.doCommand("import "+self.lmod)
+			FreeCADGui.doCommand("reload("+self.lmod+")")
+			FreeCADGui.doCommand(self.command)
+		#FreeCAD.ActiveDocument.commitTransaction()
+		FreeCAD.ActiveDocument.recompute()
+
+
+class _alwaysActive(_Command):
+
+	def IsActive(self):
 			return True
-		else:
-			return False
 
-	def GetResources(self):
-		return {
-#			'Pixmap'  : 'Std_Tool1', 
-			'MenuText': 'Nurbs Editor', 
-			'ToolTip': 'creates a test nurbs'
-		}
 
-FreeCADGui.addCommand('Nurbs Editor', nurbsEditor())
+#-----------------------------------------------
+def always():
+	return True
 
+def ondocument():
+	return FreeCADGui.ActiveDocument <> None
 
-#----------------------
-class addUline:
+def onselection():
+	return len(FreeCADGui.Selection.getSelection())>0
 
-	def IsActive(self):
-		return len(FreeCADGui.Selection.getSelectionEx())==1
-		if App.ActiveDocument.Nurbs: return True
+def onselection1():
+	return len(FreeCADGui.Selection.getSelection())==1
 
-	def GetResources(self):
-		return {
-			'Pixmap'  : FreeCAD.ConfigGet('UserAppData')+"/Mod/freecad-nurbs/icons/"+'add_edge.svg', 
-			'MenuText': 'Add  Meridian or Rib', 
-			'ToolTip': 'creates a new list of poles above the selected U line'
-		}
+def onselection2():
+	return len(FreeCADGui.Selection.getSelection())==2
 
-	def Activated(self):
-		import nurbswb.needle_cmds
-		reload(nurbswb.needle_cmds)
-		nurbswb.needle_cmds.cmdAdd()
+def onselection3():
+	return len(FreeCADGui.Selection.getSelection())==3
 
+def onselex():
+	return len(FreeCADGui.Selection.getSelectionEx())<>0
 
-FreeCADGui.addCommand('add U line',addUline())
-#----------------
+def onselex1():
+	return len(FreeCADGui.Selection.getSelectionEx())==1
 
-class addVline:
 
-	def IsActive(self):
-		return len(FreeCADGui.Selection.getSelectionEx())==1
-		return True
-		if App.ActiveDocument.Nurbs: return True
+FreeCAD.tcmds5=[]
 
-	def GetResources(self):
-		return {
-			'Pixmap'  : FreeCAD.ConfigGet('UserAppData')+"/Mod/freecad-nurbs/icons/"+'delete_edge.svg', 
-			'MenuText': 'Delete Meridian or Rib', 
-			'ToolTip': ''
-		}
+def c1(menu,name,*info):
+	global _Command
+	name1="Nurbs_"+name
+	t=_Command(name,*info)
+	FreeCADGui.addCommand(name1,t)
+	FreeCAD.tcmds5.append([menu,name1])
 
-	def Activated(self):
-		import nurbswb.needle_cmds
-		reload(nurbswb.needle_cmds)
-		nurbswb.needle_cmds.cmdDel()
+def c1a(menu,isactive,name,*info):
+	global _Command
+	name1="Nurbs_"+name
+	t=_Command(name,*info)
+	t.IsActive=isactive
+	FreeCADGui.addCommand(name1,t)
+	FreeCAD.tcmds5.append([menu,name1])
 
+def c2(menu,title,name,*info):
+	print info
+	global _Command
+	title1="Nurbs_"+title
+	FreeCADGui.addCommand(title1,_Command(name,*info))
+	FreeCAD.tcmds5.append([menu,title1])
 
-FreeCADGui.addCommand('add V line',addVline())
-#----------------
+def c2a(menu,isactive,title,name,*info):
+	print info
+	global _Command
+	t=_Command(name,*info)
+	title1="Nurbs_"+title
+	t.IsActive=isactive
+	FreeCADGui.addCommand(title1,t)
+	FreeCAD.tcmds5.append([menu,title1])
 
-class uvgridGenerator:
-	def IsActive(self):
-		return FreeCADGui.Selection.getSelection() <> []
+#-------------------------------
 
-	def GetResources(self):
-		return {
-#			'Pixmap'  : FreeCAD.ConfigGet('UserAppData')+"/Mod/freecad-nurbs/icons/"+'addvline.svg', 
-			'MenuText': 'UV grid of Part', 
-			'ToolTip': ''
-		}
+# special conditions fore actions
+def onneedle():
+	dokname=FreeCAD.ParamGet('User parameter:Plugins/nurbs').GetString("Document","Needle")
+	try: App.getDocument(dokname); return True
+	except: return False
 
-
-	def Activated(self):
-		import nurbswb.uvgrid_generator
-		reload(nurbswb.uvgrid_generator)
-		nurbswb.uvgrid_generator.runSel()
-
-
-FreeCADGui.addCommand('UV Grid Generator',uvgridGenerator())
-
-
-class Helper:
-	def IsActive(self):
-		return FreeCADGui.Selection.getSelection() <> []
-
-	def GetResources(self):
-		return {
-#			'Pixmap'  : FreeCAD.ConfigGet('UserAppData')+"/Mod/freecad-nurbs/icons/"+'addvline.svg', 
-			'MenuText': 'Nurbs Helper', 
-			'ToolTip': ''
-		}
-
-	def Activated(self):
-		import nurbswb.helper
-		reload(nurbswb.helper)
-		nurbswb.helper.makeHelperSel()
-
-FreeCADGui.addCommand('Surface Helper',Helper())
-
-#----------------
-
-class randomTorus:
-
-	def Activated(self):
-		import nurbswb.nurbs
-		reload(nurbswb.nurbs)
-		nurbswb.nurbs.testRandomTorus()
-
-	def IsActive(self):
-		if FreeCADGui.ActiveDocument:
-			return True
-		else:
-			return False
-
-	def GetResources(self):
-		return {
-#			'Pixmap'  : 'Std_Tool1', 
-			'MenuText': 'Test Random Torus', 
-		}
-
-FreeCADGui.addCommand('Random Torus',randomTorus())
-
-
-class randomCylinder:
-
-	def Activated(self):
-		import nurbswb.nurbs
-		reload(nurbswb.nurbs)
-		nurbswb.nurbs.testRandomCylinder()
-
-	def IsActive(self):
-		if FreeCADGui.ActiveDocument:
-			return True
-		else:
-			return False
-
-	def GetResources(self):
-		return {
-#			'Pixmap'  : 'Std_Tool1', 
-			'MenuText': 'Test Random Cylinder', 
-		}
-
-FreeCADGui.addCommand('Random Cylinder',randomCylinder())
-
-class randomSphere:
-
-	def Activated(self):
-		import nurbswb.nurbs
-		reload(nurbswb.nurbs)
-		nurbswb.nurbs.testRandomSphere()
-
-	def IsActive(self):
-		if FreeCADGui.ActiveDocument:
-			return True
-		else:
-			return False
-
-	def GetResources(self):
-		return {
-#			'Pixmap'  : 'Std_Tool1', 
-			'MenuText': 'Test Random Sphere', 
-		}
-
-FreeCADGui.addCommand('Random Sphere',randomSphere())
-
-class randomPlane:
-
-	def Activated(self):
-		import nurbswb.nurbs
-		reload(nurbswb.nurbs)
-		nurbswb.nurbs.testRandomB()
-
-	def IsActive(self):
-		if FreeCADGui.ActiveDocument:
-			return True
-		else:
-			return False
-
-	def GetResources(self):
-		return {
-#			'Pixmap'  : 'Std_Tool1', 
-			'MenuText': 'Test Random Plane', 
-		}
-
-FreeCADGui.addCommand('Random Plane',randomPlane())
-
-
-class needleChangeModel:
-
-	def Activated(self):
-		import nurbswb.needle_change_model
-		reload(nurbswb.needle_change_model)
-		nurbswb.needle_change_model.run()
-
-	def IsActive(self):
-		if FreeCADGui.ActiveDocument:
-			return True
-		else:
-			return False
-
-	def GetResources(self):
-		return {
-#			'Pixmap'  : 'Std_Tool1', 
-			'MenuText': 'Needle Change Model', 
-		}
-
-FreeCADGui.addCommand('needle Change Model',needleChangeModel())
-
-
-
-class simpleHood:
-
-	def Activated(self):
-		import nurbswb.simplehood;
-		reload(nurbswb.simplehood);
-		nurbswb.simplehood.run()
-
-	def IsActive(self):
-		if FreeCADGui.ActiveDocument:
-			return True
-		else:
-			return False
-
-	def GetResources(self):
-		return {
-#			'Pixmap'  : 'Std_Tool1', 
-			'MenuText': 'Simple Hood', 
-		}
-
-FreeCADGui.addCommand('simple Hood',simpleHood())
-
-class needle:
-
-	def Activated(self):
-		import nurbswb.nurbs
-		import nurbswb.needle as needle
-		reload( nurbswb.needle)
-
-		dokname=FreeCAD.ParamGet('User parameter:Plugins/nurbs').GetString("Document","Needle")
-		try: App.closeDocument(dokname)
-		except: pass
-
-		App.newDocument(dokname)
-		App.setActiveDocument(dokname)
-		App.ActiveDocument=App.getDocument(dokname)
-		Gui.ActiveDocument=Gui.getDocument(dokname)
-
-		a=needle.createNeedle()
-
-
-		a.useBackbone=True
-		a.useRibTemplate=True
-		a.useRibCage=True
-		#a.useMesh=True
-		a.RibCount=0
-		import nurbswb.needle_models
-		reload (nurbswb.needle_models)
-		# a.Proxy.getExampleModel(nurbswb.needle_models.modelBanana)
-		model=FreeCAD.ParamGet('User parameter:Plugins/nurbs').GetString("NeedleModel","modelSimple")
-
-		print ("a.Proxy.getExampleModel(nurbswb.needle_models."+ model+")")
-		eval("a.Proxy.getExampleModel(nurbswb.needle_models."+ model+")")
-
-
-#		import Draft
-#		points=[FreeCAD.Vector(192.694291746,-129.634476444,0.0),FreeCAD.Vector(130.429397583,-0.657173752785,40.0),FreeCAD.Vector(-52.807308197,-112.73400116,0.0),FreeCAD.Vector(-127.525184631,-71.8170700073,0.0),FreeCAD.Vector(-205.801071167,-274.622741699,0.0),FreeCAD.Vector(28.1370697021,-262.169769287,0.0),FreeCAD.Vector(125.981895447,-187.451873779,0.0)]
-#		# Draft BSpline
-#		Draft.makeBSpline(points,closed=True,face=True,support=None)
-#		import Part
-#		bs=Part.BSplineCurve()
-#		bs.interpolate(points)
-#		bs.setPeriodic()
-#		mybsc=App.ActiveDocument.addObject('Part::Feature','MyBSC')
-#		mybsc.Shape=bs.toShape()
-
-		App.activeDocument().recompute()
-		Gui.SendMsgToActiveView("ViewFit")
-		App.activeDocument().recompute()
-
-
-		a.Proxy.startssevents()
-		a.ViewObject.Selectable=False
-
-
-	def IsActive(self):
-		return True
-		if FreeCADGui.ActiveDocument:
-			return True
-		else:
-			return False
-
-	def GetResources(self):
-		return {
-#			'Pixmap'  : 'Std_Tool1', 
-			'MenuText': 'Test Needle', 
-		}
-
-FreeCADGui.addCommand('Create Needle', needle())
-
-#-------------------------------------
-
-
-
-class shoe:
-
-	def Activated(self):
-
-		import nurbswb;import nurbswb.shoe as shoe;reload( nurbswb.shoe);shoe.run()
-
-
-	def IsActive(self):
-		return True
-
-	def GetResources(self):
-		return {
-#			'Pixmap'  : 'Std_Tool1', 
-			'MenuText': 'Shoe', 
-		}
-
-FreeCADGui.addCommand('Create Shoe', shoe())
-
-class scancut:
-
-	def Activated(self):
-
-		import nurbswb;import nurbswb.scancut as scut;reload( nurbswb.scancut);scut.run()
-
-
-	def IsActive(self):
-		return True
-
-	def GetResources(self):
-		return {
-#			'Pixmap'  : 'Std_Tool1', 
-			'MenuText': 'Cut Scan', 
-		}
-
-FreeCADGui.addCommand('Cut Scan', scancut())
-
-
-
-
-
-
-
-
-
-
-
-
-#----------------
-
-class editBackbone:
-
-	def Activated(self):
-		import nurbswb.wheel_event
-		reload(nurbswb.wheel_event)
-		nurbswb.wheel_event.start("Backbone")
-
-	def IsActive(self):
-		dokname=FreeCAD.ParamGet('User parameter:Plugins/nurbs').GetString("Document","Needle")
-		try: 
-			App.getDocument(dokname)
-			return True
-		except:
-			return False
-		#return len(FreeCADGui.Selection.getSelectionEx())==1
-
-	def GetResources(self):
-		return {
-#			'Pixmap'  : 'Std_Tool1', 
-			'MenuText': 'Edit Backbone', 
-		}
-
-FreeCADGui.addCommand('Edit Backbone',editBackbone())
-
-
-#-------------------------
-
-#----------------
-
-class editRib:
-
-	def Activated(self):
-		import nurbswb.wheel_event
-		reload(nurbswb.wheel_event)
-		nurbswb.wheel_event.start("Rib_template")
-
-	def IsActive(self):
-		dokname=FreeCAD.ParamGet('User parameter:Plugins/nurbs').GetString("Document","Needle")
-		try: 
-			App.getDocument(dokname)
-			return True
-		except:
-			return False
-		#return len(FreeCADGui.Selection.getSelectionEx())==1
-
-	def GetResources(self):
-		return {
-#			'Pixmap'  : 'Std_Tool1', 
-			'MenuText': 'Edit Rib', 
-		}
-
-FreeCADGui.addCommand('Edit Rib',editRib())
-
-#-------------------------
-
-
-#----------------
-
-class openSS:
-
-	def Activated(self):
-		import nurbswb.wheel_event
-		reload(nurbswb.wheel_event)
-		FreeCAD.ss=nurbswb.wheel_event.undock("Spreadsheet")
-
-	def IsActive(self):
-		try:
-			App.ActiveDocument.Spreadsheet
-			return True
-		except:
-			return False
-
-	def GetResources(self):
-		return {
-#			'Pixmap'  : 'Std_Tool1', 
-			'MenuText': 'Open Spreadsheet', 
-		}
-
-FreeCADGui.addCommand('Open SS',openSS())
-
-class zebraTool:
-
-	def Activated(self):
-		import nurbswb.zebratool
-		reload(nurbswb.zebratool)
-		nurbswb.zebratool.run()
-		# FreeCAD.ss=nurbswb.wheel_event.undock("Spreadsheet")
-
-	def IsActive(self):
-		try:
-			App.ActiveDocument
-			return True
-		except:
-			return False
-
-	def GetResources(self):
-		return {
-			'Pixmap'  : FreeCAD.ConfigGet('UserAppData')+"/Mod/freecad-nurbs/icons/"+'zebra.svg', 
-			'MenuText': 'Zebra Tool', 
-		}
-
-FreeCADGui.addCommand('ZebraTool',zebraTool())
-
-
-class DBE:
-
-	def Activated(self):
-		import nurbswb.DraftBSplineEditor
-		reload(nurbswb.DraftBSplineEditor)
-		FreeCAD.bse=nurbswb.DraftBSplineEditor.run()
-
-	def IsActive(self):
-		return len(FreeCADGui.Selection.getSelection())==1
-
-
-	def GetResources(self):
-		return {
-#			'Pixmap'  : 'Std_Tool1', 
-			'MenuText': 'DraftBSpline Editor', 
-		}
-
-FreeCADGui.addCommand('DBE',DBE())
+def onspread():
+	try: App.ActiveDocument.Spreadsheet;return True
+	except: return False
 
 
 
 import nurbswb
 import nurbswb.configuration
 
-def makemaster(command):
-	pass
+
+if FreeCAD.GuiUp:
+
+	c1a(["Curves"],always,"scancut","cut Scanned Mesh")
+
+	c1a(["Curves"],ondocument,"simplecurve","simplify curve")
+	c1a(["Curves"],onselection1,"removeknot","remove a knot in a bspline")
+	c1a(["Curves"],onselection2,"curvedistance","calculate the distance between two curves")
+	c1a(["Curves"],onselection1,"createsketchspline","create Sketcher BSpline from a curve")
+	c1a(["Curves"],ondocument,"weighteditor","Weight Editor")
+	#c2a(["Curves"],onselection1,'DraftBSpline Editor',"DraftBSplineEditor","Edit Draft Bspline",'/../icons/32px-draftbspline_edit.png',"run()")
+	c2a(["Curves"],always,'DraftBSpline Editor',"DraftBSplineEditor","Edit Draft Bspline",'/../icons/32px-draftbspline_edit.png',"run()")
+
+	#			'ToolTip': 'creates a new list of poles above the selected U line'
+	c2a(["Needle"],ondocument,'Needle','needle','create a needle','/../icons/eye.svg',"run()")
+	c2(["Needle"],'needle Change Model','needle_change_model','needle Change Model','/../icons/eye.svg',"run()")
+	c2a(["Needle"],onselex1,'addULine','needle_cmds','add Meridian/Rib','/../icons/add_edge.svg',"cmdAdd()")
+	c2a(["Needle"],onselex1,'deleteULine','needle_cmds','delete Meridian/Rib','/../icons/delete_edge.svg',"cmdDel()")
+	c2a(["Needle"],onspread,'Open Spreadsheet','wheel_event','Open Spreadsheet','/../icons/eye.svg',"undock('Spreadsheet')")
+	c2a(["Needle"],onneedle,'Edit Rib','wheel_event','Edit Rib','/../icons/eye.svg',"start('Rib_template')")
+	c2a(["Needle"],onneedle,'Edit Backbone','wheel_event','Edit Backbone','/../icons/eye.svg',"start('Backbone')")
 
 
-def createcmd2(cmd='CV',pixmap='Std_Tool1',menutext=None,tooltip=None):
-	pass
+	c2a(["Faces","create"],always,'Random Plane',"nurbs","Create plane with randoms",'/../icons/plane.svg',"testRandomB()")
+	c2a(["Faces","create"],always,'Random Torus',"nurbs","Create torus with randoms",'/../icons/torus.svg',"testRandomTorus()")
+	c2a(["Faces","create"],always,'Random Cylinder',"nurbs","Create cylinder with randomness",'/../icons/cylinder.svg',"testRandomCylinder()")
+	c2a(["Faces","create"],always,'Random Sphere',"nurbs","Create sphere with randomness",'/../icons/sphere.svg',"testRandomSphere()")
+	c2a(["Faces","create"],ondocument,'simple Hood','simplehood','create a simple hood','/../icons/eye.svg',"run()")
 
-#	try:
-#		FreeCADGui.addCommand(cmd, make_master(cmd))
-#		cvCmds.append(cmd)
-#	except:
-#		pass
+	c2a(["Faces","create"],always,'Create Shoe','shoe','Create Shoe','/../icons/shoe.svg',"run()")
+	c2a(["Faces","create"],always,'Nurbs Editor','nurbs','creates a test nurbs','/../icons/zebra.svg',"runtest()")
+	c2a(["Faces","create"],onselection,'UV Grid Generator','uvgrid_generator','create UV grid of the partr','/../icons/delete_edge.svg',"runSel()")
+	c2a(["Faces","create"],onselection,'Nurbs Helper','helper','create helper objects of the part','/../icons/delete_edge.svg',"makeHelperSel()")
 
-
-#----------------------------------------
-modes=["addUline","addVLine"]
-
-#for m in nurbswb.configuration.modes:
-for m in modes:
-	createcmd2(m)
-
-#------------------------------------------
+	c2a(["Faces"],always,'ZebraTool','zebratool','ZebraTool','/../icons/zebra.svg',"run()")
 
 
 
+	for cmd in FreeCADGui.listCommands():
+		if cmd.startswith("Nurbs_"):
+			print cmd
 
 
+'''
+
+nd=App.newDocument("Unnamed")
+App.setActiveDocument(nd.Name)
+App.ActiveDocument=App.getDocument(nd.Name)
+Gui.ActiveDocument=Gui.getDocument(nd.Name)
+'''
 
 class NurbsWorkbench(Workbench):
 	'''Nurbs'''
-	
+
 	MenuText = "Nurbs"
 	ToolTip = "Nurbs Editor"
+
+	Icon= '''
+/* XPM */
+static char * nurbs_xpm[] = {
+"16 16 2 1",
+".	c #E12DEC",
+"+	c #FFFFFF",
+"................",
+"................",
+"................",
+"................",
+".........+++++..",
+".........+++++..",
+".........+++++..",
+".........+++++..",
+".........+++++..",
+".........+++++..",
+"................",
+"................",
+"................",
+"................",
+"................",
+"................"};'''
 
 	def GetClassName(self):
 		return "Gui::PythonWorkbench"
 
 	def Initialize(self):
-		global cvCmds
-		# cmds= ['Nurbs Editor', 'add U line' ,'add V line', 'UV Grid Generator' ]
-		cmds= ['Nurbs Editor', 
-				'add U line' , 'add V line', #'UV Grid Generator' ,'Surface Helper',
-				'Random Plane','Random Torus','Random Sphere','Random Cylinder',
-				'Create Needle','needle Change Model',
-				'Edit Backbone','Edit Rib',
-				'Open SS','ZebraTool','DBE','simple Hood',
-				'Create Shoe','Cut Scan'
-			]
-		self.appendToolbar("Nurbs", cmds )
-		self.appendMenu("Nurbs", cmds)
-		Log ("Loading Nurbs Workbench ... done\n")
+		cmds= ['Nurbs_ZebraTool','Nurbs_DraftBSpline Editor','Nurbs_Create Shoe']
 
+		if 1:
+			self.appendToolbar("Nurbs", cmds )
+			self.appendMenu("Nurbs", cmds)
 
-	Icon = """
-/* XPM */
-static char * osm_xpm[] = {
-"64 64 260 2",
-"  	c #42426F",
-". 	c #424270",
-"+ 	c #434370",
-"@ 	c #444470",
-"# 	c #444471",
-"$ 	c #464674",
-"% 	c #454571",
-"& 	c #42426B",
-"* 	c #22222C",
-"= 	c #24242F",
-"- 	c #4B4B7D",
-"; 	c #484877",
-"> 	c #474775",
-", 	c #3E3E62",
-"' 	c #201614",
-") 	c #291818",
-"! 	c #2A1818",
-"~ 	c #141715",
-"{ 	c #161715",
-"] 	c #282838",
-"^ 	c #42426C",
-"/ 	c #43436E",
-"( 	c #454572",
-"_ 	c #484878",
-": 	c #12140F",
-"< 	c #A11010",
-"[ 	c #FF0909",
-"} 	c #871212",
-"| 	c #901111",
-"1 	c #911111",
-"2 	c #591413",
-"3 	c #061715",
-"4 	c #081715",
-"5 	c #071715",
-"6 	c #192129",
-"7 	c #2D2D41",
-"8 	c #494979",
-"9 	c #151715",
-"0 	c #991111",
-"a 	c #FF0A0A",
-"b 	c #FB0A0A",
-"c 	c #F40B0B",
-"d 	c #8F1111",
-"e 	c #161919",
-"f 	c #242430",
-"g 	c #311717",
-"h 	c #23232D",
-"i 	c #4B4B7E",
-"j 	c #131714",
-"k 	c #201919",
-"l 	c #25232E",
-"m 	c #464672",
-"n 	c #484875",
-"o 	c #212129",
-"p 	c #311818",
-"q 	c #FE0A0A",
-"r 	c #FF0808",
-"s 	c #061817",
-"t 	c #383857",
-"u 	c #2F1818",
-"v 	c #071918",
-"w 	c #393958",
-"x 	c #031918",
-"y 	c #3A3A5A",
-"z 	c #DB0C0D",
-"A 	c #0A140E",
-"B 	c #494977",
-"C 	c #25242E",
-"D 	c #CC0D0D",
-"E 	c #0D1613",
-"F 	c #383856",
-"G 	c #D30D0D",
-"H 	c #171613",
-"I 	c #42426A",
-"J 	c #464673",
-"K 	c #474773",
-"L 	c #3A3A59",
-"M 	c #601515",
-"N 	c #191919",
-"O 	c #4A4A79",
-"P 	c #5C1515",
-"Q 	c #1B1B1D",
-"R 	c #3C3B5C",
-"S 	c #001918",
-"T 	c #9D1010",
-"U 	c #181B1C",
-"V 	c #404066",
-"W 	c #484876",
-"X 	c #141C1E",
-"Y 	c #AE0F0F",
-"Z 	c #111919",
-"` 	c #2F2F43",
-" .	c #0C1613",
-"..	c #CB0D0D",
-"+.	c #0E1A19",
-"@.	c #302F45",
-"#.	c #474774",
-"$.	c #2C2C3E",
-"%.	c #3F1514",
-"&.	c #F00B0B",
-"*.	c #162026",
-"=.	c #45456F",
-"-.	c #484873",
-";.	c #4B4B79",
-">.	c #45456D",
-",.	c #404064",
-"'.	c #171A1C",
-").	c #A41010",
-"!.	c #F30B0B",
-"~.	c #001715",
-"{.	c #474771",
-"].	c #2F2F44",
-"^.	c #7F1212",
-"/.	c #1C1D20",
-"(.	c #484874",
-"_.	c #282B3C",
-":.	c #3C1717",
-"<.	c #4C4C7C",
-"[.	c #001713",
-"}.	c #FD0A0A",
-"|.	c #171818",
-"1.	c #323249",
-"2.	c #494976",
-"3.	c #4C4C7B",
-"4.	c #151613",
-"5.	c #931111",
-"6.	c #181919",
-"7.	c #262632",
-"8.	c #494974",
-"9.	c #4F4F7F",
-"0.	c #8A1212",
-"a.	c #981111",
-"b.	c #131410",
-"c.	c #4F4F80",
-"d.	c #4A4A77",
-"e.	c #292937",
-"f.	c #271818",
-"g.	c #F50B0B",
-"h.	c #151614",
-"i.	c #414165",
-"j.	c #494975",
-"k.	c #4B4B77",
-"l.	c #262631",
-"m.	c #241818",
-"n.	c #FA0A0A",
-"o.	c #061613",
-"p.	c #414164",
-"q.	c #101C1F",
-"r.	c #C80E0E",
-"s.	c #531515",
-"t.	c #242937",
-"u.	c #484872",
-"v.	c #3D3D5D",
-"w.	c #061917",
-"x.	c #121919",
-"y.	c #313147",
-"z.	c #4A4A76",
-"A.	c #262A39",
-"B.	c #621313",
-"C.	c #501515",
-"D.	c #1C1B1E",
-"E.	c #4E4E7D",
-"F.	c #4A4A75",
-"G.	c #0B1612",
-"H.	c #C30E0E",
-"I.	c #5F1515",
-"J.	c #4D4D7B",
-"K.	c #591515",
-"L.	c #071613",
-"M.	c #4F4F7E",
-"N.	c #1E1D20",
-"O.	c #461616",
-"P.	c #0A130D",
-"Q.	c #4C4C78",
-"R.	c #313146",
-"S.	c #0F1918",
-"T.	c #EE0B0B",
-"U.	c #3E3D5D",
-"V.	c #3F3F60",
-"W.	c #34344B",
-"X.	c #051510",
-"Y.	c #081714",
-"Z.	c #111614",
-"`.	c #8F1112",
-" +	c #831212",
-".+	c #161F23",
-"++	c #44446A",
-"@+	c #474770",
-"#+	c #484871",
-"$+	c #141411",
-"%+	c #161716",
-"&+	c #251818",
-"*+	c #3A1717",
-"=+	c #24242D",
-"-+	c #4B4B75",
-";+	c #4F4F7C",
-">+	c #50507E",
-",+	c #25252E",
-"'+	c #282834",
-")+	c #242631",
-"!+	c #041715",
-"~+	c #021917",
-"{+	c #C70E0E",
-"]+	c #F90A0A",
-"^+	c #EB0B0B",
-"/+	c #281717",
-"(+	c #303044",
-"_+	c #4C4C77",
-":+	c #3F3F5F",
-"<+	c #414162",
-"[+	c #09130D",
-"}+	c #401615",
-"|+	c #491616",
-"1+	c #C10E0E",
-"2+	c #961111",
-"3+	c #141714",
-"4+	c #272732",
-"5+	c #1E1E22",
-"6+	c #141B1D",
-"7+	c #0B1919",
-"8+	c #E70C0C",
-"9+	c #8B1111",
-"0+	c #191B1D",
-"a+	c #4E4E7B",
-"b+	c #4B4B76",
-"c+	c #4D4D7A",
-"d+	c #4E4E7C",
-"e+	c #35354D",
-"f+	c #05140F",
-"g+	c #011714",
-"h+	c #841212",
-"i+	c #DA0C0C",
-"j+	c #001612",
-"k+	c #494871",
-"l+	c #4A4A73",
-"m+	c #4D4D79",
-"n+	c #141511",
-"o+	c #1C1818",
-"p+	c #1F1919",
-"q+	c #7B1313",
-"r+	c #1A1919",
-"s+	c #2E2E41",
-"t+	c #373751",
-"u+	c #1B222A",
-"v+	c #001816",
-"w+	c #C00E0E",
-"x+	c #BF0E0E",
-"y+	c #2E2E40",
-"z+	c #4C4C76",
-"A+	c #4D4D78",
-"B+	c #494970",
-"C+	c #454569",
-"D+	c #0D130D",
-"E+	c #131817",
-"F+	c #1A1A1B",
-"G+	c #494971",
-"H+	c #2F2F41",
-"I+	c #212127",
-"J+	c #4E4E79",
-"K+	c #4F4F7B",
-"                                                                                                                                ",
-". . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . ",
-". . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . ",
-". . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . ",
-"+ + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + ",
-"+ + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + ",
-"+ + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + ",
-"+ + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + ",
-"+ + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + ",
-"@ @ @ @ @ @ @ @ @ @ @ @ @ @ @ @ @ @ @ @ @ @ @ @ @ @ @ @ @ @ @ @ @ @ @ @ @ @ @ @ @ @ @ @ @ @ @ @ @ @ @ @ @ @ @ @ @ @ @ @ @ @ @ @ ",
-"@ @ @ @ @ @ @ @ @ @ @ @ @ @ @ @ @ @ @ @ @ @ @ @ @ @ @ @ @ @ @ @ @ @ @ @ @ @ @ @ @ @ @ @ @ @ @ @ @ @ @ @ @ @ @ @ @ @ @ @ @ @ @ @ ",
-"# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # ",
-"# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # ",
-"# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # ",
-"# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # ",
-"# # # # # # # # # # # # # # # # # # # # # # # $ $ $ $ $ $ $ # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # ",
-"% % % % % % % % % % % % % % % % % % % % % % & * = = = = = = - ; ; ; ; > % % % % % % % % % % % % % % % % % % % % % % % % % % % % ",
-"% % % % % % % % % % % % % % % % % % % % % % , ' ) ) ) ) ) ! ~ { { { { ] ^ & & & / ( % % % % % % % % % % % % % % % % % % % % % % ",
-"% % % % % % % % % % % % % % % % % % % % % _ : < [ [ [ [ [ [ } | | | 1 2 3 4 4 5 6 7 8 % % % % % % % % % % % % % % % % % % % % % ",
-"( ( ( ( ( ( ( ( ( ( ( ( ( ( ( ( ( ( ( ( ( _ 9 0 a a a a a a a a a a a b c c c c d e f > ( ( ( ( ( ( ( ( ( ( ( ( ( ( ( ( ( ( ( ( ",
-"( ( ( ( ( ( ( ( ( ( ( ( ( ( ( ( ( ( ( ( ( _ 9 0 a a a a a a a a a a a a a a a a [ g h > ( ( ( ( ( ( ( ( ( ( ( ( ( ( ( ( ( ( ( ( ",
-"( ( ( ( ( ( ( ( ( ( ( ( ( ( ( ( ( ( ( ( ( i j 1 a a a a a a a a a a a a a a a a [ k l ; ( ( ( ( ( ( ( ( ( ( ( ( ( ( ( ( ( ( ( ( ",
-"m m m m m m m m m m m m m m m m m m m m n o p [ a a a a a a a a a a a a a a a a q r s t m m m m m m m m m m m m m m m m m m m m ",
-"m m m m m m m m m m m m m m m m m m m m n h u [ a a a a a a a a a a a a a a a a a [ v w m m m m m m m m m m m m m m m m m m m m ",
-"m m m m m m m m m m m m m m m m m m m m n h u [ a a a a a a a a a a a a a a a a a [ x y m m m m m m m m m m m m m m m m m m m m ",
-"m m m m m m m m m m m m m m m m m m m m n h u [ a a a a a a a a a a a a a a a a a q z A n m m m m m m m m m m m m m m m m m m m ",
-"m m m m m m m m m m m m m m m m m m m m B C k [ a a a a a a a a a a a a a a a a a a D E > m m m m m m m m m m m m m m m m m m m ",
-"m m m m m m m m m m m m m m m m m m m m F s r q a a a a a a a a a a a a a a a a a a G H I J m m m m m m m m m m m m m m m m m m ",
-"K K K K K K K K K K K K K K K K K K K K L v [ a a a a a a a a a a a a a a a a a a a [ M N O K K K K K K K K K K K K K K K K K K ",
-"K K K K K K K K K K K K K K K K K K K K L v [ a a a a a a a a a a a a a a a a a a a a P Q O K K K K K K K K K K K K K K K K K K ",
-"K K K K K K K K K K K K K K K K K K K K R S [ a a a a a a a a a a a a a a a a a a a a T U V K K K K K K K K K K K K K K K K K K ",
-"K K K K K K K K K K K K K K K K K K K W X Y a a a a a a a a a a a a a a a a a a a a a [ Z ` K K K K K K K K K K K K K K K K K K ",
-"K K K K K K K K K K K K K K K K K K K B  ...a a a a a a a a a a a a a a a a a a a a a [ +.@.#.K K K K K K K K K K K K K K K K K ",
-"K K K K K K K K K K K K K K K K K K B $.%.&.a a a a a a a a a a a a a a a a a a a a a a < *.=.K K K K K K K K K K K K K K K K K ",
-"-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.;.Q P a a a a a a a a a a a a a a a a a a a a a a a c 5 >.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.",
-"-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.,.'.).a a a a a a a a a a a a a a a a a a a a a a a !.~.{.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.",
-"-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.].Z [ a a a a a a a a a a a a a a a a a a a a a a a q ^./.;.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.",
-"(.(.(.(.(.(.(.(.(.(.(.(.(.(.(.(.(.-._.:.[ a a a a a a a a a a a a a a a a a a a a a a a a | { <.(.(.(.(.(.(.(.(.(.(.(.(.(.(.(.(.",
-"(.(.(.(.(.(.(.(.(.(.(.(.(.(.(.(.(.(.[.}.q a a a a a a a a a a a a a a a a a a a a a a a a | |.1.2.(.(.(.(.(.(.(.(.(.(.(.(.(.(.(.",
-"(.(.(.(.(.(.(.(.(.(.(.(.(.(.(.(.3.4.5.a a a a a a a a a a a a a a a a a a a a a a a a a a | 6.7.B (.(.(.(.(.(.(.(.(.(.(.(.(.(.(.",
-"8.8.8.8.8.8.8.8.8.8.8.8.8.8.8.8.9.9 0.a a a a a a a a a a a a a a a a a a a a a a a a a a a.b.c.8.8.8.8.8.8.8.8.8.8.8.8.8.8.8.8.",
-"8.8.8.8.8.8.8.8.8.8.8.8.8.8.8.d.e.f.a a a a a a a a a a a a a a a a a a a a a a a a a a g.h.i.j.8.8.8.8.8.8.8.8.8.8.8.8.8.8.8.8.",
-"8.8.8.8.8.8.8.8.8.8.8.8.8.8.8.k.l.m.[ a a a a a a a a a a a a a a a a a a a a a a a a a n.o.>.8.8.8.8.8.8.8.8.8.8.8.8.8.8.8.8.8.",
-"8.8.8.8.8.8.8.8.8.8.8.8.8.8.8.p.q.r.a a a a a a a a a a a a a a a a a a a a a a a a a [ s.t.u.8.8.8.8.8.8.8.8.8.8.8.8.8.8.8.8.8.",
-"8.8.8.8.8.8.8.8.8.8.8.8.8.8.8.v.w.[ a a a a a a a a a a a a a a a a a a a a a a a a a [ x.y.8.8.8.8.8.8.8.8.8.8.8.8.8.8.8.8.8.8.",
-"8.8.8.8.8.8.8.8.8.8.8.8.8.8.z.A.B.a a a a a a a a a a a a a a a a a a a a a a a a a a C.D.E.8.8.8.8.8.8.8.8.8.8.8.8.8.8.8.8.8.8.",
-"F.F.F.F.F.F.F.F.F.F.F.F.F.F.E.G.H.a a a a a a a a a a a a a a a a a a a a a a a a a [ I.N J.F.F.F.F.F.F.F.F.F.F.F.F.F.F.F.F.F.F.",
-"F.F.F.F.F.F.F.F.F.F.F.F.F.J.N K.[ a a a a a a a a a a a a a a a a a a a a a a a a a r.L.9.F.F.F.F.F.F.F.F.F.F.F.F.F.F.F.F.F.F.F.",
-"F.F.F.F.F.F.F.F.F.F.F.F.F.M.N.O.a a a a a a a a a a a a a a a a a a a a a a a a a q z P.Q.F.F.F.F.F.F.F.F.F.F.F.F.F.F.F.F.F.F.F.",
-"F.F.F.F.F.F.F.F.F.F.F.F.F.R.S.a T.&.a a a a a a a a a a a a a a a a a a a a a a a [ S U.F.F.F.F.F.F.F.F.F.F.F.F.F.F.F.F.F.F.F.F.",
-"F.F.F.F.F.F.F.F.F.F.F.F.F.V.W.X.Y.Z.`. +r [ [ q a a a a a a a a a a a a a a a a a 0 .+++F.F.F.F.F.F.F.F.F.F.F.F.F.F.F.F.F.F.F.F.",
-"F.F.F.F.F.F.F.F.F.F.F.F.F.F.F.@+#+++$+%+&+m.*+[ [ q a a a a a a a a a a a a a a [ u =+Q.F.F.F.F.F.F.F.F.F.F.F.F.F.F.F.F.F.F.F.F.",
-"-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+;+>+,+'+)+!+~+{+]+[ a a a a a a a a a a a a ^+/+(+_+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+",
-"-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+Q._+-+:+<+[+}+|+1+[ q a a a a a a a a a 2+3+>+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+",
-"-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+>+4+5+6+7+]+8+a a a a a a a a 9+0+a+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+",
-"b+b+b+b+b+b+b+b+b+b+b+b+b+b+b+b+b+b+b+b+b+b+b+b+b+b+c+d+V.e+f+g+h+i+[ [ a a q [ j+k+b+b+b+b+b+b+b+b+b+b+b+b+b+b+b+b+b+b+b+b+b+b+",
-"b+b+b+b+b+b+b+b+b+b+b+b+b+b+b+b+b+b+b+b+b+b+b+b+b+b+b+b+b+b+l+m+n+o+p+q+[ a [ r+s+k.b+b+b+b+b+b+b+b+b+b+b+b+b+b+b+b+b+b+b+b+b+b+",
-"b+b+b+b+b+b+b+b+b+b+b+b+b+b+b+b+b+b+b+b+b+b+b+b+b+b+b+b+b+b+b+b+M.t+e.u+v+w+x+e y+k.b+b+b+b+b+b+b+b+b+b+b+b+b+b+b+b+b+b+b+b+b+b+",
-"z+z+z+z+z+z+z+z+z+z+z+z+z+z+z+z+z+z+z+z+z+z+z+z+z+z+z+z+z+z+z+z+z+_+A+B+C+D+E+F+G+z+z+z+z+z+z+z+z+z+z+z+z+z+z+z+z+z+z+z+z+z+z+z+",
-"z+z+z+z+z+z+z+z+z+z+z+z+z+z+z+z+z+z+z+z+z+z+z+z+z+z+z+z+z+z+z+z+z+z+z+z+z+>+H+I+;+z+z+z+z+z+z+z+z+z+z+z+z+z+z+z+z+z+z+z+z+z+z+z+",
-"z+z+z+z+z+z+z+z+z+z+z+z+z+z+z+z+z+z+z+z+z+z+z+z+z+z+z+z+z+z+z+z+z+z+z+z+z+z+J+K+z+z+z+z+z+z+z+z+z+z+z+z+z+z+z+z+z+z+z+z+z+z+z+z+",
-"z+z+z+z+z+z+z+z+z+z+z+z+z+z+z+z+z+z+z+z+z+z+z+z+z+z+z+z+z+z+z+z+z+z+z+z+z+z+z+z+z+z+z+z+z+z+z+z+z+z+z+z+z+z+z+z+z+z+z+z+z+z+z+z+",
-"z+z+z+z+z+z+z+z+z+z+z+z+z+z+z+z+z+z+z+z+z+z+z+z+z+z+z+z+z+z+z+z+z+z+z+z+z+z+z+z+z+z+z+z+z+z+z+z+z+z+z+z+z+z+z+z+z+z+z+z+z+z+z+z+",
-"_+_+_+_+_+_+_+_+_+_+_+_+_+_+_+_+_+_+_+_+_+_+_+_+_+_+_+_+_+_+_+_+_+_+_+_+_+_+_+_+_+_+_+_+_+_+_+_+_+_+_+_+_+_+_+_+_+_+_+_+_+_+_+_+"};
-"""
+		menues={}
+		for (c,a) in FreeCAD.tcmds5:
+			try:menues[tuple(c)].append(a)
+			except: menues[tuple(c)]=[a]
+
+		for m in menues:
+			self.appendMenu(list(m),menues[m])
 
 FreeCADGui.addWorkbench(NurbsWorkbench)
+

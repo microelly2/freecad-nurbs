@@ -881,6 +881,57 @@ def getdata(index):
 	return sel,ci,ri,index.data()
 
 
+def run():
+#			import nurbswb.nurbs
+#		import nurbswb.needle as needle
+#		reload( nurbswb.needle)
+
+		dokname=FreeCAD.ParamGet('User parameter:Plugins/nurbs').GetString("Document","Needle")
+		try: App.closeDocument(dokname)
+		except: pass
+
+		App.newDocument(dokname)
+		App.setActiveDocument(dokname)
+		App.ActiveDocument=App.getDocument(dokname)
+		Gui.ActiveDocument=Gui.getDocument(dokname)
+
+		a=createNeedle()
+
+
+		a.useBackbone=True
+		a.useRibTemplate=True
+		a.useRibCage=True
+		#a.useMesh=True
+		a.RibCount=0
+		import nurbswb.needle_models
+		reload (nurbswb.needle_models)
+		# a.Proxy.getExampleModel(nurbswb.needle_models.modelBanana)
+		model=FreeCAD.ParamGet('User parameter:Plugins/nurbs').GetString("NeedleModel","modelSimple")
+
+		print ("a.Proxy.getExampleModel(nurbswb.needle_models."+ model+")")
+		eval("a.Proxy.getExampleModel(nurbswb.needle_models."+ model+")")
+
+
+#		import Draft
+#		points=[FreeCAD.Vector(192.694291746,-129.634476444,0.0),FreeCAD.Vector(130.429397583,-0.657173752785,40.0),FreeCAD.Vector(-52.807308197,-112.73400116,0.0),FreeCAD.Vector(-127.525184631,-71.8170700073,0.0),FreeCAD.Vector(-205.801071167,-274.622741699,0.0),FreeCAD.Vector(28.1370697021,-262.169769287,0.0),FreeCAD.Vector(125.981895447,-187.451873779,0.0)]
+#		# Draft BSpline
+#		Draft.makeBSpline(points,closed=True,face=True,support=None)
+#		import Part
+#		bs=Part.BSplineCurve()
+#		bs.interpolate(points)
+#		bs.setPeriodic()
+#		mybsc=App.ActiveDocument.addObject('Part::Feature','MyBSC')
+#		mybsc.Shape=bs.toShape()
+
+		App.activeDocument().recompute()
+		Gui.SendMsgToActiveView("ViewFit")
+		App.activeDocument().recompute()
+
+
+		a.Proxy.startssevents()
+		a.ViewObject.Selectable=False
+
+
 
 
 #-----------------------------------------

@@ -18,6 +18,12 @@ import Part,Mesh,Draft
 import numpy as np
 import random
 
+import os, nurbswb
+
+global __dir__
+__dir__ = os.path.dirname(nurbswb.__file__)
+print __dir__
+
 def Myarray2Poly(arr,bb):
 
 	print "Polygon Variante"
@@ -749,7 +755,7 @@ def createNeedle(label="MyShoe"):
 	a.useSpreadsheet=True
 	# gendata(a.Spreadsheet)
 	a.ViewObject.DisplayMode="Shaded"
-	a.ViewObject.Transparency=80
+	a.ViewObject.Transparency=20
 	return a
 
 
@@ -973,24 +979,39 @@ def genrib(r=250,h=300,w=10,m=0,l=None,name="My Rib "):
 		''' rippe als Draft Bspline '''
 
 		if l==None: l=r
+		r2=max(20,r-100)
+		l2=max(20,l-100)
+
+		MP=np.array([0,m,h])
+		LP=np.array([0,m-0.5*l,max(250,0.95*h)])
+		SLP=np.array([0,m-0.8*l,0.6*h if 0.6*h>220 else 220])
+
+		RP=np.array([0,m+0.5*r,max(250,0.95*h)])
+		SRP=np.array([0,m+0.8*r,0.6*h if 0.6*h>220 else 220])
+
+		sharp=0.3
+
 		ps=[ 
-				[0,r-2,0],
-				[0,r,0],
-				[0,r,2],
+				[0,r2-10,0],
+				[0,r2,0],
+				[0,r,50],
+				[0,r,150],
 
-				
-				[0,0.9*r,0.3*h],
-				[0,0.8*r,0.4*h],
-				
-				[0,m+w,h],
-				[0,m-w,h],
+				SRP,
+				RP+(SRP-RP)*sharp,
+				RP,
+				RP+(MP-RP)*sharp,
+				MP,
+				LP+(MP-LP)*0.2,
+				LP,
+				LP+(SLP-LP)*0.2,
+				SLP,
 
-				[0,-0.8*l,0.4*h],
-				[0,-0.95*l,0.2*h],
 
-				[0,-l,2],
-				[0,-l,0],
-				[0,-l+2,0],
+				[0,-l,150],
+				[0,-l,50],
+				[0,-l2,0],
+				[0,-l2+10,0],
 		]
 
 		points=[FreeCAD.Vector(tuple(v))*0.10 for v in ps]
@@ -1023,9 +1044,14 @@ def genribh(r=250,h=300,w=50,m=0,l=None,name="My Rib "):
 
 				[0,0.8*r,0.4*h],
 				[0,0.8*r,0.4*h+300],
-				
+
+				[0,m+2*w,0.9*h],
+
 				[0,m+w,h],
 				[0,m-w,h],
+
+				[0,m-2*w,0.9*h],
+
 
 				[0,-0.8*l,0.4*h+360],
 				[0,-0.8*l,0.4*h],
@@ -1083,9 +1109,11 @@ def genrib2(r=250,h=300,w=50,m=0,l=None,name="My Rib "):
 
 				[0,0.8*r,0.4*h],
 				[0,0.8*r,0.4*h+300],
-				
+
+				[0,m+2*w,0.9*h],
 				[0,m+w,h],
 				[0,m-w,h],
+				[0,m-2*w,0.9*h],
 
 				[0,-0.8*l,0.4*h+360],
 				[0,-0.8*l,0.4*h],
@@ -1135,42 +1163,11 @@ def run():
 
 
 	if 1:
-
-		bbps=[ 
-				[255,0,13], #b
-				[250,0,11.5], #b
-				[245,0,10], #b
-				[218,0,4], #st
-				[168,0,0], # joint j
-				[132,0,6], # girth
-				[110,0,10], # waist
-				[68,0,14], # instep ik
-				[3,0,19], # heel pk
-				[15,0,110], # heel2 ph
-				[15,0,180], # wade aa
-				[15,0,190], # wade aa
-				[15,0,199], # wade aa
-		]
-
-
-		# ebenes modell
-		bbps=[ 
-				[255,0,13], #b
-				[250,0,11.5], #b
-				[245,0,10], #b
-				[218,0,4], #st
-				[168,0,0], # joint j
-				[132,0,6], # girth
-				[110,0,10], # waist
-				[68,0,14], # instep ik
-				[60,0,16], # heel pk
-				[45,0,17], # heel2 ph
-				[35,0,18], # wade aa
-				[20,0,19], # wade aa
-				[0,0,20], # wade aa
-		]
-
-
+		
+		print "import ............"
+		import nurbswb.shoedata
+		reload(nurbswb.shoedata)
+		bbps=nurbswb.shoedata.bbps
 
 		points=[FreeCAD.Vector(tuple(v)) for v in bbps]
 
@@ -1181,33 +1178,12 @@ def run():
 
 #		Draft.makeWire(points,closed=False,face=True,support=None)
 #		App.ActiveDocument.ActiveObject.Label="Backbone Poly"
-		'''
-		# starting values
 
-		bcurve=genrib(r=200,l=400,h=350,w=10,name="B ")
-		bcurve1=genrib(r=200,l=400,h=350,w=10,name="B1 ")
-		bcurve2=genrib(r=200,l=400,h=350,w=10,name="B2 ")
+		#
 
-		stcurve=genrib(r=360,l=430,h=350,w=10,name="ST ")
-
-
-		rf=1.0/np.cos(np.pi*28/180)
-
-		joint=genrib(r=470,l=430,h=400*rf,w=10,name="Joint ")
-		girth=genrib(r=390,l=280,h=420*rf,w=10,name="Girth ")
-		waist=genrib(r=340,l=205,h=540*rf,w=10,name="Waist ")
-		instep=genrib(r=340,l=270,h=870*rf,w=10,name="Instep ")
-
-		longheel=genribh(r=270,h=1400,w=10,name="Long Heel ")
-		heel=genribh(r=270,h=1400,w=10,name="Heel ")
-		ankle1=genrib2(r=400,h=950*rf,w=10,name="Ankle 1 ")
-		ankle2=genrib2(r=400,h=950*rf,w=10,name="Ankle 2 ")
-		ankle3=genrib2(r=400,h=950*rf,w=10,name="Ankle 3 ")
-		'''
-
-		bcurve=genrib(r=230,l=320,h=170,w=10,name="B ")
-		bcurve1=genrib(r=165,l=285,h=150,w=10,name="B1 ")
-		bcurve2=genrib(r=110,l=240,h=220,w=10,name="B2 ")
+		bcurve2=genrib(r=110,l=200,h=240,w=10,name="B2 ")
+		bcurve1=genrib(r=165,l=260,h=240,w=10,name="B1 ")
+		bcurve=genrib(r=230,l=320,h=240,w=10,name="B ")
 
 		stcurve=genrib(r=400,l=400,h=240,w=10,name="ST ")
 
@@ -1215,6 +1191,7 @@ def run():
 		rf=1.0/np.cos(np.pi*28/180)
 
 		joint=genrib(r=480,l=410,h=370*rf,w=10,name="Joint ")
+
 		girth=genrib(r=420,l=350,h=520*rf,w=20,name="Girth ")
 		waist=genrib(r=380,l=320,h=600*rf,w=60,name="Waist ")
 		instep=genrib(r=340,l=300,h=840*rf,w=80,name="Instep ")
@@ -1230,19 +1207,22 @@ def run():
 		heel=genrib(r=400,h=900*rf,w=220,name="oberHeel ")
 		ankle1=genrib(r=400,h=840*rf,w=200,name="Ankle 1 ")
 		ankle2=genrib(r=300,h=840*rf,w=180,name="Ankle 2 ")
-		ankle3=genrib(r=30,h=840*rf,w=30,name="Ankle 3 ")
+		ankle3=genrib(r=85,h=840*rf,w=30,name="Ankle 3 ")
+		ankle4=genrib(r=30,h=840*rf,w=10,name="Ankle 4 ")
 
 
-	ribs=[bcurve2,bcurve1,bcurve,stcurve,joint,girth,waist,instep,longheel,heel,ankle1,ankle2,ankle3]
+	ribs=[bcurve2,bcurve1,bcurve,stcurve,joint,girth,waist,instep,longheel,heel,ankle1,ankle2,ankle3,ankle4]
 
 
-	twister= [[0,75,0]]+[[0,0,0]]*3 + [[0,28,0]]*4 +[[0,45,0]]+ [[0,50,0]]+ [[0,90,0]]*3
-	twister= [[0,75,0]]+[[0,0,0]]*3 + [[0,30,0]]*4 +[[0,48,0]]+ [[0,90,0]]+ [[0,90,0]]*3
+	#twister= [[0,75,0]]+[[0,0,0]]*3 + [[0,28,0]]*4 +[[0,45,0]]+ [[0,50,0]]+ [[0,90,0]]*3
+	#twister= [[0,75,0]]+[[0,0,0]]*3 + [[0,30,0]]*4 +[[0,48,0]]+ [[0,90,0]]+ [[0,90,0]]*3
 
 	# ebenes modell
-	twister= [[0,75,0]]+[[0,0,0]]*3 + [[0,30,0]]*4 +[[0,25,0]]+ [[0,20,0]]+ [[0,10,0]]*2 + [[0,10,0]]
+	#twister= [[0,75,0]]+[[0,0,0]]*3 + [[0,30,0]]*4 +[[0,25,0]]+ [[0,20,0]]+ [[0,10,0]]*2 + [[0,10,0]]
+	twister=nurbswb.shoedata.twister
 	
-	sc= [[1,0.3]] + [[1,1]]*12 # + [[1,1.0],[1,1.0],[1,1.0]]+ [[1.,1.]]*3
+	#sc= [[1,0.3]] + [[1,1]]*12 # + [[1,1.0],[1,1.0],[1,1.0]]+ [[1.,1.]]*3
+	sc=nurbswb.shoedata.sc
 
 	assert len(ribs)==len(twister)
 	assert len(ribs)==len(sc)
@@ -1258,6 +1238,7 @@ def run():
 	for j in a.Ribs:
 		ffs=App.ActiveDocument.addObject("Part::Spline","Rib " + j.Label)
 		profiles.addObject(j)
+		j.Placement.Rotation=FreeCAD.Rotation(FreeCAD.Vector(0,1,0,),90)
 		g.addObject(ffs)
 		ffs2=App.ActiveDocument.addObject("Part::Spline","RibP " + j.Label)
 		gp.addObject(ffs2)
@@ -1291,9 +1272,12 @@ def run():
 	print len(s.Shape.Edges)
 
 	import Points
-	Points.insert(u"/home/thomas/Dokumente/freecad_buch/b235_shoe/shoe_last_scanned.asc","Shoe")
+	try:
+		Points.insert(u"/home/thomas/Dokumente/freecad_buch/b235_shoe/shoe_last_scanned.asc","Shoe")
+	except:
+		pass
 
-	if 10:
+	if 0:
 		# flaechen erzeugen
 		try: loft=App.ActiveDocument.MeridiansLoft
 		except:loft=App.ActiveDocument.addObject('Part::Loft','MeridiansLoft')
