@@ -241,12 +241,13 @@ import nurbswb.configuration
 
 if FreeCAD.GuiUp:
 
-	c1a(["Curves"],always,"scancut","cut Scanned Mesh")
+	c1a(["Curves"],always,"scancut","cut Scanned Mesh ",'/../icons/mesh_cut.svg')
+	c1a(["Curves"],ondocument,"weighteditor","Weight Editor")
 
 	c1a(["Curves"],ondocument,"simplecurve","simplify curve")
 	c1a(["Curves"],onselection1,"removeknot","remove a knot in a bspline")
 	c1a(["Curves"],onselection2,"curvedistance","calculate the distance between two curves")
-	c1a(["Curves"],onselection1,"createsketchspline","create Sketcher BSpline from a curve")
+	c1a(["Curves"],always,"createsketchspline","create Sketcher BSpline from a curve",'/../icons/createsketchspline.svg')
 	c1a(["Curves"],ondocument,"weighteditor","Weight Editor")
 	#c2a(["Curves"],onselection1,'DraftBSpline Editor',"DraftBSplineEditor","Edit Draft Bspline",'/../icons/32px-draftbspline_edit.png',"run()")
 	c2a(["Curves"],always,'DraftBSpline Editor',"DraftBSplineEditor","Edit Draft Bspline",'/../icons/32px-draftbspline_edit.png',"run()")
@@ -274,7 +275,8 @@ if FreeCAD.GuiUp:
 
 	c2a(["Faces"],always,'ZebraTool','zebratool','ZebraTool','/../icons/zebra.svg',"run()")
 
-
+	c2a(["Faces"],always,'Curves to Face','curves2face','Curves to Face','/../icons/upgrade.svg',"run()")
+	c2a(["Curves"],always,'scanbackbonecut','scanbackbonecut','Cut the Scan along backbone ','/../icons/backbonecut.svg',"run()")
 
 	for cmd in FreeCADGui.listCommands():
 		if cmd.startswith("Nurbs_"):
@@ -322,7 +324,9 @@ static char * nurbs_xpm[] = {
 		return "Gui::PythonWorkbench"
 
 	def Initialize(self):
-		cmds= ['Nurbs_ZebraTool','Nurbs_DraftBSpline Editor','Nurbs_Create Shoe']
+		cmds= ['Nurbs_ZebraTool','Nurbs_DraftBSpline Editor',
+		'Nurbs_Create Shoe',
+		'Nurbs_scanbackbonecut','Nurbs_createsketchspline','Nurbs_Curves to Face']
 
 		if 1:
 			self.appendToolbar("Nurbs", cmds )

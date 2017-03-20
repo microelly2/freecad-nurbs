@@ -59,7 +59,8 @@ def createSketchSpline(pts=None,label="BSpline Sketch"):
 		#if i == 1: sk.addConstraint(Sketcher.Constraint('Radius',0,10.000000)) 
 		#if i>0: sk.addConstraint(Sketcher.Constraint('Equal',0,i)) 
 
-		sk.addConstraint(Sketcher.Constraint('Radius',i,10.000000)) 
+		radius=2.0
+		sk.addConstraint(Sketcher.Constraint('Radius',i,radius)) 
 		sk.renameConstraint(i, 'Weight ' +str(i+1))
 
 		#i=5; App.ActiveDocument.Sketch016.setDatum(i,40))
@@ -85,6 +86,16 @@ def createSketchSpline(pts=None,label="BSpline Sketch"):
  	sk.Placement = App.Placement(App.Vector(0,0,p.z),App.Rotation(App.Vector(1,0,0),0))
 	sk.ViewObject.LineColor=(random.random(),random.random(),random.random())
 	App.activeDocument().recompute()
+	return sk
+
+def runobj(obj,label=None):
+	bc=obj.Shape.Edge1.Curve
+	pts=bc.getPoles()
+	l=obj.Label
+	print (l,len(pts))
+	sk=createSketchSpline(pts,str(l) + " Sketch" )
+	if label <>None:
+		sk.Label=label
 	return sk
 
 

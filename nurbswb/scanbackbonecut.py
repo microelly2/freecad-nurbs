@@ -84,6 +84,7 @@ def displayCut(label,pl,pts,showpoints=True,showwire=False,showxypoints=False,sh
 		FreeCAD.ActiveDocument.ActiveObject.ViewObject.PointSize=5
 		FreeCAD.ActiveDocument.ActiveObject.Label="Points Map xy " +plst
 		FreeCAD.ActiveDocument.ActiveObject.Label=label+"t=" +plst + "#"
+		FreeCAD.ActiveDocument.ActiveObject.Label="t=" +plst + "#"
 		#FreeCAD.ActiveDocument.ActiveObject.Placement.Rotation=FreeCAD.Rotation(FreeCAD.Vector(0,1,0),-90)
 		scp.addObject(FreeCAD.ActiveDocument.ActiveObject)
 
@@ -179,19 +180,27 @@ def run():
 	#pla=FreeCAD.Placement()
 	#displayCut(pla,pcl,showpoints=True,showwire=True)
 
+	import nurbswb
+	import nurbswb.createsketchspline
+	reload(nurbswb.createsketchspline)
 
 	App=FreeCAD
 	jj=App.ActiveDocument.Scanpoints.OutList
+	
+	clo=FreeCAD.ActiveDocument.addObject("App::DocumentObjectGroup","clones")
 
 	for i,p in enumerate(App.ActiveDocument.Scanpoints.OutList):
 
-		print p.Label
 		l2=App.ActiveDocument.Profiles.OutList[2].Label
-		print l2
-		print
 		scp=FreeCAD.ActiveDocument.addObject("App::DocumentObjectGroup","GRP "+l2)
 		scp.addObject(jj[i])
-		scp.addObject(App.ActiveDocument.Profiles.OutList[2])
+		ao=App.ActiveDocument.Profiles.OutList[2]
+		scp.addObject(ao)
+		rc=nurbswb.createsketchspline.runobj(ao,jj[i].Label)
+		scp.addObject(rc)
+		cl=Draft.clone(rc)
+		cl.Label=rc.Label
+		clo.addObject(cl)
 
 	for i in App.ActiveDocument.Objects:
 		i.ViewObject.hide()
