@@ -1273,7 +1273,7 @@ def run():
 
 	import Points
 	try:
-		Points.insert(u"/home/thomas/Dokumente/freecad_buch/b235_shoe/shoe_last_scanned.asc","Shoe")
+		Points.insert(__dir__+"/../testdata/shoe_last_scanned.asc","Shoe")
 	except:
 		pass
 

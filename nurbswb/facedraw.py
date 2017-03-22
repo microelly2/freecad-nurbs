@@ -108,7 +108,7 @@ class EventFilter(QtCore.QObject):
 						stop()
 
 
-					elif e.key()== QtCore.Qt.Key_Enter or e.key()== QtCore.Qt.Key_Return:
+					elif  e.key()== QtCore.Qt.Key_Return:
 #						say("------------Enter-----------------")
 						self.update()
 					elif e.key() == QtCore.Qt.Key_Right :
@@ -137,6 +137,14 @@ class EventFilter(QtCore.QObject):
 						self.mouseWheel -= FreeCAD.ParamGet('User parameter:Plugins/nurbs').GetFloat("MovePageStep",50)
 						self.dialog.ef_action("down!",self,self.mouseWheel)
 						return True
+					if e.key()== QtCore.Qt.Key_Enter:
+							vf=FreeCAD.Vector(self.x,self.y,self.z)
+							try:
+								self.pts += [vf]
+							except:
+								self.pts = [vf]
+							if len(self.pts)>1:
+								self.wire.Shape=Part.makePolygon(self.pts)
 					else: # letter key pressed
 						ee=e.text()
 						if len(ee)>0: 
@@ -157,13 +165,6 @@ class EventFilter(QtCore.QObject):
  						if r in ['l','r']:
 
 							print ("KEY pressed ----------------------",r)
-							vf=FreeCAD.Vector(self.x,self.y,self.z)
-							try:
-								self.pts += [vf]
-							except:
-								self.pts = [FreeCAD.Vector(),vf]
-
-							self.wire.Shape=Part.makePolygon(self.pts)
 
 				except:
 					sayexc()
@@ -250,6 +251,31 @@ class EventFilter(QtCore.QObject):
 
 
 
+def drawcurve(wire,face):
+	print "drawcurve"
+
+	#w=App.ActiveDocument.Drawing_on_MyShoe__Face2.Shape
+	#t=App.ActiveDocument.MyShoe.Shape.Face2
+
+	w=wire.Shape
+	t=face
+
+
+	pts=[p.Point for p in w.Vertexes]
+	sf=t.Surface
+
+	pts2da=[sf.parameter(p) for p in pts[1:]]
+	pts2d=[FreeCAD.Base.Vector2d(p[0],p[1]) for p in pts2da]
+
+	bs2d = Part.Geom2d.BSplineCurve2d()
+	bs2d.interpolate(pts2d)
+
+	e1 = bs2d.toShape(t)
+	Part.show(e1)
+
+
+
+
 
 class MyWidget(QtGui.QWidget):
 	'''edit pole mastre dialog'''
@@ -257,7 +283,11 @@ class MyWidget(QtGui.QWidget):
 	def commit(self):
 		stop()
 
-	def cancel(self):
+	def apply(self):
+		try:
+			drawcurve(self.ef.wire,self.ef.subobj)
+		except:
+			sayexc()
 		stop()
 
 
@@ -267,7 +297,6 @@ class MyWidget(QtGui.QWidget):
 		ef=self.ef
 		print ("val,x,y,k",ef.mouseWheel,ef.posx,ef.posy,ef.key)
 		return 
-
 
 	def ef_action(self,*args):
 		return
@@ -285,8 +314,6 @@ def dialog(source):
 	w.ef="no eventfilter defined"
 
 
-
-
 	mode=QtGui.QComboBox()
 	mode.addItem("move pole") #0
 	mode.addItem("move pole and neighbors") #1
@@ -301,8 +328,8 @@ def dialog(source):
 	w.key=editorkey
 	w.modelab=lab
 
-	btn=QtGui.QPushButton("Cancel")
-	btn.clicked.connect(w.cancel)
+	btn=QtGui.QPushButton("Apply")
+	btn.clicked.connect(w.apply)
 
 	cobtn=QtGui.QPushButton("Commit and stop")
 #	cobtn.clicked.connect(w.commit)
@@ -328,8 +355,6 @@ def dialog(source):
 
 	return w
 
-
-import time
 def start(source='Backbone'):
 	'''create and initialize the event filter'''
 
@@ -340,6 +365,7 @@ def start(source='Backbone'):
 	ef.mode='r'
 	try:
 			s=Gui.Selection.getSelectionEx()
+			ef.subobj=s[0].SubObjects[0]
 			ef.objname=s[0].Object.Name
 			ef.subelement=s[0].SubElementNames[0]
 	except:
@@ -368,14 +394,6 @@ def start(source='Backbone'):
 	ef.dialog.show()
 
 
-
-
-def delo(label):
-	''' delete object by given label'''
-	try:
-		c=App.activeDocument().getObjectsByLabel(label)[0]
-		App.activeDocument().removeObject(c.Name)
-	except: pass
 
 def stop():
 	''' stop eventserver'''
