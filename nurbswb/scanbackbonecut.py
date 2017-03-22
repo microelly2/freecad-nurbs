@@ -15,18 +15,22 @@ import scipy as sp
 from scipy import signal
 
 from PySide import QtGui
-import sys,traceback,random
+import sys,traceback,random,os
 
 import Points
+import nurbswb
 
+global __dir__
+__dir__ = os.path.dirname(nurbswb.__file__)
+print __dir__
 
 # Points.export(__objs__,u"/home/thomas/Dokumente/freecad_buch/b235_shoe/shoe_last_scanned.asc")
 
 try: 
 	FreeCAD.ActiveDocument.shoe_last_scanned
 except: 
-	Points.insert(u"/home/thomas/Dokumente/freecad_buch/b235_shoe/shoe_last_scanned.asc","Shoe")
-
+#	Points.insert(u"/home/thomas/Dokumente/freecad_buch/b235_shoe/shoe_last_scanned.asc","Shoe")
+	Points.insert(__dir__+"/../testdata/shoe_last_scanned.asc","Shoe")
 
 FreeCADGui.runCommand("Draft_ToggleGrid")
 
