@@ -274,6 +274,7 @@ if FreeCAD.GuiUp:
 	c2a(["Faces","create"],onselection,'Nurbs Helper','helper','create helper objects of the part','/../icons/delete_edge.svg',"makeHelperSel()")
 
 	c2a(["Faces"],always,'ZebraTool','zebratool','ZebraTool','/../icons/zebra.svg',"run()")
+	c2a(["Curves"],always,'facedraw','facedraw','draw on a face','/../icons/backbonecut.svg',"run()")
 
 	c2a(["Faces"],always,'Curves to Face','curves2face','Curves to Face','/../icons/upgrade.svg',"run()")
 	c2a(["Curves"],always,'scanbackbonecut','scanbackbonecut','Cut the Scan along backbone ','/../icons/backbonecut.svg',"run()")
