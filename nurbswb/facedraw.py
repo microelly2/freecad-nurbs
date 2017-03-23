@@ -64,7 +64,7 @@ class EventFilter(QtCore.QObject):
 				y=pos.y()
 #				print ("mouse pos ",x,y)
 				(x,y)=Gui.ActiveDocument.ActiveView.getCursorPos()
-				print ("cursor pos",x,y)
+#				print ("cursor pos",x,y)
 				t=Gui.ActiveDocument.ActiveView.getObjectsInfo((x,y))
 				if t<>None:
 					for tt in t:
@@ -299,7 +299,7 @@ def createnewwire(widget):
 
 	print "new wire"
 	ef=widget.ef
-	w=App.ActiveDocument.addObject("Part::Feature","Drawing on " + ef.objname + ": "+ ef.subelement)
+	w=App.ActiveDocument.addObject("Part::Feature","Drawing on " + ef.objname + ": "+ ef.subelement +"#")
 	w.Shape=Part.Shape()
 
 	c=PySide.QtGui.QColorDialog.getColor(QtGui.QColor(random.randint(10,255),random.randint(10,255),random.randint(10,255)))
