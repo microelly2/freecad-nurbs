@@ -123,9 +123,9 @@ class EventFilter(QtCore.QObject):
 						stop()
 
 
-					elif  e.key()== QtCore.Qt.Key_Return:
+#					elif  e.key()== QtCore.Qt.Key_Return:
 #						say("------------Enter-----------------")
-						self.update()
+#						self.update()
 					elif e.key() == QtCore.Qt.Key_Right :
 						if self.dialog.dial.value()==self.dialog.dial.maximum(): val=0
 						else: val=self.dialog.dial.value()+1
@@ -152,7 +152,7 @@ class EventFilter(QtCore.QObject):
 						self.mouseWheel -= FreeCAD.ParamGet('User parameter:Plugins/nurbs').GetFloat("MovePageStep",50)
 						self.dialog.ef_action("down!",self,self.mouseWheel)
 						return True
-					if e.key()== QtCore.Qt.Key_Enter:
+					if e.key()== QtCore.Qt.Key_Enter or e.key()== QtCore.Qt.Key_Return:
 							vf=FreeCAD.Vector(self.x,self.y,self.z)
 							try:
 								self.pts += [vf]
@@ -161,7 +161,7 @@ class EventFilter(QtCore.QObject):
 							if len(self.pts)>1:
 								self.wire.Shape=Part.makePolygon(self.pts)
 								self.wire.ViewObject.PointSize=int(self.dialog.dial.value()+1)
-								
+
 					else: # letter key pressed
 						ee=e.text()
 						if len(ee)>0: 
@@ -179,9 +179,22 @@ class EventFilter(QtCore.QObject):
 						if r=='*':
 							Gui.activeDocument().ActiveView.fitAll()
 							return True
- 						if r in ['l','r']:
+ 						if r in ['a']:
 
-							print ("KEY pressed ----------------------",r)
+								print ("KEY pressed ----------------------",r)
+
+						vf=FreeCAD.Vector(self.x,self.y,self.z)
+
+						try:
+							self.pts += [vf]
+						except:
+							self.pts = [vf]
+						if len(self.pts)>1:
+							self.wire.Shape=Part.makePolygon(self.pts)
+							self.wire.ViewObject.PointSize=int(self.dialog.dial.value()+1)
+							self.wire.ViewObject.LineWidth=int(self.dialog.dial.value()+1)
+
+
 
 				except:
 					sayexc()
@@ -250,6 +263,9 @@ class EventFilter(QtCore.QObject):
 
 				if event.button() == QtCore.Qt.LeftButton:
 #					FreeCAD.Console.PrintMessage('!! X one left\n')
+
+
+
 					return False
 
 				elif event.button() == QtCore.Qt.RightButton:
@@ -285,7 +301,9 @@ def drawcurve(wire,face):
 	pts2d=[FreeCAD.Base.Vector2d(p[0],p[1]) for p in pts2da]
 
 	bs2d = Part.Geom2d.BSplineCurve2d()
+	bs2d.setPeriodic()
 	bs2d.interpolate(pts2d)
+	bs2d.setPeriodic()
 
 	e1 = bs2d.toShape(t)
 #	Part.show(e1)
@@ -302,16 +320,17 @@ def createnewwire(widget):
 	w=App.ActiveDocument.addObject("Part::Feature","Drawing on " + ef.objname + ": "+ ef.subelement +"#")
 	w.Shape=Part.Shape()
 
-	c=PySide.QtGui.QColorDialog.getColor(QtGui.QColor(random.randint(10,255),random.randint(10,255),random.randint(10,255)))
-	print (c.red(),c.green(),c.blue())
+	if 0:
+		c=PySide.QtGui.QColorDialog.getColor(QtGui.QColor(random.randint(10,255),random.randint(10,255),random.randint(10,255)))
+		print (c.red(),c.green(),c.blue())
 
-
-	w.ViewObject.LineColor=(1.0/255*c.red(),1.0/255*c.green(),1.0/255*c.blue())
-	w.ViewObject.LineWidth=int(widget.dial.value()+1)
-	w.ViewObject.PointColor=(1.0/255*c.red(),1.0/255*c.green(),1.0/255*c.blue())
-	w.ViewObject.PointSize=int(widget.dial.value()+1)
+		w.ViewObject.LineColor=(1.0/255*c.red(),1.0/255*c.green(),1.0/255*c.blue())
+		w.ViewObject.LineWidth=int(widget.dial.value()+1)
+		w.ViewObject.PointColor=(1.0/255*c.red(),1.0/255*c.green(),1.0/255*c.blue())
+		w.ViewObject.PointSize=int(widget.dial.value()+1)
 	# w.Label=str(w.ViewObject.LineColor)
 
+	w.ViewObject.LineColor=(random.random(),random.random(),random.random())
 
 	ef.wire=w
 	ef.pts=[]
@@ -406,6 +425,33 @@ def dialog(source):
 
 	return w
 
+
+
+def createRibCage(bs):
+
+		rc=100
+		ribs=[]
+		for i in range(rc+1):
+			f=bs.uIso(1.0/rc*i)
+			ribs.append(f.toShape())
+
+		comp=Part.Compound(ribs)
+		RibCage=App.activeDocument().addObject('Part::Feature','Ribs')
+		RibCage.Shape=comp
+
+		mers=[]
+		for i in range(rc+1):
+			f=bs.vIso(1.0/rc*i)
+			mers.append(f.toShape())
+		comp=Part.Compound(mers)
+		Meridians=App.activeDocument().addObject('Part::Feature','Meridians')
+		Meridians.Shape=comp
+		return (RibCage,Meridians)
+
+
+
+
+
 def start(source='Backbone'):
 	'''create and initialize the event filter'''
 
@@ -419,6 +465,11 @@ def start(source='Backbone'):
 			ef.subobj=s[0].SubObjects[0]
 			ef.objname=s[0].Object.Name
 			ef.subelement=s[0].SubElementNames[0]
+			s[0].Object.ViewObject.Transparency=70
+			if ef.subobj.Surface.__class__.__name__ == 'BSplineSurface':
+				rc=createRibCage(ef.subobj.Surface)
+				ef.rc=rc
+
 	except:
 		sayexc("no surface selected")
 		return
@@ -453,7 +504,13 @@ def stop():
 	ef=FreeCAD.eventfilter
 	mw.removeEventFilter(ef)
 	ef.keyPressed2=False
+	
 	ef.dialog.hide()
+	try:
+		App.ActiveDocument.removeObject(ef.rc[0].Name)
+		App.ActiveDocument.removeObject(ef.rc[1].Name) 
+	except:
+		pass
 
 
 

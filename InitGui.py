@@ -292,6 +292,7 @@ App.ActiveDocument=App.getDocument(nd.Name)
 Gui.ActiveDocument=Gui.getDocument(nd.Name)
 '''
 
+
 class NurbsWorkbench(Workbench):
 	'''Nurbs'''
 
@@ -325,9 +326,11 @@ static char * nurbs_xpm[] = {
 		return "Gui::PythonWorkbench"
 
 	def Initialize(self):
+		
 		cmds= ['Nurbs_ZebraTool','Nurbs_DraftBSpline Editor',
 		'Nurbs_Create Shoe',
-		'Nurbs_scanbackbonecut','Nurbs_createsketchspline','Nurbs_Curves to Face', 'Nurbs_facedraw']
+		'Nurbs_scanbackbonecut','Nurbs_createsketchspline','Nurbs_Curves to Face', 'Nurbs_facedraw',
+		'Part_Cone', 'Part_Cylinder','Draft_Move','Draft_Rotate','Draft_Point']
 
 		if 1:
 			self.appendToolbar("Nurbs", cmds )
