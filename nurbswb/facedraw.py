@@ -57,7 +57,8 @@ class EventFilter(QtCore.QObject):
 			return QtGui.QWidget.eventFilter(self, o, e)
 
 		if event.type() == QtCore.QEvent.MouseMove:
-			if event.buttons() == QtCore.Qt.NoButton:
+			#if event.buttons() == QtCore.Qt.NoButton:
+				#print ("vetnbuttons",event.buttons() )
 				pos = event.pos()
 				x=pos.x()
 				y=pos.y()
@@ -73,6 +74,20 @@ class EventFilter(QtCore.QObject):
 							print (tt['x'],tt['y'],tt['z'])
 							self.x,self.y,self.z=tt['x'],tt['y'],tt['z']
 							break
+					if event.buttons()==QtCore.Qt.LeftButton:
+						print "LEFT"
+						vf=FreeCAD.Vector(self.x,self.y,self.z)
+						try:
+							self.pts += [vf]
+						except:
+							self.pts = [vf]
+						if len(self.pts)>1:
+							self.wire.Shape=Part.makePolygon(self.pts)
+							self.wire.ViewObject.PointSize=int(self.dialog.dial.value()+1)
+							self.wire.ViewObject.LineWidth=int(self.dialog.dial.value()+1)
+
+
+
 
 		if z == 'PySide.QtCore.QEvent.Type.KeyPress':
 			# http://doc.qt.io/qt-4.8/qkeyevent.html
@@ -145,6 +160,8 @@ class EventFilter(QtCore.QObject):
 								self.pts = [vf]
 							if len(self.pts)>1:
 								self.wire.Shape=Part.makePolygon(self.pts)
+								self.wire.ViewObject.PointSize=int(self.dialog.dial.value()+1)
+								
 					else: # letter key pressed
 						ee=e.text()
 						if len(ee)>0: 
@@ -271,8 +288,33 @@ def drawcurve(wire,face):
 	bs2d.interpolate(pts2d)
 
 	e1 = bs2d.toShape(t)
-	Part.show(e1)
+#	Part.show(e1)
+	sp=App.ActiveDocument.addObject("Part::Spline",wire.Label+" Spline")
+	sp.Shape=e1
+	sp.ViewObject.LineColor=wire.ViewObject.LineColor
+	wire.ViewObject.hide()
 
+import random
+def createnewwire(widget):
+
+	print "new wire"
+	ef=widget.ef
+	w=App.ActiveDocument.addObject("Part::Feature","Drawing on " + ef.objname + ": "+ ef.subelement)
+	w.Shape=Part.Shape()
+
+	c=PySide.QtGui.QColorDialog.getColor(QtGui.QColor(random.randint(10,255),random.randint(10,255),random.randint(10,255)))
+	print (c.red(),c.green(),c.blue())
+
+
+	w.ViewObject.LineColor=(1.0/255*c.red(),1.0/255*c.green(),1.0/255*c.blue())
+	w.ViewObject.LineWidth=int(widget.dial.value()+1)
+	w.ViewObject.PointColor=(1.0/255*c.red(),1.0/255*c.green(),1.0/255*c.blue())
+	w.ViewObject.PointSize=int(widget.dial.value()+1)
+	# w.Label=str(w.ViewObject.LineColor)
+
+
+	ef.wire=w
+	ef.pts=[]
 
 
 
@@ -289,6 +331,14 @@ class MyWidget(QtGui.QWidget):
 		except:
 			sayexc()
 		stop()
+
+	def applyandnew(self):
+		try:
+			drawcurve(self.ef.wire,self.ef.subobj)
+		except:
+			sayexc()
+		createnewwire(self)
+
 
 
 	def update(self):
@@ -328,11 +378,11 @@ def dialog(source):
 	w.key=editorkey
 	w.modelab=lab
 
-	btn=QtGui.QPushButton("Apply")
+	btn=QtGui.QPushButton("Apply and close")
 	btn.clicked.connect(w.apply)
 
-	cobtn=QtGui.QPushButton("Commit and stop")
-#	cobtn.clicked.connect(w.commit)
+	cobtn=QtGui.QPushButton("Apply and new")
+	cobtn.clicked.connect(w.applyandnew)
 
 
 	cbtn=QtGui.QPushButton("Stop Dialog (preserve Aux)")
@@ -341,6 +391,7 @@ def dialog(source):
 	poll=QtGui.QLabel("Selected  Pole:")
 
 	dial=QtGui.QDial() 
+	dial.setMaximum(10)
 	dial.setNotchesVisible(True)
 	dial.setValue(FreeCAD.ParamGet('User parameter:Plugins/nurbs').GetInt("Cursor",0))
 #	dial.valueChanged.connect(w.setcursor2)
@@ -350,7 +401,7 @@ def dialog(source):
 	box = QtGui.QVBoxLayout()
 	w.setLayout(box)
 	
-	for ww in [btn,dial] :
+	for ww in [btn,cobtn,dial] :
 		box.addWidget(ww)
 
 	return w
