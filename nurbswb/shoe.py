@@ -975,6 +975,27 @@ if  __name__=='__main__':
 	for r in a.Ribs:
 		print r.Label
 
+def genss(name,poles):
+		''' ribs aus daten'''
+
+		# von generator ...
+		t=FreeCAD.Placement(FreeCAD.Vector (68.0, 0.0, 14.0), FreeCAD.Rotation(0.0, -60.0, 0.0)) #001
+		xpoles=[[0.4, 9.0, 0.0], [0.0, 23.0, 0.0], [2.2, 27.0, 0.0], [5.7, 35.7, 0.0], [27.0, 31.0, 0.0], 
+		[49.6, 24.0, 0.0], [74.0, 20.0, 0.0], [87.6, 16.2, 0.0], [92.0, 9.0, 0.0], [95.7, 0.1, 0.0], [94.5, -8.5, 0.0], 
+		[95.5, -19.2, 0.0], [78.6, -26.8, 0.0], [53.0, -28.0, 0.0], [22.4, -30.2, 0.0], [8.0, -26.3, 0.0], [3.4, -21.1, 0.0], [0.0, -5.0, 0.0]]
+		points=[FreeCAD.Vector(0,p[1],p[0]) for p in poles[1:]]
+		print len(points)
+		#name="TEST"
+
+		Draft.makeBSpline(points,closed=True,face=True,support=None)
+		App.ActiveDocument.ActiveObject.Label=name
+		App.ActiveDocument.ActiveObject.ViewObject.ShapeColor=(random.random(),random.random(),random.random())
+
+
+		App.ActiveDocument.ActiveObject.ViewObject.hide()
+		return App.ActiveDocument.ActiveObject
+
+
 def genrib(r=250,h=300,w=10,m=0,l=None,name="My Rib "):
 		''' rippe als Draft Bspline '''
 
@@ -1029,6 +1050,7 @@ def genrib(r=250,h=300,w=10,m=0,l=None,name="My Rib "):
 
 		App.ActiveDocument.ActiveObject.ViewObject.hide()
 		return App.ActiveDocument.ActiveObject
+
 
 
 def genribh(r=250,h=300,w=50,m=0,l=None,name="My Rib "):
@@ -1179,49 +1201,48 @@ def run():
 #		Draft.makeWire(points,closed=False,face=True,support=None)
 #		App.ActiveDocument.ActiveObject.Label="Backbone Poly"
 
-		#
-
-		bcurve2=genrib(r=110,l=200,h=240,w=10,name="B2 ")
-		bcurve1=genrib(r=165,l=260,h=240,w=10,name="B1 ")
-		bcurve=genrib(r=230,l=320,h=240,w=10,name="B ")
-
-		stcurve=genrib(r=400,l=400,h=240,w=10,name="ST ")
-
+		# bcurve2=genrib(r=110,l=200,h=240,w=10,name="B2 ")
+		bcurve2=genss("B2 ",nurbswb.shoedata.bcurve1)
+		#bcurve1=genrib(r=165,l=260,h=240,w=10,name="B1 ")
+		bcurve1=genss("B1 ",nurbswb.shoedata.bcurve1)
+		#bcurve=genrib(r=230,l=320,h=240,w=10,name="B ")
+		bcurve=genss("B ",nurbswb.shoedata.bcurve)
+		#stcurve=genrib(r=400,l=400,h=240,w=10,name="ST ")
+		stcurve=genss("ST ",nurbswb.shoedata.stcurve)
 
 		rf=1.0/np.cos(np.pi*28/180)
 
-		joint=genrib(r=480,l=410,h=370*rf,w=10,name="Joint ")
+		#joint=genrib(r=480,l=410,h=370*rf,w=10,name="Joint ")
+		#girth=genrib(r=420,l=350,h=520*rf,w=20,name="Girth ")
+		joint=genss("Joint",nurbswb.shoedata.joint)
+		girth=genss("Girth",nurbswb.shoedata.girth)
+		# ueberarbeitete koordianten
+		waist=genss("Waist",nurbswb.shoedata.waist)
+		instep=genss("Instep ",nurbswb.shoedata.instep)
 
-		girth=genrib(r=420,l=350,h=520*rf,w=20,name="Girth ")
-		waist=genrib(r=380,l=320,h=600*rf,w=60,name="Waist ")
-		instep=genrib(r=340,l=300,h=840*rf,w=80,name="Instep ")
 
-#		longheel=genribh(r=270,h=1400,w=10,name="Long Heel ")
 
-#		heel=genribh(r=270,h=950,w=10,name="oberHeel ")
-#		ankle1=genrib2(r=400,h=950*rf,w=10,name="Ankle 1 ")
-#		ankle2=genrib2(r=400,h=950*rf,w=10,name="Ankle 2 ")
-#		ankle3=genrib2(r=400,h=950*rf,w=10,name="Ankle 3 ")
 
-		longheel=genrib(r=370,h=930*rf,w=140,name="Long Heel ")
-		heel=genrib(r=400,h=900*rf,w=220,name="oberHeel ")
-		ankle1=genrib(r=400,h=840*rf,w=200,name="Ankle 1 ")
-		ankle2=genrib(r=300,h=840*rf,w=180,name="Ankle 2 ")
-		ankle3=genrib(r=85,h=840*rf,w=30,name="Ankle 3 ")
-		ankle4=genrib(r=30,h=840*rf,w=10,name="Ankle 4 ")
+		#longheel=genrib(r=370,h=930*rf,w=140,name="Long Heel ")
+		#heel=genrib(r=400,h=900*rf,w=220,name="oberHeel ")
+		longheel=genss("Long Heel ",nurbswb.shoedata.longheel)
+		heel=genss("Heel ",nurbswb.shoedata.heel)
+		
+		
+		ankle1=genss("Ankle 1 ",nurbswb.shoedata.ankle1)
+		ankle2=genss("Ankle 2 ",nurbswb.shoedata.ankle2)
+		ankle3=genss("Ankle 3 ",nurbswb.shoedata.ankle3)
+		ankle4=genss("Ankle 4 ",nurbswb.shoedata.ankle4)
+		
+		#ankle1=genrib(r=400,h=840*rf,w=200,name="Ankle 1 ")
+		#ankle2=genrib(r=300,h=840*rf,w=180,name="Ankle 2 ")
+		#ankle3=genrib(r=85,h=840*rf,w=30,name="Ankle 3 ")
+		#ankle4=genrib(r=30,h=840*rf,w=10,name="Ankle 4 ")
 
 
 	ribs=[bcurve2,bcurve1,bcurve,stcurve,joint,girth,waist,instep,longheel,heel,ankle1,ankle2,ankle3,ankle4]
 
-
-	#twister= [[0,75,0]]+[[0,0,0]]*3 + [[0,28,0]]*4 +[[0,45,0]]+ [[0,50,0]]+ [[0,90,0]]*3
-	#twister= [[0,75,0]]+[[0,0,0]]*3 + [[0,30,0]]*4 +[[0,48,0]]+ [[0,90,0]]+ [[0,90,0]]*3
-
-	# ebenes modell
-	#twister= [[0,75,0]]+[[0,0,0]]*3 + [[0,30,0]]*4 +[[0,25,0]]+ [[0,20,0]]+ [[0,10,0]]*2 + [[0,10,0]]
 	twister=nurbswb.shoedata.twister
-	
-	#sc= [[1,0.3]] + [[1,1]]*12 # + [[1,1.0],[1,1.0],[1,1.0]]+ [[1.,1.]]*3
 	sc=nurbswb.shoedata.sc
 
 	assert len(ribs)==len(twister)
@@ -1292,4 +1313,11 @@ def run():
 	App.activeDocument().recompute()
 
 
+	for i in App.ActiveDocument.Objects:
+		i.ViewObject.hide()
+
+	for obj in App.ActiveDocument.MyShoe,App.ActiveDocument.shoe_last_scanned,App.ActiveDocument.Poly:
+		obj.ViewObject.show()
+
 	print "done"
+
