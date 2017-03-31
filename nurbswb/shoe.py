@@ -1297,6 +1297,7 @@ def run():
 		Points.insert(__dir__+"/../testdata/shoe_last_scanned.asc","Shoe")
 	except:
 		pass
+	
 
 	if 0:
 		# flaechen erzeugen
@@ -1318,6 +1319,22 @@ def run():
 
 	for obj in App.ActiveDocument.MyShoe,App.ActiveDocument.shoe_last_scanned,App.ActiveDocument.Poly:
 		obj.ViewObject.show()
+
+	App.ActiveDocument.shoe_last_scanned.ViewObject.ShapeColor=(1.0,.0,.0)
+	
+	pc=Draft.clone(App.ActiveDocument.Poles)
+	pc.Scale.x=0.99
+	pc.Scale.y=0.99
+	pc.Scale.z=0.99
+	App.ActiveDocument.ActiveObject.ViewObject.ShapeColor=(.0,1.0,.0)
+	App.ActiveDocument.ActiveObject.Label="shoe 99%"
+
+	pc=Draft.clone(App.ActiveDocument.Poles)
+	pc.Scale.x=1.01
+	pc.Scale.y=1.01
+	pc.Scale.z=1.01
+	App.ActiveDocument.ActiveObject.ViewObject.ShapeColor=(.0,.0,1.0)
+	App.ActiveDocument.ActiveObject.Label="shoe 101%"
 
 	print "done"
 
