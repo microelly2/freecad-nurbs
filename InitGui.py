@@ -278,6 +278,7 @@ if FreeCAD.GuiUp:
 
 	c2a(["Faces"],always,'Curves to Face','curves2face','Curves to Face','/../icons/upgrade.svg',"run()")
 	c2a(["Curves"],always,'scanbackbonecut','scanbackbonecut','Cut the Scan along backbone ','/../icons/backbonecut.svg',"run()")
+	c2a(["Curves"],always,'transform_spline','transform_spline','peerspective transformation of a Bbspline','',"run()")
 
 	for cmd in FreeCADGui.listCommands():
 		if cmd.startswith("Nurbs_"):
