@@ -278,7 +278,9 @@ if FreeCAD.GuiUp:
 
 	c2a(["Faces"],always,'Curves to Face','curves2face','Curves to Face','/../icons/upgrade.svg',"run()")
 	c2a(["Curves"],always,'scanbackbonecut','scanbackbonecut','Cut the Scan along backbone ','/../icons/backbonecut.svg',"run()")
-	c2a(["Curves"],always,'transform_spline','transform_spline','peerspective transformation of a Bbspline','',"run()")
+	c2a(["Curves"],always,'transform_spline','transform_spline','perspective transformation of a Bbspline','',"run()")
+	c2a(["Curves"],ondocument,'createcloverleaf','createcloverleaf','create a cloverleaf','/../icons/cloverleaf.svg',"run()")
+
 
 	for cmd in FreeCADGui.listCommands():
 		if cmd.startswith("Nurbs_"):
@@ -331,6 +333,7 @@ static char * nurbs_xpm[] = {
 		cmds= ['Nurbs_ZebraTool','Nurbs_DraftBSpline Editor',
 		'Nurbs_Create Shoe',
 		'Nurbs_scanbackbonecut','Nurbs_createsketchspline','Nurbs_Curves to Face', 'Nurbs_facedraw',
+		'Nurbs_createcloverleaf',
 		'Part_Cone', 'Part_Cylinder','Draft_Move','Draft_Rotate','Draft_Point']
 
 		if 1:

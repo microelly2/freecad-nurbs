@@ -86,9 +86,14 @@ def pk(obj=None,w=None):
 		kn.ViewObject.LineColor=(0.,1.,1.)
 
 		polys=[]
+		print pts
+		print pts2
 		for i in range(1,len(pts)):
-			polyg=Part.makePolygon([pts[i],pts2[i-1]])
-			polys.append(polyg)
+			print (i,[pts[i],pts2[i-1]])
+			try:
+				polyg=Part.makePolygon([pts[i],pts2[i-1]])
+				polys.append(polyg)
+			except: pass
 
 		comp=Part.makeCompound(polys)
 		pk.Shape=comp
