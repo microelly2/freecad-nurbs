@@ -70,12 +70,15 @@ def Myarray2NurbsD3(arr,label="MyWall",degree=3):
 
 	psta=np.array(arr)
 	pst=psta
+
 	''' todo drehen nabellinie von oben weg
+	pstb=psta.swapaxes(0,1)
 	print "huhu"
 	print psta.shape
-	pst2=np.concatenate([[psta[4:]],[psta[:4]]])
+	pst2=np.concatenate([pstb[15:],pstb[:15]])
+	pst2=ptsb[4
 	print pst2.shape
-	pst=pst2
+	pst=pst2.swapaxes(0,1)
 	FreeCAD.pst=pst
 	'''
 
@@ -84,19 +87,29 @@ def Myarray2NurbsD3(arr,label="MyWall",degree=3):
 	print "weiter"
 
 	bs=Part.BSplineSurface()
-	bs.interpolate(pst)
+	try:
+		bs.interpolate(pst)
+	except:
+		print "except pole rot-"
+		bs.interpolate(psta)
+		pst=psta
+
 	FreeCAD.shoe_pst=pst
 	bs.setVPeriodic()
 
+	import random
+	color=(random.random(),random.random(),random.random())
 	for i,pps in enumerate(pst):
 		bc=Part.BSplineCurve()
 		bc.interpolate(pps)
 		App.ActiveDocument.Ribs.OutList[i].Shape=bc.toShape()
+		App.ActiveDocument.Ribs.OutList[i].ViewObject.LineColor=color
 
 	for i,pps in enumerate(pst.swapaxes(0,1)):
 		bc=Part.BSplineCurve()
 		bc.interpolate(pps)
 		App.ActiveDocument.Meridians.OutList[i].Shape=bc.toShape()
+		App.ActiveDocument.Meridians.OutList[i].ViewObject.LineColor=color
 
 	if 1:
 		print "sf2 --aa-"

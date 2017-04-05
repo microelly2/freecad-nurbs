@@ -1,35 +1,35 @@
+print "shoedata version 0.8"
 
-print "shoedata version 0.6"
+# rotations and scaling
+twister= [[0,0,0]]*4 + [[0,30,0]]*4 + [[0,25,0]] + [[0,20,0]]+ [[0,10,0]]*4
+sc= [[1,1]]*14 
 
-# ebenes modell
+# backbone (red line)
 bbps=[ 
-		[280,0,11+9], #b
-		[260,0,11+3], #b
-		[250,0,11], #b
+		[280,0,11+9], #  not used
+		[260,0,11+3], #  outside
 
-		[218,0,4], #st
+		[250,0,11], # top
+		[218,0,4], # st 
 
 		[168,0,0], # joint j
 		[132,0,6], # girth
 		[110,0,10], # waist
 		[68,0,14], # instep ik
 
-		[60,0,16], # heel pk
-		[45,0,17], # heel2 ph
-		[35,0,18], # wade aa
-		[20,0,19], # wade aa
-		[5,0,20], # wade aa
-		[0,0,20], # wade aa
+		[60,0,16], #  leg
+		[45,0,17], #  leg
+		[35,0,18], #  leg
+		[20,0,19], #  leg
+
+		[5,0,20], #  inner back end 
+		[0,0,20], #  back end heel
 	]
 
-twister= [[0,0,0]]*4 + [[0,30,0]]*4 + [[0,25,0]] + [[0,20,0]]+ [[0,10,0]]*4
-
-sc= [[1,1]]*14 
-
-
+# 3D Boxes for the ribs
 boxes=[
 
-		[7,0,-25,8],
+		[7,0,-25,8], # not used
 		[7,0,-25,8], # vorspitze
 
 		[7,0,-25,20-4-4-4],# spizte fuss
@@ -46,22 +46,18 @@ boxes=[
 		[35-2,0,-30+2,100+0],# knoechel 1
 		[33-2,0,-30+2,100-6],# knoechel 2
 		[30-3,0,-30+5,100-6],# knoechel 3
+
 		[20-3,0,-20+3,100-6],# vorbereitung abschluss hinten
-#		[10,0,-10,100-6], # abschluss hinten
 		[1,0,-1,100-6], # abschluss hinten
 
 		]
 
-'''
-labels=['B2','B1','B','ST','Joint','Girth','Waist','Instep',
-	'Long Heel','oberHeel','Ankle 1','Ankle 2','Ankle 3','Ankle 4']
-'''
 
-# ausgabe steuerung
+
+# control of output
 
 # show loft of the profiles
 showlofts=False
-
 
 # show scaled models 
 showscales=False

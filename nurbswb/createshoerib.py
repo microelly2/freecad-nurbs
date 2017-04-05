@@ -119,33 +119,72 @@ def run(name='ribbow',moves=[],box=[40,0,-40,30]):
 	dd=2
 	d=sk.addConstraint(Sketcher.Constraint('Distance',20,dd)) 
 	print ("datum",d) 
-	sk.addConstraint(Sketcher.Constraint('Distance',23,dd)) 
+	sk.renameConstraint(d, u'tangentRight')
+	d=sk.addConstraint(Sketcher.Constraint('Distance',23,dd)) 
+	print ("datum",d) 
+	sk.renameConstraint(d, u'tangentBottom')
+	d=sk.addConstraint(Sketcher.Constraint('Distance',25,dd)) 
+	print ("datum",d) 
+	sk.renameConstraint(d, u'WidthBottom')
+	d=sk.addConstraint(Sketcher.Constraint('Distance',28,dd)) 
+	sk.renameConstraint(d, u'tangentLeft')
+	d=sk.addConstraint(Sketcher.Constraint('Distance',32,dd)) 
+	sk.renameConstraint(d, u'tangentTop')
 
-	sk.addConstraint(Sketcher.Constraint('Distance',25,dd)) 
-	sk.addConstraint(Sketcher.Constraint('Distance',28,dd)) 
-	sk.addConstraint(Sketcher.Constraint('Distance',32,dd)) 
-	
-	
 
+	print "--------",d
 
 	[r,b,l,t]=box
 	print (r,l,t,b)
 	
 	sk.movePoint(0,0,App.Vector(0,t,0),0)
+	d=sk.addConstraint(Sketcher.Constraint('DistanceX',0,3,0)) 
+	sk.renameConstraint(d, u'p0 X')
+	d=sk.addConstraint(Sketcher.Constraint('DistanceY',0,3,t)) 
+	sk.renameConstraint(d, u'p0 Y')
+
 	App.activeDocument().recompute()
 
 	sk.movePoint(2,0,App.Vector(r,t,0),0)
-	App.activeDocument().recompute()
-	sk.movePoint(14,0,App.Vector(l,t,0),0)
-	App.activeDocument().recompute()
-	sk.movePoint(4,0,App.Vector(r,b+dd,0),0)
+	d=sk.addConstraint(Sketcher.Constraint('DistanceX',2,3,r)) 
+	sk.renameConstraint(d, u'p2 X')
+	d=sk.addConstraint(Sketcher.Constraint('DistanceY',2,3,t)) 
+	sk.renameConstraint(d, u'p2 Y')
+
 	App.activeDocument().recompute()
 
-	sk.movePoint(12,0,App.Vector(l,b+dd,0),0)
+
+	sk.movePoint(14,0,App.Vector(l,t,0),0)
+	d=sk.addConstraint(Sketcher.Constraint('DistanceX',14,3,l)) 
+	sk.renameConstraint(d, u'p14 X')
+	d=sk.addConstraint(Sketcher.Constraint('DistanceY',14,3,t)) 
+	sk.renameConstraint(d, u'p14 Y')
+
 	App.activeDocument().recompute()
+
+	d=sk.addConstraint(Sketcher.Constraint('DistanceX',4,3,r)) 
+	sk.renameConstraint(d, u'p4 X')
+	d=sk.addConstraint(Sketcher.Constraint('DistanceY',4,3,b+dd)) 
+	sk.renameConstraint(d, u'p4 Y')
+
+	App.activeDocument().recompute()
+
+	d=sk.addConstraint(Sketcher.Constraint('DistanceX',12,3,l)) 
+	sk.renameConstraint(d, u'p12 X')
+	d=sk.addConstraint(Sketcher.Constraint('DistanceY',12,3,b+dd)) 
+	sk.renameConstraint(d, u'p12 Y')
+
+	App.activeDocument().recompute()
+	print d
 
 	sk.movePoint(8,0,App.Vector(0,b,0),0)
+	d=sk.addConstraint(Sketcher.Constraint('DistanceX',8,3,0)) 
+	sk.renameConstraint(d, u'p8 X')
+	d=sk.addConstraint(Sketcher.Constraint('DistanceY',8,3,b)) 
+	sk.renameConstraint(d, u'p8 Y')
+
 	App.activeDocument().recompute()
+
 
 	print (name,"moves ...")
 	for [k,x,y] in moves:
@@ -164,7 +203,7 @@ if 0:
 	sk2=run("rib2",[[8,0,0],[0,0,150],[4,70,10],[12,-90,10]])
 
 
-# sk3=run("rib3",[[8,0,0]],[40,-10,-40,30])
+#sk3=run("rib3",[],[40,-10,-40,30])
 
 
 
