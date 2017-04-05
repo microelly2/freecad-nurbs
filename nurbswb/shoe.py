@@ -68,12 +68,24 @@ def Myarray2Poly(arr,bb):
 
 def Myarray2NurbsD3(arr,label="MyWall",degree=3):
 
-	pst=np.array(arr)
+	psta=np.array(arr)
+	pst=psta
+	''' todo drehen nabellinie von oben weg
+	print "huhu"
+	print psta.shape
+	pst2=np.concatenate([[psta[4:]],[psta[:4]]])
+	print pst2.shape
+	pst=pst2
+	FreeCAD.pst=pst
+	'''
+
 	try: NbVPoles,NbUPoles,_t1 =pst.shape
 	except: return (Part.Shape(),Part.Shape())
+	print "weiter"
 
 	bs=Part.BSplineSurface()
 	bs.interpolate(pst)
+	FreeCAD.shoe_pst=pst
 	bs.setVPeriodic()
 
 	for i,pps in enumerate(pst):
@@ -86,6 +98,14 @@ def Myarray2NurbsD3(arr,label="MyWall",degree=3):
 		bc.interpolate(pps)
 		App.ActiveDocument.Meridians.OutList[i].Shape=bc.toShape()
 
+	if 1:
+		print "sf2 --aa-"
+		sf2=bs.copy()
+		#sf2.segment(sf2.getUKnot(2),sf2.getUKnot(13),0,1)
+		sf2.segment(sf2.getUKnot(2),1,0,1)
+		print "sf2 reduced"
+		sh2=sf2.toShape()
+
 	sh=bs.toShape()
 
 	vcp=False
@@ -93,9 +113,9 @@ def Myarray2NurbsD3(arr,label="MyWall",degree=3):
 		sp=App.ActiveDocument.Poles
 		vcp=sp.ViewObject.ControlPoints
 	except: sp=App.ActiveDocument.addObject("Part::Spline","Poles")
-	sp.Shape=sh
+	sp.Shape=sh2
 	sp.ViewObject.ControlPoints=vcp
-	sp.ViewObject.hide()
+	#sp.ViewObject.hide()
 
 	try:
 		fa=bs.uIso(0)
@@ -114,6 +134,8 @@ def Myarray2NurbsD3(arr,label="MyWall",degree=3):
 			sol=Part.Solid(Part.Shell([sha.Face1,shb.Face1,sh.Face1]))
 		except:
 			sol=sh
+
+
 
 	return (sol,bs)
 
@@ -393,13 +415,14 @@ class Needle(PartFeature):
 		obj.addProperty("App::PropertyBool","noExecute" ,"Base")
 		obj.addProperty("App::PropertyInteger","Degree","Base").Degree=3
 		obj.addProperty("App::PropertyLink","Meridians","RibCage")
+		obj.addProperty("App::PropertyInteger","MeridiansCount","RibCage").MeridiansCount=20
 		obj.addProperty("App::PropertyInteger","RibCount","RibCage").RibCount=10
 		obj.addProperty("App::PropertyInteger","MeshUCount","Mesh").MeshUCount=5
 		obj.addProperty("App::PropertyInteger","MeshVCount","Mesh").MeshVCount=5
 
 		# obj.ViewObject.LineColor=(1.0,0.0,1.0)
 		#obj.ViewObject.DisplayMode = "Shaded"
-		obj.ViewObject.Transparency = 30
+		obj.ViewObject.Transparency = 50
 		obj.addProperty("App::PropertyLink","ribtemplateSource","Spreadsheet")
 		obj.addProperty("App::PropertyLink","backboneSource","Spreadsheet")
 		obj.addProperty("App::PropertyBool","externSourcesOff" ,"Spreadsheet")
@@ -442,8 +465,12 @@ class Needle(PartFeature):
 		curves=[]
 		pols=[]
 		for r in obj.Ribs:
-			pols=r.Points
-			c=[[v[0],v[1],v[2]] for v in pols]
+			# pols=r.Points
+			
+			pols=r.Shape.Edge1.Curve.discretize(obj.MeridiansCount)
+			
+			#c=[[v[0],v[1],v[2]] for v in pols]
+			c=[[v[2],v[0],v[1]] for v in pols]
 			curves += c 
 
 		if  len(obj.Ribs)>0:
@@ -975,24 +1002,36 @@ if  __name__=='__main__':
 	for r in a.Ribs:
 		print r.Label
 
-def genss(name,poles):
+def genss(sk):
 		''' ribs aus daten'''
 
+		poles=sk.Shape.Edge1.Curve.getPoles()
 		# von generator ...
 		t=FreeCAD.Placement(FreeCAD.Vector (68.0, 0.0, 14.0), FreeCAD.Rotation(0.0, -60.0, 0.0)) #001
 		xpoles=[[0.4, 9.0, 0.0], [0.0, 23.0, 0.0], [2.2, 27.0, 0.0], [5.7, 35.7, 0.0], [27.0, 31.0, 0.0], 
 		[49.6, 24.0, 0.0], [74.0, 20.0, 0.0], [87.6, 16.2, 0.0], [92.0, 9.0, 0.0], [95.7, 0.1, 0.0], [94.5, -8.5, 0.0], 
 		[95.5, -19.2, 0.0], [78.6, -26.8, 0.0], [53.0, -28.0, 0.0], [22.4, -30.2, 0.0], [8.0, -26.3, 0.0], [3.4, -21.1, 0.0], [0.0, -5.0, 0.0]]
-		points=[FreeCAD.Vector(0,p[1],p[0]) for p in poles[1:]]
+		
+		points=[FreeCAD.Vector(0,p[0],p[1]) for p in poles]
+
+
+#		ps=points[8:]+points[:8]
+		points=ps
+
+#		p=points[0]
+#		ps=[FreeCAD.Vector(0,p.y-5,p.z),FreeCAD.Vector(0,p.y-10,p.z)]+points+[FreeCAD.Vector(0,p.y+10,p.z),FreeCAD.Vector(0,p.y+5,p.z)] 
+#		points=ps
+
 		print len(points)
-		#name="TEST"
 
-		Draft.makeBSpline(points,closed=True,face=True,support=None)
-		App.ActiveDocument.ActiveObject.Label=name
-		App.ActiveDocument.ActiveObject.ViewObject.ShapeColor=(random.random(),random.random(),random.random())
+#		Draft.makeBSpline(points,closed=True,face=True,support=None)
+#		App.ActiveDocument.ActiveObject.Label=name
+#		App.ActiveDocument.ActiveObject.ViewObject.ShapeColor=(random.random(),random.random(),random.random())
 
 
-		App.ActiveDocument.ActiveObject.ViewObject.hide()
+#		App.ActiveDocument.ActiveObject.ViewObject.hide()
+
+		return sk
 		return App.ActiveDocument.ActiveObject
 
 
@@ -1053,113 +1092,6 @@ def genrib(r=250,h=300,w=10,m=0,l=None,name="My Rib "):
 
 
 
-def genribh(r=250,h=300,w=50,m=0,l=None,name="My Rib "):
-		''' rippe als Draft Bspline '''
-
-		if l==None: l=r
-		ps=[ 
-				[0,10,0],
-#				[0,50,0],
-				#[0,50,20],
-				[0,0.7*r,0.2*h],
-#				[0,0.4*r,0.2*h],
-
-				[0,0.8*r,0.4*h],
-				[0,0.8*r,0.4*h+300],
-
-				[0,m+2*w,0.9*h],
-
-				[0,m+w,h],
-				[0,m-w,h],
-
-				[0,m-2*w,0.9*h],
-
-
-				[0,-0.8*l,0.4*h+360],
-				[0,-0.8*l,0.4*h],
-
-				#[0,-50,20],
-#				[0,-0.4*r,0.2*h],
-				[0,-0.7*r,0.2*h],
-
-#				[0,-50,0],
-				[0,-10,0],
-		]
-
-		k=0.7
-		ps=[ 
-				[0,10,0],
-				[0,0.4*r,0],
-				[0,0.7*r,0.1*h],
-				[0,1.1*r,0.4*h],
-
-				[0,0.9*r,0.7*h],
-
-				[0,m+w,h],
-				[0,m-w,h],
-
-				[0,-0.9*l,0.7*h],
-
-				[0,-0.9*r,0.5*h],
-				[0,-0.7*r,0.2*h],
-				[0,-0.4*r,0],
-				[0,-10,0],
-		]
-
-
-
-		points=[FreeCAD.Vector(tuple(v))*0.10 for v in ps]
-
-		Draft.makeBSpline(points,closed=True,face=True,support=None)
-		App.ActiveDocument.ActiveObject.Label=name
-		App.ActiveDocument.ActiveObject.ViewObject.ShapeColor=(random.random(),random.random(),random.random())
-		
-		App.ActiveDocument.ActiveObject.ViewObject.hide()
-		return App.ActiveDocument.ActiveObject
-
-
-def genrib2(r=250,h=300,w=50,m=0,l=None,name="My Rib "):
-		''' rippe als Draft Bspline '''
-
-		if l==None: l=r
-		ps=[ 
-				[0,10,0],
-				[0,50,0],
-				#[0,50,20],
-				[0,0.7*r,0.2*h],
-#				[0,0.4*r,0.2*h],
-
-				[0,0.8*r,0.4*h],
-				[0,0.8*r,0.4*h+300],
-
-				[0,m+2*w,0.9*h],
-				[0,m+w,h],
-				[0,m-w,h],
-				[0,m-2*w,0.9*h],
-
-				[0,-0.8*l,0.4*h+360],
-				[0,-0.8*l,0.4*h],
-
-				#[0,-50,20],
-#				[0,-0.4*r,0.2*h],
-				[0,-0.7*r,0.2*h],
-
-				[0,-50,0],
-				[0,-10,0],
-		]
-
-		points=[FreeCAD.Vector(tuple(v))*0.10 for v in ps]
-
-		Draft.makeBSpline(points,closed=True,face=True,support=None)
-		App.ActiveDocument.ActiveObject.Label=name
-		App.ActiveDocument.ActiveObject.ViewObject.ShapeColor=(random.random(),random.random(),random.random())
-		
-		App.ActiveDocument.ActiveObject.ViewObject.hide()
-		return App.ActiveDocument.ActiveObject
-
-
-
-
 
 
 
@@ -1168,6 +1100,8 @@ def run():
 	print "shoe.run ..."
 
 	dokname=FreeCAD.ParamGet('User parameter:Plugins/shoe').GetString("Document","Shoe")
+
+	# dokname="last_april"
 	try: App.closeDocument(dokname)
 	except: pass
 
@@ -1175,6 +1109,7 @@ def run():
 	App.setActiveDocument(dokname)
 	App.ActiveDocument=App.getDocument(dokname)
 	Gui.ActiveDocument=Gui.getDocument(dokname)
+	
 
 	g=App.activeDocument().addObject("App::DocumentObjectGroup","Ribs")
 	m=App.activeDocument().addObject("App::DocumentObjectGroup","Meridians")
@@ -1183,64 +1118,33 @@ def run():
 
 	profiles=App.activeDocument().addObject("App::DocumentObjectGroup","Profiles")
 
+	App.Gui.activeDocument().mergeProject( __dir__+"/../testdata/last_sketch_sagittal.fcstd")
+	App.ActiveDocument.Sketch.Placement=App.Placement(App.Vector(0,0,0), App.Rotation(App.Vector(0,0.707107,0.707107),180), App.Vector(0,0,0))
 
-	if 1:
-		
-		print "import ............"
-		import nurbswb.shoedata
-		reload(nurbswb.shoedata)
-		bbps=nurbswb.shoedata.bbps
 
-		points=[FreeCAD.Vector(tuple(v)) for v in bbps]
+	print "import ............"
 
-		Draft.makeBSpline(points,closed=False,face=True,support=None)
-		App.ActiveDocument.ActiveObject.Label="Backbone"
-		babo=App.ActiveDocument.ActiveObject
-		profiles.addObject(App.ActiveDocument.ActiveObject)
+	import nurbswb.shoedata
+	reload(nurbswb.shoedata)
+
+	bbps=nurbswb.shoedata.bbps
+
+	import nurbswb.createshoerib
+	reload(nurbswb.createshoerib)
+
+	boxes=nurbswb.shoedata.boxes
+	ribs=[nurbswb.createshoerib.run("rib_"+str(i),[[8,0,0]],boxes[i]) for i in range(1,15)]
+
+
+	points=[FreeCAD.Vector(tuple(v)) for v in bbps]
+
+	Draft.makeBSpline(points,closed=False,face=True,support=None)
+	App.ActiveDocument.ActiveObject.Label="Backbone"
+	babo=App.ActiveDocument.ActiveObject
+	profiles.addObject(App.ActiveDocument.ActiveObject)
 
 #		Draft.makeWire(points,closed=False,face=True,support=None)
 #		App.ActiveDocument.ActiveObject.Label="Backbone Poly"
-
-		# bcurve2=genrib(r=110,l=200,h=240,w=10,name="B2 ")
-		bcurve2=genss("B2 ",nurbswb.shoedata.bcurve1)
-		#bcurve1=genrib(r=165,l=260,h=240,w=10,name="B1 ")
-		bcurve1=genss("B1 ",nurbswb.shoedata.bcurve1)
-		#bcurve=genrib(r=230,l=320,h=240,w=10,name="B ")
-		bcurve=genss("B ",nurbswb.shoedata.bcurve)
-		#stcurve=genrib(r=400,l=400,h=240,w=10,name="ST ")
-		stcurve=genss("ST ",nurbswb.shoedata.stcurve)
-
-		rf=1.0/np.cos(np.pi*28/180)
-
-		#joint=genrib(r=480,l=410,h=370*rf,w=10,name="Joint ")
-		#girth=genrib(r=420,l=350,h=520*rf,w=20,name="Girth ")
-		joint=genss("Joint",nurbswb.shoedata.joint)
-		girth=genss("Girth",nurbswb.shoedata.girth)
-		# ueberarbeitete koordianten
-		waist=genss("Waist",nurbswb.shoedata.waist)
-		instep=genss("Instep ",nurbswb.shoedata.instep)
-
-
-
-
-		#longheel=genrib(r=370,h=930*rf,w=140,name="Long Heel ")
-		#heel=genrib(r=400,h=900*rf,w=220,name="oberHeel ")
-		longheel=genss("Long Heel ",nurbswb.shoedata.longheel)
-		heel=genss("Heel ",nurbswb.shoedata.heel)
-		
-		
-		ankle1=genss("Ankle 1 ",nurbswb.shoedata.ankle1)
-		ankle2=genss("Ankle 2 ",nurbswb.shoedata.ankle2)
-		ankle3=genss("Ankle 3 ",nurbswb.shoedata.ankle3)
-		ankle4=genss("Ankle 4 ",nurbswb.shoedata.ankle4)
-		
-		#ankle1=genrib(r=400,h=840*rf,w=200,name="Ankle 1 ")
-		#ankle2=genrib(r=300,h=840*rf,w=180,name="Ankle 2 ")
-		#ankle3=genrib(r=85,h=840*rf,w=30,name="Ankle 3 ")
-		#ankle4=genrib(r=30,h=840*rf,w=10,name="Ankle 4 ")
-
-
-	ribs=[bcurve2,bcurve1,bcurve,stcurve,joint,girth,waist,instep,longheel,heel,ankle1,ankle2,ankle3,ankle4]
 
 	twister=nurbswb.shoedata.twister
 	sc=nurbswb.shoedata.sc
@@ -1259,12 +1163,12 @@ def run():
 	for j in a.Ribs:
 		ffs=App.ActiveDocument.addObject("Part::Spline","Rib " + j.Label)
 		profiles.addObject(j)
-		j.Placement.Rotation=FreeCAD.Rotation(FreeCAD.Vector(0,1,0,),90)
+		#j.Placement.Rotation=FreeCAD.Rotation(FreeCAD.Vector(0,1,0,),90)
 		g.addObject(ffs)
 		ffs2=App.ActiveDocument.addObject("Part::Spline","RibP " + j.Label)
 		gp.addObject(ffs2)
 
-	for j in range(len(bcurve.Points)):
+	for j in range(a.MeridiansCount):
 		ffs=App.ActiveDocument.addObject("Part::Spline","Meridian " + str(j+1))
 		m.addObject(ffs)
 		ffs=App.ActiveDocument.addObject("Part::Spline","MeridianP " + str(j+1))
@@ -1288,6 +1192,7 @@ def run():
 	Gui.SendMsgToActiveView("ViewFit")
 	FreeCADGui.runCommand("Draft_ToggleGrid")
 
+	#return
 
 	s=App.ActiveDocument.Poly
 	print len(s.Shape.Edges)
@@ -1297,9 +1202,9 @@ def run():
 		Points.insert(__dir__+"/../testdata/shoe_last_scanned.asc","Shoe")
 	except:
 		pass
-	
 
-	if 0:
+
+	if nurbswb.shoedata.showlofts:
 		# flaechen erzeugen
 		try: loft=App.ActiveDocument.MeridiansLoft
 		except:loft=App.ActiveDocument.addObject('Part::Loft','MeridiansLoft')
@@ -1317,24 +1222,32 @@ def run():
 	for i in App.ActiveDocument.Objects:
 		i.ViewObject.hide()
 
-	for obj in App.ActiveDocument.MyShoe,App.ActiveDocument.shoe_last_scanned,App.ActiveDocument.Poly:
+	for obj in App.ActiveDocument.Sketch,App.ActiveDocument.Poles,App.ActiveDocument.shoe_last_scanned,App.ActiveDocument.Poly:
 		obj.ViewObject.show()
 
 	App.ActiveDocument.shoe_last_scanned.ViewObject.ShapeColor=(1.0,.0,.0)
-	
-	pc=Draft.clone(App.ActiveDocument.Poles)
-	pc.Scale.x=0.99
-	pc.Scale.y=0.99
-	pc.Scale.z=0.99
-	App.ActiveDocument.ActiveObject.ViewObject.ShapeColor=(.0,1.0,.0)
-	App.ActiveDocument.ActiveObject.Label="shoe 99%"
+	App.ActiveDocument.shoe_last_scanned.ViewObject.PointSize=4
+	App.ActiveDocument.Poles.ViewObject.Transparency=60
 
-	pc=Draft.clone(App.ActiveDocument.Poles)
-	pc.Scale.x=1.01
-	pc.Scale.y=1.01
-	pc.Scale.z=1.01
-	App.ActiveDocument.ActiveObject.ViewObject.ShapeColor=(.0,.0,1.0)
-	App.ActiveDocument.ActiveObject.Label="shoe 101%"
+
+
+	if nurbswb.shoedata.showscales:
+
+		pc=Draft.clone(App.ActiveDocument.Poles)
+		pc.Scale.x=nurbswb.shoedata.scaleIn
+		pc.Scale.y=nurbswb.shoedata.scaleIn
+		pc.Scale.z=nurbswb.shoedata.scaleIn
+		App.ActiveDocument.ActiveObject.ViewObject.ShapeColor=(.0,1.0,.0)
+		App.ActiveDocument.ActiveObject.Label="shoe " +str(nurbswb.shoedata.scaleIn)
+
+		pc=Draft.clone(App.ActiveDocument.Poles)
+		pc.Scale.x=nurbswb.shoedata.scaleOut
+		pc.Scale.y=nurbswb.shoedata.scaleOut
+		pc.Scale.z=nurbswb.shoedata.scaleOut
+		App.ActiveDocument.ActiveObject.ViewObject.ShapeColor=(.0,.0,1.0)
+		App.ActiveDocument.ActiveObject.Label="shoe " +str(nurbswb.shoedata.scaleOut)
+
+	App.getDocument(dokname).saveAs(u"/tmp/shoe_v0.fcstd")
 
 	print "done"
 

@@ -56,6 +56,8 @@ def displayCut(label,pl,pts,showpoints=True,showwire=False,showxypoints=False,sh
 	plst="FreeCAD.Placement(FreeCAD." + str(pl.Base) +", FreeCAD.Rotation" + str(pl.Rotation.toEuler())+") "
 
 	plinv=pl.inverse()
+	rot2=FreeCAD.Placement(FreeCAD.Vector(),FreeCAD.Rotation(FreeCAD.Vector(0,0,1),90))
+	plinv=rot2.multiply(plinv)
 
 
 
@@ -190,7 +192,7 @@ def run():
 
 	App=FreeCAD
 	jj=App.ActiveDocument.Scanpoints.OutList
-	
+
 	clo=FreeCAD.ActiveDocument.addObject("App::DocumentObjectGroup","clones")
 
 	for i,p in enumerate(App.ActiveDocument.Scanpoints.OutList):
@@ -200,11 +202,11 @@ def run():
 		scp.addObject(jj[i])
 		ao=App.ActiveDocument.Profiles.OutList[2]
 		scp.addObject(ao)
-		rc=nurbswb.createsketchspline.runobj(ao,jj[i].Label)
-		scp.addObject(rc)
-		cl=Draft.clone(rc)
-		cl.Label=rc.Label
-		clo.addObject(cl)
+		#rc=nurbswb.createsketchspline.runobj(ao,jj[i].Label)
+		#scp.addObject(rc)
+		#cl=Draft.clone(rc)
+		#cl.Label=rc.Label
+		#clo.addObject(cl)
 
 	for i in App.ActiveDocument.Objects:
 		i.ViewObject.hide()

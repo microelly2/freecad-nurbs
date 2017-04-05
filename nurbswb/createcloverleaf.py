@@ -143,6 +143,11 @@ def run():
 
 
 
+App.ActiveDocument.ActiveObject.Geometry[17].length()
+
+
+
+App.ActiveDocument.cloverleaf.movePoint(5,0,App.Vector(200,100,0))
 
 
 
