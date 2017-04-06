@@ -65,3 +65,10 @@ target/
 
 *.pyc
 
+# my ones
+_*
+*~
+*.txt
+nurbswb/latex
+nurbswb/html
+
