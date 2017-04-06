@@ -168,7 +168,7 @@ def run():
 	reload(nurbswb.shoedata)
 	bbps=nurbswb.shoedata.bbps
 	twister=nurbswb.shoedata.twister
-	labels=nurbswb.shoedata.labels
+	# labels=nurbswb.shoedata.labels
 
 	for i,b in enumerate(bbps):
 		if i==0 : continue
@@ -181,7 +181,7 @@ def run():
 		pcl=FreeCAD.ActiveDocument.shoe_last_scanned.Points.Points
 
 		#displayCut(pla,pcl,showpoints=False,showxywire=False,showxypoints=True)
-		displayCut(labels[i],pla,pcl,showpoints=True,showxywire=False,showxypoints=True)
+		displayCut("cut "+str(i),pla,pcl,showpoints=True,showxywire=False,showxypoints=True)
 
 	#pla=FreeCAD.Placement()
 	#displayCut(pla,pcl,showpoints=True,showwire=True)

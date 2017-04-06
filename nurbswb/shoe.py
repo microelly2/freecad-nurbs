@@ -13,7 +13,8 @@ App=FreeCAD
 Gui=FreeCADGui
 
 from PySide import QtGui
-import Part,Mesh,Draft
+import Part,Mesh,Draft,Points
+
 
 import numpy as np
 import random
@@ -97,7 +98,6 @@ def Myarray2NurbsD3(arr,label="MyWall",degree=3):
 	FreeCAD.shoe_pst=pst
 	bs.setVPeriodic()
 
-	import random
 	color=(random.random(),random.random(),random.random())
 	for i,pps in enumerate(pst):
 		bc=Part.BSplineCurve()
@@ -901,11 +901,11 @@ def getdata(index):
 # TEST CASE
 #-----------------------------------------
 
-if  __name__=='__main__':
+#if  __name__=='__main__':
 
+
+def main_test():
 	# test aus parametern
-	import Draft
-	import nurbswb
 	import nurbswb.shoe as shoe
 	reload( nurbswb.shoe)
 
@@ -1019,12 +1019,6 @@ def genss(sk):
 		''' ribs aus daten'''
 
 		poles=sk.Shape.Edge1.Curve.getPoles()
-		# von generator ...
-		t=FreeCAD.Placement(FreeCAD.Vector (68.0, 0.0, 14.0), FreeCAD.Rotation(0.0, -60.0, 0.0)) #001
-		xpoles=[[0.4, 9.0, 0.0], [0.0, 23.0, 0.0], [2.2, 27.0, 0.0], [5.7, 35.7, 0.0], [27.0, 31.0, 0.0], 
-		[49.6, 24.0, 0.0], [74.0, 20.0, 0.0], [87.6, 16.2, 0.0], [92.0, 9.0, 0.0], [95.7, 0.1, 0.0], [94.5, -8.5, 0.0], 
-		[95.5, -19.2, 0.0], [78.6, -26.8, 0.0], [53.0, -28.0, 0.0], [22.4, -30.2, 0.0], [8.0, -26.3, 0.0], [3.4, -21.1, 0.0], [0.0, -5.0, 0.0]]
-		
 		points=[FreeCAD.Vector(0,p[0],p[1]) for p in poles]
 
 
@@ -1036,76 +1030,7 @@ def genss(sk):
 #		points=ps
 
 		print len(points)
-
-#		Draft.makeBSpline(points,closed=True,face=True,support=None)
-#		App.ActiveDocument.ActiveObject.Label=name
-#		App.ActiveDocument.ActiveObject.ViewObject.ShapeColor=(random.random(),random.random(),random.random())
-
-
-#		App.ActiveDocument.ActiveObject.ViewObject.hide()
-
 		return sk
-		return App.ActiveDocument.ActiveObject
-
-
-def genrib(r=250,h=300,w=10,m=0,l=None,name="My Rib "):
-		''' rippe als Draft Bspline '''
-
-		if l==None: l=r
-		r2=max(20,r-100)
-		l2=max(20,l-100)
-
-		MP=np.array([0,m,h])
-		LP=np.array([0,m-0.5*l,max(250,0.95*h)])
-		SLP=np.array([0,m-0.8*l,0.6*h if 0.6*h>220 else 220])
-
-		RP=np.array([0,m+0.5*r,max(250,0.95*h)])
-		SRP=np.array([0,m+0.8*r,0.6*h if 0.6*h>220 else 220])
-
-		sharp=0.3
-
-		ps=[ 
-				[0,r2-10,0],
-				[0,r2,0],
-				[0,r,50],
-				[0,r,150],
-
-				SRP,
-				RP+(SRP-RP)*sharp,
-				RP,
-				RP+(MP-RP)*sharp,
-				MP,
-				LP+(MP-LP)*0.2,
-				LP,
-				LP+(SLP-LP)*0.2,
-				SLP,
-
-
-				[0,-l,150],
-				[0,-l,50],
-				[0,-l2,0],
-				[0,-l2+10,0],
-		]
-
-		points=[FreeCAD.Vector(tuple(v))*0.10 for v in ps]
-
-		if 0:
-			Draft.makeWire(points,closed=True,face=True,support=None)
-			App.ActiveDocument.ActiveObject.Label=name
-			App.ActiveDocument.ActiveObject.ViewObject.ShapeColor=(random.random(),random.random(),random.random())
-
-		else:
-			Draft.makeBSpline(points,closed=True,face=True,support=None)
-			App.ActiveDocument.ActiveObject.Label=name
-			App.ActiveDocument.ActiveObject.ViewObject.ShapeColor=(random.random(),random.random(),random.random())
-
-
-		App.ActiveDocument.ActiveObject.ViewObject.hide()
-		return App.ActiveDocument.ActiveObject
-
-
-
-
 
 
 
@@ -1114,7 +1039,6 @@ def run():
 
 	dokname=FreeCAD.ParamGet('User parameter:Plugins/shoe').GetString("Document","Shoe")
 
-	# dokname="last_april"
 	try: App.closeDocument(dokname)
 	except: pass
 
@@ -1210,7 +1134,6 @@ def run():
 	s=App.ActiveDocument.Poly
 	print len(s.Shape.Edges)
 
-	import Points
 	try:
 		Points.insert(__dir__+"/../testdata/shoe_last_scanned.asc","Shoe")
 	except:

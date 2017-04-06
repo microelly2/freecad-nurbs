@@ -6,34 +6,7 @@ App=FreeCAD
 import Draft
 import numpy as np
 
-
-from PySide import QtGui
-import sys,traceback,random
-
-
-def showdialog(title="Fehler",text="Schau in den ReportView fuer mehr Details",detail=None):
-	msg = QtGui.QMessageBox()
-	msg.setIcon(QtGui.QMessageBox.Warning)
-	msg.setText(text)
-	msg.setWindowTitle(title)
-	if detail<>None:   msg.setDetailedText(detail)
-	msg.exec_()
-
-
-def sayexc(title='Fehler',mess=''):
-	exc_type, exc_value, exc_traceback = sys.exc_info()
-	ttt=repr(traceback.format_exception(exc_type, exc_value,exc_traceback))
-	lls=eval(ttt)
-	l=len(lls)
-	l2=lls[(l-3):]
-	FreeCAD.Console.PrintError(mess + "\n" +"-->  ".join(l2))
-	showdialog(title,text=mess,detail="--> ".join(l2))
-
-
-import numpy as np
-
 def run(name='ribbow',moves=[],box=[40,0,-40,30]):
-	
 
 	label=name
 	try: body=App.activeDocument().Body
@@ -45,12 +18,9 @@ def run(name='ribbow',moves=[],box=[40,0,-40,30]):
 
 	App.activeDocument().recompute()
 
-	pts=None
-
-	if pts==None: # some test data
-		anz=16
-		r=50
-		pts= [FreeCAD.Vector(r*np.sin(2*np.pi/anz*i),r*np.cos(2*np.pi/anz*i)+50,0) for i in range(anz)]
+	anz=16
+	r=50
+	pts= [FreeCAD.Vector(r*np.sin(2*np.pi/anz*i),r*np.cos(2*np.pi/anz*i)+50,0) for i in range(anz)]
 
 	for i,p in enumerate(pts):
 		sk.addGeometry(Part.Circle(App.Vector(int(round(p.x)),int(round(p.y)),0),App.Vector(0,0,1),10),True)
@@ -64,7 +34,6 @@ def run(name='ribbow',moves=[],box=[40,0,-40,30]):
 
 
 	k=i+1
-
 	l=[App.Vector(int(round(p.x)),int(round(p.y))) for p in pts]
 
 	if 0:
@@ -118,73 +87,57 @@ def run(name='ribbow',moves=[],box=[40,0,-40,30]):
 
 	dd=2
 	d=sk.addConstraint(Sketcher.Constraint('Distance',20,dd)) 
-	print ("datum",d) 
 	sk.renameConstraint(d, u'tangentRight')
 	d=sk.addConstraint(Sketcher.Constraint('Distance',23,dd)) 
-	print ("datum",d) 
 	sk.renameConstraint(d, u'tangentBottom')
 	d=sk.addConstraint(Sketcher.Constraint('Distance',25,dd)) 
-	print ("datum",d) 
 	sk.renameConstraint(d, u'WidthBottom')
 	d=sk.addConstraint(Sketcher.Constraint('Distance',28,dd)) 
 	sk.renameConstraint(d, u'tangentLeft')
 	d=sk.addConstraint(Sketcher.Constraint('Distance',32,dd)) 
 	sk.renameConstraint(d, u'tangentTop')
 
-
-	print "--------",d
-
 	[r,b,l,t]=box
-	print (r,l,t,b)
-	
+
 	sk.movePoint(0,0,App.Vector(0,t,0),0)
 	d=sk.addConstraint(Sketcher.Constraint('DistanceX',0,3,0)) 
-	sk.renameConstraint(d, u'p0 X')
+	sk.renameConstraint(d, u'p0X')
 	d=sk.addConstraint(Sketcher.Constraint('DistanceY',0,3,t)) 
-	sk.renameConstraint(d, u'p0 Y')
-
+	sk.renameConstraint(d, u'p0Y')
 	App.activeDocument().recompute()
 
 	sk.movePoint(2,0,App.Vector(r,t,0),0)
 	d=sk.addConstraint(Sketcher.Constraint('DistanceX',2,3,r)) 
-	sk.renameConstraint(d, u'p2 X')
+	sk.renameConstraint(d, u'p2X')
 	d=sk.addConstraint(Sketcher.Constraint('DistanceY',2,3,t)) 
-	sk.renameConstraint(d, u'p2 Y')
-
+	sk.renameConstraint(d, u'p2Y')
 	App.activeDocument().recompute()
-
 
 	sk.movePoint(14,0,App.Vector(l,t,0),0)
 	d=sk.addConstraint(Sketcher.Constraint('DistanceX',14,3,l)) 
-	sk.renameConstraint(d, u'p14 X')
+	sk.renameConstraint(d, u'p14X')
 	d=sk.addConstraint(Sketcher.Constraint('DistanceY',14,3,t)) 
-	sk.renameConstraint(d, u'p14 Y')
-
+	sk.renameConstraint(d, u'p14Y')
 	App.activeDocument().recompute()
 
 	d=sk.addConstraint(Sketcher.Constraint('DistanceX',4,3,r)) 
-	sk.renameConstraint(d, u'p4 X')
+	sk.renameConstraint(d, u'p4X')
 	d=sk.addConstraint(Sketcher.Constraint('DistanceY',4,3,b+dd)) 
-	sk.renameConstraint(d, u'p4 Y')
-
+	sk.renameConstraint(d, u'p4Y')
 	App.activeDocument().recompute()
 
 	d=sk.addConstraint(Sketcher.Constraint('DistanceX',12,3,l)) 
-	sk.renameConstraint(d, u'p12 X')
+	sk.renameConstraint(d, u'p12X')
 	d=sk.addConstraint(Sketcher.Constraint('DistanceY',12,3,b+dd)) 
-	sk.renameConstraint(d, u'p12 Y')
-
+	sk.renameConstraint(d, u'p12Y')
 	App.activeDocument().recompute()
-	print d
 
 	sk.movePoint(8,0,App.Vector(0,b,0),0)
 	d=sk.addConstraint(Sketcher.Constraint('DistanceX',8,3,0)) 
-	sk.renameConstraint(d, u'p8 X')
+	sk.renameConstraint(d, u'p8X')
 	d=sk.addConstraint(Sketcher.Constraint('DistanceY',8,3,b)) 
-	sk.renameConstraint(d, u'p8 Y')
-
+	sk.renameConstraint(d, u'p8Y')
 	App.activeDocument().recompute()
-
 
 	print (name,"moves ...")
 	for [k,x,y] in moves:
@@ -196,14 +149,10 @@ def run(name='ribbow',moves=[],box=[40,0,-40,30]):
 
 
 
+def test():
 
-
-if 0:
 	sk1=run("rib1",[[8,0,0],[0,0,120],[4,120,-10],[12,-130,0]])
 	sk2=run("rib2",[[8,0,0],[0,0,150],[4,70,10],[12,-90,10]])
 
 
-#sk3=run("rib3",[],[40,-10,-40,30])
-
-
-
+	target=run("rib3",[],[40,-10,-40,30])
