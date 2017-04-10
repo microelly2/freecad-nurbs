@@ -4,7 +4,7 @@ import FreeCAD,Part
 
 import Draft
 import numpy as np
-import cv2
+#import cv2
 
 from PySide import QtGui
 import sys,traceback,random
@@ -94,6 +94,33 @@ def diag(p,pts,u0,v0):
 		return [True,pn]
 
 
+import numpy
+
+def find_coeffs(pa, pb):
+	matrix = []
+	for p1, p2 in zip(pa, pb):
+		matrix.append([p1[0], p1[1], 1, 0, 0, 0, -p2[0]*p1[0], -p2[0]*p1[1]])
+		matrix.append([0, 0, 0, p1[0], p1[1], 1, -p2[1]*p1[0], -p2[1]*p1[1]])
+
+	A = numpy.matrix(matrix, dtype=numpy.float)
+	B = numpy.array(pb).reshape(8)
+
+	res = numpy.dot(numpy.linalg.inv(A.T * A) * A.T, B)
+	return numpy.array(res).reshape(8)
+
+def trafo(x,y,coeffs):
+	'''
+	Data is a 8-tuple  which contains the coefficients for a perspective transform. 
+	For each pixel (x, y) in the output image, 
+	the new value is taken from a position 
+	(a x + b y + c)/(g x + h y + 1), 
+	(d x + e y + f)/(g x + h y + 1) 
+	'''
+	(a, b, c, d, e, f, g, h)=coeffs
+	y2=x2=(a*x + b*y + c)/(g*x + h*y + 1)
+	y2=(d*x + e*y + f)/(g*x + h*y + 1) 
+	return (x2,y2,0)
+
 
 class Trafo(PartFeature):
 	def __init__(self,obj ):
@@ -146,11 +173,17 @@ class Trafo(PartFeature):
 		bb.Shape=bc.toShape()
 
 
-		M = cv2.getPerspectiveTransform(pts1,pts2)
+		##M = cv2.getPerspectiveTransform(pts1,pts2)
+		M=  find_coeffs(pts1, pts2)
+		print "!!!!!!!!!!!!!!!!!!!!!",M
+
 
 		if not obj.useCenter:
-			a = cv2.perspectiveTransform(np.array([pts3]), M)
-			ptsa=[FreeCAD.Vector(p[0],p[1],0) for p in a[0]]
+			##a = cv2.perspectiveTransform(np.array([pts3]), M)
+			##ptsa=[FreeCAD.Vector(p[0],p[1],0) for p in a[0]]
+			a=[trafo(p[0],p[1],M) for p in pts3]
+			ptsa=[FreeCAD.Vector(p[0],p[1],0) for p in a]
+			print "ptsa"
 
 		else:
 			pts=obj.source.Points
@@ -175,11 +208,15 @@ class Trafo(PartFeature):
 				lrc.append(cpn)
 
 			pts3= np.float32([(p[1].x,p[1].y) for p in lrc])
-			a = cv2.perspectiveTransform(np.array([pts3]), M)
+##			a = cv2.perspectiveTransform(np.array([pts3]), M)
+			a=[trafo(p[0],p[1],M) for p in pts3]
+##			ptsa=[FreeCAD.Vector(p[0],p[1],0) for p in a]
+
+			
 			pas=[]
 			for i,p in enumerate(lrc):
 				[flag,pt]=p
-				if flag: p2=FreeCAD.Vector(a[0][i][0],a[0][i][1],0)
+				if flag: p2=FreeCAD.Vector(a[i][0],a[i][1],0)
 				else: p2=pt
 				pas.append(p2)
 			ptsa=pas
