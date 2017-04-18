@@ -73,13 +73,36 @@ def displayCut(label,pl,pts,showpoints=True,showwire=False,showxypoints=False,sh
 	pts2a=[FreeCAD.Vector(round(p.x),round(p.y),round(p.z)) for p in pts2 if round(p.z)==z0]
 
 	#pts2a=[FreeCAD.Vector(round(p.z),round(p.y),round(p.x)) for p in pts2 if round(p.z)==z0]
-	
-	if len(pts2a)==0: return
 
 	try: scp=FreeCAD.ActiveDocument.Scanpoints
 	except: scp=FreeCAD.ActiveDocument.addObject("App::DocumentObjectGroup","Scanpoints")
 	try: scps=FreeCAD.ActiveDocument.ScanpointsSource
 	except: scps=FreeCAD.ActiveDocument.addObject("App::DocumentObjectGroup","ScanpointsSource")
+
+
+	if len(pts2a)==0: 
+		print ("len ptsa == 0",pts2)
+		if showxypoints:
+			Points.show(Points.Points([]))
+			FreeCAD.ActiveDocument.ActiveObject.ViewObject.ShapeColor=color
+			FreeCAD.ActiveDocument.ActiveObject.ViewObject.PointSize=5
+			FreeCAD.ActiveDocument.ActiveObject.Label="Points Map xy " +plst
+			FreeCAD.ActiveDocument.ActiveObject.Label=label+"t=" +plst + "#"
+			FreeCAD.ActiveDocument.ActiveObject.Label="t=" +plst + "#"
+			#FreeCAD.ActiveDocument.ActiveObject.Placement.Rotation=FreeCAD.Rotation(FreeCAD.Vector(0,1,0),-90)
+			scp.addObject(FreeCAD.ActiveDocument.ActiveObject)
+
+		if showpoints:
+			# diusplay the used points inside the shoe
+			sels=[pl.multVec(p) for p in pts2a]
+			s2=Points.Points([])
+			Points.show(s2)
+			FreeCAD.ActiveDocument.ActiveObject.ViewObject.ShapeColor=color
+			FreeCAD.ActiveDocument.ActiveObject.ViewObject.PointSize=5
+			FreeCAD.ActiveDocument.ActiveObject.Label="Points " +plst
+			scps.addObject(FreeCAD.ActiveDocument.ActiveObject)
+		return
+
 
 
 
@@ -145,7 +168,7 @@ def displayCut(label,pl,pts,showpoints=True,showwire=False,showxypoints=False,sh
 
 def run():
 
-	bbps=[ 
+	bbpsY=[ 
 					[255,0,13], #b
 					[250,0,11.5], #b
 					[245,0,10], #b
@@ -171,7 +194,7 @@ def run():
 	# labels=nurbswb.shoedata.labels
 
 	for i,b in enumerate(bbps):
-		if i==0 : continue
+		#if i==0 : continue
 		alpha=twister[i][1]
 		beta=twister[i][2]
 
@@ -180,6 +203,7 @@ def run():
 		pla=FreeCAD.Placement(FreeCAD.Vector(b),FreeCAD.Rotation(FreeCAD.Vector(0,0,1),beta).multiply(FreeCAD.Rotation(FreeCAD.Vector(0,1,0),alpha-90)))
 		pcl=FreeCAD.ActiveDocument.shoe_last_scanned.Points.Points
 
+		print "display cut ",i
 		#displayCut(pla,pcl,showpoints=False,showxywire=False,showxypoints=True)
 		displayCut("cut "+str(i),pla,pcl,showpoints=True,showxywire=False,showxypoints=True)
 
@@ -196,12 +220,22 @@ def run():
 	clo=FreeCAD.ActiveDocument.addObject("App::DocumentObjectGroup","clones")
 
 	for i,p in enumerate(App.ActiveDocument.Scanpoints.OutList):
+		scp=FreeCAD.ActiveDocument.addObject("App::DocumentObjectGroup","GRP "+str(i+1))
+		try:
+			l2=App.ActiveDocument.Profiles.OutList[2].Label
+			scp.addObject(jj[i])
+			ao=App.ActiveDocument.Profiles.OutList[2]
+			scp.addObject(ao)
+		except:
+			pass
 
-		l2=App.ActiveDocument.Profiles.OutList[2].Label
-		scp=FreeCAD.ActiveDocument.addObject("App::DocumentObjectGroup","GRP "+l2)
-		scp.addObject(jj[i])
-		ao=App.ActiveDocument.Profiles.OutList[2]
-		scp.addObject(ao)
+		try:
+			obj=App.ActiveDocument.getObject('rib_'+str(i+1))
+			scp.addObject(jj[i])
+			scp.addObject(obj)
+		except:
+			pass
+
 		#rc=nurbswb.createsketchspline.runobj(ao,jj[i].Label)
 		#scp.addObject(rc)
 		#cl=Draft.clone(rc)

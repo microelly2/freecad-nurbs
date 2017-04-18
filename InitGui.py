@@ -280,7 +280,7 @@ if FreeCAD.GuiUp:
 	c2a(["Curves"],always,'scanbackbonecut','scanbackbonecut','Cut the Scan along backbone ','/../icons/backbonecut.svg',"run()")
 	c2a(["Curves"],always,'transform_spline','transform_spline','perspective transformation of a Bbspline','',"run()")
 	c2a(["Curves"],ondocument,'createcloverleaf','createcloverleaf','create a cloverleaf','/../icons/cloverleaf.svg',"run()")
-
+	c2a(["Curves"],ondocument,'createshoerib','createshoerib','create a shoe last rib','/../icons/cloverleaf.svg',"run()")
 
 	for cmd in FreeCADGui.listCommands():
 		if cmd.startswith("Nurbs_"):
