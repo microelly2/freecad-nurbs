@@ -67,10 +67,11 @@ def run():
 
 	if 0:
 		# open spline
-		sk.addGeometry(Part.BSplineCurve(l,False),False)
+		sk.addGeometry(Part.BSplineCurve(l,None,None,False,3,None,False),False)
+
 	else:
 		# periodic spline
-		sk.addGeometry(Part.BSplineCurve(l,True),False)
+		sk.addGeometry(Part.BSplineCurve(l,None,None,True,3,None,False),False)
 
 	conList = []
 	for i,p in enumerate(pts):
@@ -81,14 +82,18 @@ def run():
 
 
 	App.activeDocument().recompute()
+	
 	sk.addConstraint(Sketcher.Constraint('Symmetric',0,3,2,3,1,3)) 
 	App.activeDocument().recompute()
+
 
 	sk.addConstraint(Sketcher.Constraint('Symmetric',4,3,6,3,5,3)) 
 	App.activeDocument().recompute()
 
+
 	sk.addConstraint(Sketcher.Constraint('Symmetric',8,3,10,3,9,3)) 
 	App.activeDocument().recompute()
+
 
 	sk.addConstraint(Sketcher.Constraint('Symmetric',12,3,14,3,13,3)) 
 	App.activeDocument().recompute()
@@ -142,12 +147,6 @@ def run():
 	sk.toggleConstruction(24) 
 
 
-
-App.ActiveDocument.ActiveObject.Geometry[17].length()
-
-
-
-App.ActiveDocument.cloverleaf.movePoint(5,0,App.Vector(200,100,0))
 
 
 
