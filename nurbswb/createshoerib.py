@@ -98,11 +98,11 @@ def run(name='ribbow',moves=[],box=[40,0,-40,30]):
 		sk.renameConstraint(d, u'angleLeft')
 
 	# symmetrische Ecken
-	sk.addConstraint(Sketcher.Constraint('Equal',20,21)) 
+	sk.addConstraint(Sketcher.Constraint('Equal',21,20)) 
 	sk.addConstraint(Sketcher.Constraint('Equal',28,29)) 
 	sk.addConstraint(Sketcher.Constraint('Equal',32,17)) 
-
 	sk.addConstraint(Sketcher.Constraint('Equal',23,26)) 
+
 
 #	sk.addConstraint(Sketcher.Constraint('Symmetric',25,2,24,1,24,2))
 
@@ -110,15 +110,27 @@ def run(name='ribbow',moves=[],box=[40,0,-40,30]):
 	Gui.SendMsgToActiveView("ViewFit")
 
 	dd=2
-	d=sk.addConstraint(Sketcher.Constraint('Distance',20,dd)) 
+	#d=sk.addConstraint(Sketcher.Constraint('Distance',20,dd)) 
+	d=sk.addConstraint(Sketcher.Constraint('DistanceY',4,3,3,3,30)) 
 	sk.renameConstraint(d, u'tangentRight')
-	d=sk.addConstraint(Sketcher.Constraint('Distance',23,dd)) 
+	
+	#d=sk.addConstraint(Sketcher.Constraint('Distance',23,15)) 
+	d=sk.addConstraint(Sketcher.Constraint('DistanceX',8,3,6,3,30)) 
 	sk.renameConstraint(d, u'tangentBottom')
-	d=sk.addConstraint(Sketcher.Constraint('Distance',25,dd)) 
-	sk.renameConstraint(d, u'WidthBottom')
-	d=sk.addConstraint(Sketcher.Constraint('Distance',28,dd)) 
+
+	#d=sk.addConstraint(Sketcher.Constraint('Distance',25,dd)) 
+	d=sk.addConstraint(Sketcher.Constraint('DistanceX',8,3,7,3,10)) 
+	sk.renameConstraint(d, u'WidthBottomA')
+	d=sk.addConstraint(Sketcher.Constraint('DistanceX',9,3,8,3,10)) 
+	sk.renameConstraint(d, u'WidthBottomB')
+
+
+	#d=sk.addConstraint(Sketcher.Constraint('Distance',28,dd)) 
+	d=sk.addConstraint(Sketcher.Constraint('DistanceY',11,3,12,3,30)) 
+
 	sk.renameConstraint(d, u'tangentLeft')
-	d=sk.addConstraint(Sketcher.Constraint('Distance',32,dd)) 
+	#d=sk.addConstraint(Sketcher.Constraint('Distance',32,dd)) 
+	d=sk.addConstraint(Sketcher.Constraint('DistanceX',0,3,1,3,30)) 
 	sk.renameConstraint(d, u'tangentTop')
 
 	[r,b,l,t]=box
