@@ -7,6 +7,12 @@
 #-- GNU Lesser General Public License (LGPL)
 #-------------------------------------------------
 
+'''
+Anzeige der Laenge eioner Rippe als Hoehe
+App.getDocument('Shoe').Cylinder.setExpression('Height', u'rib_7.Shape.Edge1.Length')
+
+'''
+
 
 import FreeCAD,FreeCADGui
 App=FreeCAD
@@ -36,6 +42,7 @@ def Myarray2Poly(arr,bb):
 	comp=[]
 	print pst.shape
 	for i,pps in enumerate(pst):
+		if i == 0: continue 
 
 		pvs=[FreeCAD.Vector(p) for p in pps]
 		# print pvs
@@ -45,16 +52,17 @@ def Myarray2Poly(arr,bb):
 		App.ActiveDocument.RibsPoly.OutList[i].Shape=pol
 
 	for i,pps in enumerate(pst.swapaxes(0,1)):
-		pvs=[FreeCAD.Vector(p) for p in pps]
+		pvs=[FreeCAD.Vector(p) for p in pps[1:]]
 		pol=Part.makePolygon(pvs)
 		comp.append(pol)
 		App.ActiveDocument.MeridiansPoly.OutList[i].Shape=pol
 
-	pvs=[FreeCAD.Vector(p) for p in bb]
+	pvs=[FreeCAD.Vector(p) for p in bb[1:]]
 	pol=Part.makePolygon(pvs)
 	comp.append(pol)
 
 	for i,pps in enumerate(pst):
+		if i == 0: continue 
 		pvs=[FreeCAD.Vector(pps[0]),FreeCAD.Vector(bb[i]),FreeCAD.Vector(pps[-1])]
 		pol=Part.makePolygon(pvs)
 		comp.append(pol)
@@ -100,6 +108,7 @@ def Myarray2NurbsD3(arr,label="MyWall",degree=3):
 
 	color=(random.random(),random.random(),random.random())
 	for i,pps in enumerate(pst):
+		if i == 0 : continue
 		bc=Part.BSplineCurve()
 		bc.interpolate(pps)
 		App.ActiveDocument.Ribs.OutList[i].Shape=bc.toShape()
@@ -107,7 +116,7 @@ def Myarray2NurbsD3(arr,label="MyWall",degree=3):
 
 	for i,pps in enumerate(pst.swapaxes(0,1)):
 		bc=Part.BSplineCurve()
-		bc.interpolate(pps)
+		bc.interpolate(pps[2:])
 		App.ActiveDocument.Meridians.OutList[i].Shape=bc.toShape()
 		App.ActiveDocument.Meridians.OutList[i].ViewObject.LineColor=color
 
@@ -791,11 +800,13 @@ def importCurves(obj):
 
 def createNeedle(label="MyShoe"):
 	a=FreeCAD.activeDocument().addObject("Part::FeaturePython",label)
+
 	n=Needle(a)
 	a.useSpreadsheet=True
 	# gendata(a.Spreadsheet)
 	a.ViewObject.DisplayMode="Shaded"
 	a.ViewObject.Transparency=20
+
 	return a
 
 
@@ -1126,10 +1137,13 @@ def run():
 	Gui.activeDocument().activeView().viewFront()
 	#Gui.activeDocument().activeView().viewBottom()
 
+
 	Gui.SendMsgToActiveView("ViewFit")
+
+	# return
+
 	FreeCADGui.runCommand("Draft_ToggleGrid")
 
-	#return
 
 	s=App.ActiveDocument.Poly
 	print len(s.Shape.Edges)
@@ -1160,6 +1174,7 @@ def run():
 
 	for obj in App.ActiveDocument.Sketch,App.ActiveDocument.Poles,App.ActiveDocument.shoe_last_scanned,App.ActiveDocument.Poly:
 		obj.ViewObject.show()
+
 
 	App.ActiveDocument.shoe_last_scanned.ViewObject.ShapeColor=(1.0,.0,.0)
 	App.ActiveDocument.shoe_last_scanned.ViewObject.PointSize=4

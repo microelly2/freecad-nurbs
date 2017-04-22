@@ -29,6 +29,32 @@ bbps=[
 # 3D Boxes for the ribs
 boxes=[
 
+		[6,0,-24,8+2], # not used
+		[6,0,-20,8+4], # vorspitze
+
+		[8,0,-25,14],# spizte fuss
+		[21-2,0,-30,20-4-2],
+		
+		[40,0,-40,20+2], # sp == einschnitt, zehengelenk? 
+
+		[50-3,0,-40-2,38+2], # joint J3
+		[45,0,-40+8,56], # waist
+		[40,0,-40+8,65+1], # girth
+		[40-5,0,-40+8+4,100-3], # instep I
+
+		[40-5,0,-30+2,100+3],# oeffnung short heel
+		[35-2,0,-30+2,100+0],# knoechel 1
+		[33-2,0,-30+2,100-6],# knoechel 2
+		[30-3,0,-30+5,100-6],# knoechel 3
+
+		[20-3,0,-20+3,100-6],# vorbereitung abschluss hinten
+		[1,0,-1,100-6], # abschluss hinten
+
+		]
+
+
+boxes_ex1=[
+
 		[7,0,-25,8], # not used
 		[7,0,-25,8], # vorspitze
 

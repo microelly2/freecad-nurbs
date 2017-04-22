@@ -16,6 +16,8 @@ App.ActiveDocument.Sketch.modifyBSplineKnotMultiplicity(6,3,-1)
 
 def run(name='ribbow',moves=[],box=[40,0,-40,30]):
 
+	debug=True
+	debug=False
 	label=name
 	try: body=App.activeDocument().Body
 	except:	body=App.activeDocument().addObject('PartDesign::Body','Body')
@@ -47,11 +49,14 @@ def run(name='ribbow',moves=[],box=[40,0,-40,30]):
 
 	if 0:
 		# open spline
-		sk.addGeometry(Part.BSplineCurve(l,False),False)
+		ll=sk.addGeometry(Part.BSplineCurve(l,False),False)
 	else:
 		# periodic spline
 		#sk.addGeometry(Part.BSplineCurve(l,True),False)
-		sk.addGeometry(Part.BSplineCurve(l,None,None,True,3,None,False),False)
+		ll=sk.addGeometry(Part.BSplineCurve(l,None,None,True,3,None,False),False)
+
+		if debug:
+			sk.toggleConstruction(ll) 
 
 
 	conList = []
@@ -62,7 +67,10 @@ def run(name='ribbow',moves=[],box=[40,0,-40,30]):
 
 	for p in range (0,anz):
 		ll=sk.addGeometry(Part.LineSegment(App.Vector(100+10*p,100+10*p,0),App.Vector(-100,-100,0)),False)
-		sk.toggleConstruction(ll) 
+
+		if not debug:
+			sk.toggleConstruction(ll) 
+
 		sk.addConstraint(Sketcher.Constraint('Coincident',p,3,ll,1)) 
 		App.ActiveDocument.recompute()
 		if p==anz-1: p=-1
@@ -109,33 +117,40 @@ def run(name='ribbow',moves=[],box=[40,0,-40,30]):
 	App.activeDocument().recompute()
 	Gui.SendMsgToActiveView("ViewFit")
 
-	dd=2
+	dd=30
+	dd=5
+	# dd=3
+	dtb=dd # tangent Bottom
+	
+	# dd=2
 	#d=sk.addConstraint(Sketcher.Constraint('Distance',20,dd)) 
-	d=sk.addConstraint(Sketcher.Constraint('DistanceY',4,3,3,3,30)) 
+	d=sk.addConstraint(Sketcher.Constraint('DistanceY',4,3,3,3,dd)) 
 	sk.renameConstraint(d, u'tangentRight')
 	
 	#d=sk.addConstraint(Sketcher.Constraint('Distance',23,15)) 
-	d=sk.addConstraint(Sketcher.Constraint('DistanceX',8,3,6,3,30)) 
+	d=sk.addConstraint(Sketcher.Constraint('DistanceX',7,3,6,3,dtb)) 
 	sk.renameConstraint(d, u'tangentBottom')
 
+
+
 	#d=sk.addConstraint(Sketcher.Constraint('Distance',25,dd)) 
-	d=sk.addConstraint(Sketcher.Constraint('DistanceX',8,3,7,3,10)) 
+	d=sk.addConstraint(Sketcher.Constraint('DistanceX',8,3,7,3,dd)) 
 	sk.renameConstraint(d, u'WidthBottomA')
-	d=sk.addConstraint(Sketcher.Constraint('DistanceX',9,3,8,3,10)) 
+	d=sk.addConstraint(Sketcher.Constraint('DistanceX',9,3,8,3,dd)) 
 	sk.renameConstraint(d, u'WidthBottomB')
 
 
 	#d=sk.addConstraint(Sketcher.Constraint('Distance',28,dd)) 
-	d=sk.addConstraint(Sketcher.Constraint('DistanceY',11,3,12,3,30)) 
+	d=sk.addConstraint(Sketcher.Constraint('DistanceY',11,3,12,3,dd)) 
 
 	sk.renameConstraint(d, u'tangentLeft')
 	#d=sk.addConstraint(Sketcher.Constraint('Distance',32,dd)) 
-	d=sk.addConstraint(Sketcher.Constraint('DistanceX',0,3,1,3,30)) 
+	d=sk.addConstraint(Sketcher.Constraint('DistanceX',0,3,1,3,dd)) 
 	sk.renameConstraint(d, u'tangentTop')
 
 	[r,b,l,t]=box
-
 	sk.movePoint(0,0,App.Vector(0,t,0),0)
+
 	d=sk.addConstraint(Sketcher.Constraint('DistanceX',0,3,0)) 
 	sk.renameConstraint(d, u'p0X')
 	d=sk.addConstraint(Sketcher.Constraint('DistanceY',0,3,t)) 
