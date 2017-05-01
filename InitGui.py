@@ -206,14 +206,14 @@ def c1a(menu,isactive,name,*info):
 	FreeCAD.tcmds5.append([menu,name1])
 
 def c2(menu,title,name,*info):
-	print info
+	#print info
 	global _Command
 	title1="Nurbs_"+title
 	FreeCADGui.addCommand(title1,_Command(name,*info))
 	FreeCAD.tcmds5.append([menu,title1])
 
 def c2a(menu,isactive,title,name,*info):
-	print info
+	#print info
 	global _Command
 	t=_Command(name,*info)
 	title1="Nurbs_"+title
@@ -269,6 +269,8 @@ if FreeCAD.GuiUp:
 	c2a(["Faces","create"],ondocument,'simple Hood','simplehood','create a simple hood','/../icons/eye.svg',"run()")
 
 	c2a(["Faces","create"],always,'Create Shoe','shoe','Create Shoe','/../icons/shoe.svg',"run()")
+	c2a(["Faces","create"],always,'Create Sole','sole','Create Shoe Sole','/../icons/sole.svg',"run()")
+	
 	c2a(["Faces","create"],always,'Nurbs Editor','nurbs','creates a test nurbs','/../icons/zebra.svg',"runtest()")
 	c2a(["Faces","create"],onselection,'UV Grid Generator','uvgrid_generator','create UV grid of the partr','/../icons/delete_edge.svg',"runSel()")
 	c2a(["Faces","create"],onselection,'Nurbs Helper','helper','create helper objects of the part','/../icons/delete_edge.svg',"makeHelperSel()")
@@ -282,9 +284,10 @@ if FreeCAD.GuiUp:
 	c2a(["Curves"],ondocument,'createcloverleaf','createcloverleaf','create a cloverleaf','/../icons/cloverleaf.svg',"run()")
 	c2a(["Curves"],ondocument,'createshoerib','createshoerib','create a shoe last rib','/../icons/cloverleaf.svg',"run()")
 
-	for cmd in FreeCADGui.listCommands():
-		if cmd.startswith("Nurbs_"):
-			print cmd
+
+#	for cmd in FreeCADGui.listCommands():
+#		if cmd.startswith("Nurbs_"):
+#			print cmd
 
 
 '''
@@ -331,7 +334,7 @@ static char * nurbs_xpm[] = {
 	def Initialize(self):
 		
 		cmds= ['Nurbs_ZebraTool','Nurbs_DraftBSpline Editor',
-		'Nurbs_Create Shoe',
+		'Nurbs_Create Shoe','Nurbs_Create Sole',
 		'Nurbs_scanbackbonecut','Nurbs_createsketchspline','Nurbs_Curves to Face', 'Nurbs_facedraw',
 		'Nurbs_createcloverleaf',
 		'Part_Cone', 'Part_Cylinder','Draft_Move','Draft_Rotate','Draft_Point']

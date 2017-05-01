@@ -10,6 +10,8 @@
 '''
 Anzeige der Laenge eioner Rippe als Hoehe
 App.getDocument('Shoe').Cylinder.setExpression('Height', u'rib_7.Shape.Edge1.Length')
+for  c in  App.ActiveDocument.rib_13.Constraints:
+	print c.Name,c.Value
 
 '''
 
@@ -93,7 +95,6 @@ def Myarray2NurbsD3(arr,label="MyWall",degree=3):
 
 	try: NbVPoles,NbUPoles,_t1 =pst.shape
 	except: return (Part.Shape(),Part.Shape())
-	print "weiter"
 
 	bs=Part.BSplineSurface()
 	try:
@@ -121,12 +122,17 @@ def Myarray2NurbsD3(arr,label="MyWall",degree=3):
 		App.ActiveDocument.Meridians.OutList[i].ViewObject.LineColor=color
 
 	if 1:
-		print "sf2 --aa-"
 		sf2=bs.copy()
-		#sf2.segment(sf2.getUKnot(2),sf2.getUKnot(13),0,1)
-		sf2.segment(sf2.getUKnot(2),1,0,1)
-		print "sf2 reduced"
+#		sf2.segment(sf2.getUKnot(2),1,0,1)
+#---------------
+#segment sole
+		sf2.segment(sf2.getUKnot(2),1,sf2.getVKnot(5),sf2.getVKnot(15))
+#--------------
+
 		sh2=sf2.toShape()
+
+
+
 
 	sh=bs.toShape()
 
@@ -227,8 +233,8 @@ def toUVMesh(bs, uf=5, vf=5):
 def scale2(curves,scaler=None):
 
 	c=np.array(curves)
-	print ("scale2 c.shape ",c.shape)
-	print ("len scaler",len(scaler))
+#	print ("scale2 c.shape ",c.shape)
+#	print ("len scaler",len(scaler))
 
 	if scaler == None: scaler= [1]*10
 	poles=np.array([c[i]*[scaler[i,0],scaler[i,0],scaler[i,1]] for i in range(len(scaler))])
@@ -555,7 +561,7 @@ class Needle(PartFeature):
 				return
 
 		poles= scale2(curves,scaler)
-		print ("poles shape",poles.shape)
+#		print ("poles shape",poles.shape)
 
 		poles= twist(poles,twister)
 		poles= extrude(poles,bb)

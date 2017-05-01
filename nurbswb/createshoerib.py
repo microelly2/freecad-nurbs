@@ -106,11 +106,17 @@ def run(name='ribbow',moves=[],box=[40,0,-40,30]):
 		sk.renameConstraint(d, u'angleLeft')
 
 	# symmetrische Ecken
-	sk.addConstraint(Sketcher.Constraint('Equal',21,20)) 
-	sk.addConstraint(Sketcher.Constraint('Equal',28,29)) 
-	sk.addConstraint(Sketcher.Constraint('Equal',32,17)) 
-	sk.addConstraint(Sketcher.Constraint('Equal',23,26)) 
+	#sk.addConstraint(Sketcher.Constraint('Equal',21,20)) 
+	sk.addConstraint(Sketcher.Constraint('Symmetric',5,3,3,3,4,3))
+	
+	#sk.addConstraint(Sketcher.Constraint('Equal',28,29)) 
+	sk.addConstraint(Sketcher.Constraint('Symmetric',11,3,13,3,12,3))
+	
+	#sk.addConstraint(Sketcher.Constraint('Equal',32,17)) 
+	## sk.addConstraint(Sketcher.Constraint('Symmetric',1,3,15,3,0,3))
 
+	#sk.addConstraint(Sketcher.Constraint('Equal',23,26)) 
+	## sk.addConstraint(Sketcher.Constraint('Symmetric',6,3,10,3,8,3))
 
 #	sk.addConstraint(Sketcher.Constraint('Symmetric',25,2,24,1,24,2))
 
@@ -130,6 +136,8 @@ def run(name='ribbow',moves=[],box=[40,0,-40,30]):
 	#d=sk.addConstraint(Sketcher.Constraint('Distance',23,15)) 
 	d=sk.addConstraint(Sketcher.Constraint('DistanceX',7,3,6,3,dtb)) 
 	sk.renameConstraint(d, u'tangentBottom')
+	d=sk.addConstraint(Sketcher.Constraint('DistanceX',10,3,9,3,dtb)) 
+	sk.renameConstraint(d, u'tangentBottomB')
 
 
 
@@ -147,6 +155,9 @@ def run(name='ribbow',moves=[],box=[40,0,-40,30]):
 	#d=sk.addConstraint(Sketcher.Constraint('Distance',32,dd)) 
 	d=sk.addConstraint(Sketcher.Constraint('DistanceX',0,3,1,3,dd)) 
 	sk.renameConstraint(d, u'tangentTop')
+	d=sk.addConstraint(Sketcher.Constraint('DistanceX',15,3,0,3,dd)) 
+	sk.renameConstraint(d, u'tangentTopB')
+
 
 	[r,b,l,t]=box
 	sk.movePoint(0,0,App.Vector(0,t,0),0)
@@ -192,9 +203,9 @@ def run(name='ribbow',moves=[],box=[40,0,-40,30]):
 	sk.renameConstraint(d, u'p8Y')
 	App.activeDocument().recompute()
 
-	print (name,"moves ...")
+#	print (name,"moves ...")
 	for [k,x,y] in moves:
-		print (k,x,y)
+#		print (k,x,y)
 		sk.movePoint(k,3,App.Vector(x,y,0),0)
 		App.activeDocument().recompute()
 
@@ -208,4 +219,6 @@ def test():
 	sk2=run("rib2",[[8,0,0],[0,0,150],[4,70,10],[12,-90,10]])
 
 
-#target=run("rib3",[],[40,-10,-40,30])
+if  __name__ == '__main__':
+
+	target=run("rib3",[],[40,-10,-40,30])

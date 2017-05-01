@@ -1,4 +1,4 @@
-print "shoedata version 0.9"
+print "shoedata version 0.91"
 
 # rotations and scaling
 twister= [[0,0,0]]*4 + [[0,30,0]]*4 + [[0,25,0]] + [[0,20,0]]+ [[0,10,0]]*4

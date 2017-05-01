@@ -74,7 +74,9 @@ def createSketchSpline(pts=None,label="BSpline Sketch"):
 		sk.addGeometry(Part.BSplineCurve(l,False),False)
 	else:
 		# periodic spline
-		sk.addGeometry(Part.BSplineCurve(l,True),False)
+#		sk.addGeometry(Part.BSplineCurve(l,True),False)
+		ll=sk.addGeometry(Part.BSplineCurve(l,None,None,True,3,None,False),False)
+
 
 	conList = []
 	for i,p in enumerate(pts):
