@@ -7,6 +7,9 @@
 #-- GNU Lesser General Public License (LGPL)
 #-------------------------------------------------
 
+__version__ = '0.9'
+
+
 
 
 import FreeCAD,FreeCADGui
@@ -27,12 +30,17 @@ __dir__ = os.path.dirname(nurbswb.__file__)
 print __dir__
 import numpy as np
 
+
 # 12 divisions 
 
-def run():
+def runA():
 
-	LL=260.0
-	div12=[LL/12*i for i in range(13)]
+	#-------------------------------------------------------------------------------
+	LL=244.0
+	LS=LL+30
+
+	div12=[LL/11*i for i in range(12)]
+
 	higha=[18,17,16,15,11,10,8,5,0,2,5,9,14]
 	highb=[17,17,16,15,11,10,8,4,2,1,2,5,9,14]
 	highc=[17,17,16,15,25,35,35,15,5,1,2,5,9,14]
@@ -40,9 +48,25 @@ def run():
 	weia=[-15,-22,-28,-30,-32,	-33,-34,-39,-43,-42,	-37,-24,-15]
 	weib=[15,26,25,22,20,			22,23,28,32,43,			45,42,15]
 
-	la=[[div12[i],-100,higha[i]] for i in range(13)]
-	lb=[[div12[i],100,highb[i]] for i in range(13)]
-	lc=[[div12[i],80,highc[i]] for i in range(13)]
+	rand=True
+	bh=0 # randhoehe
+	bw=0.1 # randbreite
+
+
+	sh=5 # sohlenhoehe
+
+
+	# prgrammparameter
+	# grad der flaechen
+	du=3
+	dv=3
+
+	#-----------------------------------------------------------------------------
+
+	# hilfslinien
+	la=[[div12[i],-100,higha[i]] for i in range(12)]
+	lb=[[div12[i],100,highb[i]] for i in range(12)]
+	lc=[[div12[i],80,highc[i]] for i in range(12)]
 
 	try: App.getDocument("Unnamed")
 	except: App.newDocument("Unnamed")
@@ -64,35 +88,30 @@ def run():
 
 	# siehe auch https://forum.freecadweb.org/viewtopic.php?f=3&t=20525&start=70#p165214
 
-	# der 12 division shoe
-
-	# 0 heel 0
-	# 1
-	# 2
-	# 3
-	# 4 
-	# 5 
-	# 6
-	# 7 
-	# 8  joint 173
-	# 9 
-	# 10 217
-	# 11
-	# 12 top
 
 	pts2=[]
-	for i in range(13):
+	print "Koordianten ..."
+	for i in range(12):
 		x=div12[i]
 		h=higha[i]
 		hc=highc[i]
 		if i == 0:
-			pts2 +=  [[[16,26,h],[8,18,h],[4,9,h],[0,0,h],[4,-7,h],[8,-14,h],[18,-22,h]]]
-		elif i == 12:
-			pts2 +=  [[[245,35,h],[252,28,h],[255,14,h],[260,0,h],[255,-8,h],[252,-16,h],[245,-20,h]]]
+			# fersenform
+			tt=[[[16,26,h],[8,18,h],[4,9,h],[0,0,h],[4,-7,h],[8,-14,h],[18,-22,h]]]
+			pts2 += tt 
+			print (i,tt)
+		elif i == 11:
+			# Spitze
+			# spitzenform
+			tt=[[[LS-15,35,h],[LS-8,28,h],[LS-5,14,h],[LS,0,h],[LS-5,-15,h],[LS-8,-20,h],[LS-15,-35,h]]]
+			pts2 += tt 
+			print (i,tt)
 		else:
-			pts2 += [[[x,weib[i]+1.0*(weia[i]-weib[i])*j/6,h if j<>0 else hc] for j in range(7)]]
+			# mit innengewoelbe
+			# pts2 += [[[x,weib[i]+1.0*(weia[i]-weib[i])*j/6,h if j<>0 else hc] for j in range(7)]]
 
-
+			pts2 += [[[x,weib[i]+1.0*(weia[i]-weib[i])*j/6,h ] for j in range(7)]]
+			print (i,round(x,1),h,weib[i],weia[i])
 
 
 	#------------------------------------
@@ -101,17 +120,17 @@ def run():
 	cv=len(pts2)
 	cu=len(pts2[0])
 
-	kvs=[1.0/(cv-3)*i for i in range(cv-2)]
-	kus=[1.0/(cu-3)*i for i in range(cu-2)]
+	kvs=[1.0/(cv-dv)*i for i in range(cv-dv+1)]
+	kus=[1.0/(cu-du)*i for i in range(cu-du+1)]
 
-	mv=[4]+[1]*(cv-4)+[4]
-	mu=[4]+[1]*(cu-4)+[4]
+	mv=[dv+1]+[1]*(cv-dv-1)+[dv+1]
+	mu=[du+1]+[1]*(cu-du-1)+[du+1]
 
 	bs=Part.BSplineSurface()
 
 	bs.buildFromPolesMultsKnots(pts2,mv,mu,kvs,kus,
 				False,False,
-				3,3,
+				dv,du,
 			)
 
 	fa=App.ActiveDocument.addObject('Part::Spline','orig')
@@ -119,50 +138,50 @@ def run():
 	fa.ViewObject.ControlPoints=True
 
 
-	# sohle mit rand  breit 5, hoch 15
-	pts0=np.array(pts2).swapaxes(0,1)
+	rand=False
+	if rand:
+		# sohle mit rand  breit 5, hoch 15
+		pts0=np.array(pts2).swapaxes(0,1)
 
 
-	l=np.array(pts0[0])
-	l[1:-1,1] += 5
-	l[1:-1,2] += 15
+		l=np.array(pts0[0])
+		l[1:-1,1] += bw
+		l[1:-1,2] += bh
 
-	r=np.array(pts0[-1])
-	r[1:-1,1] -= 5
-	r[1:-1,2] += 15
+		r=np.array(pts0[-1])
+		r[1:-1,1] -= bw
+		r[1:-1,2] += bh
 
-	pts2=np.concatenate([[l],[pts0[0]],pts0[1:],[r]])
-
-
-
-	pts0=np.array(pts2).swapaxes(0,1)
+		pts2=np.concatenate([[l],[pts0[0]],pts0[1:],[r]])
 
 
-	l=np.array(pts0[0])
-	l[:,0] -= 10
-	l[:,2] += 15
-	#l[0,0] -= 10
 
-	pts0[0,0,2] += 15
-	pts0[0,0,0] -= 10
-
-	pts0[0,-1,2] += 15
-	pts0[0,-1,0] -= 10
-
-	r=np.array(pts0[-1])
-
-	r[:,0] += 10
-	r[:,2] += 15
-	#r[0,0] -= 10
-
-	pts0[-1,0,2] += 15
-	pts0[-1,0,0] += 10
-
-	pts0[-1,-1,2] += 15
-	pts0[-1,-1,0] += 10
+		pts0=np.array(pts2).swapaxes(0,1)
 
 
-	pts2=np.concatenate([[l],[pts0[0]],pts0[1:],[r]])
+		l=np.array(pts0[0])
+		l[:,0] -= bw
+		l[:,2] += bh
+
+		pts0[0,0,2] += bh
+		pts0[0,0,0] -= bw
+
+		pts0[0,-1,2] += bh
+		pts0[0,-1,0] -= bw
+
+		r=np.array(pts0[-1])
+
+		r[:,0] += bw
+		r[:,2] += bh
+
+		pts0[-1,0,2] += bh
+		pts0[-1,0,0] += bw
+
+		pts0[-1,-1,2] += bh
+		pts0[-1,-1,0] += bw
+
+
+		pts2=np.concatenate([[l],[pts0[0]],pts0[1:],[r]])
 
 
 
@@ -170,19 +189,20 @@ def run():
 	cv=len(pts2)
 	cu=len(pts2[0])
 
-	kvs=[1.0/(cv-3)*i for i in range(cv-2)]
-	kus=[1.0/(cu-3)*i for i in range(cu-2)]
+	kvs=[1.0/(cv-dv)*i for i in range(cv-dv+1)]
+	kus=[1.0/(cu-du)*i for i in range(cu-du+1)]
 
-	mv=[4]+[1]*(cv-4)+[4]
-	mu=[4]+[1]*(cu-4)+[4]
-
+	mv=[dv+1]+[1]*(cv-dv-1)+[dv+1]
+	mu=[du+1]+[1]*(cu-du-1)+[du+1]
 
 	bs=Part.BSplineSurface()
 
 	bs.buildFromPolesMultsKnots(pts2,mv,mu,kvs,kus,
 				False,False,
-				3,3,
+				dv,du,
 			)
+
+
 
 	if 1:
 		fa=App.ActiveDocument.addObject('Part::Spline','up')
@@ -202,20 +222,9 @@ def run():
 	if 1:
 
 
-		# sohlendicke 10 mm
-		pts2[:,:,2] -= 10
+		pts2[:,:,2] -= sh
 
 		pts3=pts2
-
-		cv=len(pts2)
-		cu=len(pts2[0])
-
-		kvs=[1.0/(cv-3)*i for i in range(cv-2)]
-		kus=[1.0/(cu-3)*i for i in range(cu-2)]
-
-		mv=[4]+[1]*(cv-4)+[4]
-		mu=[4]+[1]*(cu-4)+[4]
-
 
 		# fuess gewoelbe wieder runter
 		'''
@@ -230,11 +239,24 @@ def run():
 		'''
 
 
+		cv=len(pts2)
+		cu=len(pts2[0])
 
-		bs.buildFromPolesMultsKnots(pts3,mv,mu,kvs,kus,
+		kvs=[1.0/(cv-dv)*i for i in range(cv-dv+1)]
+		kus=[1.0/(cu-du)*i for i in range(cu-du+1)]
+
+		mv=[dv+1]+[1]*(cv-dv-1)+[dv+1]
+		mu=[du+1]+[1]*(cu-du-1)+[du+1]
+
+		bs=Part.BSplineSurface()
+
+		bs.buildFromPolesMultsKnots(pts2,mv,mu,kvs,kus,
 					False,False,
-					3,3,
+					dv,du,
 				)
+
+
+
 
 		fb=App.ActiveDocument.addObject('Part::Spline','inner')
 		fb.Shape=bs.toShape()
@@ -250,7 +272,8 @@ def run():
 			f.ViewObject.hide()
 
 
-	if 1:
+
+def createheel():
 
 		points=[FreeCAD.Vector(30.0, 11.0, 0.0), FreeCAD.Vector (65., 5., 0.0), 
 			FreeCAD.Vector (60., -10., 0.0), FreeCAD.Vector (19., -13., 0.0)]
@@ -299,6 +322,12 @@ def run():
 		print "okay"
 
 
+def run():
+	runA()
+	createheel()
+
+
 
 if __name__=='__main__':
 	run()
+
