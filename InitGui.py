@@ -284,6 +284,8 @@ if FreeCAD.GuiUp:
 	c2a(["Curves"],ondocument,'createcloverleaf','createcloverleaf','create a cloverleaf','/../icons/cloverleaf.svg',"run()")
 	c2a(["Curves"],ondocument,'createshoerib','createshoerib','create a shoe last rib','/../icons/cloverleaf.svg',"run()")
 
+	c2a(["Curves"],ondocument,'project_edge2face','project_edge2face','parallel projection of edge to face','/../icons/cloverleaf.svg',"run()")
+	c2a(["Curves"],ondocument,'loft_selection','loft_selection','loft between two selections','/../icons/Loft.svg',"run()")
 
 #	for cmd in FreeCADGui.listCommands():
 #		if cmd.startswith("Nurbs_"):

@@ -7,7 +7,7 @@
 #-- GNU Lesser General Public License (LGPL)
 #-------------------------------------------------
 
-__version__ = '0.9'
+__version__ = '0.10'
 
 
 
@@ -56,10 +56,12 @@ def runA():
 	sh=5 # sohlenhoehe
 
 
-	# prgrammparameter
+	# prgramm parameter
 	# grad der flaechen
 	du=3
 	dv=3
+	drawisolines=False
+	drawwires=False
 
 	#-----------------------------------------------------------------------------
 
@@ -75,16 +77,16 @@ def runA():
 	App.ActiveDocument=App.getDocument("Unnamed")
 	Gui.ActiveDocument=Gui.getDocument("Unnamed")
 
-	import Draft
-	wa=Draft.makeWire([FreeCAD.Vector(tuple(p)) for p in la])
-	wa.ViewObject.LineColor=(.0,1.,.0)
+	if drawwires:
+		import Draft
+		wa=Draft.makeWire([FreeCAD.Vector(tuple(p)) for p in la])
+		wa.ViewObject.LineColor=(.0,1.,.0)
 
-	wb=Draft.makeWire([FreeCAD.Vector(tuple(p)) for p in lb])
-	wb.ViewObject.LineColor=(1.,0.,.0)
+		wb=Draft.makeWire([FreeCAD.Vector(tuple(p)) for p in lb])
+		wb.ViewObject.LineColor=(1.,0.,.0)
 
-	wc=Draft.makeWire([FreeCAD.Vector(tuple(p)) for p in lc])
-	wc.ViewObject.LineColor=(1.,1.,.0)
-
+		wc=Draft.makeWire([FreeCAD.Vector(tuple(p)) for p in lc])
+		wc.ViewObject.LineColor=(1.,1.,.0)
 
 	# siehe auch https://forum.freecadweb.org/viewtopic.php?f=3&t=20525&start=70#p165214
 
@@ -109,12 +111,10 @@ def runA():
 		else:
 			# mit innengewoelbe
 			# pts2 += [[[x,weib[i]+1.0*(weia[i]-weib[i])*j/6,h if j<>0 else hc] for j in range(7)]]
-
 			pts2 += [[[x,weib[i]+1.0*(weia[i]-weib[i])*j/6,h ] for j in range(7)]]
 			print (i,round(x,1),h,weib[i],weia[i])
 
 
-	#------------------------------------
 	pts2=np.array(pts2)
 
 	cv=len(pts2)
@@ -133,16 +133,18 @@ def runA():
 				dv,du,
 			)
 
-	fa=App.ActiveDocument.addObject('Part::Spline','orig')
+	try:
+		fa=App.ActiveDocument.orig
+	except:
+		fa=App.ActiveDocument.addObject('Part::Spline','orig')
+
 	fa.Shape=bs.toShape()
 	fa.ViewObject.ControlPoints=True
 
 
-	rand=False
 	if rand:
-		# sohle mit rand  breit 5, hoch 15
-		pts0=np.array(pts2).swapaxes(0,1)
 
+		pts0=np.array(pts2).swapaxes(0,1)
 
 		l=np.array(pts0[0])
 		l[1:-1,1] += bw
@@ -157,7 +159,6 @@ def runA():
 
 
 		pts0=np.array(pts2).swapaxes(0,1)
-
 
 		l=np.array(pts0[0])
 		l[:,0] -= bw
@@ -180,7 +181,6 @@ def runA():
 		pts0[-1,-1,2] += bh
 		pts0[-1,-1,0] += bw
 
-
 		pts2=np.concatenate([[l],[pts0[0]],pts0[1:],[r]])
 
 
@@ -205,12 +205,14 @@ def runA():
 
 
 	if 1:
-		fa=App.ActiveDocument.addObject('Part::Spline','up')
+		try: fa= App.ActiveDocument.up
+		except: fa=App.ActiveDocument.addObject('Part::Spline','up')
+
 		fa.Shape=bs.toShape()
 		fa.ViewObject.ControlPoints=True
 
 
-	if 1:
+	if drawisolines:
 		for k in kus:
 			Part.show(bs.vIso(k).toShape())
 
@@ -257,12 +259,15 @@ def runA():
 
 
 
+		try: fb= App.ActiveDocument.inner
+		except: fb=App.ActiveDocument.addObject('Part::Spline','inner')
 
-		fb=App.ActiveDocument.addObject('Part::Spline','inner')
 		fb.Shape=bs.toShape()
 		fb.ViewObject.ControlPoints=True
 
-		loft=App.ActiveDocument.addObject('Part::Loft','Oberteile Sohle')
+		try:  loft=App.ActiveDocument.sole
+		except: loft=App.ActiveDocument.addObject('Part::Loft','sole')
+
 		loft.Sections=[fa,fb]
 		loft.Solid=True
 		loft.ViewObject.ShapeColor=(.0,1.,.0)
@@ -324,7 +329,7 @@ def createheel():
 
 def run():
 	runA()
-	createheel()
+	#createheel()
 
 
 
