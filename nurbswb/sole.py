@@ -7,7 +7,7 @@
 #-- GNU Lesser General Public License (LGPL)
 #-------------------------------------------------
 
-__version__ = '0.10'
+__version__ = '0.11'
 
 
 
@@ -33,20 +33,147 @@ import numpy as np
 
 # 12 divisions 
 
+
+def ssa2npa(spreadsheet,c1,r1,c2,r2,default=None):
+	''' create array from table'''
+
+	c2 +=1
+	r2 +=1
+
+	ss=spreadsheet
+	z=[]
+	for r in range(r1,r2):
+		for c in range(c1,c2):
+			cn=cellname(c,r)
+#			print cn
+			try:
+				v=ss.get(cn)
+				z.append(ss.get(cn))
+			except:
+				z.append(default)
+
+
+	z=np.array(z)
+#	print z
+	ps=np.array(z).reshape(r2-r1,c2-c1)
+	return ps
+
+
+
+def npa2ssa(arr,spreadsheet,c1,r1,color=None):
+	''' write 2s array into spreadsheet '''
+	ss=spreadsheet
+	arr=np.array(arr)
+	try:
+		rla,cla=arr.shape
+	except:
+		rla=arr.shape[0]
+		cla=0
+	c2=c1+cla
+	r2=r1+rla
+	if cla==0:
+		for r in range(r1,r2):
+			cn=cellname(c1,r)
+			ss.set(cn,str(arr[r-r1]))
+			if color<>None: ss.setBackground(cn,color)
+	else:
+		for r in range(r1,r2):
+			for c in range(c1,c2):
+				cn=cellname(c,r)
+	#			print (cn,c,r,)
+				ss.set(cn,str(arr[r-r1,c-c1]))
+				if color<>None: ss.setBackground(cn,color)
+
+
+
+def cellname(col,row):
+	#limit to 26
+	if col>90-64:
+		raise Exception("not implement")
+	char=chr(col+64)
+	cn=char+str(row)
+	return cn
+
+
 def runA():
 
-	#-------------------------------------------------------------------------------
 	LL=244.0
 	LS=LL+30
 
-	div12=[LL/11*i for i in range(12)]
+	div12=[round(LL/11*i,1) for i in range(12)]
 
-	higha=[18,17,16,15,11,10,8,5,0,2,5,9,14]
+	try: ss=App.ActiveDocument.Spreadsheet
+	except: 
+		ss=App.activeDocument().addObject('Spreadsheet::Sheet','Spreadsheet')
+
+		ss.set("A1","Sohle")
+		ss.set("C1","LL")
+		ss.set("A8","Divisionen")
+		npa2ssa(np.arange(1,13).reshape(1,12),ss,2,8)
+		ss.set("A18","Spitze")
+		ss.set("A19","  length -LL")
+		ss.set("A20","  left/right")
+		ss.set("A21","  height")
+		
+		ss.set("A23","Ferse")
+		ss.set("A24","  length")
+		ss.set("A25","  left/right")
+		ss.set("A26","  height")
+
+
+		#-------------------------------------------------------------------------------
+		ss.set("D1",str(LL))
+
+		# fussspitze
+		h=14
+		# normal
+		if 0:
+
+			tt=[[[LS-15,35,h],[LS-8,28,h],[LS-5,14,h],[LS,0,h],[LS-5,-15,h],[LS-8,-20,h],[LS-15,-35,h]]]
+
+		# sehr gross 
+		if 1:
+			h=18
+			LS=LL+70
+			tt=[[[35,35,14],[40,28,h],[65,14,h],[70,0,h],[65,-15,h],[40,-15,h],[35,-20,14]]]
+
+		npa2ssa(np.array(tt[0]).swapaxes(0,1),ss,2,19)
+
+		#ferse
+		h=30
+		tf=[[[16,26,h],[8,18,h],[4,9,h],[0,0,h],[4,-7,h],[8,-14,h],[18,-22,h]]]
+		npa2ssa(np.array(tf[0]).swapaxes(0,1),ss,2,24)
+
+	#if 1:
+		higha=[18,17,16,15, 11,10,8,5, 0,2,5,9,14]
+
+		weia=[-15,-22,-28,-30,-32,	-33,-34,-39,-43,-42,	-37,-25,-23]
+		weib=[15,26,25,22,20,			22,23,28,32,43,			45,42,15]
+
+		ss.set("A9","Hight A")
+		ss.set("A10","Length")
+		ss.set("A14","Width right")
+		ss.set("A15","Width left")
+
+		npa2ssa(np.array(higha).reshape(1,13),ss,2,9)
+		npa2ssa(np.array(weia).reshape(1,13),ss,2,14)
+		npa2ssa(np.array(weib).reshape(1,13),ss,2,15)
+		npa2ssa(np.array(div12).reshape(1,12),ss,2,10)
+
 	highb=[17,17,16,15,11,10,8,4,2,1,2,5,9,14]
 	highc=[17,17,16,15,25,35,35,15,5,1,2,5,9,14]
 
-	weia=[-15,-22,-28,-30,-32,	-33,-34,-39,-43,-42,	-37,-24,-15]
-	weib=[15,26,25,22,20,			22,23,28,32,43,			45,42,15]
+	App.activeDocument().recompute()
+
+	tf=[ssa2npa(ss,2,24,8,26,default=None).swapaxes(0,1)]
+	tt=np.array([ssa2npa(ss,2,19,8,21,default=None).swapaxes(0,1)])
+	tt[0,:,0] += LL
+
+	higha=ssa2npa(ss,2,9,2+12,9,default=None)[0]
+	weia=ssa2npa(ss,2,14,2+12,14,default=None)[0]
+	weib=ssa2npa(ss,2,15,2+12,15,default=None)[0]
+
+	App.activeDocument().recompute()
 
 	rand=True
 	bh=0 # randhoehe
@@ -93,21 +220,23 @@ def runA():
 
 	pts2=[]
 	print "Koordianten ..."
-	for i in range(12):
-		x=div12[i]
-		h=higha[i]
-		hc=highc[i]
+	for i in range(13):
+		if i<>12:
+			x=div12[i]
+			h=higha[i]
+			hc=highc[i]
 		if i == 0:
 			# fersenform
-			tt=[[[16,26,h],[8,18,h],[4,9,h],[0,0,h],[4,-7,h],[8,-14,h],[18,-22,h]]]
-			pts2 += tt 
-			print (i,tt)
-		elif i == 11:
+			#tf=[[[16,26,h],[8,18,h],[4,9,h],[0,0,h],[4,-7,h],[8,-14,h],[18,-22,h]]]
+			pts2 += tf 
+			print (i,tf)
+		elif i == 12:
 			# Spitze
 			# spitzenform
-			tt=[[[LS-15,35,h],[LS-8,28,h],[LS-5,14,h],[LS,0,h],[LS-5,-15,h],[LS-8,-20,h],[LS-15,-35,h]]]
-			pts2 += tt 
-			print (i,tt)
+			#tt=[[[LS-15,35,h],[LS-8,28,h],[LS-5,14,h],[LS,0,h],[LS-5,-15,h],[LS-8,-20,h],[LS-15,-35,h]]]
+			# pts2 += tt 
+			pts2.append(tt[0])
+			print ("XX",i,tt)
 		else:
 			# mit innengewoelbe
 			# pts2 += [[[x,weib[i]+1.0*(weia[i]-weib[i])*j/6,h if j<>0 else hc] for j in range(7)]]
@@ -116,9 +245,12 @@ def runA():
 
 
 	pts2=np.array(pts2)
+	print "--------------", pts2.shape
 
 	cv=len(pts2)
 	cu=len(pts2[0])
+	#print pts2.round()
+	print (cv,cu)
 
 	kvs=[1.0/(cv-dv)*i for i in range(cv-dv+1)]
 	kus=[1.0/(cu-du)*i for i in range(cu-du+1)]
@@ -133,10 +265,8 @@ def runA():
 				dv,du,
 			)
 
-	try:
-		fa=App.ActiveDocument.orig
-	except:
-		fa=App.ActiveDocument.addObject('Part::Spline','orig')
+	try: fa=App.ActiveDocument.orig
+	except: fa=App.ActiveDocument.addObject('Part::Spline','orig')
 
 	fa.Shape=bs.toShape()
 	fa.ViewObject.ControlPoints=True

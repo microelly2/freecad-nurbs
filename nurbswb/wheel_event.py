@@ -1356,9 +1356,12 @@ def stop():
 def undock(label='Spreadsheet'):
 	''' open the data spreadsheet as top level window'''
 
-	#activate eventmanager for ss
-	a=App.activeDocument().MyNeedle
-	a.Proxy.startssevents()
+	try:
+		#activate eventmanager for ss
+		a=App.activeDocument().MyNeedle
+		a.Proxy.startssevents()
+	except:
+		print "cannot active eventmanager"
 
 	mw=FreeCADGui.getMainWindow()
 	mdiarea=mw.findChild(QtGui.QMdiArea)
@@ -1385,6 +1388,8 @@ def undock(label='Spreadsheet'):
 			sw.close()
 			FreeCAD.ss=w
 			return w
+
+
 
 
 try: stop()
