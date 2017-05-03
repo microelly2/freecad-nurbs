@@ -7,7 +7,7 @@
 #-- GNU Lesser General Public License (LGPL)
 #-------------------------------------------------
 
-__version__ = '0.11'
+__version__ = '0.12'
 
 
 
@@ -95,83 +95,88 @@ def cellname(col,row):
 	return cn
 
 
-def runA():
+def runA(model=None):
 
-	LL=244.0
-	LS=LL+30
-
-	div12=[round(LL/11*i,1) for i in range(12)]
-
-	try: ss=App.ActiveDocument.Spreadsheet
+	try: 
+		try:
+			[ss]=FreeCADGui.Selection.getSelection()
+			print "Selection",ss.Label
+		except:
+			ss=App.ActiveDocument.Spreadsheet
 	except: 
 		ss=App.activeDocument().addObject('Spreadsheet::Sheet','Spreadsheet')
 
-		ss.set("A1","Sohle")
-		ss.set("C1","LL")
-		ss.set("A8","Divisionen")
-		npa2ssa(np.arange(1,13).reshape(1,12),ss,2,8)
-		ss.set("A18","Spitze")
-		ss.set("A19","  length -LL")
-		ss.set("A20","  left/right")
-		ss.set("A21","  height")
+
+		App.activeDocument().recompute()
+
+		import nurbswb.sole_models
+		reload(nurbswb.sole_models)
+		model=nurbswb.sole_models.model()
+
+	ss.set("A1","Sohle")
+	ss.set("C1","LL")
+	ss.set("A8","Divisionen")
+	npa2ssa(np.arange(1,13).reshape(1,12),ss,2,8)
+	ss.set("A18","Spitze")
+	ss.set("A19","  length -LL")
+	ss.set("A20","  left/right")
+	ss.set("A21","  height")
+	ss.set("A23","Ferse")
+	ss.set("A24","  length")
+	ss.set("A25","  left/right")
+	ss.set("A26","  height")
+	ss.set("A9","Hight A")
+	ss.set("A10","Length")
+	ss.set("A14","Width right")
+	ss.set("A15","Width left")
+
+
+	if model<>None:
+		print "load model"
+		print model
+		LL=model.LL
+		LS=model.LS
+		div12=model.div12
+		tt=np.array(model.tt)
 		
-		ss.set("A23","Ferse")
-		ss.set("A24","  length")
-		ss.set("A25","  left/right")
-		ss.set("A26","  height")
+		tt[0,:,0] += LL
 
+		tf=model.tf
 
-		#-------------------------------------------------------------------------------
+		weia=model.weia
+		weib=model.weib
+
+		higha=model.higha
+		highb=model.highb
+		highc=model.highc
+
 		ss.set("D1",str(LL))
-
-		# fussspitze
-		h=14
-		# normal
-		if 0:
-
-			tt=[[[LS-15,35,h],[LS-8,28,h],[LS-5,14,h],[LS,0,h],[LS-5,-15,h],[LS-8,-20,h],[LS-15,-35,h]]]
-
-		# sehr gross 
-		if 1:
-			h=18
-			LS=LL+70
-			tt=[[[35,35,14],[40,28,h],[65,14,h],[70,0,h],[65,-15,h],[40,-15,h],[35,-20,14]]]
-
 		npa2ssa(np.array(tt[0]).swapaxes(0,1),ss,2,19)
-
-		#ferse
-		h=30
-		tf=[[[16,26,h],[8,18,h],[4,9,h],[0,0,h],[4,-7,h],[8,-14,h],[18,-22,h]]]
 		npa2ssa(np.array(tf[0]).swapaxes(0,1),ss,2,24)
-
-	#if 1:
-		higha=[18,17,16,15, 11,10,8,5, 0,2,5,9,14]
-
-		weia=[-15,-22,-28,-30,-32,	-33,-34,-39,-43,-42,	-37,-25,-23]
-		weib=[15,26,25,22,20,			22,23,28,32,43,			45,42,15]
-
-		ss.set("A9","Hight A")
-		ss.set("A10","Length")
-		ss.set("A14","Width right")
-		ss.set("A15","Width left")
-
 		npa2ssa(np.array(higha).reshape(1,13),ss,2,9)
 		npa2ssa(np.array(weia).reshape(1,13),ss,2,14)
 		npa2ssa(np.array(weib).reshape(1,13),ss,2,15)
 		npa2ssa(np.array(div12).reshape(1,12),ss,2,10)
 
-	highb=[17,17,16,15,11,10,8,4,2,1,2,5,9,14]
-	highc=[17,17,16,15,25,35,35,15,5,1,2,5,9,14]
+	else:
+		# load from spreadsheet
+		LL=244.0
+		LS=LL+30
+		div12=[round(LL/11*i,1) for i in range(12)]
 
-	App.activeDocument().recompute()
+		highb=[17,17,16,15,11,10,8,4,2,1,2,5,9,14]
+		highc=[17,17,16,15,25,35,35,15,5,1,2,5,9,14]
 
-	tf=[ssa2npa(ss,2,24,8,26,default=None).swapaxes(0,1)]
-	tt=np.array([ssa2npa(ss,2,19,8,21,default=None).swapaxes(0,1)])
-	tt[0,:,0] += LL
+		App.activeDocument().recompute()
 
-	higha=ssa2npa(ss,2,9,2+12,9,default=None)[0]
-	weia=ssa2npa(ss,2,14,2+12,14,default=None)[0]
-	weib=ssa2npa(ss,2,15,2+12,15,default=None)[0]
+		tf=[ssa2npa(ss,2,24,8,26,default=None).swapaxes(0,1)]
+		tt=np.array([ssa2npa(ss,2,19,8,21,default=None).swapaxes(0,1)])
+		tt[0,:,0] += LL
+		print "LL,",LL
+
+		higha=ssa2npa(ss,2,9,2+12,9,default=None)[0]
+		weia=ssa2npa(ss,2,14,2+12,14,default=None)[0]
+		weib=ssa2npa(ss,2,15,2+12,15,default=None)[0]
 
 	App.activeDocument().recompute()
 
@@ -197,12 +202,12 @@ def runA():
 	lb=[[div12[i],100,highb[i]] for i in range(12)]
 	lc=[[div12[i],80,highc[i]] for i in range(12)]
 
-	try: App.getDocument("Unnamed")
-	except: App.newDocument("Unnamed")
-	
-	App.setActiveDocument("Unnamed")
-	App.ActiveDocument=App.getDocument("Unnamed")
-	Gui.ActiveDocument=Gui.getDocument("Unnamed")
+#	try: App.getDocument("Unnamed")
+#	except: App.newDocument("Unnamed")
+#	
+#	App.setActiveDocument("Unnamed")
+#	App.ActiveDocument=App.getDocument("Unnamed")
+#	Gui.ActiveDocument=Gui.getDocument("Unnamed")
 
 	if drawwires:
 		import Draft
