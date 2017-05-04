@@ -271,7 +271,7 @@ if FreeCAD.GuiUp:
 	c2a(["Faces","create"],always,'Create Shoe','shoe','Create Shoe','/../icons/shoe.svg',"run()")
 	c2a(["Faces","create"],always,'Create Sole','sole','Create Shoe Sole','/../icons/sole.svg',"run()")
 	c2(["Faces"],'Sole Change Model','sole_change_model','Shoe Sole Change Model','/../icons/eye.svg',"run()")
-
+	c2(["Faces"],'Iso Map','isomap','draw isomap of Face','/../icons/eye.svg',"run()")
 
 	c2a(["Faces","create"],always,'Nurbs Editor','nurbs','creates a test nurbs','/../icons/zebra.svg',"runtest()")
 	c2a(["Faces","create"],onselection,'UV Grid Generator','uvgrid_generator','create UV grid of the partr','/../icons/delete_edge.svg',"runSel()")

@@ -97,6 +97,49 @@ def cellname(col,row):
 
 def runA(model=None):
 
+
+	# von andre daten 30.04.
+
+	import Part,Draft
+
+	points_list = [       
+				   [0,0,18],
+				   [-22,12,17],
+
+				   [-28,44,16],
+				   [-30,66,15],
+
+				   [-32,88,11],
+				   [-33,95,10],	       
+
+				   [-34,110,8],
+				   [-39,132,5],
+
+				   [-43,163,0],
+				   [-42,196,2],
+				   [-37,218,5],
+				   [-24,240,9],
+				   [ 9,258,14],
+
+				   [36,240,9],
+				   [42,218,5],
+				   [45,196,2],
+				   [43,174,1],
+				   [32,147,2],
+				   [28,132,5],
+				   [23,110,8],
+				   [22,95,10],
+				   [20,88,11],
+				   [22,66,15],
+				   [25,44,16],
+				   [26,22,17],
+				   [22,12,17],
+				   
+			   ]
+
+
+
+
 	try: 
 		try:
 			[ss]=FreeCADGui.Selection.getSelection()
@@ -112,6 +155,11 @@ def runA(model=None):
 		import nurbswb.sole_models
 		reload(nurbswb.sole_models)
 		model=nurbswb.sole_models.model()
+
+	p=Draft.makeWire([FreeCAD.Vector(p[0],-p[1],p[2]) for p in points_list])
+	p.Placement.Rotation.Angle=np.pi/2
+
+
 
 	ss.set("A1","Sohle")
 	ss.set("C1","LL")
@@ -130,6 +178,8 @@ def runA(model=None):
 	ss.set("A14","Width right")
 	ss.set("A15","Width left")
 
+	highd=[0]*13
+	highe=[0]*7
 
 	if model<>None:
 		print "load model"
@@ -149,11 +199,15 @@ def runA(model=None):
 		higha=model.higha
 		highb=model.highb
 		highc=model.highc
+		highd=model.highd
+		highe=model.highe
 
 		ss.set("D1",str(LL))
 		npa2ssa(np.array(tt[0]).swapaxes(0,1),ss,2,19)
 		npa2ssa(np.array(tf[0]).swapaxes(0,1),ss,2,24)
 		npa2ssa(np.array(higha).reshape(1,13),ss,2,9)
+		print np.array(weia).shape
+		print np.array(weib).shape
 		npa2ssa(np.array(weia).reshape(1,13),ss,2,14)
 		npa2ssa(np.array(weib).reshape(1,13),ss,2,15)
 		npa2ssa(np.array(div12).reshape(1,12),ss,2,10)
@@ -225,11 +279,13 @@ def runA(model=None):
 
 	pts2=[]
 	print "Koordianten ..."
+	print highd
 	for i in range(13):
 		if i<>12:
 			x=div12[i]
 			h=higha[i]
 			hc=highc[i]
+			
 		if i == 0:
 			# fersenform
 			#tf=[[[16,26,h],[8,18,h],[4,9,h],[0,0,h],[4,-7,h],[8,-14,h],[18,-22,h]]]
@@ -245,7 +301,15 @@ def runA(model=None):
 		else:
 			# mit innengewoelbe
 			# pts2 += [[[x,weib[i]+1.0*(weia[i]-weib[i])*j/6,h if j<>0 else hc] for j in range(7)]]
+			
 			pts2 += [[[x,weib[i]+1.0*(weia[i]-weib[i])*j/6,h ] for j in range(7)]]
+			
+			
+			# spielerei mit tiefer legen
+			#pts2 += [[[x,weib[i]+1.0*(weia[i]-weib[i])*j/6,h if  j not in [3,4] else h+highd[i]*highe[j] ] for j in range(7)]]
+			#pts2 += [[[x,weib[i]+1.0*(weia[i]-weib[i])*j/6, h+highd[i]*highe[j] ] for j in range(7)]]
+
+
 			print (i,round(x,1),h,weib[i],weia[i])
 
 
@@ -275,6 +339,8 @@ def runA(model=None):
 
 	fa.Shape=bs.toShape()
 	fa.ViewObject.ControlPoints=True
+
+
 
 
 	if rand:
@@ -353,6 +419,13 @@ def runA(model=None):
 
 		for k in kvs:
 			Part.show(bs.uIso(k).toShape())
+
+
+	coll=[]
+	for pts in pts2:
+		coll += [Part.makePolygon([FreeCAD.Vector(p) for p in pts])]
+	Part.show(Part.Compound(coll))
+	
 
 
 

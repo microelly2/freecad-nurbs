@@ -126,7 +126,8 @@ def Myarray2NurbsD3(arr,label="MyWall",degree=3):
 #		sf2.segment(sf2.getUKnot(2),1,0,1)
 #---------------
 #segment sole
-		sf2.segment(sf2.getUKnot(2),1,sf2.getVKnot(5),sf2.getVKnot(15))
+
+#		sf2.segment(sf2.getUKnot(2),1,sf2.getVKnot(5),sf2.getVKnot(15))
 #--------------
 
 		sh2=sf2.toShape()

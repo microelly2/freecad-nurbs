@@ -75,14 +75,41 @@ class EventFilter(QtCore.QObject):
 							self.x,self.y,self.z=tt['x'],tt['y'],tt['z']
 							break
 					if event.buttons()==QtCore.Qt.LeftButton:
-						print "LEFT"
+						print "LEFT AA"
 						vf=FreeCAD.Vector(self.x,self.y,self.z)
+						bs=self.subobj.Surface
+						print bs
+						(u,v)=bs.parameter(vf)
+						print (u,v)
+						lu=0.5
+						lv=0.5
+
+						ba=bs.vIso(u)
+						ky=ba.length(v,lv)
+						if v<0.5: ky =-ky
+
+						bbc=bs.vIso(v)
+						kx=bbc.length(lu,u)
+						if u<0.5: kx =-kx
+						
+						
+						
+						mf=FreeCAD.Vector(self.x,self.y,0)
+						mf=FreeCAD.Vector(-1*ky,-1*kx,0)
+						
 						try:
 							self.pts += [vf]
+							self.ptsm += [mf]
 						except:
 							self.pts = [vf]
+							self.ptsm = [mf]
+
+
+
 						if len(self.pts)>1:
+
 							self.wire.Shape=Part.makePolygon(self.pts)
+							self.wirem.Shape=Part.makePolygon(self.ptsm)
 							self.wire.ViewObject.PointSize=int(self.dialog.dial.value()+1)
 							self.wire.ViewObject.LineWidth=int(self.dialog.dial.value()+1)
 
@@ -184,15 +211,22 @@ class EventFilter(QtCore.QObject):
 								print ("KEY pressed ----------------------",r)
 
 						vf=FreeCAD.Vector(self.x,self.y,self.z)
+						mf=FreeCAD.Vector(self.x,self.y,0)
 
 						try:
 							self.pts += [vf]
+							self.ptsm += [mf]
 						except:
 							self.pts = [vf]
+							self.ptsm = [mf]
+
 						if len(self.pts)>1:
 							self.wire.Shape=Part.makePolygon(self.pts)
 							self.wire.ViewObject.PointSize=int(self.dialog.dial.value()+1)
 							self.wire.ViewObject.LineWidth=int(self.dialog.dial.value()+1)
+							self.wirem.Shape=Part.makePolygon(self.ptsm)
+							self.wirem.ViewObject.PointSize=int(self.dialog.dial.value()+1)
+							self.wirem.ViewObject.LineWidth=int(self.dialog.dial.value()+1)
 
 
 
@@ -313,12 +347,15 @@ def drawcurve(wire,face):
 	wire.ViewObject.hide()
 
 import random
+
 def createnewwire(widget):
 
 	print "new wire"
 	ef=widget.ef
-	w=App.ActiveDocument.addObject("Part::Feature","Drawing on " + ef.objname + ": "+ ef.subelement +"#")
+	w=App.ActiveDocument.addObject("Part::Feature","A Drawing on " + ef.objname + ": "+ ef.subelement +"#")
 	w.Shape=Part.Shape()
+	wam=App.ActiveDocument.addObject("Part::Feature","YY Drawing on " + ef.objname + ": "+ ef.subelement +"#")
+	wam.Shape=Part.Shape()
 
 	if 0:
 		c=PySide.QtGui.QColorDialog.getColor(QtGui.QColor(random.randint(10,255),random.randint(10,255),random.randint(10,255)))
@@ -333,6 +370,7 @@ def createnewwire(widget):
 	w.ViewObject.LineColor=(random.random(),random.random(),random.random())
 
 	ef.wire=w
+	ef.wirem=wam
 	ef.pts=[]
 
 
@@ -480,14 +518,20 @@ def start(source='Backbone'):
 	mw.installEventFilter(ef)
 	ef.keyPressed2=False
 
-	w=App.ActiveDocument.addObject("Part::Feature","Drawing on " + ef.objname + ": "+ ef.subelement)
+	w=App.ActiveDocument.addObject("Part::Feature","UUUU Drawing on " + ef.objname + ": "+ ef.subelement)
 	w.Shape=Part.Shape()
 
 	w.ViewObject.LineColor=(1.0,0.0,0.0)
 	w.ViewObject.LineWidth=10
 
+	wam=App.ActiveDocument.addObject("Part::Feature","ZZZZ Drawing on " + ef.objname + ": "+ ef.subelement)
+	wam.Shape=Part.Shape()
+
+	wam.ViewObject.LineColor=(1.0,0.0,1.0)
+	wam.ViewObject.LineWidth=10
 
 	ef.wire=w
+	ef.wirem=wam
 
 	ef.dialog=dialog(source)
 	ef.dialog.ef=ef
