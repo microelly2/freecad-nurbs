@@ -276,6 +276,7 @@ if FreeCAD.GuiUp:
 	c2a(["Faces","create"],always,'Nurbs Editor','nurbs','creates a test nurbs','/../icons/zebra.svg',"runtest()")
 	c2a(["Faces","create"],onselection,'UV Grid Generator','uvgrid_generator','create UV grid of the partr','/../icons/delete_edge.svg',"runSel()")
 	c2a(["Faces","create"],onselection,'Nurbs Helper','helper','create helper objects of the part','/../icons/delete_edge.svg',"makeHelperSel()")
+	c2a(["Faces"],always,'filledface','filledface','createFilledFace','/../icons/eye.svg',"createFilledFace()")
 
 	c2a(["Faces"],always,'ZebraTool','zebratool','ZebraTool','/../icons/zebra.svg',"run()")
 	c2a(["Curves"],always,'facedraw','facedraw','draw on a face','/../icons/draw.svg',"run()")
