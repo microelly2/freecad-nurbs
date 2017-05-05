@@ -144,6 +144,9 @@ def runA(model=None):
 		try:
 			[ss]=FreeCADGui.Selection.getSelection()
 			print "Selection",ss.Label
+			if ss.__class__.__name__ <>'Sheet':
+				print "not a spreadsheet"
+				raise Exception("selection is not a spreadsheet")
 		except:
 			ss=App.ActiveDocument.Spreadsheet
 	except: 
