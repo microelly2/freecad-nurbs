@@ -44,7 +44,7 @@ def runA(obj):
 	fx=-1
 	fy=-1
 
-	fx,fy=1,1
+	#fx,fy=1,1
 
 	comps=[]
 
@@ -188,7 +188,7 @@ def runA(obj):
 	for u in range(uc+1):
 		um=1.*u/20
 		#print (vu2x[u](0.025),ptsb[u,1],ptsa[1,u,0])
-		print (ptsa[1,u,0], uv2x(um,0.05))
+		# print (ptsa[1,u,0], uv2x(um,0.05))
 
 
 	ptss=[]
@@ -223,7 +223,7 @@ def runA(obj):
 		y=v2y(vm)
 		y=uv2y(vm,um)
 		x=uv2x(vm,um)
-		print (x,y)
+		# print (x,y)
 		ptss.append(FreeCAD.Vector(fx*x,fy*y,0))
 		ptsk.append(bs.value(um,vm))
 
@@ -238,33 +238,89 @@ def runA(obj):
 
 
 	print "reverse"
-#	for m in range(26):
-	for m in  [0,5,10,15,20,25]:
-		for n in range(27):
+	if 0:
+	#	for m in range(26):
+		for m in  [0,5,10,15,20,25]:
+			for n in range(27):
+				ptsk=[]
+				ptss=[]
+				for a in range(21):
+					xm=-100+10*m+ 25.*np.sin(2*np.pi*a/20)
+					ym=-130+10*n+25.*np.cos(2*np.pi*a/20)
+					# print (um,vm)
+					u=xy2u(xm,ym)
+					v=xy2v(xm,ym)
+					print (round(xm),round(ym),round(u,2),round(v,2))
+					ptsk.append(bs.value(u,v))
+					ptss.append(FreeCAD.Vector(fx*xm,fy*ym,-10))
+
+
+
+				w2=Draft.makeWire(ptsk)
+				w2.Label="reverse" + str(m)
+
+				w2.ViewObject.LineColor=(0.,1.,1.)
+
+				w1=Draft.makeWire(ptss)
+				w1.Label="Planar circle"
+				w1.Placement.Base=refpos
+
+	col=[]
+	col2=[]
+
+	for m in range(-2,24):
+		for n in range(2,24):
 			ptsk=[]
 			ptss=[]
-			for a in range(21):
-				xm=-100+10*m+ 25.*np.sin(2*np.pi*a/20)
-				ym=-130+10*n+25.*np.cos(2*np.pi*a/20)
-				# print (um,vm)
-				u=xy2u(xm,ym)
-				v=xy2v(xm,ym)
-				print (round(xm),round(ym),round(u,2),round(v,2))
-				ptsk.append(bs.value(u,v))
-				ptss.append(FreeCAD.Vector(fx*xm,fy*ym,-10))
-			w2=Draft.makeWire(ptsk)
-			w2.Label="reverse" + str(m)
+			r=10
 
-			w2.ViewObject.LineColor=(0.,1.,1.)
+			xm=-100+10*m
+			ym=-130+10*n
+			u=xy2u(xm,ym)
+			v=xy2v(xm,ym)
+			zp=bs.value(u,v)
 
-			w1=Draft.makeWire(ptss)
-			w1.Label="Planar circle"
-			w1.Placement.Base=refpos
+			#ost
+			xm=-100+10*m+r
+			ym=-130+10*n
+			u=xy2u(xm,ym)
+			v=xy2v(xm,ym)
+			ze=bs.value(u,v)
 
+			xm=-100+10*m-r
+			ym=-130+10*n
+			u=xy2u(xm,ym)
+			v=xy2v(xm,ym)
+			zw=bs.value(u,v)
 
+			xm=-100+10*m
+			ym=-130+10*n+r
+			u=xy2u(xm,ym)
+			v=xy2v(xm,ym)
+			zn=bs.value(u,v)
 
+			xm=-100+10*m
+			ym=-130+10*n-r
+			u=xy2u(xm,ym)
+			v=xy2v(xm,ym)
+			zs=bs.value(u,v)
 
+			d=np.array([(zp-ze).Length,(zp-zn).Length,(zp-zw).Length,(zp-zs).Length])
+			
+			d *= 100/r
+			d -= 100
 
+			#if np.abs(d).max()>10:
+			if np.abs(d).mean()>5:
+				col2 += [Part.makePolygon([ze,zn,zw,zs,ze])]
+			else:
+				col += [Part.makePolygon([ze,zn,zw,zs,ze])]
+			print(m-10,n-13,"!", np.round(d,1))
+
+	Part.show(Part.Compound(col))
+	App.ActiveDocument.ActiveObject.ViewObject.LineColor=(0.,0.,1.)
+	Part.show(Part.Compound(col2))
+	App.ActiveDocument.ActiveObject.ViewObject.LineColor=(1.,0.,0.)
 
 def run():
 	[source]=Gui.Selection.getSelection()
