@@ -159,8 +159,9 @@ def runA(model=None):
 		reload(nurbswb.sole_models)
 		model=nurbswb.sole_models.model()
 
-	p=Draft.makeWire([FreeCAD.Vector(p[0],-p[1],p[2]) for p in points_list])
-	p.Placement.Rotation.Angle=np.pi/2
+	if 0: # "punktelisten anzeigen"
+		p=Draft.makeWire([FreeCAD.Vector(p[0],-p[1],p[2]) for p in points_list])
+		p.Placement.Rotation.Angle=np.pi/2
 
 
 
@@ -413,7 +414,7 @@ def runA(model=None):
 		except: fa=App.ActiveDocument.addObject('Part::Spline','up')
 
 		fa.Shape=bs.toShape()
-		fa.ViewObject.ControlPoints=True
+		# fa.ViewObject.ControlPoints=True
 
 
 	if drawisolines:
@@ -427,7 +428,8 @@ def runA(model=None):
 	coll=[]
 	for pts in pts2:
 		coll += [Part.makePolygon([FreeCAD.Vector(p) for p in pts])]
-	Part.show(Part.Compound(coll))
+
+	#Part.show(Part.Compound(coll))
 	
 
 
@@ -474,7 +476,7 @@ def runA(model=None):
 		except: fb=App.ActiveDocument.addObject('Part::Spline','inner')
 
 		fb.Shape=bs.toShape()
-		fb.ViewObject.ControlPoints=True
+		# fb.ViewObject.ControlPoints=True
 
 		try:  loft=App.ActiveDocument.sole
 		except: loft=App.ActiveDocument.addObject('Part::Loft','sole')

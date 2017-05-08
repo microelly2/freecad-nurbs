@@ -13,6 +13,21 @@ import Part,Mesh,Draft,Points
 
 import Draft
 import numpy as np
+import scipy
+
+
+
+
+#def interpolate(x,y,z, gridsize,mode=,rbfmode=True,shape=None):
+
+
+#		rbf = scipy.interpolate.Rbf(x, y, z, function='thin_plate')
+	#	rbf = scipy.interpolate.interp2d(x, y, z, kind=mode)
+
+	#	zi=rbf2(yi,xi)
+
+
+
 
 def runA(obj):
 	#bs=App.ActiveDocument.orig.Shape.Face1.Surface
@@ -127,6 +142,49 @@ def runA(obj):
 	# geht so nicht besser 
 	uv2y = interpolate.interp2d(us, vs, ptsa[:,:,1], kind='cubic')
 
+	#--------------- reverse map
+	print ("aaaaaaaaaaaaaa",len(us),len(ptsa[:,:,0]))
+	print ("aaaaaaaaaaaaaa",len(vs),len(ptsa[:,:,1]))
+	print ptsa.shape
+	kku=[]
+	for ui in range(uc+1):
+		for vi in range(vc+1):
+			kku.append([ptsa[ui,vi,0],ptsa[ui,vi,1], us[ui]])
+	kku=np.array(kku)
+
+	kkv=[]
+	for ui in range(uc+1):
+		for vi in range(vc+1):
+			kkv.append([ptsa[ui,vi,0],ptsa[ui,vi,1], vs[vi]])
+	kkv=np.array(kkv)
+	FreeCAD.kkv=kkv.copy()
+	FreeCAD.kku=kku.copy()
+
+	import Points
+
+	FreeCAD.kku[:,2] *=100
+	pp=Points.Points([FreeCAD.Vector(tuple(p))  for  p in FreeCAD.kku])
+	Points.show(pp)
+
+
+	FreeCAD.kkv[:,2] *=100
+	pp=Points.Points([FreeCAD.Vector(tuple(p))  for  p in FreeCAD.kkv])
+	Points.show(pp)
+
+
+
+#	xy2u = interpolate.interp2d(ptsa[:,:,0],ptsa[:,:,1],us,   kind='cubic')
+#	xy2v = interpolate.interp2d(ptsa[:,:,0],ptsa[:,:,1],vs,  kind='cubic')
+
+	xy2u=56
+	xy2v=34
+	xy2u = scipy.interpolate.Rbf(kku[:,0],kku[:,1],kku[:,2], function='thin_plate')
+	xy2v = scipy.interpolate.Rbf(kkv[:,0],kkv[:,1],kkv[:,2], function='thin_plate')
+	print "okay"
+
+
+
+
 	for u in range(uc+1):
 		um=1.*u/20
 		#print (vu2x[u](0.025),ptsb[u,1],ptsa[1,u,0])
@@ -177,6 +235,32 @@ def runA(obj):
 
 	w1.ViewObject.LineColor=(1.,0.,0.)
 	w2.ViewObject.LineColor=(1.,0.,0.)
+
+
+	print "reverse"
+#	for m in range(26):
+	for m in  [0,5,10,15,20,25]:
+		for n in range(27):
+			ptsk=[]
+			ptss=[]
+			for a in range(21):
+				xm=-100+10*m+ 25.*np.sin(2*np.pi*a/20)
+				ym=-130+10*n+25.*np.cos(2*np.pi*a/20)
+				# print (um,vm)
+				u=xy2u(xm,ym)
+				v=xy2v(xm,ym)
+				print (round(xm),round(ym),round(u,2),round(v,2))
+				ptsk.append(bs.value(u,v))
+				ptss.append(FreeCAD.Vector(fx*xm,fy*ym,-10))
+			w2=Draft.makeWire(ptsk)
+			w2.Label="reverse" + str(m)
+
+			w2.ViewObject.LineColor=(0.,1.,1.)
+
+			w1=Draft.makeWire(ptss)
+			w1.Label="Planar circle"
+			w1.Placement.Base=refpos
+
 
 
 

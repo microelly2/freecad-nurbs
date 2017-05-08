@@ -106,6 +106,7 @@ def Myarray2NurbsD3(arr,label="MyWall",degree=3):
 
 	FreeCAD.shoe_pst=pst
 	bs.setVPeriodic()
+	FreeCAD.bsa=bs
 
 	color=(random.random(),random.random(),random.random())
 	for i,pps in enumerate(pst):
