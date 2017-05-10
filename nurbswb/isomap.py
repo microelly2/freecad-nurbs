@@ -274,10 +274,12 @@ def runA(obj):
 			ptss=[]
 			r=10
 
+
 			xm=-100+10*m
 			ym=-130+10*n
 			u=xy2u(xm,ym)
 			v=xy2v(xm,ym)
+			
 			zp=bs.value(u,v)
 
 			#ost
@@ -322,11 +324,58 @@ def runA(obj):
 	Part.show(Part.Compound(col2))
 	App.ActiveDocument.ActiveObject.ViewObject.LineColor=(1.,0.,0.)
 
+
+	bs=App.ActiveDocument.Poles.Shape.Face1.Surface
+	drawcircle2(bs,xy2u,xy2v)
+
+
 def run():
 	[source]=Gui.Selection.getSelection()
 
 	runA(source)
 
 
+
+
+
+def drawcircle2(bs,xy2u,xy2v,RM=5,uc=10,vc=10):
+	col=[]
+#	for  ui in range(1,10):
+#		for vi in range(1,10):
+#			
+	for m in range(-2,24):
+		for n in range(2,24):
+			ptsk=[]
+			ptss=[]
+			RM=5
+
+
+			xm=-100+10*m
+			ym=-130+10*n
+			um=xy2u(xm,ym)
+			vm=xy2v(xm,ym)
+
+	#		um=0.1*ui
+	#		vm=0.1*vi
+#			um=1.0/uc*ui
+#			vm=1.0/vc*vi
+
+			pss=[]
+			pm=bs.value(um,vm)
+			for a in range(17):
+	#			RM=5
+				r=0.03
+				for i in range(5):
+					pa=bs.value(um+r*np.cos(np.pi*a/8),vm+r*np.sin(np.pi*a/8))
+				#	print ((pa-pm).Length, RM/(pa-pm).Length)
+					r=r*RM/(pa-pm).Length
+					pa=bs.value(um+r*np.cos(np.pi*a/8),vm+r*np.sin(np.pi*a/8))
+				#print ((pa-pm).Length, RM/(pa-pm).Length)
+				#print
+				l=(pa-pm).Length
+				pss.append(pa)
+			col +=[Part.makePolygon(pss+[pm])]
+	Part.show(Part.Compound(col))
+	App.ActiveDocument.ActiveObject.ViewObject.LineColor=(1.,1.,0.)
 
 

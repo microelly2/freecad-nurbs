@@ -271,6 +271,9 @@ if FreeCAD.GuiUp:
 	c2a(["Faces","create"],always,'Create Shoe','shoe','Create Shoe','/../icons/shoe.svg',"run()")
 	c2a(["Faces","create"],always,'Create Sole','sole','Create Shoe Sole','/../icons/sole.svg',"run()")
 	c2(["Faces"],'Sole Change Model','sole_change_model','Shoe Sole Change Model','/../icons/eye.svg',"run()")
+	c2(["Faces"],'load Sole Height','load_sole_profile_height','Load Height Profile','/../icons/eye.svg',"run()")
+	c2(["Faces"],'load Sole Widht','load_sole_profile_width','Load Width Profile','/../icons/eye.svg',"run()")
+
 	c2(["Faces"],'Iso Map','isomap','draw isomap of Face','/../icons/eye.svg',"run()")
 
 	c2a(["Faces","create"],always,'Nurbs Editor','nurbs','creates a test nurbs','/../icons/zebra.svg',"runtest()")

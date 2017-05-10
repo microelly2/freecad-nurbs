@@ -186,7 +186,7 @@ def runA(model=None):
 	highe=[0]*7
 
 	if model<>None:
-		print "load model"
+		print "load model -------------------------"
 		print model
 		LL=model.LL
 		LS=model.LS
@@ -217,7 +217,7 @@ def runA(model=None):
 		npa2ssa(np.array(div12).reshape(1,12),ss,2,10)
 
 	else:
-		# load from spreadsheet
+		print " load from spreadsheet---------------------"
 		LL=244.0
 		LS=LL+30
 		div12=[round(LL/11*i,1) for i in range(12)]
@@ -229,7 +229,8 @@ def runA(model=None):
 
 		tf=[ssa2npa(ss,2,24,8,26,default=None).swapaxes(0,1)]
 		tt=np.array([ssa2npa(ss,2,19,8,21,default=None).swapaxes(0,1)])
-		tt[0,:,0] += LL
+		
+		# tt[0,:,0] += LL
 		print "LL,",LL
 
 		higha=ssa2npa(ss,2,9,2+12,9,default=None)[0]
