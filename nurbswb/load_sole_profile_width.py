@@ -19,36 +19,7 @@ __dir__ = os.path.dirname(nurbswb.__file__)
 print __dir__
 import numpy as np
 
-
-def run():
-
-	fn= __dir__+"/../testdata/breitev3.fcstd"
-
-	FreeCAD.open(fn)
-	dok=App.getDocument("breitev3")
-	s=dok.Sketch
-
-
-
-	s.getDatum('r1').Value
-
-
-	rs=[]
-	ls=[]
-	for i in range(1,12):
-		print s.getDatum('r'+str(i)).Value
-		print s.getDatum('l'+str(i)).Value
-		rs += [s.getDatum('r'+str(i)).Value]
-		ls += [s.getDatum('l'+str(i)).Value]
-
-
-	App.closeDocument("breitev3")
-
-
-	dok2=App.getDocument("Unnamed")
-	App.setActiveDocument(dok2.Name)
-
-	def cellname(col,row):
+def cellname(col,row):
 		#limit to 26
 		if col>90-64:
 			raise Exception("not implement")
@@ -56,26 +27,48 @@ def run():
 		cn=char+str(row)
 		return cn
 
-	ss=dok2.Spreadsheet
+
+def run():
+	aktiv=App.ActiveDocument
+
+	fn=FreeCAD.ParamGet('User parameter:Plugins/shoe').GetString("width profile")
+	if fn=='':
+		fn= __dir__+"/../testdata/breitev3.fcstd"
+		FreeCAD.ParamGet('User parameter:Plugins/shoe').SetString("width profile",fn)
 
 
+	dok=FreeCAD.open(fn)
+	s=dok.Sketch
+
+	# werte aus sketch holen
+	rs=[]
+	ls=[]
+	for i in range(1,12):
+		rs += [s.getDatum('r'+str(i)).Value]
+		ls += [s.getDatum('l'+str(i)).Value]
+
+	App.closeDocument(dok.Name)
+
+
+	#eigentliche Arbeitsdatei
+	dok2=aktiv
+	App.setActiveDocument(dok2.Name)
+
+
+	sss=dok.findObjects("Sketcher::SketchObject")
+	ss=sss[0]
+
+	# daten ins spreadsheet
 	for s in range(1,12):
 		cn=cellname(s+1,14)
-		print (s,cn,ss.get(cn))
 		ss.set(cn,str(rs[s-1]))
 		cn=cellname(s+1,15)
-		print (s,cn,ss.get(cn))
 		ss.set(cn,str(ls[s-1]))
 
 
-
+	# aktualisieren
 	dok2.recompute()
-
-
-	App.getDocument("Unnamed").recompute()
-
 	import nurbswb.sole
 	reload(nurbswb.sole)
 	nurbswb.sole.run()
-
-	App.getDocument("Unnamed").recompute()
+	dok2.recompute()

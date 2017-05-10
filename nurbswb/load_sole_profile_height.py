@@ -21,12 +21,21 @@ __dir__ = os.path.dirname(nurbswb.__file__)
 print __dir__
 import numpy as np
 
+def cellname(col,row):
+	char=chr(col+64)
+	cn=char+str(row)
+	return cn
+
 def run():
+	aktiv=App.ActiveDocument
 
-	fn= __dir__+"/../testdata/heelsv3.fcstd"
-	FreeCAD.open(fn)
+	fn=FreeCAD.ParamGet('User parameter:Plugins/shoe').GetString("height profile")
+	if fn=='':
+		fn= __dir__+"/../testdata/heelsv3.fcstd"
+		FreeCAD.ParamGet('User parameter:Plugins/shoe').SetString("height profile",fn)
 
-	dok=App.getDocument("heelsv3")
+	dok=FreeCAD.open(fn)
+
 	s=dok.Sketch001
 	c=s.Shape.Edge1.Curve
 
@@ -37,39 +46,28 @@ def run():
 		print pts[i]
 		mpts.append(pts[i])
 
-	App.closeDocument("heelsv3")
+	App.closeDocument(dok.Name)
 
 
-	dok2=App.getDocument("Unnamed")
+	dok2=aktiv
 	App.setActiveDocument(dok2.Name)
+	sss=dok.findObjects("Sketcher::SketchObject")
+	ss=sss[0]
 
-	def cellname(col,row):
-		#limit to 26
-		if col>90-64:
-			raise Exception("not implement")
-		char=chr(col+64)
-		cn=char+str(row)
-		return cn
 
-	ss=dok2.Spreadsheet
-
+	# daten ins spreadsheet schreiben
 	for s in range(8):
 		cn=cellname(s+3,9)
-		print (s,cn,ss.get(cn), mpts[-s-1])
 		ss.set(cn,str(mpts[-s-1].y))
 
+	# ferse hochlegen
 	for j in range(7):
 		cn=cellname(j+2,26)
 		ss.set(cn,str((mpts[-1].y)))
 
 
 	dok2.recompute()
-
-
-	App.getDocument("Unnamed").recompute()
-
 	import nurbswb.sole
 	reload(nurbswb.sole)
 	nurbswb.sole.run()
-
-	App.getDocument("Unnamed").recompute()
+	dok2.recompute()
