@@ -30,6 +30,7 @@ def cellname(col,row):
 assert cellname(1,2)=='A2'
 assert cellname(3,4)=='C4'
 
+
 def createSpreadsheet(label='Spreadsheet'):
 	ss=App.ActiveDocument.getObject(label)
 	if ss==None:
@@ -295,6 +296,72 @@ def array2Nurbs(arr,a,b,c,d,label="MyArrayNurbs",borderPoles=False):
 	sp.ViewObject.ShapeColor = (random.random(),random.random(),random.random())
 	return sp
 
+
+
+def cellname(col,row):
+	#limit to 26
+	if col>90-64:
+		raise Exception("not implement")
+	char=chr(col+64)
+	cn=char+str(row)
+	return cn
+
+
+
+def npa2ssa(arr,spreadsheet,c1,r1,color=None):
+	''' write 2s array into spreadsheet '''
+	ss=spreadsheet
+	arr=np.array(arr)
+	try:
+		rla,cla=arr.shape
+	except:
+		rla=arr.shape[0]
+		cla=0
+	c2=c1+cla
+	r2=r1+rla
+#	print "update ss -------------  xxx"
+#	print arr
+#	print (c1,r1,cla)
+
+	if cla==0:
+		for r in range(r1,r2):
+			cn=cellname(c1,r)
+			ss.set(cn,str(arr[r-r1]))
+			if color<>None: ss.setBackground(cn,color)
+	else:
+		for r in range(r1,r2):
+			for c in range(c1,c2):
+				cn=cellname(c,r)
+				#print (cn,c,r,arr[r-r1,c-c1])
+				ss.set(cn,str(arr[r-r1,c-c1]))
+				#print ("!!",cn,c,r,arr[r-r1,c-c1],ss.get(cn))
+				if color<>None: ss.setBackground(cn,color)
+
+
+
+def ssa2npa(spreadsheet,c1,r1,c2,r2,default=None):
+	''' create array from table'''
+
+	c2 +=1
+	r2 +=1
+
+	ss=spreadsheet
+	z=[]
+	for r in range(r1,r2):
+		for c in range(c1,c2):
+			cn=cellname(c,r)
+			# print cn
+			try:
+				v=ss.get(cn)
+				z.append(ss.get(cn))
+			except:
+				z.append(default)
+
+
+	z=np.array(z)
+#	print z
+	ps=np.array(z).reshape(r2-r1,c2-c1)
+	return ps
 
 
 #-----------------------------------

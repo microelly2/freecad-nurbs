@@ -10,7 +10,6 @@ Gui=FreeCADGui
 from PySide import QtGui
 import Part,Mesh,Draft,Points
 
-
 import numpy as np
 import random
 
@@ -19,12 +18,11 @@ import os, nurbswb
 global __dir__
 __dir__ = os.path.dirname(nurbswb.__file__)
 print __dir__
-import numpy as np
 
-def cellname(col,row):
-	char=chr(col+64)
-	cn=char+str(row)
-	return cn
+import nurbswb.spreadsheet_lib
+reload (nurbswb.spreadsheet_lib)
+from nurbswb.spreadsheet_lib import ssa2npa, npa2ssa, cellname
+
 
 def run():
 	aktiv=App.ActiveDocument
@@ -36,23 +34,27 @@ def run():
 
 	dok=FreeCAD.open(fn)
 
-	s=dok.Sketch001
+	sss=dok.findObjects("Sketcher::SketchObject")
+	s=sss[0]
+
 	c=s.Shape.Edge1.Curve
 
 	pts=c.discretize(86)
 
 	mpts=[]
 	for i in [0,15,25,35,45,55,65,75,85]:
-		print pts[i]
+#		print pts[i]
 		mpts.append(pts[i])
+
 
 	App.closeDocument(dok.Name)
 
-
 	dok2=aktiv
 	App.setActiveDocument(dok2.Name)
-	sss=dok.findObjects("Sketcher::SketchObject")
-	ss=sss[0]
+
+	ss=dok2.Spreadsheet
+
+
 
 
 	# daten ins spreadsheet schreiben

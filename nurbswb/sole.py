@@ -6,10 +6,11 @@
 #--
 #-- GNU Lesser General Public License (LGPL)
 #-------------------------------------------------
+'''
+shoe sole creation
 
+'''
 __version__ = '0.12'
-
-
 
 
 import FreeCAD,FreeCADGui
@@ -33,69 +34,18 @@ import numpy as np
 
 # 12 divisions 
 
-
-def ssa2npa(spreadsheet,c1,r1,c2,r2,default=None):
-	''' create array from table'''
-
-	c2 +=1
-	r2 +=1
-
-	ss=spreadsheet
-	z=[]
-	for r in range(r1,r2):
-		for c in range(c1,c2):
-			cn=cellname(c,r)
-#			print cn
-			try:
-				v=ss.get(cn)
-				z.append(ss.get(cn))
-			except:
-				z.append(default)
-
-
-	z=np.array(z)
-#	print z
-	ps=np.array(z).reshape(r2-r1,c2-c1)
-	return ps
-
-
-
-def npa2ssa(arr,spreadsheet,c1,r1,color=None):
-	''' write 2s array into spreadsheet '''
-	ss=spreadsheet
-	arr=np.array(arr)
-	try:
-		rla,cla=arr.shape
-	except:
-		rla=arr.shape[0]
-		cla=0
-	c2=c1+cla
-	r2=r1+rla
-	if cla==0:
-		for r in range(r1,r2):
-			cn=cellname(c1,r)
-			ss.set(cn,str(arr[r-r1]))
-			if color<>None: ss.setBackground(cn,color)
-	else:
-		for r in range(r1,r2):
-			for c in range(c1,c2):
-				cn=cellname(c,r)
-	#			print (cn,c,r,)
-				ss.set(cn,str(arr[r-r1,c-c1]))
-				if color<>None: ss.setBackground(cn,color)
-
-
-
-def cellname(col,row):
-	#limit to 26
-	if col>90-64:
-		raise Exception("not implement")
-	char=chr(col+64)
-	cn=char+str(row)
-	return cn
+import nurbswb.spreadsheet_lib
+reload (nurbswb.spreadsheet_lib)
+from nurbswb.spreadsheet_lib import ssa2npa, npa2ssa, cellname
 
 
 def runA(model=None):
+	'''
+	create or update a sole environment:
+	spreadsheet, 
+	
+	
+	'''
 
 
 	# von andre daten 30.04.
@@ -230,8 +180,9 @@ def runA(model=None):
 		tf=[ssa2npa(ss,2,24,8,26,default=None).swapaxes(0,1)]
 		tt=np.array([ssa2npa(ss,2,19,8,21,default=None).swapaxes(0,1)])
 		
+		print ("tt,LL",tt,LL)
 		# tt[0,:,0] += LL
-		print "LL,",LL
+		# print "LL,",LL
 
 		higha=ssa2npa(ss,2,9,2+12,9,default=None)[0]
 		weia=ssa2npa(ss,2,14,2+12,14,default=None)[0]
@@ -283,8 +234,8 @@ def runA(model=None):
 
 
 	pts2=[]
-	print "Koordianten ..."
-	print highd
+#	print "Koordianten ..."
+#	print highd
 	for i in range(13):
 		if i<>12:
 			x=div12[i]
@@ -295,14 +246,14 @@ def runA(model=None):
 			# fersenform
 			#tf=[[[16,26,h],[8,18,h],[4,9,h],[0,0,h],[4,-7,h],[8,-14,h],[18,-22,h]]]
 			pts2 += tf 
-			print (i,tf)
+#			print (i,tf)
 		elif i == 12:
 			# Spitze
 			# spitzenform
 			#tt=[[[LS-15,35,h],[LS-8,28,h],[LS-5,14,h],[LS,0,h],[LS-5,-15,h],[LS-8,-20,h],[LS-15,-35,h]]]
 			# pts2 += tt 
 			pts2.append(tt[0])
-			print ("XX",i,tt)
+#			print ("XX",i,tt)
 		else:
 			# mit innengewoelbe
 			# pts2 += [[[x,weib[i]+1.0*(weia[i]-weib[i])*j/6,h if j<>0 else hc] for j in range(7)]]
@@ -315,16 +266,16 @@ def runA(model=None):
 			#pts2 += [[[x,weib[i]+1.0*(weia[i]-weib[i])*j/6, h+highd[i]*highe[j] ] for j in range(7)]]
 
 
-			print (i,round(x,1),h,weib[i],weia[i])
+#			print (i,round(x,1),h,weib[i],weia[i])
 
 
 	pts2=np.array(pts2)
-	print "--------------", pts2.shape
+#	print "--------------", pts2.shape
 
 	cv=len(pts2)
 	cu=len(pts2[0])
 	#print pts2.round()
-	print (cv,cu)
+#	print (cv,cu)
 
 	kvs=[1.0/(cv-dv)*i for i in range(cv-dv+1)]
 	kus=[1.0/(cu-du)*i for i in range(cu-du+1)]

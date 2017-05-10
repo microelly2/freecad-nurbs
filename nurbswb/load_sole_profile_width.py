@@ -19,13 +19,9 @@ __dir__ = os.path.dirname(nurbswb.__file__)
 print __dir__
 import numpy as np
 
-def cellname(col,row):
-		#limit to 26
-		if col>90-64:
-			raise Exception("not implement")
-		char=chr(col+64)
-		cn=char+str(row)
-		return cn
+import nurbswb.spreadsheet_lib
+reload (nurbswb.spreadsheet_lib)
+from nurbswb.spreadsheet_lib import ssa2npa, npa2ssa, cellname
 
 
 def run():
@@ -38,7 +34,9 @@ def run():
 
 
 	dok=FreeCAD.open(fn)
-	s=dok.Sketch
+	sss=dok.findObjects("Sketcher::SketchObject")
+	s=sss[0]
+
 
 	# werte aus sketch holen
 	rs=[]
@@ -50,13 +48,15 @@ def run():
 	App.closeDocument(dok.Name)
 
 
+
 	#eigentliche Arbeitsdatei
 	dok2=aktiv
 	App.setActiveDocument(dok2.Name)
 
 
-	sss=dok.findObjects("Sketcher::SketchObject")
-	ss=sss[0]
+	sss=dok2.findObjects("Sketcher::SketchObject")
+#	print sss,dok2.Name
+	ss=dok2.Spreadsheet
 
 	# daten ins spreadsheet
 	for s in range(1,12):
