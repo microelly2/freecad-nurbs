@@ -1,5 +1,10 @@
 
-# auswertung heel -Linie
+'''
+load height and lenght information for a sole from a sketcher file
+filename is 'User parameter:Plugins/shoe').GetString("height profile")
+the skeche contains exactly one bspline curve
+'''
+
 
 
 
@@ -7,25 +12,21 @@ import FreeCAD,FreeCADGui
 App=FreeCAD
 Gui=FreeCADGui
 
-from PySide import QtGui
-import Part,Mesh,Draft,Points
-
-import numpy as np
-import random
-
 import os, nurbswb
-
 global __dir__
 __dir__ = os.path.dirname(nurbswb.__file__)
-print __dir__
 
 import nurbswb.spreadsheet_lib
 reload (nurbswb.spreadsheet_lib)
 from nurbswb.spreadsheet_lib import ssa2npa, npa2ssa, cellname
 
+from nurbswb.errors import showdialog 
 
-def run():
+def runA():
+
 	aktiv=App.ActiveDocument
+	if aktiv==None:
+		showdialog("Fehler","no Sole Document","first open or create a sole document")
 
 	fn=FreeCAD.ParamGet('User parameter:Plugins/shoe').GetString("height profile")
 	if fn=='':
@@ -35,15 +36,18 @@ def run():
 	dok=FreeCAD.open(fn)
 
 	sss=dok.findObjects("Sketcher::SketchObject")
-	s=sss[0]
 
-	c=s.Shape.Edge1.Curve
+	try:
+		s=sss[0]
+		c=s.Shape.Edge1.Curve
+	except: 
+		showdialog("Error","Height profile document has no sketch")
+
 
 	pts=c.discretize(86)
 
 	mpts=[]
 	for i in [0,15,25,35,45,55,65,75,85]:
-#		print pts[i]
 		mpts.append(pts[i])
 
 
@@ -73,3 +77,9 @@ def run():
 	reload(nurbswb.sole)
 	nurbswb.sole.run()
 	dok2.recompute()
+
+
+
+def run():
+	try: runA()
+	except : showdialog() 

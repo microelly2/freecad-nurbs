@@ -1,4 +1,10 @@
 
+'''
+load width information for a sole from a sketcher file
+filename is 'User parameter:Plugins/shoe').GetString("width profile")
+there must be one sketch in it with constraints  l1-l12, r1-r12
+'''
+
 
 
 import FreeCAD,FreeCADGui
@@ -23,8 +29,9 @@ import nurbswb.spreadsheet_lib
 reload (nurbswb.spreadsheet_lib)
 from nurbswb.spreadsheet_lib import ssa2npa, npa2ssa, cellname
 
+from nurbswb.errors import showdialog 
 
-def run():
+def runA():
 	aktiv=App.ActiveDocument
 
 	fn=FreeCAD.ParamGet('User parameter:Plugins/shoe').GetString("width profile")
@@ -72,3 +79,10 @@ def run():
 	reload(nurbswb.sole)
 	nurbswb.sole.run()
 	dok2.recompute()
+
+
+
+
+def run():
+	try: runA()
+	except : showdialog() 
