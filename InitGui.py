@@ -307,8 +307,10 @@ if FreeCAD.GuiUp:
 	c2a(["Curves"],ondocument,'project_edge2face','project_edge2face','parallel projection of edge to face','/../icons/cloverleaf.svg',"run()")
 	c2a(["Curves"],ondocument,'loft_selection','loft_selection','loft between two selections','/../icons/Loft.svg',"run()")
 	c2a(["Curves"],ondocument,'knotsandpoles','knotsandpoles','display knots and poles for selected curves','/../icons/Loft.svg',"run()")
-	c2a(["Curves"],ondocument,'monitor','monitor','create a monitor for a curve length','/../icons/Loft.svg',"run")
-	
+	c2a(["Curves"],ondocument,'monitor','monitor','create a monitor for a curve length','/../icons/Loft.svg',"run()")
+	c2a(["Curves"],ondocument,'param_bspline','param_bspline','create a parametric bspline with tangents','/../icons/Loft.svg',"run()")
+
+
 
 
 	c2(["Workspace"],'Create Workspace',None,"Create workspace",'/../icons/plane.svg',"createws()","workspace")
