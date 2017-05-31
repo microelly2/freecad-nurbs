@@ -93,7 +93,7 @@ def createSketchSpline(pts=None,label="BSpline Sketch",periodic=True):
 	return sk
 
 
-def runobj(obj,label=None
+def runobj(obj,label=None):
 	''' erzeugt fuer ein objekt den SktchSpline'''
 
 	bc=obj.Shape.Edge1.Curve
