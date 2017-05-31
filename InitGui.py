@@ -303,6 +303,7 @@ if FreeCAD.GuiUp:
 
 	c2a(["Curves"],ondocument,'project_edge2face','project_edge2face','parallel projection of edge to face','/../icons/cloverleaf.svg',"run()")
 	c2a(["Curves"],ondocument,'loft_selection','loft_selection','loft between two selections','/../icons/Loft.svg',"run()")
+	c2a(["Curves"],ondocument,'knotsandpoles','knotsandpoles','display knots and poles for selected curves','/../icons/Loft.svg',"run()")
 
 	c2(["Workspace"],'Create Workspace',None,"Create workspace",'/../icons/plane.svg',"createws()","workspace")
 	c2(["Workspace"],'Create Link',None,"Create workspace link",'/../icons/plane.svg',"createlink()","workspace")
