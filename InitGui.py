@@ -296,6 +296,8 @@ if FreeCAD.GuiUp:
 	
 
 	c2a(["Faces"],always,'Curves to Face','curves2face','Curves to Face','/../icons/upgrade.svg',"run()")
+	c2a(["Faces"],always,'Segment','segment','Cut a segment of a Face','/../icons/upgrade.svg',"run()")
+
 	c2a(["Curves"],always,'scanbackbonecut','scanbackbonecut','Cut the Scan along backbone ','/../icons/backbonecut.svg',"run()")
 	c2a(["Curves"],always,'transform_spline','transform_spline','perspective transformation of a Bbspline','',"run()")
 	c2a(["Curves"],ondocument,'createcloverleaf','createcloverleaf','create a cloverleaf','/../icons/cloverleaf.svg',"run()")
@@ -304,7 +306,8 @@ if FreeCAD.GuiUp:
 	c2a(["Curves"],ondocument,'project_edge2face','project_edge2face','parallel projection of edge to face','/../icons/cloverleaf.svg',"run()")
 	c2a(["Curves"],ondocument,'loft_selection','loft_selection','loft between two selections','/../icons/Loft.svg',"run()")
 	c2a(["Curves"],ondocument,'knotsandpoles','knotsandpoles','display knots and poles for selected curves','/../icons/Loft.svg',"run()")
-	c2a(["Curves"],ondocument,'monitor','monitor','create a monitor for a curve length','/../icons/Loft.svg',"run()")
+	c2a(["Curves"],ondocument,'monitor','monitor','create a monitor for a curve length','/../icons/Loft.svg',"run")
+	
 
 
 	c2(["Workspace"],'Create Workspace',None,"Create workspace",'/../icons/plane.svg',"createws()","workspace")
