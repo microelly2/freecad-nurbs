@@ -6,6 +6,7 @@ import math
 from pivy import coin
 
 class gridNode(coin.SoSeparator):
+    ''' coin Node fuer das grid'''
     def __init__(self):
         super(gridNode, self).__init__()
 
@@ -284,6 +285,7 @@ class gridNode(coin.SoSeparator):
 
 
 class gridObject:
+    '''  parametrisches Grid'''
     def __init__(self, obj):
         obj.Proxy = self
         obj.addProperty("App::PropertyPlacement",  "Placement",   "Base",   "Placement")
@@ -298,6 +300,8 @@ class gridObject:
             fp.ViewObject.Proxy.trans.rotation = coin.SbRotation(ro[0],ro[1],ro[2],ro[3])
    
 class gridVP:
+    ''' View Provider fuer das Grid '''
+
     def __init__(self, obj ):
         obj.addProperty("App::PropertyDistance",  "Total",         "Size",   "Size of a grid quadrant").Total = '100mm'
         obj.addProperty("App::PropertyDistance",  "Subdivision",   "Size",   "Size of subdivisions").Subdivision = '10mm'
@@ -462,6 +466,7 @@ class gridVP:
         return(True)
 
 def run():
+    '''erzeugnt ein parametrisches Grid Objekt, das nachtraeglich konfiguriert werden kann'''
 
     obj=FreeCAD.ActiveDocument.addObject("App::FeaturePython","Grid")
     gridObject(obj)

@@ -195,7 +195,9 @@ class ViewProviderHelper:
 
 
 def makeHelper():
-
+	''' creates a Helper object as Part::FeaturePython
+	the parameters must be set in a next step.
+	'''
 	a=FreeCAD.ActiveDocument.addObject("Part::FeaturePython","Helper")
 	a.Label="Nurbs Helper generated"
 	Helper(a)
@@ -210,7 +212,10 @@ def makeHelper():
 
 
 def create_subface_shape(self,bs,umin,umax,vmin,vmax):
-
+	'''creates a pole grid for a subset of the poles
+	umin, umax, vmin, vmax are the indexes for the poles
+	the result is a Part.Compound of curves trouhg the poles
+	'''
 		uk=bs.getUKnots()
 		vk=bs.getVKnots()
 
@@ -245,6 +250,9 @@ def create_subface_shape(self,bs,umin,umax,vmin,vmax):
 
 
 def split_shape(self,bs,umin,umax,vmin,vmax):
+	'''creates a segment for the bspline surface bs
+	umin, umax, vmin, vmax are the indexes for the knots
+	'''
 
 	uk=bs.getUKnots()
 	vk=bs.getVKnots()
@@ -258,6 +266,7 @@ def split_shape(self,bs,umin,umax,vmin,vmax):
 
 
 def makeHelperSel():
+	''' creates a helper of mode "isoGrid" for the Gui-selected objects'''
 	for obj in Gui.Selection.getSelection():
 		h=makeHelper()
 		h.source=obj
@@ -265,8 +274,11 @@ def makeHelperSel():
 		h.Placement.Base.x=2400
 
 
-if __name__ == '__main__':
 
+
+
+def runtest():
+	'''testcase creates a nurbs and 3 helpers'''
 
 	try:
 		App.closeDocument("Unnamed")
@@ -345,5 +357,9 @@ if __name__ == '__main__':
 	hp3.Shape=comp=Part.Compound([shape1,shape2])
 	hp3.Placement.Base.x=3600
 
+def run():
+	''' main call - its still the runtest() '''
+	runtest()
 
-
+if __name__ == '__main__':
+	run()

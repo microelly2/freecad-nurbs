@@ -8,6 +8,11 @@ import FreeCADGui as Gui
 import Draft
 
 def run():
+	''' for all selected curves two wires are created
+	one displays all poles and the other all knotes
+	the created objects are not parametric
+	'''
+
 	sx=Gui.Selection.getSelectionEx()
 	for s in sx:
 		print (s,s.SubObjects)

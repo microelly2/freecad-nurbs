@@ -6,9 +6,10 @@
 #--
 #-- GNU Lesser General Public License (LGPL)
 #-------------------------------------------------
-
+'''
+zur veranschaulichung der kruemmung der freiformflaechen
 # http://forum.freecadweb.org/viewtopic.php?f=22&t=15343&start=10
-
+'''
 
 import FreeCAD
 import FreeCADGui

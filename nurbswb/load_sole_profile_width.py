@@ -24,6 +24,10 @@ from nurbswb.errors import sayexc
 
 
 def runa():
+	''' load the data from the first sketch in file fn
+	writes the data intot the spreadsheet 
+	and recomputes the sole
+	'''
 #	raise Exception("test fehler")
     aktiv = FreeCAD.ActiveDocument
 

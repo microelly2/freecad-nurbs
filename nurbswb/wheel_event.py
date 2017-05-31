@@ -6,6 +6,10 @@
 #--
 #-- GNU Lesser General Public License (LGPL)
 #-------------------------------------------------
+'''eventfilter for the nurbs-needle editor
+
+
+'''
 
 from PySide import QtGui,QtCore
 from nurbswb.say import *
@@ -1292,7 +1296,7 @@ def start(source):
 	s =SelObserver()
 	FreeCADGui.Selection.addObserver(s)                       # install the function mode resident
 	ef.selObserver=s
-	
+
 	FreeCAD.eventfilter=ef
 
 	mw=QtGui.qApp
