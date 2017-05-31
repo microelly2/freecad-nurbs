@@ -212,6 +212,7 @@ def c2(menu,title,name,*info):
 	FreeCADGui.addCommand(title1,_Command(name,*info))
 	FreeCAD.tcmds5.append([menu,title1])
 
+
 def c2a(menu,isactive,title,name,*info):
 	#print info
 	global _Command
@@ -219,6 +220,14 @@ def c2a(menu,isactive,title,name,*info):
 	title1="Nurbs_"+title
 	t.IsActive=isactive
 	FreeCADGui.addCommand(title1,t)
+	FreeCAD.tcmds5.append([menu,title1])
+
+def c2b(menu,title,name,*info):
+	#print info
+	global _Command
+	title1="YY_"+title
+	#lib=None,name=None,icon='/../icons/eye.svg',command=None,modul='nurbswb'):
+	FreeCADGui.addCommand(title1,_Command(name,*info))
 	FreeCAD.tcmds5.append([menu,title1])
 
 #-------------------------------
@@ -292,6 +301,9 @@ if FreeCAD.GuiUp:
 
 	c2a(["Curves"],ondocument,'project_edge2face','project_edge2face','parallel projection of edge to face','/../icons/cloverleaf.svg',"run()")
 	c2a(["Curves"],ondocument,'loft_selection','loft_selection','loft between two selections','/../icons/Loft.svg',"run()")
+
+	c2(["Workspace"],'Create Workspace',None,"Create workspace",'/../icons/plane.svg',"createws()","workspace")
+	c2(["Workspace"],'Create Link',None,"Create workspace link",'/../icons/plane.svg',"createlink()","workspace")
 
 #	for cmd in FreeCADGui.listCommands():
 #		if cmd.startswith("Nurbs_"):

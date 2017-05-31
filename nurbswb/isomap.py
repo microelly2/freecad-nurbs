@@ -9,194 +9,115 @@ Gui=FreeCADGui
 from PySide import QtGui
 import Part,Mesh,Draft,Points
 
-
-
-import Draft
 import numpy as np
 import scipy
+from scipy import interpolate
+
+import matplotlib.pyplot as plt
 
 
 
 
-#def interpolate(x,y,z, gridsize,mode=,rbfmode=True,shape=None):
-
-
-#		rbf = scipy.interpolate.Rbf(x, y, z, function='thin_plate')
-	#	rbf = scipy.interpolate.interp2d(x, y, z, kind=mode)
-
-	#	zi=rbf2(yi,xi)
-
-
-
-
-def runA(obj):
-	#bs=App.ActiveDocument.orig.Shape.Face1.Surface
-	#bs=App.ActiveDocument.MyShoe.Shape.Face1.Surface
-	#bs=App.ActiveDocument.Poles.Shape.Face1.Surface
-	bs=obj.Shape.Face1.Surface
-
-
-	# mittelpunkt
-	mpv=0.5
-	mpu=0.5
-
-	# skalierung/lage
-	fx=-1
-	fy=-1
+def runA(obj, mpv=0.5, mpu=0.5, fx=-1, fy=-1, vc=30, uc=30 ):
+	'''  Hilfsobjekte zeichnen   
+	mittelpunkt in uv: mpv, mpu
+	skalierung/lage der xy-Ebene: fx,fy 
+	anzahl der gitterlinien: vc,uc
+	'''
 
 	#fx,fy=1,1
 
-	comps=[]
-
-	s=App.ActiveDocument.addObject("Part::Sphere","Center Face")
-	s.Placement.Base=bs.value(mpv,mpu)
+	bs=obj.Shape.Face1.Surface
 	refpos=bs.value(mpv,mpu)
 
-#	s=App.ActiveDocument.addObject("Part::Sphere","Center Map")
+	if 1: # display centers
+		s=App.ActiveDocument.addObject("Part::Sphere","Center Face")
+		s.Placement.Base=bs.value(mpv,mpu)
 
-	vc=30
-	uc=30
-
-	ptsa=[]
-
-	ba=bs.uIso(mpu)
-	comps += [ba.toShape()]
+		s=App.ActiveDocument.addObject("Part::Sphere","Center Map")
 
 
-	for v in range(vc+1):
-		pts=[]
-		vm=1.0/vc*v
 
-		ky=ba.length(vm,mpv)
+	if 1: # display grids
+		comps=[]
+		ptsa=[]
 
-		if vm<mpv: ky =-ky
-		bbc=bs.vIso(vm)
+		ba=bs.uIso(mpu)
+		comps += [ba.toShape()]
 
-		comps += [bbc.toShape()]
-
-		ptsk=[]
-		for u in range(uc+1):
-			uv=1.0/uc*u
-	#		bc=bs.uIso(uv)
-
-			ba=bs.uIso(uv)
+		for v in range(vc+1):
+			pts=[]
+			vm=1.0/vc*v
 
 			ky=ba.length(vm,mpv)
+
 			if vm<mpv: ky =-ky
+			bbc=bs.vIso(vm)
 
-	##		if v==0:
-		##		bb=bs.uIso(uv)
-		##		#Part.show(bb.toShape())
+			comps += [bbc.toShape()]
 
-			kx=bbc.length(mpu,uv)
-			if uv<mpu: kx =-kx
-			ptsk.append(bs.value(vm,uv))
+			ptsk=[]
+			for u in range(uc+1):
+				uv=1.0/uc*u
+				ba=bs.uIso(uv)
 
-	#		print (v,u,round(kx),round(ky))#,bs.value(uv,vm))
-			pts.append([kx,ky,0])
-		ptsa.append(pts)
+				ky=ba.length(vm,mpv)
+				if vm<mpv: ky =-ky
 
-		comps += [ Part.makePolygon(ptsk)]
 
-	Part.show(Part.Compound(comps))
-	App.ActiveDocument.ActiveObject.Label="Grid"
+				kx=bbc.length(mpu,uv)
+				if uv<mpu: kx =-kx
+				ptsk.append(bs.value(vm,uv))
 
-	if 10:
-		comps=[]
-		for pts in ptsa:
-			comps += [ Part.makePolygon([FreeCAD.Vector(fx*p[0],fy*p[1],0) for p in pts]) ]
+				pts.append([kx,ky,0])
+			ptsa.append(pts)
 
-		ptsa=np.array(ptsa).swapaxes(0,1)
-
-		for pts in ptsa:
-			comps += [ Part.makePolygon([FreeCAD.Vector(fx*p[0],fy*p[1],0) for p in pts]) ]
+			comps += [ Part.makePolygon(ptsk)]
 
 		Part.show(Part.Compound(comps))
-		App.ActiveDocument.ActiveObject.Placement.Base=refpos
-		App.ActiveDocument.ActiveObject.Label="planar Map of Grid"
-
-	vs=[1.0/vc*v for v in range(vc+1)]
-	us=[1./uc*u for u in range(uc+1)]
-
-	import matplotlib.pyplot as plt
-	from scipy import interpolate
-
-	ptsa=np.array(ptsa)
-	v2y = interpolate.interp1d(vs, ptsa[0,:,1])
-
-	#vnew = np.arange(0, 1.2, 0.2)
-	#ynew = x2u(vnew)   # use interpolation function returned by `interp1d`
-
-	#plt.plot(vs, ptsa[0,:,1], 'o', vnew, ynew, '-')
-	#plt.show()
-
-	ptsb=ptsa.swapaxes(0,1)
-	vu2x=[]
-	for u in range(uc+1):
-		um=1.*u/20
-		u2x = interpolate.interp1d(us, ptsb[u,:,0], kind='cubic')
-		vu2x.append(u2x)
-
-	uv2x = interpolate.interp2d(us, vs, ptsa[:,:,0], kind='cubic')
-
-	# geht so nicht besser 
-	uv2y = interpolate.interp2d(us, vs, ptsa[:,:,1], kind='cubic')
-
-	#--------------- reverse map
-	print ("aaaaaaaaaaaaaa",len(us),len(ptsa[:,:,0]))
-	print ("aaaaaaaaaaaaaa",len(vs),len(ptsa[:,:,1]))
-	print ptsa.shape
-	kku=[]
-	for ui in range(uc+1):
-		for vi in range(vc+1):
-			kku.append([ptsa[ui,vi,0],ptsa[ui,vi,1], us[ui]])
-	kku=np.array(kku)
-
-	kkv=[]
-	for ui in range(uc+1):
-		for vi in range(vc+1):
-			kkv.append([ptsa[ui,vi,0],ptsa[ui,vi,1], vs[vi]])
-	kkv=np.array(kkv)
-	FreeCAD.kkv=kkv.copy()
-	FreeCAD.kku=kku.copy()
-
-	import Points
-
-	FreeCAD.kku[:,2] *=100
-	pp=Points.Points([FreeCAD.Vector(tuple(p))  for  p in FreeCAD.kku])
-	Points.show(pp)
+		App.ActiveDocument.ActiveObject.Label="Grid"
 
 
-	FreeCAD.kkv[:,2] *=100
-	pp=Points.Points([FreeCAD.Vector(tuple(p))  for  p in FreeCAD.kkv])
-	Points.show(pp)
+		if 1:
+			comps=[]
+
+			for pts in ptsa:
+				comps += [ Part.makePolygon([FreeCAD.Vector(fx*p[0],fy*p[1],0) for p in pts]) ]
+
+			ptsa=np.array(ptsa).swapaxes(0,1)
+			for pts in ptsa:
+				comps += [ Part.makePolygon([FreeCAD.Vector(fx*p[0],fy*p[1],0) for p in pts]) ]
+
+			Part.show(Part.Compound(comps))
+			App.ActiveDocument.ActiveObject.Placement.Base=refpos
+			App.ActiveDocument.ActiveObject.Label="planar Map of Grid"
 
 
 
-#	xy2u = interpolate.interp2d(ptsa[:,:,0],ptsa[:,:,1],us,   kind='cubic')
-#	xy2v = interpolate.interp2d(ptsa[:,:,0],ptsa[:,:,1],vs,  kind='cubic')
-
-	xy2u=56
-	xy2v=34
-	xy2u = scipy.interpolate.Rbf(kku[:,0],kku[:,1],kku[:,2], function='thin_plate')
-	xy2v = scipy.interpolate.Rbf(kkv[:,0],kkv[:,1],kkv[:,2], function='thin_plate')
-	print "okay"
+	[uv2x,uv2y,xy2u,xy2v]=getmap(obj)
 
 
+	if 0:
+		# display 2 curves
+		run_1(obj,bs,uv2x,uv2y,fx,fy,refpos)
+		# display square grid
+		run_2(obj,bs,xy2u,xy2v,fx,fy,refpos)
+
+	if 0:
+		bs=obj.Shape.Face1.Surface
+		drawcircle2(bs,xy2u,xy2v)
 
 
-	for u in range(uc+1):
-		um=1.*u/20
-		#print (vu2x[u](0.025),ptsb[u,1],ptsa[1,u,0])
-		# print (ptsa[1,u,0], uv2x(um,0.05))
 
-
+def run_1(obj,bs,uv2x,uv2y,fx,fy,refpos):
+	
 	ptss=[]
 	ptsk=[]
+
 	for a in range(21):
+
 		um=1./20*a
 		vm=0.7/20*a
-	#	y=v2y(vm)
 		y=uv2y(vm,um)
 		x=uv2x(vm,um)
 		ptss.append(FreeCAD.Vector(fx*x,fy*y,0))
@@ -205,65 +126,39 @@ def runA(obj):
 	w1=Draft.makeWire(ptss)
 	w1.Placement.Base=refpos
 	w1.Label="Map uv-line"
+	w1.ViewObject.LineColor=(1.,0.,1.)
+
 	w2=Draft.makeWire(ptsk)
 	w2.Label="uv-line"
-
-
-	w1.ViewObject.LineColor=(1.,0.,1.)
 	w2.ViewObject.LineColor=(1.,0.,1.)
 
 
 	ptss=[]
 	ptsk=[]
+
+
 	for a in range(21):
 		um=0.7+ 0.3*np.sin(2*np.pi*a/20)
 		vm=0.5+ 0.5*np.cos(2*np.pi*a/20)
-		# print (um,vm)
-		
-		y=v2y(vm)
+
 		y=uv2y(vm,um)
 		x=uv2x(vm,um)
-		# print (x,y)
 		ptss.append(FreeCAD.Vector(fx*x,fy*y,0))
 		ptsk.append(bs.value(um,vm))
 
 	w1=Draft.makeWire(ptss)
 	w1.Label="Map uv-circle"
 	w1.Placement.Base=refpos
+	w1.ViewObject.LineColor=(1.,0.,0.)
+
 	w2=Draft.makeWire(ptsk)
 	w2.Label="uv-circle"
-
-	w1.ViewObject.LineColor=(1.,0.,0.)
 	w2.ViewObject.LineColor=(1.,0.,0.)
 
 
-	print "reverse"
-	if 0:
-	#	for m in range(26):
-		for m in  [0,5,10,15,20,25]:
-			for n in range(27):
-				ptsk=[]
-				ptss=[]
-				for a in range(21):
-					xm=-100+10*m+ 25.*np.sin(2*np.pi*a/20)
-					ym=-130+10*n+25.*np.cos(2*np.pi*a/20)
-					# print (um,vm)
-					u=xy2u(xm,ym)
-					v=xy2v(xm,ym)
-					print (round(xm),round(ym),round(u,2),round(v,2))
-					ptsk.append(bs.value(u,v))
-					ptss.append(FreeCAD.Vector(fx*xm,fy*ym,-10))
 
 
-
-				w2=Draft.makeWire(ptsk)
-				w2.Label="reverse" + str(m)
-
-				w2.ViewObject.LineColor=(0.,1.,1.)
-
-				w1=Draft.makeWire(ptss)
-				w1.Label="Planar circle"
-				w1.Placement.Base=refpos
+def run_2(obj,bs,xy2u,xy2v,fx,fy,refpos):
 
 	col=[]
 	col2=[]
@@ -273,7 +168,6 @@ def runA(obj):
 			ptsk=[]
 			ptss=[]
 			r=10
-
 
 			xm=-100+10*m
 			ym=-130+10*n
@@ -317,53 +211,128 @@ def runA(obj):
 				col2 += [Part.makePolygon([ze,zn,zw,zs,ze])]
 			else:
 				col += [Part.makePolygon([ze,zn,zw,zs,ze])]
-			print(m-10,n-13,"!", np.round(d,1))
+
+#			print(m-10,n-13,"!", np.round(d,1))
 
 	Part.show(Part.Compound(col))
 	App.ActiveDocument.ActiveObject.ViewObject.LineColor=(0.,0.,1.)
+
 	Part.show(Part.Compound(col2))
 	App.ActiveDocument.ActiveObject.ViewObject.LineColor=(1.,0.,0.)
 
 
-	bs=App.ActiveDocument.Poles.Shape.Face1.Surface
-	drawcircle2(bs,xy2u,xy2v)
 
 
-def run():
-	[source]=Gui.Selection.getSelection()
-
-	runA(source)
+#----------------------------------------------------------------------
 
 
+def getmap(obj, mpv=0.5, mpu=0.5, fx=-1, fy=-1, vc=30, uc=30 ):
+	'''  berechnet vier interpolatoren zum umrechnen von xy(isomap) in uv(nurbs) und zurueck 
+	mittelpunkt in uv: mpv, mpu
+	skalierung/lage der xy-Ebene: fx,fy 
+	anzahl der gitterlinien: vc,uc
+	'''
+
+	bs=obj.Shape.Face1.Surface
+
+	# skalierung/lage
+	#fx,fy=1,1
+
+	refpos=bs.value(mpv,mpu)
+	ptsa=[] # abbildung des uv-iso-gitter auf die xy-Ebene
+
+	for v in range(vc+1):
+		pts=[]
+		vaa=1.0/vc*v
+
+		bbc=bs.vIso(vaa)
+
+		for u in range(uc+1):
+			uaa=1.0/uc*u
+			ba=bs.uIso(uaa)
+
+			ky=ba.length(vaa,mpv)
+			if vaa<mpv: ky =-ky
+
+			kx=bbc.length(mpu,uaa)
+			if uaa<mpu: kx =-kx
+
+			pts.append([kx,ky,0])
+
+		ptsa.append(pts)
+
+
+	ptsa=np.array(ptsa).swapaxes(0,1)
+
+	vs=[1.0/vc*v for v in range(vc+1)]
+	us=[1.0/uc*u for u in range(uc+1)]
+
+	uv2x = scipy.interpolate.interp2d(us, vs, ptsa[:,:,0], kind='cubic')
+	uv2y = scipy.interpolate.interp2d(us, vs, ptsa[:,:,1], kind='cubic')
+
+
+	kku=[]
+	for ui in range(uc+1):
+		for vi in range(vc+1):
+			kku.append([ptsa[ui,vi,0],ptsa[ui,vi,1], us[ui]])
+	kku=np.array(kku)
+
+	kkv=[]
+	for ui in range(uc+1):
+		for vi in range(vc+1):
+			kkv.append([ptsa[ui,vi,0],ptsa[ui,vi,1], vs[vi]])
+	kkv=np.array(kkv)
+
+	try:
+		mode='thin_plate'
+		xy2u = scipy.interpolate.Rbf(kku[:,0],kku[:,1],kku[:,2], function=mode)
+		xy2v = scipy.interpolate.Rbf(kkv[:,0],kkv[:,1],kkv[:,2], function=mode)
+	except:
+		mode='cubic'
+		xy2u = scipy.interpolate.interp2d(kku[:,0],kku[:,1],kku[:,2], kind=mode)
+		xy2v = scipy.interpolate.interp2d(kkv[:,0],kkv[:,1],kkv[:,2], kind=mode)
+
+
+
+
+	if 0: # testrechnung sollte auf geliche stelle zurueck kommen
+		u0=0.2
+		v0=0.6
+
+		y=uv2y(u0,v0)
+		x=uv2x(u0,v0)
+		u=xy2v(x,y)
+		v=xy2u(x,y)
+
+		print (u0,v0,x,y,u,v)
+
+	return [uv2x,uv2y,xy2u,xy2v]
+
+
+
+#-----------------------------------------------------------------------
 
 
 
 def drawcircle2(bs,xy2u,xy2v,RM=5,uc=10,vc=10):
+	''' zeichnet Kreise auf die Flaeche bs '''
+
 	col=[]
-#	for  ui in range(1,10):
-#		for vi in range(1,10):
-#			
+
 	for m in range(-2,24):
 		for n in range(2,24):
 			ptsk=[]
 			ptss=[]
-			RM=5
-
 
 			xm=-100+10*m
 			ym=-130+10*n
 			um=xy2u(xm,ym)
 			vm=xy2v(xm,ym)
 
-	#		um=0.1*ui
-	#		vm=0.1*vi
-#			um=1.0/uc*ui
-#			vm=1.0/vc*vi
-
 			pss=[]
 			pm=bs.value(um,vm)
+
 			for a in range(17):
-	#			RM=5
 				r=0.03
 				for i in range(5):
 					pa=bs.value(um+r*np.cos(np.pi*a/8),vm+r*np.sin(np.pi*a/8))
@@ -375,7 +344,20 @@ def drawcircle2(bs,xy2u,xy2v,RM=5,uc=10,vc=10):
 				l=(pa-pm).Length
 				pss.append(pa)
 			col +=[Part.makePolygon(pss+[pm])]
+
 	Part.show(Part.Compound(col))
 	App.ActiveDocument.ActiveObject.ViewObject.LineColor=(1.,1.,0.)
+
+
+
+
+def run():
+	[source]=Gui.Selection.getSelection()
+
+	getmap(source)
+	
+	# zum testen oder debuggen
+	runA(source)
+
 
 

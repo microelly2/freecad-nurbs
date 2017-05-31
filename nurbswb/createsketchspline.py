@@ -40,7 +40,7 @@ def sayexc(title='Fehler',mess=''):
 	showdialog(title,text=mess,detail="--> ".join(l2))
 
 
-def createSketchSpline(pts=None,label="BSpline Sketch"):
+def createSketchSpline(pts=None,label="BSpline Sketch",periodic=True):
 
 	try: body=App.activeDocument().Body
 	except:	body=App.activeDocument().addObject('PartDesign::Body','Body')
@@ -69,9 +69,11 @@ def createSketchSpline(pts=None,label="BSpline Sketch"):
 
 	l=[App.Vector(int(round(p.x)),int(round(p.y))) for p in pts]
 
-	if 0:
+	if not periodic:
 		# open spline
-		sk.addGeometry(Part.BSplineCurve(l,False),False)
+#		sk.addGeometry(Part.BSplineCurve(l,False),False)
+		ll=sk.addGeometry(Part.BSplineCurve(l,None,None,False,3,None,False),False)
+
 	else:
 		# periodic spline
 #		sk.addGeometry(Part.BSplineCurve(l,True),False)
@@ -90,7 +92,10 @@ def createSketchSpline(pts=None,label="BSpline Sketch"):
 	App.activeDocument().recompute()
 	return sk
 
-def runobj(obj,label=None):
+
+def runobj(obj,label=None
+	''' erzeugt fuer ein objekt den SktchSpline'''
+
 	bc=obj.Shape.Edge1.Curve
 	pts=bc.getPoles()
 	l=obj.Label
@@ -102,6 +107,8 @@ def runobj(obj,label=None):
 
 
 def run():
+	''' erzeugt fuer jedes selektierte Objekte  aus Edge1 einen Sketch'''
+
 	if len( Gui.Selection.getSelection())==0:
 		showdialog('Oops','nothing selected - nothing to do for me','Plese select a Draft Bspline or Draft Wire')
 

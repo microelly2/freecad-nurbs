@@ -428,6 +428,34 @@ class modelS1(model):
 		self.bb[8][0]=300 # move in x-direction
 
 
+
+class modelSchlauch(model):
+
+	def __init__(self,bbl=40):
+		model.__init__(self)
+		self.info='schlauchn'
+		self.curve=[
+				[200,0,0],
+				[200,600,0],
+				[-200,400,0],
+				[-200,0,0],
+			]
+
+		self.sc=[[1,1],[0.7,0.7],[0.7,0.7],[1,1]]*10
+
+		self.twister=[[0,0,0]]*bbl
+
+		self.twister[10]=[0,0,15] # rotate on x-axis
+		self.twister[20]=[0,15,0] # rotate on y-axis
+		self.twister[30]=[15,0,0] # rotate on z-axis
+
+		self.bb=[[0,0,30*i] for i in range(bbl)]
+		self.bb[15][1]=30 # move in y-direction
+		self.bb[25][0]=30 # move in x-direction
+
+
+
+
 class modelSimple(model):
 
 	def __init__(self,bbl=4):
