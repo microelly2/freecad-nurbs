@@ -70,11 +70,18 @@ class Segment(PartFeature):
 
 
 	def execute(proxy, obj):
-		face=obj.source.Shape.Face1
-		bs=face.Surface.copy()
-		uks=bs.getUKnots()
-		vks=bs.getVKnots()
-		bs.segment(uks[obj.umin],uks[obj.umax],vks[obj.vmin],vks[obj.vmax])
+		if  len(obj.source.Shape.Faces) >= 1:
+			face=obj.source.Shape.Face1
+			bs=face.Surface.copy()
+			uks=bs.getUKnots()
+			vks=bs.getVKnots()
+			bs.segment(uks[obj.umin],uks[obj.umax],vks[obj.vmin],vks[obj.vmax])
+		else:
+			edge=obj.source.Shape.Edge1
+			bs=edge.Curve.copy()
+			ks=bs.getKnots()
+			bs.segment(ks[obj.umin],ks[obj.umax])
+
 		obj.Shape=bs.toShape()
 
 
@@ -86,12 +93,19 @@ def createSegment(name="MySegment"):
 	return ffobj
 
 def run():
-	createSegment()
+
+	source=None
+	if len( Gui.Selection.getSelection())<>0:
+		source=Gui.Selection.getSelection()[0]
+	s=createSegment()
+	s.source=source
+	sm.umax=-2
+	sm.umin=2
 
 if __name__ == '__main__':
 
 	sm=createSegment()
-	sm.source=App.ActiveDocument.orig
+	sm.source=App.ActiveDocument.Sketch
 	sm.umax=5
 
 
