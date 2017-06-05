@@ -92,6 +92,50 @@ def createSegment(name="MySegment"):
 	Segment(ffobj)
 	return ffobj
 
+
+class NurbsTrafo(PartFeature):
+	'''parametric filled face'''
+
+	def __init__(self, obj):
+		PartFeature.__init__(self, obj)
+
+		obj.addProperty("App::PropertyLink", "source", "Base")
+
+		obj.addProperty("App::PropertyInteger", "start", "Base")
+		obj.addProperty("App::PropertyInteger", "umax", "Base")
+		obj.addProperty("App::PropertyInteger", "vmin", "Base")
+		obj.addProperty("App::PropertyInteger", "vmax", "Base")
+
+		obj.umax=-1
+		obj.vmax=-1
+		ViewProvider(obj.ViewObject)
+
+
+	def execute(proxy, obj):
+		bc=obj.source.Shape.Edge1.Curve.copy()
+		pols=bc.getPoles()
+		i=obj.start
+		pols2=pols[i:] +pols[:i]
+
+		multies=bc.getMultiplicities()
+		knots=bc.getKnots()
+		deg=bc.Degree
+		bc.buildFromPolesMultsKnots(pols2,multies,knots,True,deg)
+
+		obj.Shape=bc.toShape()
+
+
+def createNurbsTrafo(name="MyNurbsTrafo"):
+
+	ffobj = FreeCAD.activeDocument().addObject(
+		"Part::FeaturePython", name)
+	NurbsTrafo(ffobj)
+	return ffobj
+
+
+
+
+
 def run():
 
 	source=None

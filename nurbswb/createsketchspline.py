@@ -118,6 +118,7 @@ def run():
 			pts=bc.getPoles()
 			l=obj.Label
 			print (l,len(pts))
-			createSketchSpline(pts,str(l) + " Sketch" )
+			periodic=bc.isPeriodic()
+			createSketchSpline(pts,str(l) + " Sketch" ,periodic)
 		except:
 			sayexc(title='Error',mess='somethinq wrong with ' + obj.Label)
