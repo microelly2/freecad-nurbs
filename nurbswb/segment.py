@@ -125,13 +125,84 @@ class NurbsTrafo(PartFeature):
 		obj.Shape=bc.toShape()
 
 
-def createNurbsTrafo(name="MyNurbsTrafo"):
+def createNurbsTrafo(name="MyNurbsTafo"):
 
 	ffobj = FreeCAD.activeDocument().addObject(
 		"Part::FeaturePython", name)
 	NurbsTrafo(ffobj)
 	return ffobj
 
+
+
+class FineSegment(PartFeature):
+
+	def __init__(self, obj):
+		PartFeature.__init__(self, obj)
+
+		obj.addProperty("App::PropertyLink", "source", "Base")
+
+		obj.addProperty("App::PropertyInteger", "factor", "Base")
+
+		obj.addProperty("App::PropertyInteger", "umin", "Base")
+		obj.addProperty("App::PropertyInteger", "umax", "Base")
+		obj.addProperty("App::PropertyInteger", "vmin", "Base")
+		obj.addProperty("App::PropertyInteger", "vmax", "Base")
+
+		obj.factor=100
+
+		obj.umin=0
+		obj.vmin=0
+		obj.umax=obj.factor
+		obj.vmax=obj.factor
+
+		ViewProvider(obj.ViewObject)
+
+
+	def execute(proxy, obj):
+		pass
+
+	def onChanged(self, obj, prop):
+		if prop in ["vmin","vmax","umin","umax","source"]:
+			face=obj.source.Shape.Face1
+			bs=face.Surface.copy()
+
+			if obj.umin<0: obj.umin=0
+			if obj.vmin<0: obj.vmin=0
+			
+			if obj.umax>obj.factor: obj.umax=obj.factor
+			if obj.vmax>obj.factor: obj.vmax=obj.factor
+			if obj.umin>obj.umax: obj.umin=obj.umax
+			if obj.vmin>obj.vmax: obj.vmin=obj.vmax
+
+			umin=1.0/obj.factor*obj.umin
+			umax=1.0/obj.factor*obj.umax
+			vmin=1.0/obj.factor*obj.vmin
+			vmax=1.0/obj.factor*obj.vmax
+
+
+			if umin>0:
+				bs.insertUKnot(umin,1,0)
+
+			if umax<obj.factor:
+				bs.insertUKnot(umax,1,0)
+
+			if vmin>0:
+				bs.insertVKnot(vmin,1,0)
+
+			if vmax<obj.factor:
+				bs.insertVKnot(vmax,1,0)
+
+
+			bs.segment(umin,umax,vmin,vmax)
+			obj.Shape=bs.toShape()
+
+
+def createFineSegment(name="MyFineSegment"):
+
+	ffobj = FreeCAD.activeDocument().addObject(
+		"Part::FeaturePython", name)
+	FineSegment(ffobj)
+	return ffobj
 
 
 
@@ -142,14 +213,20 @@ def run():
 	if len( Gui.Selection.getSelection())<>0:
 		source=Gui.Selection.getSelection()[0]
 	s=createSegment()
+	
 	s.source=source
 	sm.umax=-2
 	sm.umin=2
 
 if __name__ == '__main__':
 
-	sm=createSegment()
-	sm.source=App.ActiveDocument.Sketch
-	sm.umax=5
+#	sm=createSegment()
+#	sm.source=App.ActiveDocument.Sketch
+#	sm.umax=5
+
+	k=createFineSegment()
+	k.source=App.ActiveDocument.orig
+
+
 
 
