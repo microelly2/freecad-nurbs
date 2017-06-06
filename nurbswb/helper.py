@@ -35,7 +35,10 @@ class Helper(PartFeature):
 
 		self.TypeId="NurbsHelper"
 		obj.addProperty("App::PropertyLink","source","XYZ","Length of the Nurbs")
-		obj.addProperty("App::PropertyEnumeration","mode","XYZ","").mode=["poleGrid","isoGrid","Surface"]
+		obj.addProperty("App::PropertyEnumeration","mode","XYZ","").mode=["poleGrid","isoGrid","Surface","uIso","vIso"]
+		obj.addProperty("App::PropertyFloat","factor","XYZ","").factor=0
+		obj.addProperty("App::PropertyFloat","param","XYZ","").param=4
+
 
 
 	def attach(self,vobj):
@@ -90,6 +93,29 @@ class Helper(PartFeature):
 		self.obj2.Shape=comp
 		return comp
 
+	def create_curve(self):
+		fp=self.obj2
+		bs=self.obj2.source.Shape.Face1.Surface
+		if fp.factor == 0.0:
+			if fp.mode=='uIso':
+				ks=bs.getUKnots()
+				bc=bs.uIso(ks[int(fp.param)])
+			elif fp.mode=='vIso':
+				ks=bs.getVKnots()
+				bc=bs.vIso(ks[int(fp.param)])
+			else:
+				raise Exception("unexpected mode: " + fp.mode)
+		else:
+			if fp.mode=='uIso':
+				bc=bs.uIso(fp.param/fp.factor)
+			elif fp.mode=='vIso':
+				bc=bs.vIso(fp.param/fp.factor)
+			else:
+				raise Exception("unexpected mode: " + fp.mode)
+
+		self.obj2.Shape=bc.toShape()
+
+
 
 
 
@@ -122,10 +148,14 @@ class ViewProviderHelper:
 					#fp.Shape=App.ActiveDocument.Torus.Shape
 					#fp.Shape=fp.source.Proxy.create_grid_shape()
 					fp.Proxy.create_knotes_shape2()
+				elif mode == "uIso" or mode == "vIso":
+					print "create Curve"
+					fp.Proxy.create_curve()
 				else:
 					# fp.Shape=App.ActiveDocument.Cylinder.Shape
 					fp.Shape=fp.source.Shape
 					pass
+
 			except:
 				sayexc("Shape from Source")
 			fp.Placement=pm
@@ -216,33 +246,33 @@ def create_subface_shape(self,bs,umin,umax,vmin,vmax):
 	umin, umax, vmin, vmax are the indexes for the poles
 	the result is a Part.Compound of curves trouhg the poles
 	'''
-		uk=bs.getUKnots()
-		vk=bs.getVKnots()
+	uk=bs.getUKnots()
+	vk=bs.getVKnots()
 
-		sss=[]
+	sss=[]
 
-		for iu in uk[umin:umax+1]:
-			pps=[]
-			for iv in vk[vmin:vmax+1]:
-				p=bs.value(iu,iv)
-				pps.append(p)
-			tt=Part.BSplineCurve()
-			tt.interpolate(pps)
-			ss=tt.toShape()
-			sss.append(ss)
-
+	for iu in uk[umin:umax+1]:
+		pps=[]
 		for iv in vk[vmin:vmax+1]:
-			pps=[]
-			for iu in uk[umin:umax+1]:
-				p=bs.value(iu,iv)
-				pps.append(p)
-			tt=Part.BSplineCurve()
-			tt.interpolate(pps)
-			ss=tt.toShape()
-			sss.append(ss)
+			p=bs.value(iu,iv)
+			pps.append(p)
+		tt=Part.BSplineCurve()
+		tt.interpolate(pps)
+		ss=tt.toShape()
+		sss.append(ss)
 
-		comp=Part.Compound(sss)
-		return comp
+	for iv in vk[vmin:vmax+1]:
+		pps=[]
+		for iu in uk[umin:umax+1]:
+			p=bs.value(iu,iv)
+			pps.append(p)
+		tt=Part.BSplineCurve()
+		tt.interpolate(pps)
+		ss=tt.toShape()
+		sss.append(ss)
+
+	comp=Part.Compound(sss)
+	return comp
 
 
 
@@ -298,6 +328,7 @@ def runtest():
 	sayErr("created")
 	# hp.source=App.ActiveDocument.Box
 	hp.source=App.ActiveDocument.Nurbs
+	hp.Label="Helper Surface"
 	
 	sayErr("source changed")
 	hp.mode="Surface"
@@ -311,7 +342,7 @@ def runtest():
 	sayErr("source changed")
 	hp2.mode="isoGrid"
 	hp2.Placement.Base.x=2400
-
+	hp2.Label="Helper isoGrid"
 
 	hp3=makeHelper()
 	sayErr("created")
@@ -321,41 +352,66 @@ def runtest():
 	sayErr("source changed")
 	hp3.mode="poleGrid"
 	hp3.Placement.Base.x=3600
-
+	hp3.Label="Helper poleGrid"
 
 	Gui.activeDocument().activeView().viewAxonometric()
 	Gui.SendMsgToActiveView("ViewFit")
 
 
+	if 0:
+		bs=hp.source.Proxy.bs
+		shape=create_knotes_shape(None,bs)
 
-	bs=hp.source.Proxy.bs
-	shape=create_knotes_shape(None,bs)
-
-	hp.Shape=shape
-	hp.Placement.Base.x=1200
-
-
-	shape=create_subface_shape(None,bs,0,11,0,17)
-
-	hp2.Shape=shape
-	hp2.Placement.Base.x=2400
+		hp.Shape=shape
+		hp.Placement.Base.x=1200
 
 
+		shape=create_subface_shape(None,bs,0,11,0,17)
 
-
-	tt1, shape1=split_shape(None,bs,0,7,0,8)
-	tt2, shape2=split_shape(None,bs,0,-1,9,-1)
-
-
-	hp3.Shape=comp=Part.Compound([shape1,shape2])
-	hp3.Placement.Base.x=3600
+		hp2.Shape=shape
+		hp2.Placement.Base.x=2400
 
 
 
-	shape1=create_knotes_shape(None,tt1)
-	shape2=create_knotes_shape(None,tt2)
-	hp3.Shape=comp=Part.Compound([shape1,shape2])
-	hp3.Placement.Base.x=3600
+
+		tt1, shape1=split_shape(None,bs,0,7,0,8)
+		tt2, shape2=split_shape(None,bs,0,-1,9,-1)
+
+
+		hp3.Shape=comp=Part.Compound([shape1,shape2])
+		hp3.Placement.Base.x=3600
+
+
+
+		shape1=create_knotes_shape(None,tt1)
+		shape2=create_knotes_shape(None,tt2)
+		hp3.Shape=comp=Part.Compound([shape1,shape2])
+		hp3.Placement.Base.x=3600
+
+
+
+
+	hp4=makeHelper()
+	sayErr("created")
+	# hp.source=App.ActiveDocument.Box
+	hp4.source=App.ActiveDocument.Nurbs
+	# hp4.Placement.Base.z=100
+	hp4.Label="Helper isoCurve U"
+	hp4.factor=0
+	hp4.mode="uIso"
+	hp4.param=3
+
+	hp5=makeHelper()
+	sayErr("created")
+	# hp.source=App.ActiveDocument.Box
+	hp5.source=App.ActiveDocument.Nurbs
+	# hp4.Placement.Base.z=100
+	hp5.Label="Helper isoCurve V"
+	hp5.factor=0
+	hp5.mode="vIso"
+	hp5.param=3
+
+
 
 def run():
 	''' main call - its still the runtest() '''
