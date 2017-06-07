@@ -79,44 +79,29 @@ def Myarray2Poly(arr,bb):
 
 def Myarray2NurbsD3(arr,label="MyWall",degree=3):
 
-	psta=np.array(arr)
-	pst=psta
+	pstb=np.array(arr).swapaxes(0,1)
+	pst2=np.concatenate([pstb[9:-1],pstb[1:9]])
+	psta=pst2.swapaxes(1,0)
 
-	''' todo drehen nabellinie von oben weg
-	pstb=psta.swapaxes(0,1)
-	print "huhu"
-	print psta.shape
-	pst2=np.concatenate([pstb[15:],pstb[:15]])
-	pst2=ptsb[4
-	print pst2.shape
-	pst=pst2.swapaxes(0,1)
-	FreeCAD.pst=pst
-	'''
-
-	try: NbVPoles,NbUPoles,_t1 =pst.shape
+	try: NbVPoles,NbUPoles,_t1 =psta.shape
 	except: return (Part.Shape(),Part.Shape())
 
 	bs=Part.BSplineSurface()
-	try:
-		bs.interpolate(pst)
-	except:
-		print "except pole rot-"
-		bs.interpolate(psta)
-		pst=psta
+	bs.interpolate(psta)
+	pst=psta
 
 	FreeCAD.shoe_pst=pst
 	bs.setVPeriodic()
-	FreeCAD.bsa=bs
 
 	color=(random.random(),random.random(),random.random())
-	for i,pps in enumerate(pst):
+	for i,pps in enumerate(psta):
 		if i == 0 : continue
 		bc=Part.BSplineCurve()
 		bc.interpolate(pps)
 		App.ActiveDocument.Ribs.OutList[i].Shape=bc.toShape()
 		App.ActiveDocument.Ribs.OutList[i].ViewObject.LineColor=color
 
-	for i,pps in enumerate(pst.swapaxes(0,1)):
+	for i,pps in enumerate(psta.swapaxes(0,1)):
 		bc=Part.BSplineCurve()
 		bc.interpolate(pps[2:])
 		App.ActiveDocument.Meridians.OutList[i].Shape=bc.toShape()
@@ -124,18 +109,13 @@ def Myarray2NurbsD3(arr,label="MyWall",degree=3):
 
 	if 1:
 		sf2=bs.copy()
-#		sf2.segment(sf2.getUKnot(2),1,0,1)
-#---------------
-#segment sole
-
-#		sf2.segment(sf2.getUKnot(2),1,sf2.getVKnot(5),sf2.getVKnot(15))
-#--------------
-
+		sf2.setVPeriodic()
+		uks=sf2.getUKnots()
+		sf2.segment(uks[1],1,0,1)
 		sh2=sf2.toShape()
 
-
-
-
+	uks=bs.getUKnots()
+	bs.segment(uks[1],1,0,1)
 	sh=bs.toShape()
 
 	vcp=False
@@ -164,8 +144,6 @@ def Myarray2NurbsD3(arr,label="MyWall",degree=3):
 			sol=Part.Solid(Part.Shell([sha.Face1,shb.Face1,sh.Face1]))
 		except:
 			sol=sh
-
-
 
 	return (sol,bs)
 
@@ -1089,7 +1067,12 @@ def run():
 	reload(nurbswb.createshoerib)
 
 	boxes=nurbswb.shoedata.boxes
+
 	ribs=[nurbswb.createshoerib.run("rib_"+str(i),[[8,0,0]],boxes[i]) for i in range(1,15)]
+	#ribs=[nurbswb.createshoerib.run("rib_"+str(i),[[8,0,0]],boxes[i]) for i in 1,2,14]
+	#print "ende 1069 XXX"
+	#return
+	#return
 
 
 	points=[FreeCAD.Vector(tuple(v)) for v in bbps]
