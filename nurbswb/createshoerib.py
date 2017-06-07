@@ -18,6 +18,13 @@ def run(name='ribbow',moves=[],box=[40,0,-40,30]):
 
 	debug=True
 	debug=False
+	
+	print "----------------------"
+	print name
+	print moves
+	print box
+	print "-------------------------"
+
 	label=name
 	try: body=App.activeDocument().Body
 	except:	body=App.activeDocument().addObject('PartDesign::Body','Body')
@@ -125,6 +132,16 @@ def run(name='ribbow',moves=[],box=[40,0,-40,30]):
 
 	dd=30
 	dd=5
+	[r,b,l,t]=box
+
+
+
+	if min(r,-l)<dd:
+		dd=min(r,-l)*0.4
+
+	if r== 10: dd=1
+
+
 	# dd=3
 	dtb=dd # tangent Bottom
 	
@@ -159,7 +176,13 @@ def run(name='ribbow',moves=[],box=[40,0,-40,30]):
 	sk.renameConstraint(d, u'tangentTopB')
 
 
-	[r,b,l,t]=box
+	
+
+	if r+l<-10:
+		print "verletzung --------------createshoerib zeile 172---- r+l",r+l
+		# r += 10
+		print r+l
+
 	sk.movePoint(0,0,App.Vector(0,t,0),0)
 
 	d=sk.addConstraint(Sketcher.Constraint('DistanceX',0,3,0)) 

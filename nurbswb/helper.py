@@ -61,7 +61,10 @@ class Helper(PartFeature):
 		say(["onDocumentRestored",str(fp.Label)+ ": "+str(fp.Proxy.__class__.__name__)])
 
 	def create_knotes_shape2(self):
-		bs=self.obj2.source.Proxy.getBS()
+		#bs=self.obj2.source.Proxy.getBS()
+		print "obj2",self.obj2
+		bs=self.obj2.source.Shape.Face1.Surface
+		print "bs",bs
 		#shape=nurbswb.helper.create_knotes_shape(None,bs)
 
 		uk=bs.getUKnots()
@@ -91,6 +94,8 @@ class Helper(PartFeature):
 
 		comp=Part.Compound(sss)
 		self.obj2.Shape=comp
+		print comp
+		print sss
 		return comp
 
 	def create_curve(self):
@@ -147,6 +152,7 @@ class ViewProviderHelper:
 				elif mode == "isoGrid":
 					#fp.Shape=App.ActiveDocument.Torus.Shape
 					#fp.Shape=fp.source.Proxy.create_grid_shape()
+					print "update isogrid"
 					fp.Proxy.create_knotes_shape2()
 				elif mode == "uIso" or mode == "vIso":
 					print "create Curve"

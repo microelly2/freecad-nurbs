@@ -29,10 +29,13 @@ bbps=[
 # 3D Boxes for the ribs
 boxes=[
 
-		[6,0,-24,8+2], # not used
-		[6,0,-20,8+4], # vorspitze
+		[8,0,-24,8+2], # not used
+#		[12,0,-20,8+4], # vorspitze
+#		[12,0,-25,14],# spizte fuss
 
-		[8,0,-25,14],# spizte fuss
+		[10,0,-16,8+4], # vorspitze
+		[12,0,-25,14],# spizte fuss
+
 		[21-2,0,-30,20-4-2],
 		
 		[40,0,-40,20+2], # sp == einschnitt, zehengelenk? 
