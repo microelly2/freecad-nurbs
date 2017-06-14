@@ -19,6 +19,7 @@ import numpy as np
 
 
 class PartFeature:
+	''' basic defs'''
 
 	def __init__(self, obj):
 		obj.Proxy = self
@@ -38,6 +39,7 @@ class PartFeature:
 
 
 class ViewProvider:
+	''' basic defs '''
 
 	def __init__(self, obj):
 		obj.Proxy = self
@@ -94,6 +96,10 @@ class Segment(PartFeature):
 
 
 def createSegment(name="MySegment"):
+	''' erzeugt ein segment aus der source Flaeche oder Kurve
+	Segmente sind nur fuer die gegebenen Knoten mieglich
+	umin, ... vmax: Eingabe der Knotennummer
+	'''
 
 	ffobj = FreeCAD.activeDocument().addObject(
 		"Part::FeaturePython", name)
@@ -133,6 +139,7 @@ class NurbsTrafo(PartFeature):
 			k=obj.start
 
 			poles2=np.concatenate([y[k:],y[:k]]).swapaxes(0,1)
+			print poles2
 
 			bs2=Part.BSplineSurface()
 			bs2.buildFromPolesMultsKnots(poles2,
@@ -227,10 +234,9 @@ class FineSegment(PartFeature):
 				umax=bs.getUKnots()[-1]
 #				obj.umax=int(round(umax*obj.factor,0))
 
-
 			print  bs.getUKnots()
 			print  bs.getVKnots()
-			print  [umin,umax,vmin,vmax]
+			print ("interval",umin,umax,vmin,vmax)
 
 			if umin>0 and umin not in bs.getUKnots():
 				bs.insertUKnot(umin,1,0)
@@ -244,7 +250,10 @@ class FineSegment(PartFeature):
 			if vmax<obj.factor and vmax not in bs.getVKnots(): # and vmax< bs.getVKnots()[-1]:
 				bs.insertVKnot(vmax,1,0)
 
-
+			uks=bs.getUKnots()
+			if umin<uks[0]: umin=uks[0]
+			
+			print ("interval",umin,umax,vmin,vmax)
 			bs.segment(umin,umax,vmin,vmax)
 			obj.Shape=bs.toShape()
 
@@ -260,7 +269,7 @@ def createFineSegment(name="MyFineSegment"):
 
 
 
-def run():
+def runsegment():
 	'''anwendungsfall fuer die selection wird ein segment erzeugt'''
 
 	source=None
@@ -271,6 +280,27 @@ def run():
 	sm.umax=-2
 	sm.umin=2
 
+def runfinesegment():
+	'''anwendungsfall fuer die selection wird ein segment erzeugt'''
+
+	source=None
+	if len( Gui.Selection.getSelection())<>0:
+		source=Gui.Selection.getSelection()[0]
+	s=createFineSegment()
+	s.source=source
+
+def runnurbstrafo():
+	'''anwendungsfall fuer die selection wird ein segment erzeugt'''
+
+	source=None
+	if len( Gui.Selection.getSelection())<>0:
+		source=Gui.Selection.getSelection()[0]
+	s=createNurbsTrafo()
+	s.source=source
+
+
+
+
 if __name__ == '__main__':
 
 #	sm=createSegment()
@@ -279,6 +309,8 @@ if __name__ == '__main__':
 
 	k=createFineSegment()
 	k.source=App.ActiveDocument.orig
+
+
 
 
 

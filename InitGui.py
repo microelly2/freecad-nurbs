@@ -296,7 +296,14 @@ if FreeCAD.GuiUp:
 	
 
 	c2a(["Faces"],always,'Curves to Face','curves2face','Curves to Face','/../icons/upgrade.svg',"run()")
-	c2a(["Faces"],always,'Segment','segment','Cut a segment of a Face','/../icons/upgrade.svg',"run()")
+	c2a(["Faces"],always,'Segment','segment','Cut a segment of a Face','/../icons/upgrade.svg',"runsegment()")
+	c2a(["Faces"],always,'FineSegment','segment','Cut a fine segment of a Face','/../icons/upgrade.svg',"runfinesegment()")
+	c2a(["Faces"],always,'NurbsTrafo','segment','Transform a Face','/../icons/upgrade.svg',"runnurbstrafo()")
+
+	c2a(["Faces"],always,'Tangent','tangentsurface','create a tangent Face','/../icons/upgrade.svg',"runtangentsurface()")
+	c2a(["Faces"],always,'Deam','tangentsurface','create a Seam','/../icons/upgrade.svg',"runseam()")
+
+
 	c2a(["Faces"],always,'Grid generator','uvgrid_generator','create a uv-grid for a Face','/../icons/upgrade.svg',"run()")
 
 	c2a(["Curves"],always,'scanbackbonecut','scanbackbonecut','Cut the Scan along backbone ','/../icons/backbonecut.svg',"run()")
