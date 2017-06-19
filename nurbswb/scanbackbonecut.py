@@ -59,7 +59,17 @@ def displayCut(label,pl,pts,showpoints=True,showwire=False,showxypoints=False,sh
 	rot2=FreeCAD.Placement(FreeCAD.Vector(),FreeCAD.Rotation(FreeCAD.Vector(0,0,1),90))
 	plinv=rot2.multiply(plinv)
 
+	print "rotation A"
+	print " Base:" + str(plinv.Base) +" Rot Euler:" + str(plinv.Rotation.toEuler())
 
+	plaa=plinv.inverse()
+	print "rotation B"
+	print " Base:" + str(plaa.Base) +" Rot Euler:" + str(plaa.Rotation.toEuler())
+
+
+	plcc=plaa.multiply(plinv)
+	print "rotation C"
+	print " Base:" + str(plcc.Base) +" Rot Euler:" + str(plcc.Rotation.toEuler())
 
 
 	pts2=[plinv.multVec(p) for p in pts]
@@ -94,7 +104,11 @@ def displayCut(label,pl,pts,showpoints=True,showwire=False,showxypoints=False,sh
 
 		if showpoints:
 			# diusplay the used points inside the shoe
-			sels=[pl.multVec(p) for p in pts2a]
+			# rot2=FreeCAD.Placement(FreeCAD.Vector(),FreeCAD.Rotation(FreeCAD.Vector(0,0,1),-90))
+			#plaa=rot2.multiply(pl)
+			#plaa=pl.multiply(rot2)
+			
+			sels=[plaa.multVec(p) for p in pts2a]
 			s2=Points.Points([])
 			Points.show(s2)
 			FreeCAD.ActiveDocument.ActiveObject.ViewObject.ShapeColor=color
@@ -157,7 +171,8 @@ def displayCut(label,pl,pts,showpoints=True,showwire=False,showxypoints=False,sh
 		FreeCAD.ActiveDocument.ActiveObject.Label="Wire "+ plst
 	if showpoints:
 		# diusplay the used points inside the shoe
-		sels=[pl.multVec(p) for p in pts2a]
+		sels=[plaa.multVec(p) for p in pts2a]
+
 		s2=Points.Points(sels)
 		Points.show(s2)
 		FreeCAD.ActiveDocument.ActiveObject.ViewObject.ShapeColor=color
@@ -165,6 +180,7 @@ def displayCut(label,pl,pts,showpoints=True,showwire=False,showxypoints=False,sh
 		FreeCAD.ActiveDocument.ActiveObject.Label="Points " +plst
 		scps.addObject(FreeCAD.ActiveDocument.ActiveObject)
 
+	return plaa
 
 def run():
 
@@ -192,20 +208,25 @@ def run():
 	bbps=nurbswb.shoedata.bbps
 	twister=nurbswb.shoedata.twister
 	# labels=nurbswb.shoedata.labels
-
+	trafos=[]
 	for i,b in enumerate(bbps):
-		#if i==0 : continue
+		# if i<>5 : continue
 		alpha=twister[i][1]
 		beta=twister[i][2]
 
 	#p2.Rotation=FreeCAD.Rotation(FreeCAD.Vector(0,0,1),FreeCAD.Rotation(FreeCAD.Vector(0,1,0),beta).multiply(FreeCAD.Rotation(FreeCAD.Vector(1,0,0),xa)))
 
-		pla=FreeCAD.Placement(FreeCAD.Vector(b),FreeCAD.Rotation(FreeCAD.Vector(0,0,1),beta).multiply(FreeCAD.Rotation(FreeCAD.Vector(0,1,0),alpha-90)))
+		pla=FreeCAD.Placement(FreeCAD.Vector(b),FreeCAD.Rotation(FreeCAD.Vector(0,0,1),-beta).multiply(FreeCAD.Rotation(FreeCAD.Vector(0,1,0),alpha-90)))
 		pcl=FreeCAD.ActiveDocument.shoe_last_scanned.Points.Points
 
-		print "display cut ",i
+
+
+		print ("display cut ",i,beta,alpha)
 		#displayCut(pla,pcl,showpoints=False,showxywire=False,showxypoints=True)
-		displayCut("cut "+str(i),pla,pcl,showpoints=True,showxywire=False,showxypoints=True)
+		trafo=displayCut("cut "+str(i),pla,pcl,showpoints=True,showxywire=False,showxypoints=True)
+		trafos.append(trafo)
+
+
 
 	#pla=FreeCAD.Placement()
 	#displayCut(pla,pcl,showpoints=True,showwire=True)
@@ -217,7 +238,7 @@ def run():
 	App=FreeCAD
 	jj=App.ActiveDocument.Scanpoints.OutList
 
-	clo=FreeCAD.ActiveDocument.addObject("App::DocumentObjectGroup","clones")
+	clo=FreeCAD.ActiveDocument.addObject("App::DocumentObjectGroup","clones2")
 
 	for i,p in enumerate(App.ActiveDocument.Scanpoints.OutList):
 		scp=FreeCAD.ActiveDocument.addObject("App::DocumentObjectGroup","GRP "+str(i+1))
@@ -233,6 +254,11 @@ def run():
 			obj=App.ActiveDocument.getObject('rib_'+str(i+1))
 			scp.addObject(jj[i])
 			scp.addObject(obj)
+			
+			skaa=Draft.clone(obj)
+			# skaa.Scale=FreeCAD.Vector(-1,1,1)
+			skaa.Placement=trafos[i]
+			clo.addObject(skaa)
 		except:
 			pass
 
@@ -244,3 +270,7 @@ def run():
 
 	for i in App.ActiveDocument.Objects:
 		i.ViewObject.hide()
+
+	for i in [App.ActiveDocument.shoe_last_scanned] + App.ActiveDocument.clones2.OutList :
+		i.ViewObject.show()
+
