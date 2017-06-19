@@ -83,11 +83,14 @@ def Myarray2NurbsD3(arr,label="MyWall",degree=3):
 	pst2=np.concatenate([pstb[9:-1],pstb[1:9]])
 	psta=pst2.swapaxes(1,0)
 
+	# ptsa=np.array(arr)
+
 	try: NbVPoles,NbUPoles,_t1 =psta.shape
 	except: return (Part.Shape(),Part.Shape())
 
 	bs=Part.BSplineSurface()
 	bs.interpolate(psta)
+	
 	pst=psta
 
 	FreeCAD.shoe_pst=pst
@@ -472,10 +475,14 @@ class Needle(PartFeature):
 
 		curves=[]
 		pols=[]
-		for r in obj.Ribs:
+		ribs=FreeCAD.ribs
+
+		#for r in obj.Ribs:
+		for r in ribs:
 			# pols=r.Points
 			
-			pols=r.Shape.Edge1.Curve.discretize(obj.MeridiansCount)
+			#pols=r.Shape.Edge1.Curve.discretize(obj.MeridiansCount)
+			pols=r.Shape.Edge1.Curve.getPoles()
 			
 			#c=[[v[0],v[1],v[2]] for v in pols]
 			c=[[v[2],v[0],v[1]] for v in pols]
@@ -1068,12 +1075,12 @@ def run():
 
 	boxes=nurbswb.shoedata.boxes
 
-	ribs=[nurbswb.createshoerib.run("rib_"+str(i),[[8,0,0]],boxes[i]) for i in range(1,15)]
+	ribs=[nurbswb.createshoerib.run("rib_"+str(i),[[8,0,0]],boxes[i],zoff=0) for i in range(1,15)]
 	#ribs=[nurbswb.createshoerib.run("rib_"+str(i),[[8,0,0]],boxes[i]) for i in 1,2,14]
 	#print "ende 1069 XXX"
 	#return
 	#return
-
+	FreeCAD.ribs=ribs
 
 	points=[FreeCAD.Vector(tuple(v)) for v in bbps]
 
@@ -1092,6 +1099,7 @@ def run():
 	assert len(ribs)==len(sc)
 
 	a=createNeedle()
+
 	gendata(a.Spreadsheet,twister,sc)
 	App.activeDocument().recompute()
 
@@ -1168,7 +1176,7 @@ def run():
 
 
 	App.ActiveDocument.shoe_last_scanned.ViewObject.ShapeColor=(1.0,.0,.0)
-	App.ActiveDocument.shoe_last_scanned.ViewObject.PointSize=4
+	App.ActiveDocument.shoe_last_scanned.ViewObject.PointSize=1
 	App.ActiveDocument.Poles.ViewObject.Transparency=60
 
 
