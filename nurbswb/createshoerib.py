@@ -14,7 +14,7 @@ App.ActiveDocument.Sketch.exposeInternalGeometry(6)
 App.ActiveDocument.Sketch.modifyBSplineKnotMultiplicity(6,3,-1) 
 '''
 
-def run(name='ribbow',moves=[],box=[40,0,-40,30]):
+def run(name='ribbow',moves=[],box=[40,0,-40,30],zoff=0):
 
 	debug=True
 	debug=False
@@ -30,6 +30,7 @@ def run(name='ribbow',moves=[],box=[40,0,-40,30]):
 	except:	body=App.activeDocument().addObject('PartDesign::Body','Body')
 
 	sk=App.activeDocument().addObject('Sketcher::SketchObject',name)
+	sk.Placement.Base.z=zoff
 	sk.Label=label
 	sk.MapMode = 'FlatFace'
 
@@ -176,7 +177,7 @@ def run(name='ribbow',moves=[],box=[40,0,-40,30]):
 	sk.renameConstraint(d, u'tangentTopB')
 
 
-	
+
 
 	if r+l<-10:
 		print "verletzung --------------createshoerib zeile 172---- r+l",r+l
@@ -226,9 +227,13 @@ def run(name='ribbow',moves=[],box=[40,0,-40,30]):
 	sk.renameConstraint(d, u'p8Y')
 	App.activeDocument().recompute()
 
+	# kein verschieben
+	return sk
+
 #	print (name,"moves ...")
+# wird nicht ausgefuehrt, weil die constraints das bereits verhindern #!#
 	for [k,x,y] in moves:
-#		print (k,x,y)
+		print (k,x,y)
 		sk.movePoint(k,3,App.Vector(x,y,0),0)
 		App.activeDocument().recompute()
 
@@ -239,9 +244,10 @@ def run(name='ribbow',moves=[],box=[40,0,-40,30]):
 def test():
 
 	sk1=run("rib1",[[8,0,0],[0,0,120],[4,120,-10],[12,-130,0]])
-	sk2=run("rib2",[[8,0,0],[0,0,150],[4,70,10],[12,-90,10]])
+	sk2=run("rib2",[[8,0,0],[0,0,150],[4,70,10],[12,-90,100]])
 
 
 if  __name__ == '__main__':
 
 	target=run("rib3",[],[40,-10,-40,30])
+	test()
