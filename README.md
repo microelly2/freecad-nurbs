@@ -1,7 +1,12 @@
-Das ist die Startseite
+Die Nurbs Workbench ist eine Sammlung von Skripten zur Verwaltung von Freiformflächen und Kurven.
 
 
-[Namespace](file:./namespaces.html) Dokumetation der Skripte
+
+Videos
+======
+
+[Video split a nurbs face into 4 segments and replace two of them](https://www.youtube.com/watch?v=bBAU5fpwwk8)
+
 
 Logbuch
 ========
@@ -14,12 +19,4 @@ Logbuch
 
 	nachverarbeitung_shoe.py, shoedata.py, shoe.py, scanbackbonecut.py - optimierung des schuh-layouts
 
-was dfen
-========
-
-
-Videos
-------
-
-[Video split a nurbs face into 4 segments and replace two of them](https://www.youtube.com/watch?v=bBAU5fpwwk8)
 

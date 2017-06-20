@@ -1,8 +1,8 @@
-## shoe configuration data
-# @version 0.92
-# @author microelly
-#
-#
+'''shoe configuration data
+@version 0.92
+@author microelly
+'''
+
 
 print "shoedata version 0.92"
 

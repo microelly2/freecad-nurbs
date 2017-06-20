@@ -1,3 +1,9 @@
+'''
+shoe sole creation
+
+'''
+
+
 # -*- coding: utf-8 -*-
 #-------------------------------------------------
 #-- create a shoe sole
@@ -6,10 +12,6 @@
 #--
 #-- GNU Lesser General Public License (LGPL)
 #-------------------------------------------------
-'''
-shoe sole creation
-
-'''
 __version__ = '0.12'
 
 

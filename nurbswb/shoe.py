@@ -1,4 +1,9 @@
+'''
+shoe xyz
+'''
 # -*- coding: utf-8 -*-
+
+
 #-------------------------------------------------
 #-- create a shoe
 #--
@@ -435,7 +440,7 @@ def gendata(ss,twister,sc):
 
 	bb=[]
 
-##	npa2ssa(curve,ss,2,3,(1.0,1.0,0.5))
+#	npa2ssa(curve,ss,2,3,(1.0,1.0,0.5))
 	npa2ssa(bb,ss,7,3,(1.0,.5,1.0))
 	npa2ssa(sc,ss,10,3,(0.5,1.0,1.0))
 	npa2ssa(twister,ss,13,3,(1.0,.5,0.5))
@@ -457,6 +462,7 @@ def gendata(ss,twister,sc):
 	App.activeDocument().recompute()
 
 
+## spreadsheat to numpy array 
 def ssa2npa(spreadsheet,c1,r1,c2,r2,default=None):
 	''' create array from table'''
 
@@ -529,6 +535,7 @@ class ViewProvider:
 
 
 class Needle(PartFeature):
+	##cond
 	def __init__(self, obj,uc=5,vc=5):
 		PartFeature.__init__(self, obj)
 
@@ -562,7 +569,7 @@ class Needle(PartFeature):
 		print "onDocumentRestored "
 		print fp.Label
 		self.Object=fp
-
+	##endcond
 
 	def onChanged(self, fp, prop):
 		
@@ -812,6 +819,9 @@ class Needle(PartFeature):
 		self.updateSS(m.curve,m.bb,m.sc,m.twister)
 
 	def Model(self):
+		''' get model data from Spreadsheet 
+		returns tuple: curve, backbone, scaler, twister
+		'''
 		ss=self.Object.Spreadsheet
 		cl=int(ss.get('B1'))
 		curve=ssa2npa(ss,2,3,4,3+cl-1)
@@ -825,11 +835,9 @@ class Needle(PartFeature):
 		self.updateSS(curve,bb,scaler,twister)
 
 	def startssevents(self):
-#		global table
 
 		mw=FreeCADGui.getMainWindow()
 		mdiarea=mw.findChild(QtGui.QMdiArea)
-
 
 		App.activeDocument().Spreadsheet.ViewObject.startEditing(0)
 		subw=mdiarea.subWindowList()
@@ -947,6 +955,7 @@ def commitData(editor):
 
 
 def startssevents2():
+	''' start events for spreadsheet gui '''
 	global table
 
 	mw=FreeCADGui.getMainWindow()
@@ -1158,8 +1167,9 @@ def genss(sk):
 
 
 
+## create the default shoe 
 def run():
-	print "shoe.run ..."
+	''' shoe.run() '''
 
 	dokname=FreeCAD.ParamGet('User parameter:Plugins/shoe').GetString("Document","Shoe")
 

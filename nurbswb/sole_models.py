@@ -1,13 +1,17 @@
 '''
-
+sole model collection 
+the model can be selected by the listModels method
 '''
 
 import numpy as np
 
 
 class model():
+	''' basic sole model '''
 
+	##\cond
 	def __init__(self):
+
 
 		self.LL=244.0
 #		self.LL=344.0
@@ -33,10 +37,11 @@ class model():
 		self.highe=[0,1,2,3,2,1,0]
 
 		self.info='a generic model'
-
+	##\endcond
 
 class modelA(model):
-
+	''' breite sohle '''
+	##\cond
 	def __init__(self):
 		model.__init__(self)
 		#spitze
@@ -44,10 +49,11 @@ class modelA(model):
 		self.tt=[[[35,35,14],[40,28,h],[45,14,h],[50,0,h],[45,-15,h],[40,-15,h],[35,-20,14]]]
 		self.tt=[[[5,35,14],[5,28,h],[10,14,h],[10,0,h],[10,-15,h],[5,-15,h],[5,-20,14]]]
 		self.info='breit'
-
+	##\endcond
 
 class modelB(model):
-
+	''' vorn spitz'''
+	##\cond
 	def __init__(self):
 		model.__init__(self)
 		#spitze
@@ -55,9 +61,13 @@ class modelB(model):
 		self.tt=[[[35,35,14],[40,28,h],[145,14,h],[150,0,h],[45,-15,h],[40,-15,h],[35,-20,14]]]
 
 		self.info='spitz'
+	##\endcond
+
+## High Heel Testcase
 
 class modelC(model):
-
+	''' high heel '''
+	##\cond
 	def __init__(self):
 		model.__init__(self)
 		#high heel
@@ -70,10 +80,11 @@ class modelC(model):
 		self.tt=[[[35,17,14],[40,15,h],[45,15,h],[55,0,h],[45,-10,h],[40,-15,h],[35,-17,14]]]
 
 		self.info='high heel'
-
+	##\endcond
 
 
 def listModels(silent=False):
+	''' erzeugt liste aller modelle mit modell und modell.info '''
 	import nurbswb.sole_models
 	reload(nurbswb.sole_models)
 	l=[]
