@@ -72,6 +72,7 @@ class Segment(PartFeature):
 		obj.umax=-1
 		obj.vmax=-1
 
+		self.obj2=obj
 		ViewProvider(obj.ViewObject)
 
 
@@ -118,9 +119,12 @@ class NurbsTrafo(PartFeature):
 		obj.addProperty("App::PropertyInteger", "umax", "Base")
 		obj.addProperty("App::PropertyInteger", "vmin", "Base")
 		obj.addProperty("App::PropertyInteger", "vmax", "Base")
+		obj.addProperty("App::PropertyBool", "swapaxes", "Base").swapaxes=True
+
 
 		obj.umax=-1
 		obj.vmax=-1
+		self.obj2=obj
 		ViewProvider(obj.ViewObject)
 
 
@@ -129,23 +133,39 @@ class NurbsTrafo(PartFeature):
 			face=obj.source.Shape.Face1
 			bs=face.Surface.copy()
 
+
+
 			poles=bs.getPoles()
 			ku=bs.getUKnots()
 			kv=bs.getVKnots()
 			mu=bs.getUMultiplicities()
 			mv=bs.getVMultiplicities()
+			perU=bs.isUPeriodic()
+			perV=bs.isVPeriodic()
 
-			y=np.array(poles).swapaxes(0,1)
 			k=obj.start
+			if not bs.isVPeriodic():
+				print "nicht vperiodic - kann nichts tun - Abbruch"
+#				return
 
-			poles2=np.concatenate([y[k:],y[:k]]).swapaxes(0,1)
+			if obj.swapaxes:
+				y=np.array(poles).swapaxes(0,1)
+				poles2=np.concatenate([y[k:],y[:k]]).swapaxes(0,1)
+				poles2=np.concatenate([y[k:-1],y[:k+1]]).swapaxes(0,1)
+			else:
+				y=np.array(poles)
+				poles2=np.concatenate([y[k:],y[:k]])
+
 			print poles2
+			FreeCAD.poles2=poles
+			print ku
+			print kv
 
 			bs2=Part.BSplineSurface()
 			bs2.buildFromPolesMultsKnots(poles2,
 				mu,mv,
 				ku,kv,
-				False,True,3,3,)
+				perU,perV,3,3,)
 
 			obj.Shape=bs2.toShape()
 
@@ -198,6 +218,7 @@ class FineSegment(PartFeature):
 		obj.umax=obj.factor
 		obj.vmax=obj.factor
 
+		self.obj2=obj
 		ViewProvider(obj.ViewObject)
 
 
@@ -234,9 +255,9 @@ class FineSegment(PartFeature):
 				umax=bs.getUKnots()[-1]
 #				obj.umax=int(round(umax*obj.factor,0))
 
-			print  bs.getUKnots()
-			print  bs.getVKnots()
-			print ("interval",umin,umax,vmin,vmax)
+#			print  bs.getUKnots()
+#			print  bs.getVKnots()
+#			print ("interval",umin,umax,vmin,vmax)
 
 			if umin>0 and umin not in bs.getUKnots():
 				bs.insertUKnot(umin,1,0)
@@ -253,7 +274,7 @@ class FineSegment(PartFeature):
 			uks=bs.getUKnots()
 			if umin<uks[0]: umin=uks[0]
 			
-			print ("interval",umin,umax,vmin,vmax)
+#			print ("interval",umin,umax,vmin,vmax)
 			bs.segment(umin,umax,vmin,vmax)
 			obj.Shape=bs.toShape()
 
@@ -301,14 +322,19 @@ def runnurbstrafo():
 
 
 
+
 if __name__ == '__main__':
 
 #	sm=createSegment()
 #	sm.source=App.ActiveDocument.Sketch
 #	sm.umax=5
 
-	k=createFineSegment()
-	k.source=App.ActiveDocument.orig
+	#k=createFineSegment()
+	#k.source=App.ActiveDocument.orig
+
+
+	s=createNurbsTrafo()
+	s.source=App.ActiveDocument.Poles
 
 
 

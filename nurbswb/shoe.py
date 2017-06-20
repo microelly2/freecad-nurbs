@@ -1,19 +1,12 @@
 # -*- coding: utf-8 -*-
 #-------------------------------------------------
-#-- create a needle
+#-- create a shoe
 #--
-#-- microelly 2016 v 0.4
+#-- microelly 2017 v 0.4
 #--
 #-- GNU Lesser General Public License (LGPL)
 #-------------------------------------------------
 
-'''
-Anzeige der Laenge eioner Rippe als Hoehe
-App.getDocument('Shoe').Cylinder.setExpression('Height', u'rib_7.Shape.Edge1.Length')
-for  c in  App.ActiveDocument.rib_13.Constraints:
-	print c.Name,c.Value
-
-'''
 
 
 import FreeCAD,FreeCADGui
@@ -75,12 +68,123 @@ def Myarray2Poly(arr,bb):
 
 	return (t,comp)
 
+#---------------------------
+'''
+nachverarbeitung shoe
+testskript zum abloesen der methoden in shoe.py fuer die
+generierung des nurbs shoe last
+'''
+
+import numpy as np
+
+
+def createBS(arr):
+	''' createBS(arr): create a BSpline Surface with the poles array arr'''
+
+	cylinder=True
+	#cylinder=False
+
+	arr=np.array(arr)
+	# pst=arr.swapaxes(0,1)
+	pst=arr
+
+	NbVPoles,NbUPoles,_t1 =pst.shape
+
+	degree=3
+
+	udegree=degree
+	vdegree=degree
+
+	if degree == 1: cylinder = False
+
+	ps=[[FreeCAD.Vector(pst[v,u,0],pst[v,u,1],pst[v,u,2]) for u in range(NbUPoles)] for v in range(NbVPoles)]
+
+	kv=[1.0/(NbVPoles-3)*i for i in range(NbVPoles-2)]
+	mv=[4] +[1]*(NbVPoles-4) +[4]
+
+
+	if  NbVPoles == 2:
+		print "KKKK"
+		kv=[0,1]
+		mv=[2,2]
+		vdegree=1
+
+
+	if cylinder:
+		ku=[1.0/(NbUPoles-1)*i for i in range(NbUPoles)]
+		mu=[2]+[1]*(NbUPoles-2)+[2]
+
+		# bug 
+		ku=[1.0/(NbUPoles)*i for i in range(NbUPoles+1)]
+		mu=[1]*(NbUPoles+1)
+		print len(ps)
+		print sum(mu)
+
+	else:
+		ku=[1.0/(NbUPoles-3)*i for i in range(NbUPoles-2)]
+		mu=[4]+[1]*(NbUPoles-4)+[4]
+
+
+	bs=Part.BSplineSurface()
+	bs.buildFromPolesMultsKnots(ps, mv, mu, kv, ku, False,cylinder ,vdegree,udegree)
+
+	print ("Cylinmder::",cylinder)
+	return bs
+
+#----------------------------------------------
+
+
+def createSimpleBSC(pols, degree=3):
+	''' createSimpleBSC(pols): create a BSpline Curve with poles pols
+	
+	'''
+
+	bc=Part.BSplineCurve()
+	du=degree
+	cu=len(pols)
+
+	period=False
+	kus=[1.0/(cu-du)*i for i in range(cu-du+1)]
+	mu=[du+1]+[1]*(cu-du-1)+[du+1]
+
+	#geschlossen/periodisch
+	#period=True
+	#kus=[1.0/(cu)*i for i in range(cu-1)]
+	#mu=[3]+[1]*(cu-3)+[3]
+
+	bc.buildFromPolesMultsKnots(pols,mu,kus,period,du,)
+	return bc
+
+
+def Xrun():
+	''' run(): test script
+	creates the surface and some helpers
+	
+	'''
+
+
+	# get the poles from shoe.py 
+	pts=FreeCAD.shoe_pst.copy()
+	pts[:,:,1] *= -1
+
+	# die flaeche
+	bs=createBS(pts)
+	try: fa=App.ActiveDocument.curve
+	except: fa=App.ActiveDocument.addObject('Part::Spline','curve')
+
+	fa.Shape=bs.toShape()
+
+
+
+
+
+#----------------------------
 
 
 def Myarray2NurbsD3(arr,label="MyWall",degree=3):
 
 	pstb=np.array(arr).swapaxes(0,1)
-	pst2=np.concatenate([pstb[9:-1],pstb[1:9]])
+	pst2=np.concatenate([pstb[7:-1],pstb[1:7]])
 	psta=pst2.swapaxes(1,0)
 
 	# ptsa=np.array(arr)
@@ -88,27 +192,42 @@ def Myarray2NurbsD3(arr,label="MyWall",degree=3):
 	try: NbVPoles,NbUPoles,_t1 =psta.shape
 	except: return (Part.Shape(),Part.Shape())
 
-	bs=Part.BSplineSurface()
-	bs.interpolate(psta)
-	
+#	bs=Part.BSplineSurface()
+#	bs.interpolate(psta)
+
 	pst=psta
 
 	FreeCAD.shoe_pst=pst
-	bs.setVPeriodic()
+#	bs.setVPeriodic()
+
+	pst[:,:,1] *= -1
+	psta=pst
+
+	# die flaeche
+	bs=createBS(pst)
+
+#	try: fa=App.ActiveDocument.curveA
+#	except: fa=App.ActiveDocument.addObject('Part::Spline','curveA')
+#
+#	fa.Shape=bs.toShape()
+
+
 
 	color=(random.random(),random.random(),random.random())
-	for i,pps in enumerate(psta):
-		if i == 0 : continue
-		bc=Part.BSplineCurve()
-		bc.interpolate(pps)
-		App.ActiveDocument.Ribs.OutList[i].Shape=bc.toShape()
-		App.ActiveDocument.Ribs.OutList[i].ViewObject.LineColor=color
 
-	for i,pps in enumerate(psta.swapaxes(0,1)):
-		bc=Part.BSplineCurve()
-		bc.interpolate(pps[2:])
-		App.ActiveDocument.Meridians.OutList[i].Shape=bc.toShape()
-		App.ActiveDocument.Meridians.OutList[i].ViewObject.LineColor=color
+#- kann qwg
+#	for i,pps in enumerate(psta):
+#		if i == 0 : continue
+#		bc=Part.BSplineCurve()
+#		bc.interpolate(pps)
+#		App.ActiveDocument.Ribs.OutList[i].Shape=bc.toShape()
+#		App.ActiveDocument.Ribs.OutList[i].ViewObject.LineColor=color
+#
+#	for i,pps in enumerate(psta.swapaxes(0,1)):
+#		bc=Part.BSplineCurve()
+#		bc.interpolate(pps[2:])
+#		App.ActiveDocument.Meridians.OutList[i].Shape=bc.toShape()
+#		App.ActiveDocument.Meridians.OutList[i].ViewObject.LineColor=color
 
 	if 1:
 		sf2=bs.copy()
@@ -553,16 +672,17 @@ class Needle(PartFeature):
 		poles= twist(poles,twister)
 		poles= extrude(poles,bb)
 
-		if 1:
-			(nn,comp)=Myarray2Poly(poles,bb)
-
-			try: poly=App.ActiveDocument.Poly
-			except: 
-				poly=App.activeDocument().addObject("Part::Compound",'Poly')
-				poly.ViewObject.PointSize = 10.00
-
-			poly.Shape=nn
-			#return
+# kann weg
+#		if 1:
+#			(nn,comp)=Myarray2Poly(poles,bb)
+#
+#			try: poly=App.ActiveDocument.Poly
+#			except: 
+#				poly=App.activeDocument().addObject("Part::Compound",'Poly')
+#				poly.ViewObject.PointSize = 10.00
+#
+#			poly.Shape=nn
+#			#return
 
 		if 1 :
 			(nn,bs)=Myarray2NurbsD3(poles,"Nadelhuelle",degree=obj.Degree)
@@ -1052,10 +1172,11 @@ def run():
 	Gui.ActiveDocument=Gui.getDocument(dokname)
 	
 
-	g=App.activeDocument().addObject("App::DocumentObjectGroup","Ribs")
-	m=App.activeDocument().addObject("App::DocumentObjectGroup","Meridians")
-	gp=App.activeDocument().addObject("App::DocumentObjectGroup","RibsPoly")
-	mp=App.activeDocument().addObject("App::DocumentObjectGroup","MeridiansPoly")
+#- kann weg
+#	g=App.activeDocument().addObject("App::DocumentObjectGroup","Ribs")
+#	m=App.activeDocument().addObject("App::DocumentObjectGroup","Meridians")
+#	gp=App.activeDocument().addObject("App::DocumentObjectGroup","RibsPoly")
+#	mp=App.activeDocument().addObject("App::DocumentObjectGroup","MeridiansPoly")
 
 	profiles=App.activeDocument().addObject("App::DocumentObjectGroup","Profiles")
 
@@ -1068,12 +1189,12 @@ def run():
 	import nurbswb.shoedata
 	reload(nurbswb.shoedata)
 
-	bbps=nurbswb.shoedata.bbps
+	bbps=nurbswb.shoedata.shoeAdam.bbps
 
 	import nurbswb.createshoerib
 	reload(nurbswb.createshoerib)
 
-	boxes=nurbswb.shoedata.boxes
+	boxes=nurbswb.shoedata.shoeAdam.boxes
 
 	ribs=[nurbswb.createshoerib.run("rib_"+str(i),[[8,0,0]],boxes[i],zoff=0) for i in range(1,15)]
 	#ribs=[nurbswb.createshoerib.run("rib_"+str(i),[[8,0,0]],boxes[i]) for i in 1,2,14]
@@ -1092,8 +1213,8 @@ def run():
 #		Draft.makeWire(points,closed=False,face=True,support=None)
 #		App.ActiveDocument.ActiveObject.Label="Backbone Poly"
 
-	twister=nurbswb.shoedata.twister
-	sc=nurbswb.shoedata.sc
+	twister=nurbswb.shoedata.shoeAdam.twister
+	sc=nurbswb.shoedata.shoeAdam.sc
 
 	assert len(ribs)==len(twister)
 	assert len(ribs)==len(sc)
@@ -1106,20 +1227,20 @@ def run():
 
 	a.Ribs=ribs
 
-
-	for j in a.Ribs:
-		ffs=App.ActiveDocument.addObject("Part::Spline","Rib " + j.Label)
-		profiles.addObject(j)
-		#j.Placement.Rotation=FreeCAD.Rotation(FreeCAD.Vector(0,1,0,),90)
-		g.addObject(ffs)
-		ffs2=App.ActiveDocument.addObject("Part::Spline","RibP " + j.Label)
-		gp.addObject(ffs2)
-
-	for j in range(a.MeridiansCount):
-		ffs=App.ActiveDocument.addObject("Part::Spline","Meridian " + str(j+1))
-		m.addObject(ffs)
-		ffs=App.ActiveDocument.addObject("Part::Spline","MeridianP " + str(j+1))
-		mp.addObject(ffs)
+#- kann weg
+#	for j in a.Ribs:
+#		ffs=App.ActiveDocument.addObject("Part::Spline","Rib " + j.Label)
+#		profiles.addObject(j)
+#		#j.Placement.Rotation=FreeCAD.Rotation(FreeCAD.Vector(0,1,0,),90)
+#		g.addObject(ffs)
+#		ffs2=App.ActiveDocument.addObject("Part::Spline","RibP " + j.Label)
+#		gp.addObject(ffs2)
+#
+#	for j in range(a.MeridiansCount):
+#		ffs=App.ActiveDocument.addObject("Part::Spline","Meridian " + str(j+1))
+#		m.addObject(ffs)
+#		ffs=App.ActiveDocument.addObject("Part::Spline","MeridianP " + str(j+1))
+#		mp.addObject(ffs)
 
 	a.useBackbone=True
 	a.useRibTemplate=False
@@ -1144,8 +1265,6 @@ def run():
 	FreeCADGui.runCommand("Draft_ToggleGrid")
 
 
-	s=App.ActiveDocument.Poly
-	print len(s.Shape.Edges)
 
 	try:
 		Points.insert(__dir__+"/../testdata/shoe_last_scanned.asc","Shoe")
@@ -1171,7 +1290,7 @@ def run():
 	for i in App.ActiveDocument.Objects:
 		i.ViewObject.hide()
 
-	for obj in App.ActiveDocument.Sketch,App.ActiveDocument.Poles,App.ActiveDocument.shoe_last_scanned,App.ActiveDocument.Poly:
+	for obj in App.ActiveDocument.Sketch,App.ActiveDocument.Poles,App.ActiveDocument.shoe_last_scanned:
 		obj.ViewObject.show()
 
 
@@ -1198,6 +1317,56 @@ def run():
 		App.ActiveDocument.ActiveObject.Label="shoe " +str(nurbswb.shoedata.scaleOut)
 
 	App.getDocument(dokname).saveAs(u"/tmp/shoe_v0.fcstd")
+
+
+
+	try: fa=App.ActiveDocument.Poles
+	except: fa=App.ActiveDocument.addObject('Part::Spline','Poles')
+
+#	fa.Shape=bs.toShape()
+
+
+	# ein paar hilfslinien
+	pts=np.array(fa.Shape.Face1.Surface.getPoles())
+	comp=[]
+	for yy in pts:
+		pas=[FreeCAD.Vector(tuple(p)) for p in yy]
+		pol=Part.makePolygon(pas)
+		cur=createSimpleBSC(pas)
+		comp +=[pol,cur.toShape()]
+
+	pts=pts.swapaxes(0,1)
+	for yy in pts:
+		pas=[FreeCAD.Vector(tuple(p)) for p in yy]
+		pol=Part.makePolygon(pas)
+		cur=createSimpleBSC(pas)
+		comp +=[pol,cur.toShape()]
+
+	Part.show(Part.Compound(comp))
+
+
+
+	# ein paar hilfssegmente exemplarisch
+	import nurbswb.segment
+
+	a=nurbswb.segment.createSegment()
+	a.source=fa
+	a.umax=-2
+	a.umin=1
+	a.vmax=-2
+	a.vmin=1
+
+	a=nurbswb.segment.createFineSegment()
+	a.source=fa
+	a.umax=95
+	a.umin=0
+	a.vmax=98
+	a.vmin=2
+	a.Label="Fein gesamt"
+
+	s=nurbswb.segment.createNurbsTrafo()
+	s.source=App.ActiveDocument.Poles
+
 
 	print "done"
 
