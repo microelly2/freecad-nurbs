@@ -1,8 +1,5 @@
-'''
-shoe xyz
-'''
+'''shoe xyz'''
 # -*- coding: utf-8 -*-
-
 
 #-------------------------------------------------
 #-- create a shoe
@@ -12,8 +9,7 @@ shoe xyz
 #-- GNU Lesser General Public License (LGPL)
 #-------------------------------------------------
 
-
-
+##\cond
 import FreeCAD,FreeCADGui
 App=FreeCAD
 Gui=FreeCADGui
@@ -30,6 +26,8 @@ import os, nurbswb
 global __dir__
 __dir__ = os.path.dirname(nurbswb.__file__)
 print __dir__
+
+##\endcond
 
 def Myarray2Poly(arr,bb):
 
@@ -500,7 +498,7 @@ if 0 and __name__=='__main__':
 
 
 
-
+##\cond
 class PartFeature:
 	def __init__(self, obj):
 		obj.Proxy = self
@@ -531,7 +529,7 @@ class ViewProvider:
 
 	def __setstate__(self,state):
 		return None
-
+##\endcond
 
 
 class Needle(PartFeature):
@@ -919,7 +917,7 @@ def importCurves(obj):
 		npa2ssa(bb,ss,7,3)
 		print "update backbone",bb
 
-def createNeedle(label="MyShoe"):
+def createShoeNeedle(label="MyShoe"):
 	a=FreeCAD.activeDocument().addObject("Part::FeaturePython",label)
 
 	n=Needle(a)
@@ -1167,12 +1165,15 @@ def genss(sk):
 
 
 
-## create the default shoe 
+## create the default shoe
+ 
 def run():
 	''' shoe.run() '''
 
+	# get the name for the documente from FC config
 	dokname=FreeCAD.ParamGet('User parameter:Plugins/shoe').GetString("Document","Shoe")
 
+	# start with a new document
 	try: App.closeDocument(dokname)
 	except: pass
 
@@ -1180,7 +1181,7 @@ def run():
 	App.setActiveDocument(dokname)
 	App.ActiveDocument=App.getDocument(dokname)
 	Gui.ActiveDocument=Gui.getDocument(dokname)
-	
+
 
 #- kann weg
 #	g=App.activeDocument().addObject("App::DocumentObjectGroup","Ribs")
@@ -1188,100 +1189,81 @@ def run():
 #	gp=App.activeDocument().addObject("App::DocumentObjectGroup","RibsPoly")
 #	mp=App.activeDocument().addObject("App::DocumentObjectGroup","MeridiansPoly")
 
+	#create a container for the rib sketches
 	profiles=App.activeDocument().addObject("App::DocumentObjectGroup","Profiles")
 
+	# load an example skethc for the xz-silouette
 	App.Gui.activeDocument().mergeProject( __dir__+"/../testdata/last_sketch_sagittal.fcstd")
 	App.ActiveDocument.Sketch.Placement=App.Placement(App.Vector(0,0,0), App.Rotation(App.Vector(0,0.707107,0.707107),180), App.Vector(0,0,0))
 
 
-	print "import ............"
 
+	print "import ............"
+	# import the configuration from shoedata 
 	import nurbswb.shoedata
 	reload(nurbswb.shoedata)
 
 	bbps=nurbswb.shoedata.shoeAdam.bbps
+	boxes=nurbswb.shoedata.shoeAdam.boxes
+	twister=nurbswb.shoedata.shoeAdam.twister
+	sc=nurbswb.shoedata.shoeAdam.sc
 
+
+	# create the shoe ribs
 	import nurbswb.createshoerib
 	reload(nurbswb.createshoerib)
 
-	boxes=nurbswb.shoedata.shoeAdam.boxes
-
 	ribs=[nurbswb.createshoerib.run("rib_"+str(i),[[8,0,0]],boxes[i],zoff=0) for i in range(1,15)]
-	#ribs=[nurbswb.createshoerib.run("rib_"+str(i),[[8,0,0]],boxes[i]) for i in 1,2,14]
-	#print "ende 1069 XXX"
-	#return
-	#return
+
+	# for debugging 
 	FreeCAD.ribs=ribs
 
+	# create a backbone curve
 	points=[FreeCAD.Vector(tuple(v)) for v in bbps]
 
-	Draft.makeBSpline(points,closed=False,face=True,support=None)
-	App.ActiveDocument.ActiveObject.Label="Backbone"
-	babo=App.ActiveDocument.ActiveObject
-	profiles.addObject(App.ActiveDocument.ActiveObject)
-
-#		Draft.makeWire(points,closed=False,face=True,support=None)
-#		App.ActiveDocument.ActiveObject.Label="Backbone Poly"
-
-	twister=nurbswb.shoedata.shoeAdam.twister
-	sc=nurbswb.shoedata.shoeAdam.sc
+	babo=Draft.makeBSpline(points,closed=False,face=True,support=None)
+	babo.Label="Backbone"
+	profiles.addObject(babo)
 
 	assert len(ribs)==len(twister)
 	assert len(ribs)==len(sc)
 
-	a=createNeedle()
+	#create the Shoe Needle
+	a=createShoeNeedle()
 
 	gendata(a.Spreadsheet,twister,sc)
 	App.activeDocument().recompute()
 
-
+	#connect the shoeNeedle with the existing parts
 	a.Ribs=ribs
-
-#- kann weg
-#	for j in a.Ribs:
-#		ffs=App.ActiveDocument.addObject("Part::Spline","Rib " + j.Label)
-#		profiles.addObject(j)
-#		#j.Placement.Rotation=FreeCAD.Rotation(FreeCAD.Vector(0,1,0,),90)
-#		g.addObject(ffs)
-#		ffs2=App.ActiveDocument.addObject("Part::Spline","RibP " + j.Label)
-#		gp.addObject(ffs2)
-#
-#	for j in range(a.MeridiansCount):
-#		ffs=App.ActiveDocument.addObject("Part::Spline","Meridian " + str(j+1))
-#		m.addObject(ffs)
-#		ffs=App.ActiveDocument.addObject("Part::Spline","MeridianP " + str(j+1))
-#		mp.addObject(ffs)
+	a.backboneSource=babo
 
 	a.useBackbone=True
 	a.useRibTemplate=False
 	a.useRibCage=True
 	a.useMesh=False
 
-	a.backboneSource=babo
 
 	# hack to update the spreadsheet
 	a.Proxy.myexecute(a)
 
+
 	App.activeDocument().recompute()
 	App.activeDocument().recompute()
 	Gui.activeDocument().activeView().viewFront()
-	#Gui.activeDocument().activeView().viewBottom()
-
 
 	Gui.SendMsgToActiveView("ViewFit")
-
-	# return
-
 	FreeCADGui.runCommand("Draft_ToggleGrid")
 
-
-
-	try:
+	# load a scanned last to compare if available
+	try: 
 		Points.insert(__dir__+"/../testdata/shoe_last_scanned.asc","Shoe")
-	except:
+		App.ActiveDocument.shoe_last_scanned.ViewObject.ShapeColor=(1.0,.0,.0)
+		App.ActiveDocument.shoe_last_scanned.ViewObject.PointSize=1
+	except: 
 		pass
 
-
+	# create lofts from the creates curves
 	if nurbswb.shoedata.showlofts:
 		# flaechen erzeugen
 		try: loft=App.ActiveDocument.MeridiansLoft
@@ -1297,44 +1279,35 @@ def run():
 	App.activeDocument().recompute()
 
 
-	for i in App.ActiveDocument.Objects:
-		i.ViewObject.hide()
-
+	# hide all but some specials
+	for i in App.ActiveDocument.Objects: i.ViewObject.hide()
 	for obj in App.ActiveDocument.Sketch,App.ActiveDocument.Poles,App.ActiveDocument.shoe_last_scanned:
 		obj.ViewObject.show()
 
+	try: fa=App.ActiveDocument.Poles
+	except: fa=App.ActiveDocument.addObject('Part::Spline','Poles')
 
-	App.ActiveDocument.shoe_last_scanned.ViewObject.ShapeColor=(1.0,.0,.0)
-	App.ActiveDocument.shoe_last_scanned.ViewObject.PointSize=1
-	App.ActiveDocument.Poles.ViewObject.Transparency=60
+	fa.ViewObject.Transparency=60
 
-
-
+	# create inner and outer scale of the last to compare
 	if nurbswb.shoedata.showscales:
 
-		pc=Draft.clone(App.ActiveDocument.Poles)
+		pc=Draft.clone(fa)
 		pc.Scale.x=nurbswb.shoedata.scaleIn
 		pc.Scale.y=nurbswb.shoedata.scaleIn
 		pc.Scale.z=nurbswb.shoedata.scaleIn
 		App.ActiveDocument.ActiveObject.ViewObject.ShapeColor=(.0,1.0,.0)
 		App.ActiveDocument.ActiveObject.Label="shoe " +str(nurbswb.shoedata.scaleIn)
 
-		pc=Draft.clone(App.ActiveDocument.Poles)
+		pc=Draft.clone(fa)
 		pc.Scale.x=nurbswb.shoedata.scaleOut
 		pc.Scale.y=nurbswb.shoedata.scaleOut
 		pc.Scale.z=nurbswb.shoedata.scaleOut
 		App.ActiveDocument.ActiveObject.ViewObject.ShapeColor=(.0,.0,1.0)
 		App.ActiveDocument.ActiveObject.Label="shoe " +str(nurbswb.shoedata.scaleOut)
 
+
 	App.getDocument(dokname).saveAs(u"/tmp/shoe_v0.fcstd")
-
-
-
-	try: fa=App.ActiveDocument.Poles
-	except: fa=App.ActiveDocument.addObject('Part::Spline','Poles')
-
-#	fa.Shape=bs.toShape()
-
 
 	# ein paar hilfslinien
 	pts=np.array(fa.Shape.Face1.Surface.getPoles())
@@ -1353,7 +1326,7 @@ def run():
 		comp +=[pol,cur.toShape()]
 
 	Part.show(Part.Compound(comp))
-
+	App.ActiveDocument.ActiveObject.Label="Poles and Rib Splines"
 
 
 	# ein paar hilfssegmente exemplarisch
@@ -1365,6 +1338,7 @@ def run():
 	a.umin=1
 	a.vmax=-2
 	a.vmin=1
+	a.Label="Segment gesamt"
 
 	a=nurbswb.segment.createFineSegment()
 	a.source=fa
@@ -1372,11 +1346,9 @@ def run():
 	a.umin=0
 	a.vmax=98
 	a.vmin=2
-	a.Label="Fein gesamt"
+	a.Label="Fein Segment gesamt"
 
+	# transform the poles array 
 	s=nurbswb.segment.createNurbsTrafo()
 	s.source=App.ActiveDocument.Poles
-
-
-	print "done"
 

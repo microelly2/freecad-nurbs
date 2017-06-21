@@ -1,3 +1,5 @@
+'''-- scan cut --- shoe last - get cut wires from a scan'''
+
 #-*- coding: utf-8 -*-
 #-------------------------------------------------
 #-- scan cut --- shoe last - get cut wires from a scan
