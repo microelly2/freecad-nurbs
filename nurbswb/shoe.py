@@ -29,6 +29,8 @@ print __dir__
 
 ##\endcond
 
+
+##\cond
 def Myarray2Poly(arr,bb):
 
 	print "Polygon Variante"
@@ -1166,6 +1168,19 @@ def genss(sk):
 
 
 ## create the default shoe
+
+##\endcond
+
+## Erstellung eines Schuh Leisten und einiger Hilfsobjekte
+#
+# - Laden eins Laengsprofiles zum Vergleich
+# - Laden einer gescannten Punktwolke zum Vergleich
+#
+# Erzeugen von Segmenten als Schritt fuer die Nachbereitung
+#
+# <a href='http://freecadbuch.de/doku.php?id=shoe'>Anwender Doku</a>
+#
+
  
 def run():
 	''' shoe.run() '''

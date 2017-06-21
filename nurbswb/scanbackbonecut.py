@@ -208,8 +208,14 @@ def run():
 	print "import ............"
 	import nurbswb.shoedata
 	reload(nurbswb.shoedata)
-	bbps=nurbswb.shoedata.bbps
-	twister=nurbswb.shoedata.twister
+
+
+	bbps=nurbswb.shoedata.shoeAdam.bbps
+	boxes=nurbswb.shoedata.shoeAdam.boxes
+	twister=nurbswb.shoedata.shoeAdam.twister
+	sc=nurbswb.shoedata.shoeAdam.sc
+
+
 	# labels=nurbswb.shoedata.labels
 	trafos=[]
 	for i,b in enumerate(bbps):

@@ -31,7 +31,7 @@ import os,random,time,sys,traceback
 
 ## 
 #
-## <A HREF="http://www.freecadbuch.de/doku.php?id=blog">FreeCAD Buch 2</A> 
+# <A HREF="http://www.freecadbuch.de/doku.php?id=blog">FreeCAD Buch 2</A> 
 #
 # @author microelly
 # @warning works only on linux, writes to /tmp/log.txt
