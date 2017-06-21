@@ -1,4 +1,4 @@
-''' ausgabe von programmablaufinformationen, importieren der wichtigsten module'''
+'''ausgabe von programmablaufinformationen, importieren der wichtigsten module'''
 # -*- coding: utf-8 -*-
 #-------------------------------------------------
 #-- (c) microelly 2017 v 0.4
@@ -76,9 +76,9 @@ def sayW(s):
 
 def errorDialog(msg):
 	''' pop up an error QMessageBox'''
-    diag = QtGui.QMessageBox(QtGui.QMessageBox.Critical,u"Error Message",msg )
-    diag.setWindowFlags(PySide.QtCore.Qt.WindowStaysOnTopHint)
-    diag.exec_()
+	diag = QtGui.QMessageBox(QtGui.QMessageBox.Critical,u"Error Message",msg )
+	diag.setWindowFlags(PySide.QtCore.Qt.WindowStaysOnTopHint)
+	diag.exec_()
 
 
 def sayexc(mess=''):

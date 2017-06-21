@@ -1,10 +1,12 @@
+'''create a shoe rib for shoeAdam'''
+# -*- coding: utf-8 -*-
+#-------------------------------------------------
+#-- (c) microelly 2017 v 0.1
+#-- GNU Lesser General Public License (LGPL)
+#-------------------------------------------------
 
-import FreeCADGui as Gui
-import FreeCAD,Part,Sketcher
-App=FreeCAD
-
-import Draft
-import numpy as np
+from say import * 
+import Sketcher
 
 
 '''
@@ -13,8 +15,16 @@ App.ActiveDocument.Sketch.modifyBSplineKnotMultiplicity(7,3,1)
 App.ActiveDocument.Sketch.exposeInternalGeometry(6)
 App.ActiveDocument.Sketch.modifyBSplineKnotMultiplicity(6,3,-1) 
 '''
+## create a special ful constrainted Sketcher Bspline
+#
+# @param name of the rib
+# @param moves post creation movement of the points inside the sketch(deactivated) 
+# @param box 4 parameters for the bounding box
+# @param zoff offset of the sketch in z-direction 
+
 
 def run(name='ribbow',moves=[],box=[40,0,-40,30],zoff=0):
+	'''creates a shoe rib '''
 
 	debug=True
 	debug=False
@@ -242,12 +252,13 @@ def run(name='ribbow',moves=[],box=[40,0,-40,30],zoff=0):
 
 
 def test():
+	'''creat some ribs'''
 
 	sk1=run("rib1",[[8,0,0],[0,0,120],[4,120,-10],[12,-130,0]])
 	sk2=run("rib2",[[8,0,0],[0,0,150],[4,70,10],[12,-90,100]])
+	target=run("rib3",[],[40,-10,-40,30])
+
 
 
 if  __name__ == '__main__':
-
-	target=run("rib3",[],[40,-10,-40,30])
 	test()

@@ -1,14 +1,24 @@
-'''shoe configuration data
-@version 0.92
-@author microelly
-'''
-
+'''shoe configuration data'''
+# version 0.92
+# (c) microelly
+#
 
 print "shoedata version 0.92"
 
-class shoeAdam():
-	''' the first shoe model a'''
+## shoeAdam ist das erste Schuh-Modell
+#
+# es benutzt eine Erweiterung der Methoden der Needle-Klasse
+# bei den einzelnen Rippen handelt es sich um parametrische Varianten einer Sketcher-BSpline
+#
+# Backbone, Twister und Scaler werden wie bei Needle verwendet.
+#
+  
 
+class shoeAdam():
+	''' the first shoe model a
+	use shoeAdam.bbps, shoeAdam.boxes, shoeAdam.twister, shoeAdam.sc '''
+
+##\cond
 
 	# backbone (red line)
 	bbps=[ 
@@ -53,7 +63,7 @@ class shoeAdam():
 			[1,0,-1,94], # abschluss hinten
 		]
 
-##\cond
+
 	# rotations and scaling
 	#twister= [[0,0,0]]*4 + [[0,30,0]]*4 + [[0,25,0]] + [[0,20,0]]+ [[0,10,0]]*4
 

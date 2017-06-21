@@ -370,12 +370,14 @@ static char * nurbs_xpm[] = {
 		return "Gui::PythonWorkbench"
 
 	def Initialize(self):
-		
+
+		Gui.activateWorkbench("DraftWorkbench")
+
 		cmds= ['Nurbs_ZebraTool','Nurbs_DraftBSpline Editor',
 		'Nurbs_Create Shoe','Nurbs_Create Sole','Nurbs_Sole Change Model',
 		'Nurbs_scanbackbonecut','Nurbs_createsketchspline','Nurbs_Curves to Face', 'Nurbs_facedraw',
 		'Nurbs_createcloverleaf',
-		'Part_Cone', 'Part_Cylinder','Draft_Move','Draft_Rotate','Draft_Point']
+		'Part_Cone', 'Part_Cylinder','Draft_Move','Draft_Rotate','Draft_Point','Draft_ToggleGrid']
 
 		if 1:
 			self.appendToolbar("Nurbs", cmds )

@@ -1,13 +1,11 @@
+'''create a segment of s bspline surface'''
+
 # -*- coding: utf-8 -*-
-#-------------------------------------------------
-#-- create a segemt of s bspline surface
-#--
 #-- microelly 2017 v 0.1
-#--
 #-- GNU Lesser General Public License (LGPL)
-#-------------------------------------------------
 
 
+##\cond
 import FreeCAD
 import FreeCADGui
 App = FreeCAD
@@ -15,7 +13,6 @@ Gui = FreeCADGui
 
 import Part
 import numpy as np
-
 
 
 class PartFeature:
@@ -50,15 +47,17 @@ class ViewProvider:
 
 	def __setstate__(self, state):
 		return None
+##\endcond
 
-
+## Segment eines BSpline als parametrisches Part::FeaturePython
 
 class Segment(PartFeature):
-	'''segment einer bspline  flaeche oder kurve
+	'''Segment einer bspline Flaeche oder Kurve
 	Einschraenkung:
-	es wird die erste flaeche Face1 bzw. die erste Kante Edge1 verarbeitet
+	es wird die erste Flaeche Face1 bzw. die erste Kante Edge1 verarbeitet
 	'''
 
+	##\cond
 	def __init__(self, obj):
 		PartFeature.__init__(self, obj)
 
@@ -74,9 +73,13 @@ class Segment(PartFeature):
 
 		self.obj2=obj
 		ViewProvider(obj.ViewObject)
+	##\endcond
 
-
-	def execute(proxy, obj):
+	## Die Properties umin, umax, vmin, vmax werden als Nummern der begrenzenden Knoten interpretiert
+	# 
+	#
+	
+	def execute(self, obj):
 
 		if  len(obj.source.Shape.Faces) >= 1:
 			face=obj.source.Shape.Face1
@@ -97,8 +100,8 @@ class Segment(PartFeature):
 
 
 def createSegment(name="MySegment"):
-	''' erzeugt ein segment aus der source Flaeche oder Kurve
-	Segmente sind nur fuer die gegebenen Knoten mieglich
+	'''erzeugt ein Segment aus der source Flaeche oder Kurve
+	Segmente sind nur fuer die gegebenen Knoten moeglich
 	umin, ... vmax: Eingabe der Knotennummer
 	'''
 
@@ -108,9 +111,12 @@ def createSegment(name="MySegment"):
 	return ffobj
 
 
-class NurbsTrafo(PartFeature):
-	'''rotieren des pole-array, um naht zu verschieben'''
+## Modifikation eines BSpline als parametrisches Part::FeaturePython
 
+class NurbsTrafo(PartFeature):
+	'''Rotieren des Pole-array, um die Naht zu verschieben'''
+
+	##\cond
 	def __init__(self, obj):
 		PartFeature.__init__(self, obj)
 
@@ -126,14 +132,13 @@ class NurbsTrafo(PartFeature):
 		obj.vmax=-1
 		self.obj2=obj
 		ViewProvider(obj.ViewObject)
-
+	##\endcond
 
 	def execute(proxy, obj):
+		''' rotiert die Pole '''
 		if  len(obj.source.Shape.Faces) >= 1:
 			face=obj.source.Shape.Face1
 			bs=face.Surface.copy()
-
-
 
 			poles=bs.getPoles()
 			ku=bs.getUKnots()
@@ -144,8 +149,8 @@ class NurbsTrafo(PartFeature):
 			perV=bs.isVPeriodic()
 
 			k=obj.start
-			if not bs.isVPeriodic():
-				print "nicht vperiodic - kann nichts tun - Abbruch"
+#			if not bs.isVPeriodic():
+#				print "nicht vperiodic - kann nichts tun - Abbruch"
 #				return
 
 			if obj.swapaxes:
@@ -193,7 +198,7 @@ def createNurbsTrafo(name="MyNurbsTafo"):
 	NurbsTrafo(ffobj)
 	return ffobj
 
-
+## Feines Segment eines BSpline als parametrisches Part::FeaturePython
 
 class FineSegment(PartFeature):
 	''' erzeugt ein feines Segment, dass feienr ist als die normale Segmentierung des nurbs
@@ -201,6 +206,7 @@ class FineSegment(PartFeature):
 	die Zahlen umin, ... vmax sind ganzzahlige Anteile von factor
 	'''
 
+	##\cond
 	def __init__(self, obj):
 		PartFeature.__init__(self, obj)
 
@@ -220,14 +226,23 @@ class FineSegment(PartFeature):
 
 		self.obj2=obj
 		ViewProvider(obj.ViewObject)
+	##\endcond
 
+#	def execute(proxy, obj):
+#		pass
 
-	def execute(proxy, obj):
-		pass
+	## Die Properties umin, umax, vmin, vmax werden durch factor geteilt
+	# und dann als der begrenzenden Knoten interpretiert
+	#
+	# FineSegment kann bei einem grossen wert von *factor* sehr genau zuschneiden
+	#
+
 
 	def onChanged(self, obj, prop):
 		if prop in ["vmin","vmax","umin","umax","source"]:
-			
+
+			if obj.source == None: return
+
 			face=obj.source.Shape.Face1
 			bs=face.Surface.copy()
 #			bs.setUNotPeriodic()
@@ -283,15 +298,14 @@ class FineSegment(PartFeature):
 def createFineSegment(name="MyFineSegment"):
 	''' erzeugt ein FineSegment Objekt '''
 
-	ffobj = FreeCAD.activeDocument().addObject(
-		"Part::FeaturePython", name)
+	ffobj = FreeCAD.activeDocument().addObject("Part::FeaturePython", name)
 	FineSegment(ffobj)
 	return ffobj
 
 
 
 def runsegment():
-	'''anwendungsfall fuer die selection wird ein segment erzeugt'''
+	'''Anwendungsfall fuer die Gui.Selection wird ein Segment erzeugt'''
 
 	source=None
 	if len( Gui.Selection.getSelection())<>0:
@@ -302,7 +316,7 @@ def runsegment():
 	sm.umin=2
 
 def runfinesegment():
-	'''anwendungsfall fuer die selection wird ein segment erzeugt'''
+	'''Anwendungsfall fuer die Gui.Selection wird ein FineSegement erzeugt'''
 
 	source=None
 	if len( Gui.Selection.getSelection())<>0:
@@ -311,7 +325,7 @@ def runfinesegment():
 	s.source=source
 
 def runnurbstrafo():
-	'''anwendungsfall fuer die selection wird ein segment erzeugt'''
+	'''Anwendungsfall fuer die Gui.Selection wird ein NurbsTrafo erzeugt'''
 
 	source=None
 	if len( Gui.Selection.getSelection())<>0:
@@ -322,7 +336,7 @@ def runnurbstrafo():
 
 
 
-
+##\cond
 if __name__ == '__main__':
 
 #	sm=createSegment()
@@ -339,5 +353,5 @@ if __name__ == '__main__':
 
 
 
-
+##\endcond
 
