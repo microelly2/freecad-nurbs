@@ -5,6 +5,7 @@ the model can be selected by the listModels method
 
 import numpy as np
 
+## the basic model
 
 class model():
 	''' basic sole model '''
@@ -39,6 +40,8 @@ class model():
 		self.info='a generic model'
 	##\endcond
 
+## breite Sohle
+
 class modelA(model):
 	''' breite sohle '''
 	##\cond
@@ -50,6 +53,9 @@ class modelA(model):
 		self.tt=[[[5,35,14],[5,28,h],[10,14,h],[10,0,h],[10,-15,h],[5,-15,h],[5,-20,14]]]
 		self.info='breit'
 	##\endcond
+
+
+## Spitze
 
 class modelB(model):
 	''' vorn spitz'''
@@ -98,17 +104,9 @@ def listModels(silent=False):
 
 
 
-
-
-
-
-
-if __name__=='__main__':
-
-
+def test():
+	'''testcase'''
 	listModels()
-
-	# testcase
 
 	class modelY(modelA):
 		pass
@@ -118,4 +116,6 @@ if __name__=='__main__':
 	nurbswb.sole.runA(model=modelY)
 
 
+if __name__=='__main__':
+	test()
 

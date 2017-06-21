@@ -15,12 +15,15 @@ App.ActiveDocument.Sketch.modifyBSplineKnotMultiplicity(7,3,1)
 App.ActiveDocument.Sketch.exposeInternalGeometry(6)
 App.ActiveDocument.Sketch.modifyBSplineKnotMultiplicity(6,3,-1) 
 '''
+
 ## create a special ful constrainted Sketcher Bspline
 #
 # @param name of the rib
 # @param moves post creation movement of the points inside the sketch(deactivated) 
 # @param box 4 parameters for the bounding box
 # @param zoff offset of the sketch in z-direction 
+#
+#.
 
 
 def run(name='ribbow',moves=[],box=[40,0,-40,30],zoff=0):
@@ -46,57 +49,47 @@ def run(name='ribbow',moves=[],box=[40,0,-40,30],zoff=0):
 
 	App.activeDocument().recompute()
 
+	#create a regular naz-gon
 	anz=16
 	r=50
 	pts= [FreeCAD.Vector(r*np.sin(2*np.pi/anz*i),r*np.cos(2*np.pi/anz*i)+50,0) for i in range(anz)]
 
+	#create the helper circles for the bspline curve
 	for i,p in enumerate(pts):
 		sk.addGeometry(Part.Circle(App.Vector(int(round(p.x)),int(round(p.y)),0),App.Vector(0,0,1),10),True)
-		if 0:
-			#if i == 1: sk.addConstraint(Sketcher.Constraint('Radius',0,10.000000)) 
-			if i>0: sk.addConstraint(Sketcher.Constraint('Equal',0,i)) 
-		else:
-			radius=2.0
-			sk.addConstraint(Sketcher.Constraint('Radius',i,radius)) 
-			sk.renameConstraint(i, 'Weight ' +str(i+1))
-
+		radius=2.0
+		sk.addConstraint(Sketcher.Constraint('Radius',i,radius)) 
+		sk.renameConstraint(i, 'Weight ' +str(i+1))
 
 	k=i+1
 	l=[App.Vector(int(round(p.x)),int(round(p.y))) for p in pts]
 
-
-	if 0:
-		# open spline
-		ll=sk.addGeometry(Part.BSplineCurve(l,False),False)
-	else:
-		# periodic spline
-		#sk.addGeometry(Part.BSplineCurve(l,True),False)
+	#create the spline
+	if 0: # open spline
+		ll=sk.addGeometry(Part.BSplineCurve(l,None,None,False,3,None,False),False)
+	else: # periodic spline
 		ll=sk.addGeometry(Part.BSplineCurve(l,None,None,True,3,None,False),False)
 
-		if debug:
-			sk.toggleConstruction(ll) 
 
-
+	#connect the poles to the spline
 	conList = []
 	for i,p in enumerate(pts):
 		conList.append(Sketcher.Constraint('InternalAlignment:Sketcher::BSplineControlPoint',i,3,k,i))
 	sk.addConstraint(conList)
 	App.activeDocument().recompute()
 
+	# connect the points for easier access in edit mode drag/drop for lines
 	for p in range (0,anz):
 		ll=sk.addGeometry(Part.LineSegment(App.Vector(100+10*p,100+10*p,0),App.Vector(-100,-100,0)),False)
-
-		if not debug:
-			sk.toggleConstruction(ll) 
-
 		sk.addConstraint(Sketcher.Constraint('Coincident',p,3,ll,1)) 
 		App.ActiveDocument.recompute()
+
 		if p==anz-1: p=-1
+
 		sk.addConstraint(Sketcher.Constraint('Coincident',p+1,3,ll,2)) 
 		App.ActiveDocument.recompute()
 
 	sk.addConstraint(Sketcher.Constraint('Parallel',32,17)) 
-
 	sk.addConstraint(Sketcher.Constraint('Parallel',20,21)) 
 
 	sk.addConstraint(Sketcher.Constraint('Parallel',23,24)) 
@@ -124,76 +117,44 @@ def run(name='ribbow',moves=[],box=[40,0,-40,30],zoff=0):
 		sk.renameConstraint(d, u'angleLeft')
 
 	# symmetrische Ecken
-	#sk.addConstraint(Sketcher.Constraint('Equal',21,20)) 
 	sk.addConstraint(Sketcher.Constraint('Symmetric',5,3,3,3,4,3))
-	
-	#sk.addConstraint(Sketcher.Constraint('Equal',28,29)) 
 	sk.addConstraint(Sketcher.Constraint('Symmetric',11,3,13,3,12,3))
-	
-	#sk.addConstraint(Sketcher.Constraint('Equal',32,17)) 
-	## sk.addConstraint(Sketcher.Constraint('Symmetric',1,3,15,3,0,3))
-
-	#sk.addConstraint(Sketcher.Constraint('Equal',23,26)) 
-	## sk.addConstraint(Sketcher.Constraint('Symmetric',6,3,10,3,8,3))
-
-#	sk.addConstraint(Sketcher.Constraint('Symmetric',25,2,24,1,24,2))
-
 	App.activeDocument().recompute()
-	Gui.SendMsgToActiveView("ViewFit")
 
-	dd=30
+
 	dd=5
 	[r,b,l,t]=box
-
-
 
 	if min(r,-l)<dd:
 		dd=min(r,-l)*0.4
 
-	if r== 10: dd=1
+	if r== 10: dd=1 #hack for the first rib
 
-
-	# dd=3
 	dtb=dd # tangent Bottom
-	
-	# dd=2
-	#d=sk.addConstraint(Sketcher.Constraint('Distance',20,dd)) 
+
 	d=sk.addConstraint(Sketcher.Constraint('DistanceY',4,3,3,3,dd)) 
 	sk.renameConstraint(d, u'tangentRight')
-	
-	#d=sk.addConstraint(Sketcher.Constraint('Distance',23,15)) 
 	d=sk.addConstraint(Sketcher.Constraint('DistanceX',7,3,6,3,dtb)) 
 	sk.renameConstraint(d, u'tangentBottom')
 	d=sk.addConstraint(Sketcher.Constraint('DistanceX',10,3,9,3,dtb)) 
 	sk.renameConstraint(d, u'tangentBottomB')
-
-
-
-	#d=sk.addConstraint(Sketcher.Constraint('Distance',25,dd)) 
 	d=sk.addConstraint(Sketcher.Constraint('DistanceX',8,3,7,3,dd)) 
 	sk.renameConstraint(d, u'WidthBottomA')
 	d=sk.addConstraint(Sketcher.Constraint('DistanceX',9,3,8,3,dd)) 
 	sk.renameConstraint(d, u'WidthBottomB')
-
-
-	#d=sk.addConstraint(Sketcher.Constraint('Distance',28,dd)) 
 	d=sk.addConstraint(Sketcher.Constraint('DistanceY',11,3,12,3,dd)) 
-
 	sk.renameConstraint(d, u'tangentLeft')
-	#d=sk.addConstraint(Sketcher.Constraint('Distance',32,dd)) 
 	d=sk.addConstraint(Sketcher.Constraint('DistanceX',0,3,1,3,dd)) 
 	sk.renameConstraint(d, u'tangentTop')
 	d=sk.addConstraint(Sketcher.Constraint('DistanceX',15,3,0,3,dd)) 
 	sk.renameConstraint(d, u'tangentTopB')
 
-
-
-
 	if r+l<-10:
-		print "verletzung --------------createshoerib zeile 172---- r+l",r+l
-		# r += 10
+		print "verletzung --------------createshoerib zeile 152---- r+l",r+l
 		print r+l
 
+
+	#move the main points to the right position
 	sk.movePoint(0,0,App.Vector(0,t,0),0)
 
 	d=sk.addConstraint(Sketcher.Constraint('DistanceX',0,3,0)) 

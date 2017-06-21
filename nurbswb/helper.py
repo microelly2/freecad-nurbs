@@ -1,14 +1,12 @@
-'''
-create some helper parts like the facebinder
+'''create some helper parts like the facebinder
 for nurbs surfaces
 modes are ["poleGrid","isoGrid","Surface"]
-
 '''
 
 
 from say import *
 
-
+##\cond
 class PartFeature:
 	def __init__(self, obj):
 		obj.Proxy = self
@@ -27,9 +25,14 @@ class PartFeature:
 
 	def __setstate__(self,state):
 		return None
+##\endcond
 
+## The Helper can display a Poles Gird, iso-Curve Grid or single isocurves as parametric Part::FeaturePython objects
+ 
 
 class Helper(PartFeature):
+
+	##\cond
 	def __init__(self, obj,uc=5,vc=5):
 		PartFeature.__init__(self, obj)
 
@@ -42,30 +45,28 @@ class Helper(PartFeature):
 
 
 	def attach(self,vobj):
-		print "attach -------------------------------------"
 		self.Object = vobj.Object
-#		self.obj2 = vobj.Object
 
+	##\endcond
 
 	def execute(self, fp):
-		#say("execute yy")
+		'''call VO.Proxy.updataData'''
 		fp.ViewObject.Proxy.updateData(fp,"Execute")
-		pass
 
 
-	def onChanged(self, fp, prop):
-		pass
-		# print "changed ",prop
+#	def onChanged(self, fp, prop):
+#		pass
 
-	def onDocumentRestored(self, fp):
-		say(["onDocumentRestored",str(fp.Label)+ ": "+str(fp.Proxy.__class__.__name__)])
+#	def onDocumentRestored(self, fp):
+#		say(["onDocumentRestored",str(fp.Label)+ ": "+str(fp.Proxy.__class__.__name__)])
 
 	def create_knotes_shape2(self):
-		#bs=self.obj2.source.Proxy.getBS()
-		print "obj2",self.obj2
+		'''create a grid of iso curves '''
+#		#bs=self.obj2.source.Proxy.getBS()
+#		print "obj2",self.obj2
 		bs=self.obj2.source.Shape.Face1.Surface
-		print "bs",bs
-		#shape=nurbswb.helper.create_knotes_shape(None,bs)
+#		print "bs",bs
+#		#shape=nurbswb.helper.create_knotes_shape(None,bs)
 
 		uk=bs.getUKnots()
 		vk=bs.getVKnots()
@@ -99,6 +100,8 @@ class Helper(PartFeature):
 		return comp
 
 	def create_curve(self):
+		'''create a single isoCurve'''
+
 		fp=self.obj2
 		bs=self.obj2.source.Shape.Face1.Surface
 		if fp.factor == 0.0:
@@ -123,10 +126,14 @@ class Helper(PartFeature):
 
 
 
-
+## The ViewProviderHelper uses updateData to recreate the shape 
 
 
 class ViewProviderHelper:
+
+	##\cond
+
+
 	def __init__(self, obj):
 		obj.Proxy = self
 		self.Object=obj
@@ -137,7 +144,71 @@ class ViewProviderHelper:
 		self.Object = obj
 		return
 
+
+	def onChanged(self, vp, prop):
+		# print "VO changed ",prop
+		pass
+
+	def showVersion(self):
+		cl=self.Object.Proxy.__class__.__name__
+		PySide.QtGui.QMessageBox.information(None, "About ", "Nurbs"  +"\nVersion 0.0"  )
+
+
+	def setupContextMenu(self, obj, menu):
+		cl=self.Object.Proxy.__class__.__name__
+		action = menu.addAction("About " + cl)
+		action.triggered.connect(self.showVersion)
+
+		action = menu.addAction("Edit ...")
+		action.triggered.connect(self.edit)
+
+	#		for m in self.cmenu + self.anims():
+	#			action = menu.addAction(m[0])
+	#			action.triggered.connect(m[1])
+
+
+
+	def __getstate__(self):
+		return None
+
+	def __setstate__(self,state):
+		return None
+
+	##\endcond
+
+	def getIcon(self):
+		'''symbol for the helper'''
+
+		return """
+			/* XPM */
+			static const char * ViewProviderNurbs_xpm[] = {
+			"16 16 6 1",
+			" 	c None",
+			".	c #141010",
+			"+	c #615BD2",
+			"@	c #C39D55",
+			"#	c #000000",
+			"$	c #57C355",
+			"        ........",
+			"   ......++..+..",
+			"   .@@@@.++..++.",
+			"   .@@@@.++..++.",
+			"   .@@  .++++++.",
+			"  ..@@  .++..++.",
+			"###@@@@ .++..++.",
+			"##$.@@$#.++++++.",
+			"#$#$.$$$........",
+			"#$$#######      ",
+			"#$$#$$$$$#      ",
+			"#$$#$$$$$#      ",
+			"#$$#$$$$$#      ",
+			" #$#$$$$$#      ",
+			"  ##$$$$$#      ",
+			"   #######      "};
+			"""
+
 	def updateData(self, fp, prop):
+		'''update the shape'''
 		if prop == "Shape": return
 		if prop == "Placement": return
 		pm=fp.Placement
@@ -171,64 +242,6 @@ class ViewProviderHelper:
 		return
 
 
-	def onChanged(self, vp, prop):
-		# print "VO changed ",prop
-		pass
-
-	def showVersion(self):
-		cl=self.Object.Proxy.__class__.__name__
-		PySide.QtGui.QMessageBox.information(None, "About ", "Nurbs"  +"\nVersion 0.0"  )
-
-
-	def setupContextMenu(self, obj, menu):
-		cl=self.Object.Proxy.__class__.__name__
-		action = menu.addAction("About " + cl)
-		action.triggered.connect(self.showVersion)
-
-		action = menu.addAction("Edit ...")
-		action.triggered.connect(self.edit)
-
-#		for m in self.cmenu + self.anims():
-#			action = menu.addAction(m[0])
-#			action.triggered.connect(m[1])
-
-	def getIcon(self):
-
-		return """
-			/* XPM */
-			static const char * ViewProviderNurbs_xpm[] = {
-			"16 16 6 1",
-			" 	c None",
-			".	c #141010",
-			"+	c #615BD2",
-			"@	c #C39D55",
-			"#	c #000000",
-			"$	c #57C355",
-			"        ........",
-			"   ......++..+..",
-			"   .@@@@.++..++.",
-			"   .@@@@.++..++.",
-			"   .@@  .++++++.",
-			"  ..@@  .++..++.",
-			"###@@@@ .++..++.",
-			"##$.@@$#.++++++.",
-			"#$#$.$$$........",
-			"#$$#######      ",
-			"#$$#$$$$$#      ",
-			"#$$#$$$$$#      ",
-			"#$$#$$$$$#      ",
-			" #$#$$$$$#      ",
-			"  ##$$$$$#      ",
-			"   #######      "};
-			"""
-
-	def __getstate__(self):
-		return None
-
-	def __setstate__(self,state):
-		return None
-
-
 
 def makeHelper():
 	''' creates a Helper object as Part::FeaturePython
@@ -243,64 +256,6 @@ def makeHelper():
 	return a
 
 
-
-
-
-
-def create_subface_shape(self,bs,umin,umax,vmin,vmax):
-	'''creates a pole grid for a subset of the poles
-	umin, umax, vmin, vmax are the indexes for the poles
-	the result is a Part.Compound of curves trouhg the poles
-	'''
-	uk=bs.getUKnots()
-	vk=bs.getVKnots()
-
-	sss=[]
-
-	for iu in uk[umin:umax+1]:
-		pps=[]
-		for iv in vk[vmin:vmax+1]:
-			p=bs.value(iu,iv)
-			pps.append(p)
-		tt=Part.BSplineCurve()
-		tt.interpolate(pps)
-		ss=tt.toShape()
-		sss.append(ss)
-
-	for iv in vk[vmin:vmax+1]:
-		pps=[]
-		for iu in uk[umin:umax+1]:
-			p=bs.value(iu,iv)
-			pps.append(p)
-		tt=Part.BSplineCurve()
-		tt.interpolate(pps)
-		ss=tt.toShape()
-		sss.append(ss)
-
-	comp=Part.Compound(sss)
-	return comp
-
-
-
-
-
-
-def split_shape(self,bs,umin,umax,vmin,vmax):
-	'''creates a segment for the bspline surface bs
-	umin, umax, vmin, vmax are the indexes for the knots
-	'''
-
-	uk=bs.getUKnots()
-	vk=bs.getVKnots()
-
-	print (len(uk),len(vk))
-	tt=bs.copy()
-	tt.segment(uk[umin],uk[umax],vk[vmin],vk[vmax])
-
-	sha=tt.toShape()
-	return tt,sha
-
-
 def makeHelperSel():
 	''' creates a helper of mode "isoGrid" for the Gui-selected objects'''
 	for obj in Gui.Selection.getSelection():
@@ -308,8 +263,6 @@ def makeHelperSel():
 		h.source=obj
 		h.mode="isoGrid"
 		h.Placement.Base.x=2400
-
-
 
 
 
@@ -326,36 +279,22 @@ def runtest():
 		pass
 
 	import nurbswb.nurbs
-	# nurbswb.nurbs.runtest()
 	nurbswb.nurbs.testRandomB()
-	
 
 	hp=makeHelper()
-	sayErr("created")
-	# hp.source=App.ActiveDocument.Box
 	hp.source=App.ActiveDocument.Nurbs
 	hp.Label="Helper Surface"
-	
-	sayErr("source changed")
 	hp.mode="Surface"
 	hp.Placement.Base.x=1200
 
 	hp2=makeHelper()
-	sayErr("created")
-	# hp.source=App.ActiveDocument.Box
 	hp2.source=App.ActiveDocument.Nurbs
-	
-	sayErr("source changed")
 	hp2.mode="isoGrid"
 	hp2.Placement.Base.x=2400
 	hp2.Label="Helper isoGrid"
 
 	hp3=makeHelper()
-	sayErr("created")
-	# hp.source=App.ActiveDocument.Box
 	hp3.source=App.ActiveDocument.Nurbs
-	
-	sayErr("source changed")
 	hp3.mode="poleGrid"
 	hp3.Placement.Base.x=3600
 	hp3.Label="Helper poleGrid"
@@ -363,55 +302,15 @@ def runtest():
 	Gui.activeDocument().activeView().viewAxonometric()
 	Gui.SendMsgToActiveView("ViewFit")
 
-
-	if 0:
-		bs=hp.source.Proxy.bs
-		shape=create_knotes_shape(None,bs)
-
-		hp.Shape=shape
-		hp.Placement.Base.x=1200
-
-
-		shape=create_subface_shape(None,bs,0,11,0,17)
-
-		hp2.Shape=shape
-		hp2.Placement.Base.x=2400
-
-
-
-
-		tt1, shape1=split_shape(None,bs,0,7,0,8)
-		tt2, shape2=split_shape(None,bs,0,-1,9,-1)
-
-
-		hp3.Shape=comp=Part.Compound([shape1,shape2])
-		hp3.Placement.Base.x=3600
-
-
-
-		shape1=create_knotes_shape(None,tt1)
-		shape2=create_knotes_shape(None,tt2)
-		hp3.Shape=comp=Part.Compound([shape1,shape2])
-		hp3.Placement.Base.x=3600
-
-
-
-
 	hp4=makeHelper()
-	sayErr("created")
-	# hp.source=App.ActiveDocument.Box
 	hp4.source=App.ActiveDocument.Nurbs
-	# hp4.Placement.Base.z=100
 	hp4.Label="Helper isoCurve U"
 	hp4.factor=0
 	hp4.mode="uIso"
 	hp4.param=3
 
 	hp5=makeHelper()
-	sayErr("created")
-	# hp.source=App.ActiveDocument.Box
 	hp5.source=App.ActiveDocument.Nurbs
-	# hp4.Placement.Base.z=100
 	hp5.Label="Helper isoCurve V"
 	hp5.factor=0
 	hp5.mode="vIso"

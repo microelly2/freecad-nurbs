@@ -20,7 +20,9 @@ import nurbswb.spreadsheet_lib
 reload (nurbswb.spreadsheet_lib)
 from nurbswb.spreadsheet_lib import ssa2npa, npa2ssa, cellname
 
-from nurbswb.errors import showdialog 
+# from nurbswb.errors import showdialog 
+
+from nurbswb.say import *
 
 def runA():
 
