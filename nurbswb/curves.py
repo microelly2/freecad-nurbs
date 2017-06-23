@@ -133,6 +133,37 @@ def runOffsetSpline(name="MyOffSp"):
 # 
 #
 
+
+import numpy as np
+
+# finde Kanten
+
+
+def dirs(obj,vn):
+
+	print ("dirs",obj.Label)
+	p=obj.Shape.Vertexes[vn].Point
+	rc=[]
+	for e in obj.Shape.Edges:
+		if e.Vertexes[0].Point == p:
+			t=e.tangentAt(0)
+			dire=np.arctan2(t.y,t.x)
+			print ("startpoint", dire *180.0/np.pi)
+			rc.append(np.pi+dire)
+		if len(e.Vertexes)>1 and  e.Vertexes[1].Point == p:
+			t=e.tangentAt(1)
+			dire=np.arctan2(t.y,t.x)
+			print ("endpoint", dire *180.0/np.pi)
+			rc.append(dire)
+
+	return rc
+
+#obj=App.ActiveDocument.MyStar
+#rc=dirs(obj,2)
+
+print rc
+import time
+
 class Star(nurbswb.pyob.FeaturePython):
 	'''Sketch Object with Python''' 
 
@@ -149,23 +180,38 @@ class Star(nurbswb.pyob.FeaturePython):
 	def onChanged(proxy,obj,prop):
 		'''run myExecute for property prop: relativePosition and vertexNumber'''
 
-		if prop in ["relativePosition","vertexNumber"]: 
+		if prop in ["parent","relativePosition","VertexNumber","tangentCond","tangentInverse","tangentCond"]: 
 			proxy.myExecute(obj)
 
 
 	def myExecute(proxy,obj):
 		''' positon to parent'''
 
-		print obj.parent
-		print obj.relativePosition
+		print ("myExecute",time.time())
+
 		if obj.parent == None: return
+
+		relpos=FreeCAD.Placement(obj.relativePosition)
+		
+		if obj.tangentCond <>0 and obj.VertexNumber <> 0:
+			rc=dirs(obj.parent,obj.VertexNumber-1)
+			
+			if obj.tangentCond > len(rc): obj.tangentCond =len(rc)
+			if obj.tangentCond < 0: obj.tangentCond = 0
+
+			print "genutzer Winkel ", rc[obj.tangentCond-1] *180/np.pi
+			if obj.tangentInverse:
+				relpos.Rotation.Angle += np.pi + rc[obj.tangentCond-1]
+			else:
+				relpos.Rotation.Angle += rc[obj.tangentCond-1]
+
+
 		if obj.VertexNumber==0:
 			pos=obj.parent.Placement
 		else:
 			pos=FreeCAD.Placement(obj.parent.Shape.Vertexes[obj.VertexNumber-1].Point,FreeCAD.Rotation())
-		obj.Placement=obj.relativePosition.multiply(pos)
-		obj.Placement=pos.multiply(obj.relativePosition)
-		print "replaced"
+
+		obj.Placement=pos.multiply(relpos)
 
 
 ##\cond
@@ -185,41 +231,53 @@ def runStar(name="MyStar"):
 
 
 	obj = FreeCAD.ActiveDocument.addObject("Sketcher::SketchObjectPython",name)
-	obj.addProperty("App::PropertyInteger", "VertexNumber", "Base", "end").VertexNumber=0
-	obj.addProperty("App::PropertyLink", "parent", "Base", "end")
-	obj.addProperty("App::PropertyPlacement", "relativePosition", "Base", "end")
+	obj.addProperty("App::PropertyInteger", "VertexNumber", "Parent", ).VertexNumber=0
+	obj.addProperty("App::PropertyInteger", "tangentCond", "Parent", )
+	obj.addProperty("App::PropertyBool", "tangentInverse", "Parent", )
+	obj.addProperty("App::PropertyLink", "parent", "Parent", )
+	obj.addProperty("App::PropertyPlacement", "relativePosition", "Parent", )
 
 	# add some data
-	obj.addGeometry(Part.LineSegment(App.Vector(0.000000,0.000000,0),App.Vector(100.,150.,0)),False)
+	obj.addGeometry(Part.LineSegment(App.Vector(0.000000,0.000000,0),App.Vector(100.,0.,0)),False)
 	obj.addConstraint(Sketcher.Constraint('Coincident',-1,1,0,1)) 
 	App.ActiveDocument.recompute()
 	App.ActiveDocument.recompute()
 
-	obj.addGeometry(Part.LineSegment(App.Vector(100.,150,0),App.Vector(50.,256.,0)),False)
+	obj.addGeometry(Part.LineSegment(App.Vector(100.,0,0),App.Vector(200.,100.,0)),False)
 	obj.addConstraint(Sketcher.Constraint('Coincident',0,2,1,1)) 
 	App.ActiveDocument.recompute()
 	App.ActiveDocument.recompute()
 
-	obj.addGeometry(Part.LineSegment(App.Vector(50.,256.,0),App.Vector(134.,334.,0)),False)
+	obj.addGeometry(Part.LineSegment(App.Vector(200.,100.,0),App.Vector(200.,200.,0)),False)
 	obj.addConstraint(Sketcher.Constraint('Coincident',1,2,2,1)) 
 	App.ActiveDocument.recompute()
 	App.ActiveDocument.recompute()
 
 
-	obj.addGeometry(Part.LineSegment(App.Vector(100.,150,0),App.Vector(250.,-256.,0)),False)
+	obj.addGeometry(Part.LineSegment(App.Vector(100.,0,0),App.Vector(200.,-200.,0)),False)
 	obj.addConstraint(Sketcher.Constraint('Coincident',0,2,3,1)) 
 	App.ActiveDocument.recompute()
 	App.ActiveDocument.recompute()
 
-	obj.addGeometry(Part.LineSegment(App.Vector(250.,-256.,0),App.Vector(434.,-234.,0)),False)
+	obj.addGeometry(Part.LineSegment(App.Vector(200.,-200.,0),App.Vector(40.,-300.,0)),False)
 	obj.addConstraint(Sketcher.Constraint('Coincident',3,2,4,1)) 
 	App.ActiveDocument.recompute()
 	App.ActiveDocument.recompute()
 
 	Star(obj)
-	obj.ViewObject.LineColor=(random.random(),random.random(),random.random())
+	obj.ViewObject.LineColor=(0.5*random.random(),0.5*random.random(),0.5*random.random())
+	obj.ViewObject.PointColor=(1.0,0.,0.)
+	obj.ViewObject.PointSize=8
+	obj.ViewObject.LineWidth=4
+	
+	obj.addGeometry(Part.Circle(App.Vector(0.0,0.00,0),App.Vector(0,0,1),20),False)
+	App.ActiveDocument.MyStar004.addConstraint(Sketcher.Constraint('Coincident',5,3,-1,1)) 
+	App.ActiveDocument.recompute()
+	App.ActiveDocument.recompute()
 	App.activeDocument().recompute()
 	
+	obj.VertexNumber=3
+	#obj.parent=App.ActiveDocument.getObject('MyStar')
 
 	return obj
 
