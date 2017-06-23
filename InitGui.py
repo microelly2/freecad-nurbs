@@ -316,7 +316,8 @@ if FreeCAD.GuiUp:
 	c2a(["Curves"],ondocument,'knotsandpoles','knotsandpoles','display knots and poles for selected curves','/../icons/Loft.svg',"run()")
 	c2a(["Curves"],ondocument,'monitor','monitor','create a monitor for a curve length','/../icons/Loft.svg',"run()")
 	c2a(["Curves"],ondocument,'param_bspline','param_bspline','create a parametric bspline with tangents','/../icons/Loft.svg',"run()")
-
+	c2a(["Curves"],ondocument,'OffsetSpline','curves','create a Sketch for a OffsetSpline','/../icons/Loft.svg',"runOffsetSpline()")
+	c2a(["Curves"],ondocument,'Stare','curves','create a Sketch for a Star','/../icons/Loft.svg',"runStar()")
 
 
 

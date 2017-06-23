@@ -1,43 +1,13 @@
+'''convert a draft bspline to a sketcher bspline'''
 # -*- coding: utf-8 -*-
 #-------------------------------------------------
-#-- convert a draft bspline to a sketcher bspline
-#--
 #-- microelly 2017 v 0.1
-#--
 #-- GNU Lesser General Public License (LGPL)
 #-------------------------------------------------
 
-import random
+from say import *
 from scipy.signal import argrelextrema
-import numpy as np
-import matplotlib.pyplot as plt
-
-import Draft,Part,Sketcher
-import FreeCAD,FreeCADGui
-App=FreeCAD
-Gui=FreeCADGui
-
-from PySide import QtGui
-import sys,traceback,random
-
-
-def showdialog(title="Fehler",text="Schau in den ReportView fuer mehr Details",detail=None):
-	msg = QtGui.QMessageBox()
-	msg.setIcon(QtGui.QMessageBox.Warning)
-	msg.setText(text)
-	msg.setWindowTitle(title)
-	if detail<>None:   msg.setDetailedText(detail)
-	msg.exec_()
-
-
-def sayexc(title='Fehler',mess=''):
-	exc_type, exc_value, exc_traceback = sys.exc_info()
-	ttt=repr(traceback.format_exception(exc_type, exc_value,exc_traceback))
-	lls=eval(ttt)
-	l=len(lls)
-	l2=lls[(l-3):]
-	FreeCAD.Console.PrintError(mess + "\n" +"-->  ".join(l2))
-	showdialog(title,text=mess,detail="--> ".join(l2))
+import Sketcher
 
 
 def createSketchSpline(pts=None,label="BSpline Sketch",periodic=True):
@@ -66,19 +36,12 @@ def createSketchSpline(pts=None,label="BSpline Sketch",periodic=True):
 		#i=5; App.ActiveDocument.Sketch016.setDatum(i,40))
 
 	k=i+1
-
 	l=[App.Vector(int(round(p.x)),int(round(p.y))) for p in pts]
 
 	if not periodic:
-		# open spline
-#		sk.addGeometry(Part.BSplineCurve(l,False),False)
 		ll=sk.addGeometry(Part.BSplineCurve(l,None,None,False,3,None,False),False)
-
 	else:
-		# periodic spline
-#		sk.addGeometry(Part.BSplineCurve(l,True),False)
 		ll=sk.addGeometry(Part.BSplineCurve(l,None,None,True,3,None,False),False)
-
 
 	conList = []
 	for i,p in enumerate(pts):
@@ -96,18 +59,13 @@ def createSketchSpline(pts=None,label="BSpline Sketch",periodic=True):
 def runobj(obj,label=None):
 	''' erzeugt fuer ein objekt den SktchSpline'''
 
-	bc=obj.Shape.Edge1.Curve
-	pts=bc.getPoles()
-	l=obj.Label
-	print (l,len(pts))
-	sk=createSketchSpline(pts,str(l) + " Sketch" )
-	if label <>None:
-		sk.Label=label
+	sk=createSketchSpline(obj.Shape.Edge1.Curve.getPoles(),str(obj.Label) + " Sketch" )
+	if label <>None: sk.Label=label
 	return sk
 
 
 def run():
-	''' erzeugt fuer jedes selektierte Objekte  aus Edge1 einen Sketch'''
+	''' erzeugt fuer jedes selektierte Objekte aus Edge1 einen Sketch'''
 
 	if len( Gui.Selection.getSelection())==0:
 		showdialog('Oops','nothing selected - nothing to do for me','Plese select a Draft Bspline or Draft Wire')
@@ -121,4 +79,4 @@ def run():
 			periodic=bc.isPeriodic()
 			createSketchSpline(pts,str(l) + " Sketch" ,periodic)
 		except:
-			sayexc(title='Error',mess='somethinq wrong with ' + obj.Label)
+			sayexc2(title='Error',mess='somethinq wrong with ' + obj.Label)

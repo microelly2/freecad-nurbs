@@ -43,9 +43,11 @@ def run(name='ribbow',moves=[],box=[40,0,-40,30],zoff=0):
 	except:	body=App.activeDocument().addObject('PartDesign::Body','Body')
 
 	sk=App.activeDocument().addObject('Sketcher::SketchObject',name)
+	print "huhu"
+
 	sk.Placement.Base.z=zoff
 	sk.Label=label
-	sk.MapMode = 'FlatFace'
+#	sk.MapMode = 'FlatFace'
 
 	App.activeDocument().recompute()
 

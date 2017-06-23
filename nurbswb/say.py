@@ -39,6 +39,7 @@ import os,random,time,sys,traceback
 # @param[in] s String to log
 # @param[in] logon is logging on (False) 
 #
+# @image html plane.svg
 #
 # .
 

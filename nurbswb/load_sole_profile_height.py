@@ -1,6 +1,6 @@
 
 '''
-load height and lenght information for a sole from a sketcher file
+load height and length information for a sole from a sketcher file
 filename is 'User parameter:Plugins/shoe').GetString("height profile")
 the skeche contains exactly one bspline curve
 '''

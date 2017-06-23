@@ -15,7 +15,7 @@ import Part
 import numpy as np
 
 
-class PartFeature:
+class FeaturePython:
 	''' basic defs'''
 
 	def __init__(self, obj):
