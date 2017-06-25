@@ -4,13 +4,14 @@ from say import *
 
 Gui.ActiveDocument=None
 import FreeCAD
-try:
-	FreeCAD.open(u"/home/thomas/Schreibtisch/tt_offset_example.fcstd")
-	App.setActiveDocument("tt_offset_example")
-	App.ActiveDocument=App.getDocument("tt_offset_example")
-	Gui.ActiveDocument=Gui.getDocument("tt_offset_example")
-except:
-	pass
+if 0:
+	try:
+		FreeCAD.open(u"/home/thomas/Schreibtisch/tt_offset_example.fcstd")
+		App.setActiveDocument("tt_offset_example")
+		App.ActiveDocument=App.getDocument("tt_offset_example")
+		Gui.ActiveDocument=Gui.getDocument("tt_offset_example")
+	except:
+		pass
 
 import nurbswb.datatools
 reload (nurbswb.datatools)
