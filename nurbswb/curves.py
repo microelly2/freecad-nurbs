@@ -37,8 +37,7 @@ class _ViewProvider(nurbswb.pyob.ViewProvider):
 
 ##\endcond
 
-## more docu with 
-## for _Sketch (hier ist gelich ein Link auf _Sketch und run)
+## Two Offset curves for a Bspline definded by a Sketcher interpolation polygon
 
 class OffsetSpline(nurbswb.pyob.FeaturePython):
 	'''Sketch Object with Python''' 
@@ -161,8 +160,10 @@ def dirs(obj,vn):
 #obj=App.ActiveDocument.MyStar
 #rc=dirs(obj,2)
 
-print rc
+#print rc
 import time
+
+## A (topological) 2D tree with special connecting methods to combine trees to larger tree
 
 class Star(nurbswb.pyob.FeaturePython):
 	'''Sketch Object with Python''' 
@@ -271,7 +272,7 @@ def runStar(name="MyStar"):
 	obj.ViewObject.LineWidth=4
 	
 	obj.addGeometry(Part.Circle(App.Vector(0.0,0.00,0),App.Vector(0,0,1),20),False)
-	App.ActiveDocument.MyStar004.addConstraint(Sketcher.Constraint('Coincident',5,3,-1,1)) 
+	obj.addConstraint(Sketcher.Constraint('Coincident',5,3,-1,1)) 
 	App.ActiveDocument.recompute()
 	App.ActiveDocument.recompute()
 	App.activeDocument().recompute()

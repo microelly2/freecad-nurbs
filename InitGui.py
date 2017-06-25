@@ -318,6 +318,8 @@ if FreeCAD.GuiUp:
 	c2a(["Curves"],ondocument,'param_bspline','param_bspline','create a parametric bspline with tangents','/../icons/Loft.svg',"run()")
 	c2a(["Curves"],ondocument,'OffsetSpline','curves','create a Sketch for a OffsetSpline','/../icons/Loft.svg',"runOffsetSpline()")
 	c2a(["Curves"],ondocument,'Stare','curves','create a Sketch for a Star','/../icons/Loft.svg',"runStar()")
+	c2a(["Curves"],ondocument,'DynamicOffset','dynamicoffset','create a dynamic Offset','/../icons/Loft.svg',"run()")
+	c2a(["Curves"],ondocument,'FloatList','datatools','create a floatlist','/../icons/Loft.svg',"runFloatlist()")
 
 
 
