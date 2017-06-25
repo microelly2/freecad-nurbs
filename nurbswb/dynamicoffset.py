@@ -18,6 +18,14 @@ reload (nurbswb.datatools)
 
 import scipy.interpolate
 
+## some more on myupdate
+# calculates a scipy.interpolate.interp1d 
+# for the floatlist obj.datalist
+#
+# in debugmode the calculated shape contains wires for both curves and 
+# connecting lines beween corresponding points on all curves
+
+
 
 def myupdate(obj):
 	'''interpolate the obj.datalist to get the obj.Shape as BSpline'''
@@ -95,16 +103,31 @@ def myupdate(obj):
 from say import *
 import nurbswb.pyob
 
-## configurable offset
+## A configurable offset curve
 #
-# *Properties*
+# Properties
+# ----------
 #
 #  - **data** - link to a FloatList node
 #  - **curveO** - inner offset curve node 
 #  - **curveI** - outer offset curve node
 #  - **debug**  - displays some helping 2D information
 # 
+# Icon
+# ----
 # @image html plane.svg
+# Links
+# -----
+#
+#  - [Usage](http://freecadbuch.de/doku.php?id=nurbs:dynaoffset)
+#  - [Video](https://youtu.be/7wKXfh2fifY) (25.06.2017)<br>
+#  - [Git source](https://github.com/microelly2/freecad-nurbs/blob/master/nurbswb/dynamicoffset.py)
+#
+#  link run()
+#  link DynaOffset
+#  link DynaOffset.execute()
+#  link datatools.FloatList
+
 
 
 class DynaOffset(nurbswb.pyob.FeaturePython):
@@ -130,6 +153,7 @@ class DynaOffset(nurbswb.pyob.FeaturePython):
 
 
 	def execute(proxy,obj):
+		''' update curve'''
 		myupdate(obj)
 
 
@@ -147,12 +171,14 @@ def createDynaoffset(name="DynamicOffset"):
 	DynaOffset(obj)
 	return obj
 
-# method for workbench menu entry
+## method for workbench menu entry
 
 def run():
 	'''create a DynaOffset'''
 	createDynaoffset()
 
+
+#\cond
 if __name__=='__main__':
 
 	fl2=App.ActiveDocument.getObject("ParmeterList")
@@ -160,6 +186,6 @@ if __name__=='__main__':
 		fl2=nurbswb.datatools.createFloatlist("ParameterList")
 		fl2.val007=10
 
-
 	dof=createDynaoffset()
 	dof.data=fl2
+#\endcond

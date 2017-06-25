@@ -139,6 +139,9 @@ import numpy as np
 
 
 def dirs(obj,vn):
+	'''find directions of the edges in a shape obj.Shape
+	at vertex number vn
+	'''
 
 	print ("dirs",obj.Label)
 	p=obj.Shape.Vertexes[vn].Point
@@ -283,6 +286,7 @@ def runStar(name="MyStar"):
 	return obj
 
 
+## \cond
 if __name__=='__main__':
 	star=runStar()
 	star2=runStar()
@@ -291,4 +295,6 @@ if __name__=='__main__':
 	star2.relativePosition.Rotation.Angle=-1.2
 	App.activeDocument().recompute()
 
+
+#\endcond
 

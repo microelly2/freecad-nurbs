@@ -5,36 +5,17 @@ modes are ["poleGrid","isoGrid","Surface"]
 
 
 from say import *
+import nurbswb.pyob
 
-##\cond
-class PartFeature:
-	def __init__(self, obj):
-		obj.Proxy = self
-		self.obj2=obj
-
-# grundmethoden zum sichern
-
-	def attach(self,vobj):
-		self.Object = vobj.Object
-
-	def claimChildren(self):
-		return self.Object.Group
-
-	def __getstate__(self):
-		return None
-
-	def __setstate__(self,state):
-		return None
-##\endcond
 
 ## The Helper can display a Poles Gird, iso-Curve Grid or single isocurves as parametric Part::FeaturePython objects
  
 
-class Helper(PartFeature):
+class Helper(nurbswb.pyob.FeaturePython):
 
 	##\cond
 	def __init__(self, obj,uc=5,vc=5):
-		PartFeature.__init__(self, obj)
+		FeaturePython.__init__(self, obj)
 
 		self.TypeId="NurbsHelper"
 		obj.addProperty("App::PropertyLink","source","XYZ","Length of the Nurbs")
@@ -129,25 +110,15 @@ class Helper(PartFeature):
 ## The ViewProviderHelper uses updateData to recreate the shape 
 
 
-class ViewProviderHelper:
+class ViewProviderHelper(nurbswb.pyob.ViewProvider):
 
 	##\cond
 
 
-	def __init__(self, obj):
-		obj.Proxy = self
-		self.Object=obj
-
 	def attach(self, obj):
-		''' Setup the scene sub-graph of the view provider, this method is mandatory '''
 		obj.Proxy = self
 		self.Object = obj
-		return
 
-
-	def onChanged(self, vp, prop):
-		# print "VO changed ",prop
-		pass
 
 	def showVersion(self):
 		cl=self.Object.Proxy.__class__.__name__
@@ -165,14 +136,6 @@ class ViewProviderHelper:
 	#		for m in self.cmenu + self.anims():
 	#			action = menu.addAction(m[0])
 	#			action.triggered.connect(m[1])
-
-
-
-	def __getstate__(self):
-		return None
-
-	def __setstate__(self,state):
-		return None
 
 	##\endcond
 
