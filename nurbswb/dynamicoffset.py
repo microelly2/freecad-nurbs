@@ -149,7 +149,7 @@ def createDynaoffset(name="DynamicOffset"):
 # method for workbench menu entry
 
 def run():
-	'''create a DynaOffset
+	'''create a DynaOffset'''
 	createDynaoffset()
 
 if __name__=='__main__':
