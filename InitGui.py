@@ -109,6 +109,33 @@ def get_SelectedObjects(info=0, printError=True):
 
 #------------------------------
 
+
+import FreeCAD,FreeCADGui
+import sys
+
+#---------------------------------------------------------------------------
+# define the Commands of the Test Application module
+#---------------------------------------------------------------------------
+class MyTestCmd2:
+    """Opens a Qt dialog with all inserted unit tests"""
+    def Activated(self):
+        import QtUnitGui
+        QtUnitGui.addTest("nurbswb.TestNurbs")
+        QtUnitGui.addTest("nurbswb.TestMeinAll.Col1")
+        QtUnitGui.addTest("nurbswb.TestMeinAll.Col2")
+        QtUnitGui.addTest("TestMeinAll.Col2")
+
+    def GetResources(self):
+        return {'MenuText': 'Test-test...', 'ToolTip': 'Runs the self-test for the workbench'}
+
+
+FreeCADGui.addCommand('My_Test2'        ,MyTestCmd2())
+# FreeCADGui.runCommand('My_Test2')
+
+
+
+
+
 #------------------------------------------
 # fast command adder template
 
@@ -320,7 +347,7 @@ if FreeCAD.GuiUp:
 	c2a(["Curves"],ondocument,'Stare','curves','create a Sketch for a Star','/../icons/Loft.svg',"runStar()")
 	c2a(["Curves"],ondocument,'DynamicOffset','dynamicoffset','create a dynamic Offset','/../icons/Loft.svg',"run()")
 	c2a(["Curves"],ondocument,'FloatList','datatools','create a floatlist','/../icons/Loft.svg',"runFloatlist()")
-
+	c2a(["Curves"],ondocument,'Sole','create_sole_sketch','create a sole as offsetspline','/../icons/Loft.svg',"runSole()")
 
 
 	c2(["Workspace"],'Create Workspace',None,"Create workspace",'/../icons/plane.svg',"createws()","workspace")
@@ -380,7 +407,7 @@ static char * nurbs_xpm[] = {
 		'Nurbs_Create Shoe','Nurbs_Create Sole','Nurbs_Sole Change Model',
 		'Nurbs_scanbackbonecut','Nurbs_createsketchspline','Nurbs_Curves to Face', 'Nurbs_facedraw',
 		'Nurbs_createcloverleaf',
-		'Part_Cone', 'Part_Cylinder','Draft_Move','Draft_Rotate','Draft_Point','Draft_ToggleGrid']
+		'Part_Cone', 'Part_Cylinder','Draft_Move','Draft_Rotate','Draft_Point','Draft_ToggleGrid','My_Test2']
 
 		if 1:
 			self.appendToolbar("Nurbs", cmds )

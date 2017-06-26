@@ -18,8 +18,8 @@ reload (nurbswb.datatools)
 
 import scipy.interpolate
 
-## some more on myupdate
-# calculates a scipy.interpolate.interp1d 
+
+## calculates a scipy.interpolate.interp1d 
 # for the floatlist obj.datalist
 #
 # in debugmode the calculated shape contains wires for both curves and 
@@ -116,6 +116,7 @@ import nurbswb.pyob
 # Icon
 # ----
 # @image html plane.svg
+#
 # Links
 # -----
 #
@@ -123,10 +124,25 @@ import nurbswb.pyob
 #  - [Video](https://youtu.be/7wKXfh2fifY) (25.06.2017)<br>
 #  - [Git source](https://github.com/microelly2/freecad-nurbs/blob/master/nurbswb/dynamicoffset.py)
 #
+# Example
+# -------
+#\code 
+#import nurbswb.datatools
+#fl=nurbswb.datatools.createFloatlist("ParameterList")
+#fl.val007=10
+#
+#dof=createDynaoffset()
+#dof.data=fl
+#
+#  \endcode
+
+
+
 #  link run()
 #  link DynaOffset
 #  link DynaOffset.execute()
 #  link datatools.FloatList
+#
 
 
 

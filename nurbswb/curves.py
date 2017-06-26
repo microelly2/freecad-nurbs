@@ -4,7 +4,9 @@ for Offset curve generation
 <A HREF="http://www.freecadbuch.de/doku.php?id=blog">FreeCAD Buch</A>
 
 ''' 
-## <A HREF="http://www.freecadbuch.de/doku.php?id=blog">FreeCAD Buch 2</A> 
+
+
+# <A HREF="http://www.freecadbuch.de/doku.php?id=blog">FreeCAD Buch 2</A> 
 # Author  microelly
 # Warning huhuwas
 # weiter
@@ -125,6 +127,7 @@ def runOffsetSpline(name="MyOffSp"):
 	obj.ofout=10
 
 	App.activeDocument().recompute()
+	return obj
 
 
 #
