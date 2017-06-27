@@ -1,12 +1,13 @@
+'''shoe sole object'''
 
 from say import *
 import Sketcher
 
 
-
 def createsole(sk):
+	'''create the basic geometry sketch for a sole with 12 segments'''
 	LL=sk.LL
-	
+
 	lls=[]
 	for p in range(12):
 		ll=sk.addGeometry(Part.LineSegment(App.Vector(10*p,0,0),App.Vector(10*p+10,0,0)),False)
@@ -77,7 +78,7 @@ reload(nurbswb.curves)
 
 
 class Sole(nurbswb.curves.OffsetSpline):
-	'''Sketch Object with Python''' 
+	'''Shoe sole as Sketch Object with Python''' 
 
 	##\cond
 	def __init__(self, obj, icon='/home/thomas/.FreeCAD/Mod/freecad-nurbs/icons/draw.svg'):
@@ -89,20 +90,24 @@ class Sole(nurbswb.curves.OffsetSpline):
 	##\endcond
 
 	def onChanged(proxy,obj,prop):
+		'''change on lastlength, inner and outer offset'''  
 		if prop == 'LL':
 			obj.setDatum(79,obj.LL)
 		if prop not in ["ofin","ofout"]: return 
 		nurbswb.curves.OffsetSpline.myExecute(obj)
 
 
-def runSole(name="meineSohle"):
+#
+#
+#
+#
+
+def runSole(name="meineSohle",LL=260):
+	'''create a default sole object'''
 	obj = FreeCAD.ActiveDocument.addObject("Sketcher::SketchObjectPython",name)
 	obj.addProperty("App::PropertyInteger", "ofin", "Base", "end").ofin=10
 	obj.addProperty("App::PropertyInteger", "ofout", "Base", "end").ofout=10
-	obj.addProperty("App::PropertyInteger", "LL", "Base", "end").LL=290
-
-	obj.ofin=10
-	obj.ofout=10
+	obj.addProperty("App::PropertyInteger", "LL", "Base", "end").LL=LL
 
 	Sole(obj)
 

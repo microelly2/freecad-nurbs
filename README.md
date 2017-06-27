@@ -14,6 +14,9 @@ Thomas W. Sederberg]  (http://cagd.cs.byu.edu/~557/text/cagd.pdf)
 
 Videos
 ======
+   - [Sole Sketch](https://www.youtube.com/edit?o=U&video_id=l3U9SAbo9TE)(26.06.2017)<br>
+die Schuh-Sohle als eine spezielle Anwendung des Offset und Sketch
+
    - [Dynamic Offset](https://youtu.be/7wKXfh2fifY)(25.06.2017)<br>
 Aus den Offset-Kurven und einer Werteliste wird eine Zwischenkurve berechnet.
 

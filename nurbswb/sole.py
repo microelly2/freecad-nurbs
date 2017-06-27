@@ -144,7 +144,14 @@ def runA(model=None):
 		LS=model.LS
 		div12=model.div12
 		tt=np.array(model.tt)
-		
+
+		print "Fehler dubug ..."
+		FreeCAD._debug_LL=LL
+		FreeCAD._debug_tt=tt
+		print LL
+		print tt[0,:,0]
+		print "End debug"
+
 		tt[0,:,0] += LL
 
 		tf=model.tf
