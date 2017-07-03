@@ -60,7 +60,7 @@ def MyDialog(target=None):
 def run():
 	#[target]=FreeCADGui.Selection.getSelection()
 	target=None
-	MyDialog(target)
+	return MyDialog(target)
 
 
 

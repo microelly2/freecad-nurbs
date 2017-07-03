@@ -118,3 +118,8 @@ def sayexc2(title='Fehler', mess=''):
     showdialog(title, text=mess, detail="--> ".join(la2))
 
 
+
+
+
+def runtest():
+	pass

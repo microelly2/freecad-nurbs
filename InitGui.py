@@ -120,6 +120,7 @@ class MyTestCmd2:
     """Opens a Qt dialog with all inserted unit tests"""
     def Activated(self):
         import QtUnitGui
+        QtUnitGui.addTest("nurbswb.TestNurbsGui")
         QtUnitGui.addTest("nurbswb.TestNurbs")
         QtUnitGui.addTest("nurbswb.TestMeinAll.Col1")
         QtUnitGui.addTest("nurbswb.TestMeinAll.Col2")
@@ -349,6 +350,8 @@ if FreeCAD.GuiUp:
 	c2a(["Curves"],ondocument,'FloatList','datatools','create a floatlist','/../icons/Loft.svg',"runFloatlist()")
 	c2a(["Curves"],ondocument,'Sole','create_sole_sketch','create a sole as offsetspline','/../icons/Loft.svg',"runSole()")
 
+	c2a(["Shoe"],ondocument,'toggleSketch','shoe_tools','toggle constraints of a rib','/../icons/toggleshoesketch.svg',"toggleShoeSketch()")
+
 
 	c2(["Workspace"],'Create Workspace',None,"Create workspace",'/../icons/plane.svg',"createws()","workspace")
 	c2(["Workspace"],'Create Link',None,"Create workspace link",'/../icons/plane.svg',"createlink()","workspace")
@@ -407,7 +410,8 @@ static char * nurbs_xpm[] = {
 		'Nurbs_Create Shoe','Nurbs_Create Sole','Nurbs_Sole Change Model',
 		'Nurbs_scanbackbonecut','Nurbs_createsketchspline','Nurbs_Curves to Face', 'Nurbs_facedraw',
 		'Nurbs_createcloverleaf',
-		'Part_Cone', 'Part_Cylinder','Draft_Move','Draft_Rotate','Draft_Point','Draft_ToggleGrid','My_Test2']
+		'Part_Cone', 'Part_Cylinder','Draft_Move','Draft_Rotate','Draft_Point','Draft_ToggleGrid',
+		'My_Test2','Nurbs_toggleSketch']
 
 		if 1:
 			self.appendToolbar("Nurbs", cmds )
