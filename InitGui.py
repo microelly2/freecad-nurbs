@@ -181,7 +181,8 @@ class _Command():
 			FreeCADGui.doCommand("reload("+self.lmod+")")
 			FreeCADGui.doCommand(self.command)
 		#FreeCAD.ActiveDocument.commitTransaction()
-		FreeCAD.ActiveDocument.recompute()
+		if FreeCAD.ActiveDocument <> None:
+			FreeCAD.ActiveDocument.recompute()
 
 
 class _alwaysActive(_Command):
@@ -192,27 +193,35 @@ class _alwaysActive(_Command):
 
 #-----------------------------------------------
 def always():
+	''' always'''
 	return True
 
 def ondocument():
+	'''if a document is active'''
 	return FreeCADGui.ActiveDocument <> None
 
 def onselection():
+	'''if at least one object is selected'''
 	return len(FreeCADGui.Selection.getSelection())>0
 
 def onselection1():
+	'''if exactly one object is selected'''
 	return len(FreeCADGui.Selection.getSelection())==1
 
 def onselection2():
+	'''if exactly two objects are selected'''
 	return len(FreeCADGui.Selection.getSelection())==2
 
 def onselection3():
+	'''if exactly three objects are selected'''
 	return len(FreeCADGui.Selection.getSelection())==3
 
 def onselex():
+	'''if at least one subobject is selected'''
 	return len(FreeCADGui.Selection.getSelectionEx())<>0
 
 def onselex1():
+	'''if exactly one subobject is selected'''
 	return len(FreeCADGui.Selection.getSelectionEx())==1
 
 
@@ -220,10 +229,11 @@ FreeCAD.tcmds5=[]
 
 def c1(menu,name,*info):
 	global _Command
+
 	name1="Nurbs_"+name
 	t=_Command(name,*info)
 	FreeCADGui.addCommand(name1,t)
-	FreeCAD.tcmds5.append([menu,name1])
+	FreeCAD.tcmds5.append([menu,name1,name,'always',info])
 
 def c1a(menu,isactive,name,*info):
 	global _Command
@@ -231,15 +241,14 @@ def c1a(menu,isactive,name,*info):
 	t=_Command(name,*info)
 	t.IsActive=isactive
 	FreeCADGui.addCommand(name1,t)
-	FreeCAD.tcmds5.append([menu,name1])
+	FreeCAD.tcmds5.append([menu,name1,name,isactive,info])
 
 def c2(menu,title,name,*info):
 	#print info
 	global _Command
 	title1="Nurbs_"+title
 	FreeCADGui.addCommand(title1,_Command(name,*info))
-	FreeCAD.tcmds5.append([menu,title1])
-
+	FreeCAD.tcmds5.append([menu,title1,name,'always',info])
 
 def c2a(menu,isactive,title,name,*info):
 	#print info
@@ -248,7 +257,7 @@ def c2a(menu,isactive,title,name,*info):
 	title1="Nurbs_"+title
 	t.IsActive=isactive
 	FreeCADGui.addCommand(title1,t)
-	FreeCAD.tcmds5.append([menu,title1])
+	FreeCAD.tcmds5.append([menu,title1,name,isactive,info])
 
 def c2b(menu,title,name,*info):
 	#print info
@@ -256,8 +265,7 @@ def c2b(menu,title,name,*info):
 	title1="YY_"+title
 	#lib=None,name=None,icon='/../icons/eye.svg',command=None,modul='nurbswb'):
 	FreeCADGui.addCommand(title1,_Command(name,*info))
-	FreeCAD.tcmds5.append([menu,title1])
-
+	FreeCAD.tcmds5.append([menu,title1,name,'always',info])
 #-------------------------------
 
 # special conditions fore actions
@@ -289,53 +297,9 @@ if FreeCAD.GuiUp:
 	#c2a(["Curves"],onselection1,'DraftBSpline Editor',"DraftBSplineEditor","Edit Draft Bspline",'/../icons/32px-draftbspline_edit.png',"run()")
 	c2a(["Curves"],always,'DraftBSpline Editor',"DraftBSplineEditor","Edit Draft Bspline",'/../icons/32px-draftbspline_edit.png',"run()")
 
-	#			'ToolTip': 'creates a new list of poles above the selected U line'
-	c2a(["Needle"],ondocument,'Needle','needle','create a needle','/../icons/eye.svg',"run()")
-	c2(["Needle"],'needle Change Model','needle_change_model','needle Change Model','/../icons/eye.svg',"run()")
-	c2a(["Needle"],onselex1,'addULine','needle_cmds','add Meridian/Rib','/../icons/add_edge.svg',"cmdAdd()")
-	c2a(["Needle"],onselex1,'deleteULine','needle_cmds','delete Meridian/Rib','/../icons/delete_edge.svg',"cmdDel()")
-	c2a(["Needle"],onspread,'Open Spreadsheet','wheel_event','Open Spreadsheet','/../icons/eye.svg',"undock('Spreadsheet')")
-	c2a(["Needle"],onneedle,'Edit Rib','wheel_event','Edit Rib','/../icons/eye.svg',"start('Rib_template')")
-	c2a(["Needle"],onneedle,'Edit Backbone','wheel_event','Edit Backbone','/../icons/eye.svg',"start('Backbone')")
-
-
-	c2a(["Faces","create"],always,'Random Plane',"nurbs","Create plane with randoms",'/../icons/plane.svg',"testRandomB()")
-	c2a(["Faces","create"],always,'Random Torus',"nurbs","Create torus with randoms",'/../icons/torus.svg',"testRandomTorus()")
-	c2a(["Faces","create"],always,'Random Cylinder',"nurbs","Create cylinder with randomness",'/../icons/cylinder.svg',"testRandomCylinder()")
-	c2a(["Faces","create"],always,'Random Sphere',"nurbs","Create sphere with randomness",'/../icons/sphere.svg',"testRandomSphere()")
-	c2a(["Faces","create"],ondocument,'simple Hood','simplehood','create a simple hood','/../icons/eye.svg',"run()")
-
-	c2a(["Faces","create"],always,'Create Shoe','shoe','Create Shoe','/../icons/shoe.svg',"run()")
-	c2a(["Faces","create"],always,'Create Sole','sole','Create Shoe Sole','/../icons/sole.svg',"run()")
-	c2(["Faces"],'Sole Change Model','sole_change_model','Shoe Sole Change Model','/../icons/eye.svg',"run()")
-	c2(["Faces"],'load Sole Height','load_sole_profile_height','Load Height Profile','/../icons/eye.svg',"run()")
-	c2(["Faces"],'load Sole Widht','load_sole_profile_width','Load Width Profile','/../icons/eye.svg',"run()")
-
-	c2(["Faces"],'Iso Map','isomap','draw isomap of Face','/../icons/eye.svg',"run()")
-
-	c2a(["Faces","create"],always,'Nurbs Editor','nurbs','creates a test nurbs','/../icons/zebra.svg',"runtest()")
-	c2a(["Faces","create"],onselection,'UV Grid Generator','uvgrid_generator','create UV grid of the partr','/../icons/delete_edge.svg',"runSel()")
-	c2a(["Faces","create"],onselection,'Nurbs Helper','helper','create helper objects of the part','/../icons/delete_edge.svg',"makeHelperSel()")
-	c2a(["Faces"],always,'filledface','filledface','createFilledFace','/../icons/eye.svg',"createFilledFace()")
-
-	c2a(["Faces"],always,'ZebraTool','zebratool','ZebraTool','/../icons/zebra.svg',"run()")
-	c2a(["Nurbs"],always,'Grid','blender_grid','Create Grid',"/../icons/Draft_Grid.svg","run()")
 	c2a(["Curves"],always,'facedraw','facedraw','draw on a face','/../icons/draw.svg',"run()")
-	
-
-	c2a(["Faces"],always,'Curves to Face','curves2face','Curves to Face','/../icons/upgrade.svg',"run()")
-	c2a(["Faces"],always,'Segment','segment','Cut a segment of a Face','/../icons/upgrade.svg',"runsegment()")
-	c2a(["Faces"],always,'FineSegment','segment','Cut a fine segment of a Face','/../icons/upgrade.svg',"runfinesegment()")
-	c2a(["Faces"],always,'NurbsTrafo','segment','Transform a Face','/../icons/upgrade.svg',"runnurbstrafo()")
-
-	c2a(["Faces"],always,'Tangent','tangentsurface','create a tangent Face','/../icons/upgrade.svg',"runtangentsurface()")
-	c2a(["Faces"],always,'Deam','tangentsurface','create a Seam','/../icons/upgrade.svg',"runseam()")
-
-
-	c2a(["Faces"],always,'Grid generator','uvgrid_generator','create a uv-grid for a Face','/../icons/upgrade.svg',"run()")
-
 	c2a(["Curves"],always,'scanbackbonecut','scanbackbonecut','Cut the Scan along backbone ','/../icons/backbonecut.svg',"run()")
-	c2a(["Curves"],always,'transform_spline','transform_spline','perspective transformation of a Bbspline','',"run()")
+	c2a(["Curves"],always,'transform_spline','transform_spline','perspective transformation of a Bbspline','/../icons/upgrade.svg',"run()")
 	c2a(["Curves"],ondocument,'createcloverleaf','createcloverleaf','create a cloverleaf','/../icons/cloverleaf.svg',"run()")
 	c2a(["Curves"],ondocument,'createshoerib','createshoerib','create a shoe last rib','/../icons/cloverleaf.svg',"run()")
 
@@ -350,11 +314,54 @@ if FreeCAD.GuiUp:
 	c2a(["Curves"],ondocument,'FloatList','datatools','create a floatlist','/../icons/Loft.svg',"runFloatlist()")
 	c2a(["Curves"],ondocument,'Sole','create_sole_sketch','create a sole as offsetspline','/../icons/Loft.svg',"runSole()")
 
-	c2a(["Shoe"],ondocument,'toggleSketch','shoe_tools','toggle constraints of a rib','/../icons/toggleshoesketch.svg',"toggleShoeSketch()")
+
+	c2a(["Faces","create"],always,'Random Plane',"nurbs","Create plane with randoms",'/../icons/plane.svg',"testRandomB()")
+	c2a(["Faces","create"],always,'Random Torus',"nurbs","Create torus with randoms",'/../icons/torus.svg',"testRandomTorus()")
+	c2a(["Faces","create"],always,'Random Cylinder',"nurbs","Create cylinder with randomness",'/../icons/cylinder.svg',"testRandomCylinder()")
+	c2a(["Faces","create"],always,'Random Sphere',"nurbs","Create sphere with randomness",'/../icons/sphere.svg',"testRandomSphere()")
+	c2a(["Faces","create"],ondocument,'simple Hood','simplehood','create a simple hood','/../icons/eye.svg',"run()")
+
+	c2a(["Faces","create"],always,'Create Shoe','shoe','Create Shoe','/../icons/shoe.svg',"run()")
+	c2a(["Faces","create"],always,'Create Sole','sole','Create Shoe Sole','/../icons/sole.svg',"run()")
+
+	c2(["Faces"],'Sole Change Model','sole_change_model','Shoe Sole Change Model','/../icons/eye.svg',"run()")
+	c2(["Faces"],'load Sole Height','load_sole_profile_height','Load Height Profile','/../icons/eye.svg',"run()")
+	c2(["Faces"],'load Sole Widht','load_sole_profile_width','Load Width Profile','/../icons/eye.svg',"run()")
+
+	c2(["Faces"],'Iso Map','isomap','draw isomap of Face','/../icons/eye.svg',"run()")
+
+	c2a(["Faces","create"],always,'Nurbs Editor','nurbs','creates a test nurbs','/../icons/zebra.svg',"runtest()")
+	c2a(["Faces","create"],onselection,'UV Grid Generator','uvgrid_generator','create UV grid of the partr','/../icons/delete_edge.svg',"runSel()")
+	c2a(["Faces","create"],onselection,'Nurbs Helper','helper','create helper objects of the part','/../icons/delete_edge.svg',"makeHelperSel()")
+	c2a(["Faces"],always,'filledface','filledface','createFilledFace','/../icons/eye.svg',"createFilledFace()")
+
+	c2a(["Faces"],always,'ZebraTool','zebratool','ZebraTool','/../icons/zebra.svg',"run()")
+	c2a(["Faces"],always,'Curves to Face','curves2face','Curves to Face','/../icons/upgrade.svg',"run()")
+	c2a(["Faces"],always,'Segment','segment','Cut a segment of a Face','/../icons/upgrade.svg',"runsegment()")
+	c2a(["Faces"],always,'FineSegment','segment','Cut a fine segment of a Face','/../icons/upgrade.svg',"runfinesegment()")
+	c2a(["Faces"],always,'NurbsTrafo','segment','Transform a Face','/../icons/upgrade.svg',"runnurbstrafo()")
+	c2a(["Faces"],always,'Tangent','tangentsurface','create a tangent Face','/../icons/upgrade.svg',"runtangentsurface()")
+	c2a(["Faces"],always,'Deam','tangentsurface','create a Seam','/../icons/upgrade.svg',"runseam()")
+	c2a(["Faces"],always,'Grid generator','uvgrid_generator','create a uv-grid for a Face','/../icons/upgrade.svg',"run()")
 
 
 	c2(["Workspace"],'Create Workspace',None,"Create workspace",'/../icons/plane.svg',"createws()","workspace")
 	c2(["Workspace"],'Create Link',None,"Create workspace link",'/../icons/plane.svg',"createlink()","workspace")
+
+	c2a(["Needle"],ondocument,'Needle','needle','create a needle','/../icons/eye.svg',"run()")
+	c2(["Needle"],'needle Change Model','needle_change_model','needle Change Model','/../icons/eye.svg',"run()")
+	c2a(["Needle"],onselex1,'addULine','needle_cmds','add Meridian/Rib','/../icons/add_edge.svg',"cmdAdd()")
+	c2a(["Needle"],onselex1,'deleteULine','needle_cmds','delete Meridian/Rib','/../icons/delete_edge.svg',"cmdDel()")
+	c2a(["Needle"],onspread,'Open Spreadsheet','wheel_event','Open Spreadsheet','/../icons/eye.svg',"undock('Spreadsheet')")
+	c2a(["Needle"],onneedle,'Edit Rib','wheel_event','Edit Rib','/../icons/eye.svg',"start('Rib_template')")
+	c2a(["Needle"],onneedle,'Edit Backbone','wheel_event','Edit Backbone','/../icons/eye.svg',"start('Backbone')")
+
+	c2a(["Shoe"],ondocument,'toggleSketch','shoe_tools','toggle constraints of a rib','/../icons/toggleshoesketch.svg',"toggleShoeSketch()")
+	c2a(["Shoe"],always,'Generate Docu',"gendok","generate menu structure docu for web",'/../icons/plane.svg',"run()")
+
+	c2a(["Nurbs"],always,'Grid','blender_grid','Create Grid',"/../icons/Draft_Grid.svg","run()")
+
+
 
 #	for cmd in FreeCADGui.listCommands():
 #		if cmd.startswith("Nurbs_"):
@@ -418,11 +425,16 @@ static char * nurbs_xpm[] = {
 			self.appendMenu("Nurbs", cmds)
 
 		menues={}
-		for (c,a) in FreeCAD.tcmds5:
+		ml=[]
+		for _t in FreeCAD.tcmds5:
+			c=_t[0]
+			a=_t[1]
 			try:menues[tuple(c)].append(a)
-			except: menues[tuple(c)]=[a]
+			except: 
+				menues[tuple(c)]=[a]
+				ml.append(tuple(c))
 
-		for m in menues:
+		for m in ml:
 			self.appendMenu(list(m),menues[m])
 
 FreeCADGui.addWorkbench(NurbsWorkbench)

@@ -1,10 +1,21 @@
+'''tools for shoe editor'''
 
 from say import *
 
-sk = App.ActiveDocument.getObject('rib_10')
+
+## toggle all position constraints of a gui selected shoe rib
+#
+#Rippe auswaehlen
+#Menu Shoe -> toggle constraints of a rib  (oder symbol blaue sohle)
+#
+#Alle Positionsconstraints sind blau
+#
+#bei Wiederholung werden alle wieder rot
+#
 
 
 def toggleShoeSketch():
+	'''toggle all position constraints of a gui selected shoe rib'''
 	if len( Gui.Selection.getSelection())<>0:
 		sk=Gui.Selection.getSelection()[0]
 	print "toogle sketch constraints for " + sk.Label
@@ -15,3 +26,5 @@ def toggleShoeSketch():
 				sk.toggleDriving(i)
 		#		sk.setDriving(i,False)
 			except: pass
+
+
