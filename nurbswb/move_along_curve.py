@@ -1,6 +1,6 @@
-#
-# objekt auf curve positionieren und ausrichten
-#
+'''objekt auf curve positionieren und ausrichten'''
+
+
 import FreeCAD 
 import FreeCADGui
 
@@ -14,7 +14,20 @@ def srun(w):
 	movepos(bc,c,v)
 
 
+def dropcopy(w):
+	c=w.target
+	FreeCAD.ActiveDocument.addObject('Part::Feature','Copy_of_'+c.Label+"_at_"+str(w.ha.value())).Shape=c.Shape
+	FreeCAD.ActiveDocument.recompute()
+
+## put the object c  on the curve bc in relative postion  v
+# @param bc bspline curve
+# @param c part
+# @param v float between 0 and 1 
+#
+#.
+
 def movepos(bc,c,v):
+	'''movepos(bc,c,v)'''
 
 	pa=bc.LastParameter
 	ps=bc.FirstParameter
@@ -45,6 +58,8 @@ def movepos(bc,c,v):
 
 from PySide import QtGui, QtCore
 
+## Dialog mit einem Dialer zur Postionsbestimmung
+
 def MyDialog(path,target):
 
 	w=QtGui.QWidget()
@@ -56,8 +71,11 @@ def MyDialog(path,target):
 	w.setWindowFlags(QtCore.Qt.WindowStaysOnTopHint)
 
 
+	l=QtGui.QLabel("MOVE {}<br>ALONG {}.Edge1".format(target.Label,path.Label))
+	box.addWidget(l)
 
-	l=QtGui.QLabel("Position" )
+
+	l=QtGui.QLabel("Position 0 .. 100" )
 	box.addWidget(l)
 
 	h=QtGui.QDial()
@@ -70,18 +88,26 @@ def MyDialog(path,target):
 	h.valueChanged.connect(lambda:srun(w))
 	box.addWidget(h)
 
+	b=QtGui.QPushButton("Drop copy")
+	box.addWidget(b)
+	b.clicked.connect(lambda:dropcopy(w))
 
 	w.show()
 	return w
 
+## run on the selection
+#
+# selection is
+# 1. animated object,
+# 2. path to follow 
 
 def run():
-	[path,target]=FreeCADGui.Selection.getSelection()
+	[target,path]=FreeCADGui.Selection.getSelection()
 	MyDialog(path,target)
 
 # selektion:
 # 1. pfad spline
 # 2. zu platzierendes objekt
 
-
-run()
+if __name__=='__main__':
+	run()

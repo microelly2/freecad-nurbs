@@ -1,3 +1,5 @@
+'''OffsetSpline and Star'''
+
 '''
 SketcherObjectPython example oo
 for Offset curve generation

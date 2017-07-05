@@ -9,8 +9,12 @@ from say import *
 from scipy.signal import argrelextrema
 import Sketcher
 
+##creates a BSpline Curve approximation Sketch for a list of points
+#
+
 
 def createSketchSpline(pts=None,label="BSpline Sketch",periodic=True):
+	'''createSketchSpline(pts=None,label="BSpline Sketch",periodic=True)'''
 
 	try: body=App.activeDocument().Body
 	except:	body=App.activeDocument().addObject('PartDesign::Body','Body')
@@ -57,7 +61,7 @@ def createSketchSpline(pts=None,label="BSpline Sketch",periodic=True):
 
 
 def runobj(obj,label=None):
-	''' erzeugt fuer ein objekt den SktchSpline'''
+	''' erzeugt fuer ein objekt den SketchSpline'''
 
 	sk=createSketchSpline(obj.Shape.Edge1.Curve.getPoles(),str(obj.Label) + " Sketch" )
 	if label <>None: sk.Label=label

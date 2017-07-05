@@ -1,7 +1,6 @@
 #***************************************************************************
 #*																		*
 #*   Copyright (c) 2016													* 
-#*   <edwardvmills@ ???													*
 #*   <microelly2@freecadbuch.de>										* 
 #*																		*
 #*  This program is free software; you can redistribute it and/or modify*
@@ -148,7 +147,7 @@ __dir__ = os.path.dirname(nurbswb.__file__)
 global _Command
 class _Command():
 
-	def __init__(self,lib=None,name=None,icon='/../icons/eye.svg',command=None,modul='nurbswb'):
+	def __init__(self,lib=None,name=None,icon='/../icons/nurbs.svg',command=None,modul='nurbswb'):
 
 		if lib==None: lmod=modul
 		else: lmod=modul+'.'+lib
@@ -192,6 +191,9 @@ class _alwaysActive(_Command):
 
 
 #-----------------------------------------------
+#
+# condtions when a command should be active
+
 def always():
 	''' always'''
 	return True
@@ -225,15 +227,18 @@ def onselex1():
 	return len(FreeCADGui.Selection.getSelectionEx())==1
 
 
+# the menu entry list
 FreeCAD.tcmds5=[]
 
+# create menu entries 
+'''
 def c1(menu,name,*info):
 	global _Command
-
 	name1="Nurbs_"+name
 	t=_Command(name,*info)
 	FreeCADGui.addCommand(name1,t)
 	FreeCAD.tcmds5.append([menu,name1,name,'always',info])
+'''
 
 def c1a(menu,isactive,name,*info):
 	global _Command
@@ -243,15 +248,16 @@ def c1a(menu,isactive,name,*info):
 	FreeCADGui.addCommand(name1,t)
 	FreeCAD.tcmds5.append([menu,name1,name,isactive,info])
 
+'''
 def c2(menu,title,name,*info):
 	#print info
 	global _Command
 	title1="Nurbs_"+title
 	FreeCADGui.addCommand(title1,_Command(name,*info))
 	FreeCAD.tcmds5.append([menu,title1,name,'always',info])
+'''
 
 def c2a(menu,isactive,title,name,*info):
-	#print info
 	global _Command
 	t=_Command(name,*info)
 	title1="Nurbs_"+title
@@ -259,25 +265,18 @@ def c2a(menu,isactive,title,name,*info):
 	FreeCADGui.addCommand(title1,t)
 	FreeCAD.tcmds5.append([menu,title1,name,isactive,info])
 
-def c2b(menu,title,name,*info):
-	#print info
-	global _Command
-	title1="YY_"+title
-	#lib=None,name=None,icon='/../icons/eye.svg',command=None,modul='nurbswb'):
-	FreeCADGui.addCommand(title1,_Command(name,*info))
-	FreeCAD.tcmds5.append([menu,title1,name,'always',info])
-#-------------------------------
 
 # special conditions fore actions
 def onneedle():
+	'''open the needle file'''
 	dokname=FreeCAD.ParamGet('User parameter:Plugins/nurbs').GetString("Document","Needle")
 	try: App.getDocument(dokname); return True
 	except: return False
 
 def onspread():
+	'''there should be a spreadsheet object'''
 	try: App.ActiveDocument.Spreadsheet;return True
 	except: return False
-
 
 
 import nurbswb
@@ -303,58 +302,59 @@ if FreeCAD.GuiUp:
 	c2a(["Curves"],ondocument,'createcloverleaf','createcloverleaf','create a cloverleaf','/../icons/cloverleaf.svg',"run()")
 	c2a(["Curves"],ondocument,'createshoerib','createshoerib','create a shoe last rib','/../icons/cloverleaf.svg',"run()")
 
-	c2a(["Curves"],ondocument,'project_edge2face','project_edge2face','parallel projection of edge to face','/../icons/cloverleaf.svg',"run()")
+	c2a(["Curves"],ondocument,'project_edge2face','project_edge2face','parallel projection of edge to face','/../icons/nurbs.svg',"run()")
 	c2a(["Curves"],ondocument,'loft_selection','loft_selection','loft between two selections','/../icons/Loft.svg',"run()")
-	c2a(["Curves"],ondocument,'knotsandpoles','knotsandpoles','display knots and poles for selected curves','/../icons/Loft.svg',"run()")
-	c2a(["Curves"],ondocument,'monitor','monitor','create a monitor for a curve length','/../icons/Loft.svg',"run()")
-	c2a(["Curves"],ondocument,'param_bspline','param_bspline','create a parametric bspline with tangents','/../icons/Loft.svg',"run()")
-	c2a(["Curves"],ondocument,'OffsetSpline','curves','create a Sketch for a OffsetSpline','/../icons/Loft.svg',"runOffsetSpline()")
-	c2a(["Curves"],ondocument,'Stare','curves','create a Sketch for a Star','/../icons/Loft.svg',"runStar()")
-	c2a(["Curves"],ondocument,'DynamicOffset','dynamicoffset','create a dynamic Offset','/../icons/Loft.svg',"run()")
-	c2a(["Curves"],ondocument,'FloatList','datatools','create a floatlist','/../icons/Loft.svg',"runFloatlist()")
-	c2a(["Curves"],ondocument,'Sole','create_sole_sketch','create a sole as offsetspline','/../icons/Loft.svg',"runSole()")
+	c2a(["Curves"],ondocument,'knotsandpoles','knotsandpoles','display knots and poles for selected curves','/../icons/nurbs.svg',"run()")
+	c2a(["Curves"],ondocument,'monitor','monitor','create a monitor for a curve length','/../icons/nurbs.svg',"run()")
+	c2a(["Curves"],ondocument,'param_bspline','param_bspline','create a parametric bspline with tangents','/../icons/nurbs.svg',"run()")
+	c2a(["Curves"],ondocument,'OffsetSpline','curves','create a Sketch for a OffsetSpline','/../icons/nurbs.svg',"runOffsetSpline()")
+	c2a(["Curves"],ondocument,'Stare','curves','create a Sketch for a Star','/../icons/nurbs.svg',"runStar()")
+	c2a(["Curves"],ondocument,'DynamicOffset','dynamicoffset','create a dynamic Offset','/../icons/nurbs.svg',"run()")
+	c2a(["Curves"],ondocument,'FloatList','datatools','create a floatlist','/../icons/nurbs.svg',"runFloatlist()")
+	c2a(["Curves"],ondocument,'Sole','create_sole_sketch','create a sole as offsetspline','/../icons/nurbs.svg',"runSole()")
+	c2a(["Curves"],onselection2,'MoveAlongCurve','move_along_curve','move an object #2 along a bspline curve #1','/../icons/nurbs.svg',"run()")
 
 
 	c2a(["Faces","create"],always,'Random Plane',"nurbs","Create plane with randoms",'/../icons/plane.svg',"testRandomB()")
 	c2a(["Faces","create"],always,'Random Torus',"nurbs","Create torus with randoms",'/../icons/torus.svg',"testRandomTorus()")
 	c2a(["Faces","create"],always,'Random Cylinder',"nurbs","Create cylinder with randomness",'/../icons/cylinder.svg',"testRandomCylinder()")
 	c2a(["Faces","create"],always,'Random Sphere',"nurbs","Create sphere with randomness",'/../icons/sphere.svg',"testRandomSphere()")
-	c2a(["Faces","create"],ondocument,'simple Hood','simplehood','create a simple hood','/../icons/eye.svg',"run()")
+	c2a(["Faces","create"],ondocument,'simple Hood','simplehood','create a simple hood','/../icons/nurbs.svg',"run()")
 
 	c2a(["Faces","create"],always,'Create Shoe','shoe','Create Shoe','/../icons/shoe.svg',"run()")
 	c2a(["Faces","create"],always,'Create Sole','sole','Create Shoe Sole','/../icons/sole.svg',"run()")
 
-	c2(["Faces"],'Sole Change Model','sole_change_model','Shoe Sole Change Model','/../icons/eye.svg',"run()")
-	c2(["Faces"],'load Sole Height','load_sole_profile_height','Load Height Profile','/../icons/eye.svg',"run()")
-	c2(["Faces"],'load Sole Widht','load_sole_profile_width','Load Width Profile','/../icons/eye.svg',"run()")
+	c2a(["Faces"],ondocument,'Sole Change Model','sole_change_model','Shoe Sole Change Model','/../icons/sole.svg',"run()")
+	c2a(["Faces"],ondocument,'load Sole Height','load_sole_profile_height','Load Height Profile','/../icons/sole.svg',"run()")
+	c2a(["Faces"],ondocument,'load Sole Widht','load_sole_profile_width','Load Width Profile','/../icons/sole.svg',"run()")
 
-	c2(["Faces"],'Iso Map','isomap','draw isomap of Face','/../icons/eye.svg',"run()")
+	c2a(["Faces"],ondocument,'Iso Map','isomap','draw isomap of Face','/../icons/nurbs.svg',"run()")
 
 	c2a(["Faces","create"],always,'Nurbs Editor','nurbs','creates a test nurbs','/../icons/zebra.svg',"runtest()")
-	c2a(["Faces","create"],onselection,'UV Grid Generator','uvgrid_generator','create UV grid of the partr','/../icons/delete_edge.svg',"runSel()")
-	c2a(["Faces","create"],onselection,'Nurbs Helper','helper','create helper objects of the part','/../icons/delete_edge.svg',"makeHelperSel()")
-	c2a(["Faces"],always,'filledface','filledface','createFilledFace','/../icons/eye.svg',"createFilledFace()")
+	c2a(["Faces","create"],onselection,'UV Grid Generator','uvgrid_generator','create UV grid of the partr','/../icons/nurbs.svg',"runSel()")
+	c2a(["Faces","create"],onselection,'Nurbs Helper','helper','create helper objects of the part','/../icons/nurbs.svg',"makeHelperSel()")
+	c2a(["Faces"],always,'filledface','filledface','createFilledFace','/../icons/nurbs.svg',"createFilledFace()")
 
 	c2a(["Faces"],always,'ZebraTool','zebratool','ZebraTool','/../icons/zebra.svg',"run()")
 	c2a(["Faces"],always,'Curves to Face','curves2face','Curves to Face','/../icons/upgrade.svg',"run()")
-	c2a(["Faces"],always,'Segment','segment','Cut a segment of a Face','/../icons/upgrade.svg',"runsegment()")
-	c2a(["Faces"],always,'FineSegment','segment','Cut a fine segment of a Face','/../icons/upgrade.svg',"runfinesegment()")
-	c2a(["Faces"],always,'NurbsTrafo','segment','Transform a Face','/../icons/upgrade.svg',"runnurbstrafo()")
-	c2a(["Faces"],always,'Tangent','tangentsurface','create a tangent Face','/../icons/upgrade.svg',"runtangentsurface()")
-	c2a(["Faces"],always,'Deam','tangentsurface','create a Seam','/../icons/upgrade.svg',"runseam()")
-	c2a(["Faces"],always,'Grid generator','uvgrid_generator','create a uv-grid for a Face','/../icons/upgrade.svg',"run()")
+	c2a(["Faces"],always,'Segment','segment','Cut a segment of a Face','/../icons/nurbs.svg',"runsegment()")
+	c2a(["Faces"],always,'FineSegment','segment','Cut a fine segment of a Face','/../icons/nurbs.svg',"runfinesegment()")
+	c2a(["Faces"],always,'NurbsTrafo','segment','Transform a Face','/../icons/nurbs.svg',"runnurbstrafo()")
+	c2a(["Faces"],always,'Tangent','tangentsurface','create a tangent Face','/../icons/nurbs.svg',"runtangentsurface()")
+	c2a(["Faces"],always,'Seam','tangentsurface','create a Seam','/../icons/nurbs.svg',"runseam()")
+	c2a(["Faces"],always,'Grid generator','uvgrid_generator','create a uv-grid for a Face','/../icons/nurbs.svg',"run()")
 
 
-	c2(["Workspace"],'Create Workspace',None,"Create workspace",'/../icons/plane.svg',"createws()","workspace")
-	c2(["Workspace"],'Create Link',None,"Create workspace link",'/../icons/plane.svg',"createlink()","workspace")
+	c2a(["Workspace"],ondocument,'Create Workspace',None,"Create workspace",'/../icons/plane.svg',"createws()","workspace")
+	c2a(["Workspace"],ondocument,'Create Link',None,"Create workspace link",'/../icons/plane.svg',"createlink()","workspace")
 
-	c2a(["Needle"],ondocument,'Needle','needle','create a needle','/../icons/eye.svg',"run()")
-	c2(["Needle"],'needle Change Model','needle_change_model','needle Change Model','/../icons/eye.svg',"run()")
+	c2a(["Needle"],ondocument,'Needle','needle','create a needle','/../icons/shoe.svg',"run()")
+	c2a(["Needle"],onneedle,'needle Change Model','needle_change_model','needle Change Model','/../icons/shoe.svg',"run()")
 	c2a(["Needle"],onselex1,'addULine','needle_cmds','add Meridian/Rib','/../icons/add_edge.svg',"cmdAdd()")
 	c2a(["Needle"],onselex1,'deleteULine','needle_cmds','delete Meridian/Rib','/../icons/delete_edge.svg',"cmdDel()")
-	c2a(["Needle"],onspread,'Open Spreadsheet','wheel_event','Open Spreadsheet','/../icons/eye.svg',"undock('Spreadsheet')")
-	c2a(["Needle"],onneedle,'Edit Rib','wheel_event','Edit Rib','/../icons/eye.svg',"start('Rib_template')")
-	c2a(["Needle"],onneedle,'Edit Backbone','wheel_event','Edit Backbone','/../icons/eye.svg',"start('Backbone')")
+	c2a(["Needle"],onspread,'Open Spreadsheet','wheel_event','Open Spreadsheet','/../icons/nurbs.svg',"undock('Spreadsheet')")
+	c2a(["Needle"],onneedle,'Edit Rib','wheel_event','Edit Rib','/../icons/nurbs.svg',"start('Rib_template')")
+	c2a(["Needle"],onneedle,'Edit Backbone','wheel_event','Edit Backbone','/../icons/nurbs.svg',"start('Backbone')")
 
 	c2a(["Shoe"],ondocument,'toggleSketch','shoe_tools','toggle constraints of a rib','/../icons/toggleshoesketch.svg',"toggleShoeSketch()")
 	c2a(["Shoe"],always,'Generate Docu',"gendok","generate menu structure docu for web",'/../icons/plane.svg',"run()")
