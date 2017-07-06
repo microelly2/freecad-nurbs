@@ -1,15 +1,8 @@
+'''make a perspective tranformation of a bspline curve'''
+from say import *
+import nurbswb.pyob
 
-import FreeCADGui as Gui
-import FreeCAD,Part
-
-import Draft
-import numpy as np
-#import cv2
-
-from PySide import QtGui
-import sys,traceback,random
-
-
+'''
 def showdialog(title="Fehler",text="Schau in den ReportView fuer mehr Details",detail=None):
 	msg = QtGui.QMessageBox()
 	msg.setIcon(QtGui.QMessageBox.Warning)
@@ -60,6 +53,7 @@ class ViewProvider:
 
 	def __setstate__(self,state):
 		return None
+'''
 
 #------------------
 
@@ -94,23 +88,23 @@ def diag(p,pts,u0,v0):
 		return [True,pn]
 
 
-import numpy
 
 def find_coeffs(pa, pb):
+	'''calculate the coeffs for a perspective transformation of quadrangle  pa  to quadrangle  pb'''
 	matrix = []
 	for p1, p2 in zip(pa, pb):
 		matrix.append([p1[0], p1[1], 1, 0, 0, 0, -p2[0]*p1[0], -p2[0]*p1[1]])
 		matrix.append([0, 0, 0, p1[0], p1[1], 1, -p2[1]*p1[0], -p2[1]*p1[1]])
 
-	A = numpy.matrix(matrix, dtype=numpy.float)
-	B = numpy.array(pb).reshape(8)
+	A = np.matrix(matrix, dtype=np.float)
+	B = np.array(pb).reshape(8)
 
-	res = numpy.dot(numpy.linalg.inv(A.T * A) * A.T, B)
-	return numpy.array(res).reshape(8)
+	res = np.dot(np.linalg.inv(A.T * A) * A.T, B)
+	return np.array(res).reshape(8)
 
 def trafo(x,y,coeffs):
 	'''
-	Data is a 8-tuple  which contains the coefficients for a perspective transform. 
+	coeffs is a 8-tuple  which contains the coefficients for a perspective transform. 
 	For each pixel (x, y) in the output image, 
 	the new value is taken from a position 
 	(a x + b y + c)/(g x + h y + 1), 
@@ -121,20 +115,23 @@ def trafo(x,y,coeffs):
 	y2=(d*x + e*y + f)/(g*x + h*y + 1) 
 	return (x2,y2,0)
 
+## Trafo ist eine Klasse. mit der man eine Kurve perspektivisch 
+# verzerren kann
 
-class Trafo(PartFeature):
+
+class Trafo(nurbswb.pyob.FeaturePython):
 	def __init__(self,obj ):
-		PartFeature.__init__(self,obj)
+		nurbswb.pyob.FeaturePython.__init__(self,obj)
 
 		self.Type="Transformation"
 		self.TypeId="Transformation"
 
-		obj.addProperty("App::PropertyBool","useCenter","A").useCenter=False
-		obj.addProperty("App::PropertyLink","source","A")#.source=App.ActiveDocument.DWire
-		obj.addProperty("App::PropertyLink","target","A")#.target=line2
-		obj.addProperty("App::PropertyLink","model","A")#.model=App.ActiveDocument.Sketch
-		obj.addProperty("App::PropertyLink","center","A")#.center=App.ActiveDocument.Point
-		ViewProvider(obj.ViewObject)
+		obj.addProperty("App::PropertyBool","useCenter","A","split projection into 4 areas").useCenter=False
+		obj.addProperty("App::PropertyLink","source","A","source frame for perspective")#.source=App.ActiveDocument.DWire
+		obj.addProperty("App::PropertyLink","target","A","target frame for perspective")#.target=line2
+		obj.addProperty("App::PropertyLink","model","A","curve which should be transformed")#.model=App.ActiveDocument.Sketch
+		obj.addProperty("App::PropertyLink","center","A","needed if useCenter is on")#.center=App.ActiveDocument.Point
+		nurbswb.pyob.ViewProvider(obj.ViewObject)
 		obj.ViewObject.LineColor=(0.5,1.0,0.5)
 
 
@@ -149,6 +146,7 @@ class Trafo(PartFeature):
 
 	def myexecute(self,obj):
 
+		#calculate the point coordinats for source and target frame
 		if obj.source<>None:
 			pts1= np.float32([(p.x,p.y) for p in obj.source.Points])
 		else:
@@ -158,12 +156,12 @@ class Trafo(PartFeature):
 		pts3= np.float32([(p.x,p.y) for p in obj.model.Shape.Edge1.Curve.getPoles()])
 
 
+		#create the source poles helper
 		c=obj.model.Shape.Edge1.Curve.getPoles()
 		ks=[1.0/(len(c))*i for i in range(len(c)+1)]
 		ms=[1]*(len(c)+1)
 		bc=Part.BSplineCurve()
 		bc.buildFromPolesMultsKnots(c,ms,ks,True,2)
-
 
 		try: bb=FreeCAD.ActiveDocument.cc
 		except: bb=FreeCAD.activeDocument().addObject("Part::Spline","cc")
@@ -173,19 +171,19 @@ class Trafo(PartFeature):
 		bb.Shape=bc.toShape()
 
 
+		# compute and execute the transformation
 		##M = cv2.getPerspectiveTransform(pts1,pts2)
 		M=  find_coeffs(pts1, pts2)
-		print "!!!!!!!!!!!!!!!!!!!!!",M
-
+		print ("trafo coeffs",M)
 
 		if not obj.useCenter:
 			##a = cv2.perspectiveTransform(np.array([pts3]), M)
 			##ptsa=[FreeCAD.Vector(p[0],p[1],0) for p in a[0]]
 			a=[trafo(p[0],p[1],M) for p in pts3]
 			ptsa=[FreeCAD.Vector(p[0],p[1],0) for p in a]
-			print "ptsa"
 
 		else:
+			
 			pts=obj.source.Points
 			pts=np.array([[pts[0],pts[1]],[pts[3],pts[2]]])
 
@@ -200,7 +198,6 @@ class Trafo(PartFeature):
 				(u0,v0)=bs.parameter( obj.center.Shape.Vertex1.Point)
 			else:
 				(u0,v0)=(0.5,0.5)
-			#print ("u0,v0",u0,v0)
 
 			lrc=[]
 			for pk in obj.model.Shape.Edge1.Curve.getPoles():
@@ -221,19 +218,22 @@ class Trafo(PartFeature):
 				pas.append(p2)
 			ptsa=pas
 
-		# Draft.makeWire(ptsa,closed=False,face=True,support=None)
-		poly=Part.makePolygon(ptsa)
+
+#		poly=Part.makePolygon(ptsa)
+#		obj.Shape=poly
 
 		c=ptsa
 		ks=[1.0/(len(c))*i for i in range(len(c)+1)]
 		ms=[1]*(len(c)+1)
 		bc.buildFromPolesMultsKnots(c,ms,ks,True,2)
 
-		obj.Shape=poly
 		obj.Shape=bc.toShape()
+
+		#create the target poles helper
 
 		try: ee=FreeCAD.ActiveDocument.ee
 		except: ee=FreeCAD.activeDocument().addObject("Part::Spline","ee")
+
 		ee.Shape=bc.toShape()
 		ee.ViewObject.hide()
 		ee.Label="Target Poles"
@@ -242,6 +242,7 @@ class Trafo(PartFeature):
 
 
 def run():
+	''' create a transform object for a selected  curve'''
 
 	if len( Gui.Selection.getSelection())==0:
 		showdialog('Oops','nothing selected - nothing to do for me','Please select a Bspline Curve')

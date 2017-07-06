@@ -85,19 +85,21 @@ class OffsetSpline(nurbswb.pyob.FeaturePython):
 		fa.Shape=bc.toShape()
 		fa.ViewObject.LineColor=(.0,1.0,.0)
 
-		ofs=App.ActiveDocument.getObject(name+"_offOut")
-		if ofs==None: ofs=App.ActiveDocument.addObject("Part::Offset2D",name+"_offOut")
-		ofs.Source = fa
-		ofs.ViewObject.LineColor=(.0,0.0,1.0)
-		ofs.Value = obj.ofout
-		ofs.recompute()
+		if obj.ofout<>0:
+			ofs=App.ActiveDocument.getObject(name+"_offOut")
+			if ofs==None: ofs=App.ActiveDocument.addObject("Part::Offset2D",name+"_offOut")
+			ofs.Source = fa
+			ofs.ViewObject.LineColor=(.0,0.0,1.0)
+			ofs.Value = obj.ofout
+			ofs.recompute()
 
-		ofsi=App.ActiveDocument.getObject(name+"_offIn")
-		if ofsi==None: ofsi=App.ActiveDocument.addObject("Part::Offset2D",name+"_offIn")
-		ofsi.Source = fa
-		ofsi.ViewObject.LineColor=(1.0,0.0,.0)
-		ofsi.Value = -obj.ofin
-		ofsi.recompute()
+		if obj.ofin<>0:
+			ofsi=App.ActiveDocument.getObject(name+"_offIn")
+			if ofsi==None: ofsi=App.ActiveDocument.addObject("Part::Offset2D",name+"_offIn")
+			ofsi.Source = fa
+			ofsi.ViewObject.LineColor=(1.0,0.0,.0)
+			ofsi.Value = -obj.ofin
+			ofsi.recompute()
 
 
 ##\cond
