@@ -6,6 +6,9 @@ import FreeCADGui
 
 import numpy as np
 
+
+## callback from widget
+
 def srun(w):
 
 	bc=w.path.Shape.Edge1.Curve
@@ -13,6 +16,8 @@ def srun(w):
 	v=w.ha.value()*0.01
 	movepos(bc,c,v)
 
+
+## create a copy on the current position
 
 def dropcopy(w):
 	c=w.target

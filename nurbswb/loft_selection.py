@@ -9,6 +9,8 @@ App=FreeCAD
 
 
 
+# todo: parametric source
+# flags 
 
 def runOnEdges():
 	'''version bei selektierten geschlossenen Kanten'''
@@ -16,9 +18,15 @@ def runOnEdges():
 	import FreeCADGui as Gui
 	import Part
 	wx=Gui.Selection.getSelectionEx()
+	
 	sls=[]
 	for w in wx:
-		sls += w.SubObjects
+		sob=w.SubObjects[0]
+		if  sob.__class__.__name__ == 'Face':
+			sls += [w.SubObjects[0].Wires[0]]
+		else:
+			sls += [w.SubObjects[0]]
+
 
 	l=Part.makeLoft(sls,True,True,False)
 

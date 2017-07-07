@@ -12,18 +12,15 @@ shoe sole creation
 #--
 #-- GNU Lesser General Public License (LGPL)
 #-------------------------------------------------
+#\cond
+
 __version__ = '0.12'
 
+from say import  *
 
-import FreeCAD,FreeCADGui
-App=FreeCAD
-Gui=FreeCADGui
-
-from PySide import QtGui
 import Part,Mesh,Draft,Points
 
 
-import numpy as np
 import random
 
 import os, nurbswb
@@ -32,7 +29,7 @@ global __dir__
 __dir__ = os.path.dirname(nurbswb.__file__)
 print __dir__
 import numpy as np
-
+#\endcond
 
 # 12 divisions 
 
@@ -451,6 +448,8 @@ def runA(model=None):
 			f.ViewObject.hide()
 
 
+## prototype create a heel
+# absatz ninten und vorne, erste experimente
 
 def createheel():
 
@@ -501,6 +500,7 @@ def createheel():
 		print "okay"
 
 
+## create sole and infrastructure models
 def run():
 	runA()
 	createheel()
