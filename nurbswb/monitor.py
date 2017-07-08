@@ -107,10 +107,13 @@ class Monitor(PartFeature):
 		PartFeature.__init__(self, obj)
 
 		obj.addProperty("App::PropertyLink","source","")
+		# for a indirect dependency a 2nd source to trigger
+		obj.addProperty("App::PropertyLink","source2","")
 		obj.addProperty("App::PropertyFloat","val","")
 		obj.addProperty("App::PropertyFloat","minVal","")
 		obj.addProperty("App::PropertyFloat","maxVal","")
 		obj.addProperty("App::PropertyBool","noExecute" ,"Base")
+		
 		ViewProvider(obj.ViewObject)
 
 	def onDocumentRestored(self, fp):
