@@ -36,35 +36,37 @@ class SketchClone(nurbswb.pyob.FeaturePython):
 				return
 
 			gs=obj.base.Geometry
-			rel=obj.relation
+			try: rel=obj.relation
+			except: return
 			if rel==[]:
-				rel=range(len(obj.base.Geomery))
+				rel=range(len(obj.base.Geometry))
 			for i,i2 in enumerate(rel):
 				obj.addGeometry(gs[i2-1])
 
 
-	def myExecute(proxy,obj):
+	def myExecute(proxy,obj,loop=-1):
 		''' position to parent'''
 
 		if obj.off:
 			print obj.Label + " is deactivated (off)"
-			return
+			return 0
 
 		if obj.base == None:
-			return
+			return 0
 		rel=obj.relation
 		if rel==[]:
-			rel=range(len(obj.base.Geomery))
+			rel=range(len(obj.base.Geometry))
+		count=0
 		try:
 			ts=time.time()
 			bsk=obj.base
 			gs=obj.base.Geometry
-			#for i,g in enumerate(gs):
 			for i,i2 in enumerate(rel):
-				for j in range(4):
+				for j in [1,2]:
 					pos=obj.getPoint(i,j)
 					posn=obj.base.getPoint(i2-1,j)
-					if pos <>posn:
+					if (pos-posn).Length>0.001:
+						count +=1
 						obj.movePoint(i,j,posn+obj.offset)
 						rc=obj.solve()
 						if rc <>0: print ("solve 0 rc=",rc)
@@ -75,28 +77,42 @@ class SketchClone(nurbswb.pyob.FeaturePython):
 			# bsk.recompute()
 		except:
 			sayexc()
-
-		print ("myExecute time",round(time.time()-ts,3))
-
+		if loop>-1:
+			pass
+			# print ("myExecute time",loop+1,count,round(time.time()-ts,3))
+		else:
+			print ("myExecute time",round(time.time()-ts,3))
+		if count==0:
+			return count
+		else:
+			return time.time()-ts
 
 
 ##\cond
 	def execute(self, obj):
 		''' recompute sketch and than run postprocess: myExecute'''
+		if obj == None: return
 		obj.recompute() 
-		self.myExecute(obj)
+		tsum=0
+		print ""
+		for i in range(10):
+			rc=self.myExecute(obj,i)
+			tsum += rc
+			if rc==0: 
+				print ("all myExecute time",i,round(tsum,3))
+				break
 ##\endcond
 
 
 
-def runSketchClone(name="MySketchClone"):
+def runSketchClone(name="MyCloneAndMore"):
 
 	obj = FreeCAD.ActiveDocument.addObject("Sketcher::SketchObjectPython",name)
 	obj.addProperty("App::PropertyLink", "base", "Base",)
 	obj.addProperty("App::PropertyBool", "off", "Base",)
 	obj.addProperty("App::PropertyIntegerList", "relation", "Base",)
 	obj.addProperty("App::PropertyVector", "offset", "Base",)
-	obj.offset=FreeCAD.Vector(1,1,0)
+	obj.offset=FreeCAD.Vector(0,0,0)
 	SketchClone(obj)
 
 	obj.ViewObject.DrawStyle = u"Dashdot"
@@ -108,7 +124,6 @@ def runSketchClone(name="MySketchClone"):
 
 
 def runtest():
-	pass
 
 	obj=runDriver()
 	obj.relation=[1,3,5,6,7]
