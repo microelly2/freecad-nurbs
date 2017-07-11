@@ -63,6 +63,8 @@ class OffsetSpline(nurbswb.pyob.FeaturePython):
 
 
 
+
+
 	def myExecute(proxy,obj):
 		''' creates a closed BSpline that interpolates the vertexes chain of the sketch
 		and two offset curves in- and outside'''
@@ -110,6 +112,46 @@ class OffsetSpline(nurbswb.pyob.FeaturePython):
 ##\endcond
 
 
+#---------------------
+class Ufo(nurbswb.pyob.FeaturePython):
+	'''a mirgrationtest class''' 
+
+	##\cond
+	def __init__(self, obj, icon='/home/thomas/.FreeCAD/Mod/freecad-nurbs/icons/draw.svg'):
+		obj.Proxy = self
+		self.Type = self.__class__.__name__
+		self.obj2 = obj
+		self.aa = None
+		_ViewProvider(obj.ViewObject, icon) 
+
+	##\endcond
+
+	def onChanged(proxy,obj,prop):
+		print "ufo cahnged"
+		return
+#		'''run myExecute for property prop: "ofin" and "ofout"'''
+#		if prop not in ["ofin","ofout"]: return 
+#		proxy.myExecute(obj)
+
+
+	def myExecute(proxy,obj):
+		print "ufo my execute "
+		return
+			ofsi.recompute()
+
+
+##\cond
+	def execute(self, obj):
+		''' recompuute sketch and than run postprocess: myExecute'''
+		obj.recompute() 
+		self.myExecute(obj)
+##\endcond
+
+
+
+
+
+#----------------------
 
 
 def runOffsetSpline(name="MyOffSp"):

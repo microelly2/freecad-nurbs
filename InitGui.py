@@ -315,6 +315,7 @@ if FreeCAD.GuiUp:
 	c2a(["Curves"],ondocument,'FloatList','datatools','create a floatlist','/../icons/nurbs.svg',"runFloatlist()")
 	c2a(["Curves"],ondocument,'Sole','create_sole_sketch','create a sole as offsetspline','/../icons/nurbs.svg',"runSole()")
 	c2a(["Curves"],onselection2,'MoveAlongCurve','move_along_curve','move an object #2 along a bspline curve #1','/../icons/nurbs.svg',"run()")
+	c2a(["Curves"],ondocument,'SketchClone','sketchclone','create a semi clone of a sketch','/../icons/sketchdriver.svg',"runSketchClone()")
 
 
 	c2a(["Faces","create"],always,'Random Plane',"nurbs","Create plane with randoms",'/../icons/plane.svg',"testRandomB()")
