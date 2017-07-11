@@ -362,6 +362,9 @@ if FreeCAD.GuiUp:
 	c2a(["Shoe"],ondocument,'toggleSketch','shoe_tools','toggle constraints of a rib','/../icons/toggleshoesketch.svg',"toggleShoeSketch()")
 	c2a(["Shoe"],always,'Generate Docu',"gendok","generate menu structure docu for web",'/../icons/plane.svg',"run()")
 
+	c2a(["Shoe"],always,'DriverSketch','skdriver','driver test for shoe rib','/../icons/toggleshoesketch.svg',"runribtest()")
+
+
 	c2a(["Nurbs"],always,'Grid','blender_grid','Create Grid',"/../icons/Draft_Grid.svg","run()")
 
 
