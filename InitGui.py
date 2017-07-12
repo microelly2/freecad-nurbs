@@ -297,7 +297,6 @@ if FreeCAD.GuiUp:
 	c2a(["Curves"],always,'DraftBSpline Editor',"DraftBSplineEditor","Edit Draft Bspline",'/../icons/32px-draftbspline_edit.png',"run()")
 
 	c2a(["Curves"],always,'facedraw','facedraw','draw on a face','/../icons/draw.svg',"run()")
-	c2a(["Curves"],always,'scanbackbonecut','scanbackbonecut','Cut the Scan along backbone ','/../icons/backbonecut.svg',"run()")
 	c2a(["Curves"],always,'transform_spline','transform_spline','perspective transformation of a Bbspline','/../icons/upgrade.svg',"run()")
 	c2a(["Curves"],ondocument,'createcloverleaf','createcloverleaf','create a cloverleaf','/../icons/cloverleaf.svg',"run()")
 	c2a(["Curves"],ondocument,'createshoerib','createshoerib','create a shoe last rib','/../icons/cloverleaf.svg',"run()")
@@ -324,8 +323,9 @@ if FreeCAD.GuiUp:
 	c2a(["Faces","create"],always,'Random Sphere',"nurbs","Create sphere with randomness",'/../icons/sphere.svg',"testRandomSphere()")
 	c2a(["Faces","create"],ondocument,'simple Hood','simplehood','create a simple hood','/../icons/nurbs.svg',"run()")
 
-	c2a(["Faces","create"],always,'Create Shoe','shoe','Create Shoe','/../icons/shoe.svg',"run()")
-	c2a(["Faces","create"],always,'Create Sole','sole','Create Shoe Sole','/../icons/sole.svg',"run()")
+	c2a(["Shoe"],always,'Create Shoe','shoe','Create Shoe','/../icons/shoe.svg',"run()")
+	c2a(["Shoe"],always,'scanbackbonecut','scanbackbonecut','Cut the Scan along backbone ','/../icons/backbonecut.svg',"run()")
+	c2a(["Shoe"],always,'Create Sole','sole','Create Shoe Sole','/../icons/sole.svg',"run()")
 
 	c2a(["Faces"],ondocument,'Sole Change Model','sole_change_model','Shoe Sole Change Model','/../icons/sole.svg',"run()")
 	c2a(["Faces"],ondocument,'load Sole Height','load_sole_profile_height','Load Height Profile','/../icons/sole.svg',"run()")
