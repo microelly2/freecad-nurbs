@@ -82,7 +82,9 @@ def run(name='ribbow',moves=[],box=[40,0,-40,30],zoff=0):
 
 	# connect the points for easier access in edit mode drag/drop for lines
 	for p in range (0,anz):
-		ll=sk.addGeometry(Part.LineSegment(App.Vector(100+10*p,100+10*p,0),App.Vector(-100,-100,0)),False)
+		#ll=sk.addGeometry(Part.LineSegment(App.Vector(100+10*p,100+10*p,0),App.Vector(-100,-100,0)),False)
+		# nur als hilfslinien
+		ll=sk.addGeometry(Part.LineSegment(App.Vector(100+10*p,100+10*p,0),App.Vector(-100,-100,0)),True)
 		sk.addConstraint(Sketcher.Constraint('Coincident',p,3,ll,1)) 
 		App.ActiveDocument.recompute()
 

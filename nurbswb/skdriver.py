@@ -67,8 +67,8 @@ class Driver(nurbswb.pyob.FeaturePython):
 		if obj.off:
 			print obj.Label + " is deactivated (off)"
 			return
-		print "start"
-		print obj.relation
+#		print "start"
+#		print obj.relation
 
 		try:
 			ts=time.time()
@@ -79,19 +79,21 @@ class Driver(nurbswb.pyob.FeaturePython):
 			tomove=[]
 			for i,(a,b,c,d,e) in enumerate(rel):
 				try:
-					print i,"###"
+					
 					pos=obj.getPoint(b,c)
-					print pos
+#					print pos
 					posa=bsk.getPoint(d,e)
-					print posa
-					print
+#					print posa
+#					print
 					tomove.append((pos-posa).Length>0.001)
 				except:
+					print i,"###"
+					print (a,b,c,d,e)
 					sayexc()
 					tomove.append(False)
 
 			for i,(a,b,c,d,e) in enumerate(rel):
-				print (a,b,c,d,e)
+#				print (a,b,c,d,e)
 				try:
 					if a==0 : 
 						FreeCAD.obj=obj
@@ -119,6 +121,7 @@ class Driver(nurbswb.pyob.FeaturePython):
 			proxy.rollback(obj)
 
 		print ("myExecute time",round(time.time()-ts,2))
+		bsk.touch()
 		return
 
 
@@ -175,6 +178,7 @@ def runtest():
 			1,	3,1,	1,1,
 			1,	3,2,	1,2,
 		]
+
 
 
 
@@ -271,6 +275,7 @@ def runribtest():
 				1,	6,3,	3,1,
 				1,	7,3,	3,2,
 
+# - ab hier fehlerhaft !!!! warum?
 				1,	8,3,	4,1,
 				1,	9,3,	4,2,
 
@@ -295,3 +300,161 @@ def runribtest():
 	Gui.activeDocument().activeView().viewTop()
 	Gui.SendMsgToActiveView("ViewFit")
 	Gui.activeDocument().activeView().viewTop()
+
+
+
+
+def run_rib_driver(nr):
+
+	if 0:
+		try:App.closeDocument("Unnamed")
+		except: pass
+		App.newDocument("Unnamed")
+		App.setActiveDocument("Unnamed")
+		App.ActiveDocument=App.getDocument("Unnamed")
+		Gui.ActiveDocument=Gui.getDocument("Unnamed")
+
+	import nurbswb
+	import nurbswb.createshoerib
+	reload(nurbswb.createshoerib)
+
+
+#	nurbswb.createshoerib.run()
+#	rib=App.ActiveDocument.ribbow
+#	rib.ViewObject.LineColor = (1.000,0.667,0.000)
+
+	rib=App.ActiveDocument.getObject('rib_'+str(nr))
+	print ("nutze rippe",rib.Label)
+
+	for i in range(76,96):
+		rib.toggleDriving(i) 
+
+	name="ribdriver_" +str(nr)
+
+	obj = FreeCAD.ActiveDocument.addObject("Sketcher::SketchObjectPython",name)
+	obj.addProperty("App::PropertyLink", "base", "Base",)
+
+	obj.addProperty("App::PropertyBool", "off", "Base",)
+	# obj.off=True
+	obj.addProperty("App::PropertyBool", "rollback", "Base",)
+
+	obj.addProperty("App::PropertyIntegerList", "relation", "Base",)
+
+	# weitere parameter
+	obj.addProperty("App::PropertyFloat", "radiusA", "Base",).radiusA=80
+	obj.addProperty("App::PropertyFloat", "radiusB", "Base",).radiusB=100
+
+	# initial geometry
+
+	obj.base=rib
+
+	for i in range(8):
+		g=rib.Geometry[17+2*i].copy()
+		obj.addGeometry(g)
+		#print g
+		obj.solve()
+		obj.recompute
+
+
+
+	obj.ViewObject.DrawStyle = u"Dashdot"
+	obj.ViewObject.LineColor= (1.000,0.000,0.498)
+	obj.ViewObject.LineWidth = 6
+
+
+	obj.relation=[
+				0,	0,1,	0,3,
+				0,	0,2,	1,3,
+				0,	1,1,	2,3,
+				0,	1,2,	3,3,
+
+				0,	2,1,	4,3,
+				0,	2,2,	5,3,
+
+				0,	3,1,	6,3,
+				0,	3,2,	7,3,
+
+				0,	4,1,	8,3,
+				0,	4,2,	9,3,
+
+				0,	5,1,	10,3,
+				0,	5,2,	11,3,
+
+				0,	6,1,	12,3,
+				0,	6,2,	13,3,
+
+				0,	7,1,	14,3,
+				0,	7,2,	15,3,
+
+
+
+				1,	0,3,	0,1,
+				1,	1,3,	0,2,
+				1,	2,3,	1,1,
+				1,	3,3,	1,2,
+
+				1,	4,3,	2,1,
+				1,	5,3,	2,2,
+
+
+				1,	6,3,	3,1,
+				1,	7,3,	3,2,
+
+## ab hier fehler 
+#				1,	8,3,	4,1,
+#				1,	9,3,	4,2,
+#
+#				1,	10,3,	5,1,
+#				1,	11,3,	5,2,
+#
+#				1,	12,3,	6,1,
+#				1,	13,3,	6,2,
+#
+#				1,	14,3,	7,1,
+#				1,	15,3,	7,2,
+
+
+
+
+			]
+
+	Driver(obj)
+
+
+
+	App.activeDocument().recompute()
+	Gui.activeDocument().activeView().viewTop()
+	Gui.SendMsgToActiveView("ViewFit")
+	Gui.activeDocument().activeView().viewTop()
+	grp=App.ActiveDocument.getObject('GRP_'+str(nr))
+	grp.addObject(obj)
+	obj.ViewObject.hide()
+
+
+
+def runribtest2():
+	
+	for i in  range(2,15):
+	#for i in [10]:
+		try:
+			run_rib_driver(i)
+		except:
+			sayexc()
+
+
+
+def recomputeAll():
+	for i in range(2,15):
+		obj=App.ActiveDocument.getObject('rib_'+str(i))
+		dob=App.ActiveDocument.getObject('ribdriver_'+str(i))
+		if obj <> None:
+			obj.touch()
+		if dob<>None:
+			dob.off=True
+
+	App.activeDocument().recompute()
+
+	for i in range(2,15):
+		dob=App.ActiveDocument.getObject('ribdriver_'+str(i))
+		if dob<>None:
+			dob.off=False
