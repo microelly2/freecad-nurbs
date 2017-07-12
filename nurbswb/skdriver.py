@@ -1,3 +1,4 @@
+'''create a driversketch for a sketch'''
 
 from say import *
 import nurbswb.pyob
@@ -27,6 +28,7 @@ class Driver(nurbswb.pyob.FeaturePython):
 	##\endcond
 
 	def onBeforeChange(proxy,obj,prop):
+		'''create a backup of the point coordinates'''
 		if prop <> "Geometry": return
 
 #		print ("onBeforeChange",prop)
@@ -47,8 +49,6 @@ class Driver(nurbswb.pyob.FeaturePython):
 			obj.movePoint(i,j,pos)
 			obj.solve()
 			print ("back",i,j)
-
-	myOnChanged = None
 
 	def onChanged(proxy,obj,prop):
 		'''run myExecute for some properties'''
@@ -79,21 +79,24 @@ class Driver(nurbswb.pyob.FeaturePython):
 			tomove=[]
 			for i,(a,b,c,d,e) in enumerate(rel):
 				try:
-					
-					pos=obj.getPoint(b,c)
-#					print pos
-					posa=bsk.getPoint(d,e)
-#					print posa
-#					print
-					tomove.append((pos-posa).Length>0.001)
+					if a==1:
+						tomove.append(False)
+					else:
+						pos=obj.getPoint(b,c)
+	#					print pos
+						posa=bsk.getPoint(d,e)
+	#					print posa
+	#					print
+						tomove.append((pos-posa).Length>0.001)
 				except:
 					print i,"###"
 					print (a,b,c,d,e)
 					sayexc()
 					tomove.append(False)
+					FreeCAD.obj=obj
+					return
 
 			for i,(a,b,c,d,e) in enumerate(rel):
-#				print (a,b,c,d,e)
 				try:
 					if a==0 : 
 						FreeCAD.obj=obj
@@ -121,8 +124,6 @@ class Driver(nurbswb.pyob.FeaturePython):
 			proxy.rollback(obj)
 
 		print ("myExecute time",round(time.time()-ts,2))
-		bsk.touch()
-		return
 
 
 
@@ -136,6 +137,7 @@ class Driver(nurbswb.pyob.FeaturePython):
 
 
 def runDriver(name="MyDriver"):
+	''' an example driver for a special test sketch'''
 
 
 	obj = FreeCAD.ActiveDocument.addObject("Sketcher::SketchObjectPython",name)
@@ -165,6 +167,7 @@ def runDriver(name="MyDriver"):
 
 
 def runtest():
+	''' the testcase for runDriver'''
 
 	obj=runDriver()
 	obj.base=App.ActiveDocument.Sketch
@@ -184,6 +187,7 @@ def runtest():
 
 
 def runribtest():
+	'''creates the driver for the single default rib'''
 
 	try:App.closeDocument("Unnamed")
 	except: pass
@@ -197,7 +201,6 @@ def runribtest():
 	reload(nurbswb.createshoerib)
 	nurbswb.createshoerib.run()
 
-
 	rib=App.ActiveDocument.ribbow
 	rib.ViewObject.LineColor = (1.000,0.667,0.000)
 
@@ -210,7 +213,6 @@ def runribtest():
 	obj.addProperty("App::PropertyLink", "base", "Base",)
 
 	obj.addProperty("App::PropertyBool", "off", "Base",)
-	# obj.off=True
 	obj.addProperty("App::PropertyBool", "rollback", "Base",)
 
 	obj.addProperty("App::PropertyIntegerList", "relation", "Base",)
@@ -223,13 +225,19 @@ def runribtest():
 
 	obj.base=rib
 
-	for i in range(8):
-		g=rib.Geometry[17+2*i].copy()
+#	for i in range(8):
+#		g=rib.Geometry[17+2*i].copy()
+#		obj.addGeometry(g)
+#		# print g
+#		obj.solve()
+#		obj.recompute
+
+	for i in [17,19,21,23,28,30,32]:
+		g=rib.Geometry[i].copy()
 		obj.addGeometry(g)
-		print g
+		# print g
 		obj.solve()
 		obj.recompute
-
 
 
 	obj.ViewObject.DrawStyle = u"Dashdot"
@@ -237,47 +245,49 @@ def runribtest():
 	obj.ViewObject.LineWidth = 6
 
 
-	obj.relation=[
+	#obj.relation=[
+	txxx=[
+#17
 				0,	0,1,	0,3,
 				0,	0,2,	1,3,
+#19
 				0,	1,1,	2,3,
 				0,	1,2,	3,3,
-
-				0,	2,1,	4,3,
-				0,	2,2,	5,3,
-
-				0,	3,1,	6,3,
-				0,	3,2,	7,3,
-
-				0,	4,1,	8,3,
-				0,	4,2,	9,3,
-
+#21
+				0,	2,1,	5,3,
+				0,	2,2,	6,3,
+#23
+				0,	3,1,	7,3,
+				0,	3,2,	8,3,
+#25
+#				0,	4,1,	4,3,
+#				0,	4,2,	9,3,
+#28
 				0,	5,1,	10,3,
 				0,	5,2,	11,3,
-
+#30
 				0,	6,1,	12,3,
 				0,	6,2,	13,3,
-
+#32
 				0,	7,1,	14,3,
 				0,	7,2,	15,3,
-
-
 
 				1,	0,3,	0,1,
 				1,	1,3,	0,2,
 				1,	2,3,	1,1,
 				1,	3,3,	1,2,
 
-				1,	4,3,	2,1,
-				1,	5,3,	2,2,
-
-
-				1,	6,3,	3,1,
-				1,	7,3,	3,2,
+				1,	5,3,	2,1,
+				1,	6,3,	2,2,
+				1,	7,3,	3,1,
+				1,	8,3,	3,2,
 
 # - ab hier fehlerhaft !!!! warum?
-				1,	8,3,	4,1,
-				1,	9,3,	4,2,
+#			]
+#
+#	rest=[
+#				1,	4,3,	4,1,
+#				1,	9,3,	4,2,
 
 				1,	10,3,	5,1,
 				1,	11,3,	5,2,
@@ -293,6 +303,50 @@ def runribtest():
 
 			]
 
+
+	obj.relation=[
+#17
+				0,	0,1,	0,3,
+				0,	0,2,	1,3,
+#19
+				0,	1,1,	2,3,
+				0,	1,2,	3,3,
+#21
+				0,	2,1,	5,3,
+				0,	2,2,	6,3,
+#23
+				0,	3,1,	7,3,
+				0,	3,2,	8,3,
+#28
+				0,	4,1,	10,3,
+				0,	4,2,	11,3,
+#30
+				0,	5,1,	12,3,
+				0,	5,2,	13,3,
+#32
+				0,	6,1,	14,3,
+				0,	6,2,	15,3,
+#-----------------
+				1,	0,3,	0,1,
+				1,	1,3,	0,2,
+				1,	2,3,	1,1,
+				1,	3,3,	1,2,
+
+				1,	5,3,	2,1,
+				1,	6,3,	2,2,
+				1,	7,3,	3,1,
+				1,	8,3,	3,2,
+
+				1,	10,3,	4,1,
+				1,	11,3,	4,2,
+				1,	12,3,	5,1,
+				1,	13,3,	5,2,
+
+				1,	14,3,	6,1,
+				1,	15,3,	6,2,
+			]
+
+
 	Driver(obj)
 
 
@@ -304,27 +358,11 @@ def runribtest():
 
 
 
-def run_rib_driver(nr):
-
-	if 0:
-		try:App.closeDocument("Unnamed")
-		except: pass
-		App.newDocument("Unnamed")
-		App.setActiveDocument("Unnamed")
-		App.ActiveDocument=App.getDocument("Unnamed")
-		Gui.ActiveDocument=Gui.getDocument("Unnamed")
-
-	import nurbswb
-	import nurbswb.createshoerib
-	reload(nurbswb.createshoerib)
-
-
-#	nurbswb.createshoerib.run()
-#	rib=App.ActiveDocument.ribbow
-#	rib.ViewObject.LineColor = (1.000,0.667,0.000)
+def create_rib_driver(nr):
+	'''create the rib driver for rib nr and put it into the group of the rib'''
 
 	rib=App.ActiveDocument.getObject('rib_'+str(nr))
-	print ("nutze rippe",rib.Label)
+	print ("create driver for rib",rib.Label)
 
 	for i in range(76,96):
 		rib.toggleDriving(i) 
@@ -335,7 +373,6 @@ def run_rib_driver(nr):
 	obj.addProperty("App::PropertyLink", "base", "Base",)
 
 	obj.addProperty("App::PropertyBool", "off", "Base",)
-	# obj.off=True
 	obj.addProperty("App::PropertyBool", "rollback", "Base",)
 
 	obj.addProperty("App::PropertyIntegerList", "relation", "Base",)
@@ -433,22 +470,24 @@ def run_rib_driver(nr):
 
 
 def runribtest2():
-	
+	'''create ribdrivers for all shoe ribs'''
 	for i in  range(2,15):
 	#for i in [10]:
 		try:
-			run_rib_driver(i)
+			create_rib_driver(i)
 		except:
 			sayexc()
 
 
 
 def recomputeAll():
+	'''to recompute the shoe all ribs must be touched'''
 	for i in range(2,15):
 		obj=App.ActiveDocument.getObject('rib_'+str(i))
 		dob=App.ActiveDocument.getObject('ribdriver_'+str(i))
 		if obj <> None:
 			obj.touch()
+		# deactivate the driver feedback to speed up
 		if dob<>None:
 			dob.off=True
 
@@ -458,3 +497,4 @@ def recomputeAll():
 		dob=App.ActiveDocument.getObject('ribdriver_'+str(i))
 		if dob<>None:
 			dob.off=False
+

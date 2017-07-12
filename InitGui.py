@@ -323,9 +323,6 @@ if FreeCAD.GuiUp:
 	c2a(["Faces","create"],always,'Random Sphere',"nurbs","Create sphere with randomness",'/../icons/sphere.svg',"testRandomSphere()")
 	c2a(["Faces","create"],ondocument,'simple Hood','simplehood','create a simple hood','/../icons/nurbs.svg',"run()")
 
-	c2a(["Shoe"],always,'Create Shoe','shoe','Create Shoe','/../icons/shoe.svg',"run()")
-	c2a(["Shoe"],always,'scanbackbonecut','scanbackbonecut','Cut the Scan along backbone ','/../icons/backbonecut.svg',"run()")
-	c2a(["Shoe"],always,'Create Sole','sole','Create Shoe Sole','/../icons/sole.svg',"run()")
 
 	c2a(["Faces"],ondocument,'Sole Change Model','sole_change_model','Shoe Sole Change Model','/../icons/sole.svg',"run()")
 	c2a(["Faces"],ondocument,'load Sole Height','load_sole_profile_height','Load Height Profile','/../icons/sole.svg',"run()")
@@ -358,6 +355,10 @@ if FreeCAD.GuiUp:
 	c2a(["Needle"],onspread,'Open Spreadsheet','wheel_event','Open Spreadsheet','/../icons/nurbs.svg',"undock('Spreadsheet')")
 	c2a(["Needle"],onneedle,'Edit Rib','wheel_event','Edit Rib','/../icons/nurbs.svg',"start('Rib_template')")
 	c2a(["Needle"],onneedle,'Edit Backbone','wheel_event','Edit Backbone','/../icons/nurbs.svg',"start('Backbone')")
+
+	c2a(["Shoe"],always,'Create Shoe','shoe','Create Shoe','/../icons/shoe.svg',"run()")
+	c2a(["Shoe"],always,'scanbackbonecut','scanbackbonecut','Cut the Scan along backbone ','/../icons/backbonecut.svg',"run()")
+	c2a(["Shoe"],always,'Create Sole','sole','Create Shoe Sole','/../icons/sole.svg',"run()")
 
 	c2a(["Shoe"],ondocument,'toggleSketch','shoe_tools','toggle constraints of a rib','/../icons/toggleshoesketch.svg',"toggleShoeSketch()")
 	c2a(["Shoe"],always,'Generate Docu',"gendok","generate menu structure docu for web",'/../icons/plane.svg',"run()")
