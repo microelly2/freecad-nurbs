@@ -368,6 +368,12 @@ if FreeCAD.GuiUp:
 
 	c2a(["Shoe"],always,'RecomputeAll','skdriver','recompute shoe','/../icons/toggleshoesketch.svg',"recomputeAll()")
 
+	c2a(["Shoe"],always,'LoadSketch','sketchmanager','load sketch from a sketchlib','/../icons/toggleshoesketch.svg',"runLoadSketch()")
+	c2a(["Shoe"],always,'SaveSketch','sketchmanager','save sketch into the sketchlib','/../icons/toggleshoesketch.svg',"runSaveSketch()")
+	c2a(["Shoe"],always,'DisplaySketchlib','sketchmanager','list all sketches of the sketchlib','/../icons/toggleshoesketch.svg',"runSketchLib()")
+
+
+
 	c2a(["Nurbs"],always,'Grid','blender_grid','Create Grid',"/../icons/Draft_Grid.svg","run()")
 
 
@@ -421,13 +427,14 @@ static char * nurbs_xpm[] = {
 	def Initialize(self):
 
 		Gui.activateWorkbench("DraftWorkbench")
+		Gui.activateWorkbench("SketcherWorkbench")
 
 		cmds= ['Nurbs_ZebraTool','Nurbs_DraftBSpline Editor',
 		'Nurbs_Create Shoe','Nurbs_Create Sole','Nurbs_Sole Change Model',
 		'Nurbs_scanbackbonecut','Nurbs_createsketchspline','Nurbs_Curves to Face', 'Nurbs_facedraw',
 		'Nurbs_createcloverleaf',
 		'Part_Cone', 'Part_Cylinder','Draft_Move','Draft_Rotate','Draft_Point','Draft_ToggleGrid',
-		'My_Test2','Nurbs_toggleSketch']
+		'My_Test2','Nurbs_toggleSketch','Sketcher_NewSketch']
 
 		if 1:
 			self.appendToolbar("Nurbs", cmds )
