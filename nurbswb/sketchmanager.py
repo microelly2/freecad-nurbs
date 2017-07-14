@@ -9,7 +9,7 @@ import glob
 from PySide import QtGui, QtCore
 
 
-
+#\cond
 class _ViewProvider(nurbswb.pyob.ViewProvider):
 	''' base class view provider '''
 
@@ -19,7 +19,7 @@ class _ViewProvider(nurbswb.pyob.ViewProvider):
 
 	def getIcon(self):
 		return FreeCAD.ConfigGet("UserAppData") +'/Mod/freecad-nurbs/icons/sketchdriver.svg'
-
+#\endcond
 
 
 def copySketch(sketch,name):
@@ -101,9 +101,9 @@ def getfiles():
 
 
 def saveSketch(w=None):
+	'''save Gui.Selection  sketch into a file inside the sketch lib directory'''
 
 	sel=Gui.Selection.getSelection()[0]
-	
 	fn=FreeCAD.ConfigGet("UserAppData") +'sketchlib/'+sel.Name+"_"+str(int(round(time.time())))+"_sk.fcstd"
 	nd=App.newDocument("XYZ")
 	App.ActiveDocument=nd
@@ -114,6 +114,7 @@ def saveSketch(w=None):
 
 
 
+#\cond
 def srun(w):
 	a=w.target
 	lm=getfiles()
@@ -131,9 +132,11 @@ def srun(w):
 	print cmd
 	eval(cmd)
 	# w.hide()
+#\endcond
 
 
 def MyLoadDialog(target=None):
+	'''widget for load sketch from file into a sketch object''' 
 
 	lm=getfiles()
 	w=QtGui.QWidget()
@@ -163,6 +166,7 @@ def MyLoadDialog(target=None):
 
 # hier names dialog einbauen
 def MySaveDialog(target=None):
+	'''widget for save sketch into a file''' 
 
 	lm=getfiles()
 	w=QtGui.QWidget()
@@ -184,17 +188,20 @@ def MySaveDialog(target=None):
 
 
 def runLoadSketch():
+	'''method called from Gui menu'''
 	#[target]=FreeCADGui.Selection.getSelection()
 	target=None
 	return MyLoadDialog(target)
 
 def runSaveSketch():
+	'''method saveSketch called from Gui menu'''
 	#[target]=FreeCADGui.Selection.getSelection()
 #	target=None
 #	return MySaveDialog(target)
 	saveSketch()
 
 def runSketchLib():
+	'''method called from Gui menu'''
 	sayexc2("Ups","Noch nicht implementiert")
 
 if __name__=='__main__':

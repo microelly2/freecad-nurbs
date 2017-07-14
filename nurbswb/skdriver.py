@@ -5,6 +5,19 @@ import nurbswb.pyob
 import Sketcher
 
 
+
+def setSketchDatum(sk,name,wert):
+	'''set the value of a constraint by constraint name'''
+
+	for i,c in enumerate(sk.Constraints):
+		#print (i,c.Name)
+		if c.Name==name:
+			sk.setDatum(i,wert)
+			return
+	raise Exception("Constraint " + name + " nicht gefunden")
+
+
+
 class _ViewProvider(nurbswb.pyob.ViewProvider):
 	''' base class view provider '''
 
@@ -70,54 +83,70 @@ class Driver(nurbswb.pyob.FeaturePython):
 #		print "start"
 #		print obj.relation
 
-		try:
-			ts=time.time()
-			bsk=obj.base
+		for its in range(2):
 
-			rel=np.array(obj.relation).reshape(len(obj.relation)/5,5)
+			try:
+				ts=time.time()
+				bsk=obj.base
 
-			tomove=[]
-			for i,(a,b,c,d,e) in enumerate(rel):
-				try:
-					if a==1:
+				rel=np.array(obj.relation).reshape(len(obj.relation)/5,5)
+
+				tomove=[]
+				for i,(a,b,c,d,e) in enumerate(rel):
+					try:
+						if a==1:
+							tomove.append(False)
+						else:
+							pos=obj.getPoint(b,c)
+		#					print pos
+							posa=bsk.getPoint(d,e)
+		#					print posa
+		#					print
+							tomove.append((pos-posa).Length>0.001)
+					except:
+						print i,"###"
+						print (a,b,c,d,e)
+						sayexc()
 						tomove.append(False)
-					else:
-						pos=obj.getPoint(b,c)
-	#					print pos
-						posa=bsk.getPoint(d,e)
-	#					print posa
-	#					print
-						tomove.append((pos-posa).Length>0.001)
-				except:
-					print i,"###"
-					print (a,b,c,d,e)
-					sayexc()
-					tomove.append(False)
-					FreeCAD.obj=obj
-					return
-
-			for i,(a,b,c,d,e) in enumerate(rel):
-				try:
-					if a==0 : 
 						FreeCAD.obj=obj
-						pos=obj.getPoint(b,c)
-						#if (proxy.oldpos[(b,c)]-pos).Length>0.1:
-						if tomove[i]:
-							bsk.movePoint(d,e,pos)
-						rc=bsk.solve()
-						if rc <>0: print ("solve 0 rc=",rc)
-					else:
-						pos=bsk.getPoint(b,c)
-						obj.movePoint(d,e,pos)
-						rc=obj.solve()
-						if rc <>0: print ("solve 1 rc=",rc)
-				except:
-					sayexc("movepoint"+str(i))
-			obj.recompute()
-			bsk.recompute()
-		except:
-			sayexc()
-			proxy.rollback(obj)
+						return
+
+				for i,(a,b,c,d,e) in enumerate(rel):
+					try:
+						if a==0 : 
+							FreeCAD.obj=obj
+							pos=obj.getPoint(b,c)
+							#if (proxy.oldpos[(b,c)]-pos).Length>0.1:
+							if tomove[i]:
+								bsk.movePoint(d,e,pos)
+							rc=bsk.solve()
+							if rc <>0: print ("solve 0 rc=",rc)
+	#					else:
+	#						pos=bsk.getPoint(b,c)
+	#						obj.movePoint(d,e,pos)
+	#						rc=obj.solve()
+	#						if rc <>0: print ("solve 1 rc=",rc)
+					except:
+						sayexc("movepoint"+str(i))
+
+
+				for i,(a,b,c,d,e) in enumerate(rel):
+					try:
+						if a==0:
+							pos=bsk.getPoint(d,e)
+							obj.movePoint(b,c,pos)
+							rc=obj.solve()
+							if rc <>0: print ("solve 1 rc=",rc)
+					except:
+						sayexc("movepoint"+str(i))
+
+
+
+				obj.recompute()
+				bsk.recompute()
+			except:
+				sayexc()
+				proxy.rollback(obj)
 
 		# rollback im testmode
 		if obj.rollback:
@@ -184,6 +213,20 @@ def runtest():
 
 
 
+def create_rib_driver(nr):
+	'''create the rib driver for rib nr and put it into the group of the rib'''
+
+	rib=App.ActiveDocument.getObject('rib_'+str(nr))
+	print ("create driver for rib",rib.Label)
+
+	for i in range(76,96):
+		rib.setDriving(i,False) 
+
+	name="ribdriver_" +str(nr)
+
+	runrib(rib,name,nr)
+
+
 
 
 def runribtest():
@@ -200,14 +243,17 @@ def runribtest():
 	import nurbswb.createshoerib
 	reload(nurbswb.createshoerib)
 	nurbswb.createshoerib.run()
-
 	rib=App.ActiveDocument.ribbow
 	rib.ViewObject.LineColor = (1.000,0.667,0.000)
 
 	for i in range(76,96):
-		rib.toggleDriving(i) 
+		# rib.toggleDriving(i) 
+		rib.setDriving(i,False) 
 
 	name="ribdriver"
+	runrib(rib,name)
+
+def runrib(rib,name,nr=None):
 
 	obj = FreeCAD.ActiveDocument.addObject("Sketcher::SketchObjectPython",name)
 	obj.addProperty("App::PropertyLink", "base", "Base",)
@@ -225,14 +271,8 @@ def runribtest():
 
 	obj.base=rib
 
-#	for i in range(8):
-#		g=rib.Geometry[17+2*i].copy()
-#		obj.addGeometry(g)
-#		# print g
-#		obj.solve()
-#		obj.recompute
 
-	for i in [17,19,21,23,28,30,32]:
+	for i in [17,19,21,23,26,28]:
 		g=rib.Geometry[i].copy()
 		obj.addGeometry(g)
 		# print g
@@ -245,106 +285,41 @@ def runribtest():
 	obj.ViewObject.LineWidth = 6
 
 
-	#obj.relation=[
-	txxx=[
-#17
-				0,	0,1,	0,3,
-				0,	0,2,	1,3,
-#19
-				0,	1,1,	2,3,
-				0,	1,2,	3,3,
-#21
-				0,	2,1,	5,3,
-				0,	2,2,	6,3,
-#23
-				0,	3,1,	7,3,
-				0,	3,2,	8,3,
-#25
-#				0,	4,1,	4,3,
-#				0,	4,2,	9,3,
-#28
-				0,	5,1,	10,3,
-				0,	5,2,	11,3,
-#30
-				0,	6,1,	12,3,
-				0,	6,2,	13,3,
-#32
-				0,	7,1,	14,3,
-				0,	7,2,	15,3,
-
-				1,	0,3,	0,1,
-				1,	1,3,	0,2,
-				1,	2,3,	1,1,
-				1,	3,3,	1,2,
-
-				1,	5,3,	2,1,
-				1,	6,3,	2,2,
-				1,	7,3,	3,1,
-				1,	8,3,	3,2,
-
-# - ab hier fehlerhaft !!!! warum?
-#			]
-#
-#	rest=[
-#				1,	4,3,	4,1,
-#				1,	9,3,	4,2,
-
-				1,	10,3,	5,1,
-				1,	11,3,	5,2,
-
-				1,	12,3,	6,1,
-				1,	13,3,	6,2,
-
-				1,	14,3,	7,1,
-				1,	15,3,	7,2,
-
-
-
-
-			]
-
-
 	obj.relation=[
-#17
-				0,	0,1,	0,3,
+				0,	0,1,	15,3,
 				0,	0,2,	1,3,
-#19
+
 				0,	1,1,	2,3,
 				0,	1,2,	3,3,
-#21
+
 				0,	2,1,	5,3,
 				0,	2,2,	6,3,
-#23
+
 				0,	3,1,	7,3,
-				0,	3,2,	8,3,
-#28
+				0,	3,2,	9,3,
+
 				0,	4,1,	10,3,
 				0,	4,2,	11,3,
-#30
-				0,	5,1,	12,3,
-				0,	5,2,	13,3,
-#32
-				0,	6,1,	14,3,
-				0,	6,2,	15,3,
-#-----------------
-				1,	0,3,	0,1,
-				1,	1,3,	0,2,
-				1,	2,3,	1,1,
-				1,	3,3,	1,2,
 
-				1,	5,3,	2,1,
-				1,	6,3,	2,2,
-				1,	7,3,	3,1,
-				1,	8,3,	3,2,
-
-				1,	10,3,	4,1,
-				1,	11,3,	4,2,
-				1,	12,3,	5,1,
-				1,	13,3,	5,2,
-
-				1,	14,3,	6,1,
-				1,	15,3,	6,2,
+				0,	5,1,	13,3,
+				0,	5,2,	14,3,
 			]
+
+
+	bsk=obj.base
+	rel=np.array(obj.relation).reshape(len(obj.relation)/5,5)
+	
+	for i,(a,b,c,d,e) in enumerate(rel):
+				try:
+					if a==0:
+						pos=bsk.getPoint(d,e)
+						obj.movePoint(b,c,pos)
+						rc=obj.solve()
+						if rc <>0: print ("solve 1 rc=",rc)
+				except:
+					sayexc("movepoint"+str(i))
+
+
 
 
 	Driver(obj)
@@ -355,10 +330,14 @@ def runribtest():
 	Gui.SendMsgToActiveView("ViewFit")
 	Gui.activeDocument().activeView().viewTop()
 
+	if nr<> None:
+		grp=App.ActiveDocument.getObject('GRP_'+str(nr))
+		grp.addObject(obj)
+		obj.ViewObject.hide()
 
 
 
-def create_rib_driver(nr):
+def create_rib_driverALT(nr):
 	'''create the rib driver for rib nr and put it into the group of the rib'''
 
 	rib=App.ActiveDocument.getObject('rib_'+str(nr))
@@ -456,7 +435,6 @@ def create_rib_driver(nr):
 			]
 
 	Driver(obj)
-
 
 
 	App.activeDocument().recompute()

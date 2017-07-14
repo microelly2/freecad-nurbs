@@ -7,7 +7,7 @@
 
 from say import * 
 import Sketcher
-
+import nurbswb.pyob
 
 '''
 multiplizitaet erhoehen
@@ -15,6 +15,17 @@ App.ActiveDocument.Sketch.modifyBSplineKnotMultiplicity(7,3,1)
 App.ActiveDocument.Sketch.exposeInternalGeometry(6)
 App.ActiveDocument.Sketch.modifyBSplineKnotMultiplicity(6,3,-1) 
 '''
+
+class _ViewProvider(nurbswb.pyob.ViewProvider):
+	''' base class view provider '''
+
+	def __init__(self, vobj):
+		self.Object = vobj.Object
+		vobj.Proxy = self
+
+	def getIcon(self):
+		return '/home/thomas/.FreeCAD/Mod/freecad-nurbs/icons/sketchrib.svg'
+
 
 ## create a special ful constrainted Sketcher Bspline
 #
@@ -42,7 +53,10 @@ def run(name='ribbow',moves=[],box=[40,0,-40,30],zoff=0):
 	try: body=App.activeDocument().Body
 	except:	body=App.activeDocument().addObject('PartDesign::Body','Body')
 
-	sk=App.activeDocument().addObject('Sketcher::SketchObject',name)
+	#sk=App.activeDocument().addObject('Sketcher::SketchObject',name)
+	sk = FreeCAD.ActiveDocument.addObject("Sketcher::SketchObjectPython",name)
+	_ViewProvider(sk.ViewObject) 
+
 
 	sk.Placement.Base.z=zoff
 	sk.Label=label
@@ -81,9 +95,12 @@ def run(name='ribbow',moves=[],box=[40,0,-40,30],zoff=0):
 
 	# connect the points for easier access in edit mode drag/drop for lines
 	for p in range (0,anz):
-		#ll=sk.addGeometry(Part.LineSegment(App.Vector(100+10*p,100+10*p,0),App.Vector(-100,-100,0)),False)
-		# nur als hilfslinien
-		ll=sk.addGeometry(Part.LineSegment(App.Vector(100+10*p,100+10*p,0),App.Vector(-100,-100,0)),True)
+		if 1:
+			ll=sk.addGeometry(Part.LineSegment(App.Vector(100+10*p,100+10*p,0),App.Vector(-100,-100,0)),False)
+		else:
+			# nur als hilfslinien
+			ll=sk.addGeometry(Part.LineSegment(App.Vector(100+10*p,100+10*p,0),App.Vector(-100,-100,0)),True)
+
 		sk.addConstraint(Sketcher.Constraint('Coincident',p,3,ll,1)) 
 		App.ActiveDocument.recompute()
 
@@ -92,14 +109,19 @@ def run(name='ribbow',moves=[],box=[40,0,-40,30],zoff=0):
 		sk.addConstraint(Sketcher.Constraint('Coincident',p+1,3,ll,2)) 
 		App.ActiveDocument.recompute()
 
-	sk.addConstraint(Sketcher.Constraint('Parallel',32,17)) 
-	sk.addConstraint(Sketcher.Constraint('Parallel',20,21)) 
+	d=sk.addConstraint(Sketcher.Constraint('Parallel',32,17)) 
+	sk.renameConstraint(d,'Parallel_32_17')
+	d=sk.addConstraint(Sketcher.Constraint('Parallel',20,21)) 
+	sk.renameConstraint(d,'Parallel_20_21')
+	d=sk.addConstraint(Sketcher.Constraint('Parallel',23,24)) 
+	sk.renameConstraint(d,'Parallel_23_24')
+	d=sk.addConstraint(Sketcher.Constraint('Parallel',24,25)) 
+	sk.renameConstraint(d,'Parallel_24_25')
+	d=sk.addConstraint(Sketcher.Constraint('Parallel',25,26)) 
+	sk.renameConstraint(d,'Parallel_25_26')
 
-	sk.addConstraint(Sketcher.Constraint('Parallel',23,24)) 
-	sk.addConstraint(Sketcher.Constraint('Parallel',24,25)) 
-	sk.addConstraint(Sketcher.Constraint('Parallel',25,26)) 
-
-	sk.addConstraint(Sketcher.Constraint('Parallel',28,29)) 
+	d=sk.addConstraint(Sketcher.Constraint('Parallel',28,29)) 
+	sk.renameConstraint(d,'Parallel_28_29')
 
 	#rahmen rechteck
 	if 0:
@@ -120,8 +142,10 @@ def run(name='ribbow',moves=[],box=[40,0,-40,30],zoff=0):
 		sk.renameConstraint(d, u'angleLeft')
 
 	# symmetrische Ecken
-	sk.addConstraint(Sketcher.Constraint('Symmetric',5,3,3,3,4,3))
-	sk.addConstraint(Sketcher.Constraint('Symmetric',11,3,13,3,12,3))
+	d=sk.addConstraint(Sketcher.Constraint('Symmetric',5,3,3,3,4,3))
+	sk.renameConstraint(d, u'symmetryRight')
+	d=sk.addConstraint(Sketcher.Constraint('Symmetric',11,3,13,3,12,3))
+	sk.renameConstraint(d, u'symmetryLeft')
 	App.activeDocument().recompute()
 
 
