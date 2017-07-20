@@ -165,7 +165,7 @@ class Monitor(PartFeature):
 					j=(obj.maxVal-obj.source.Shape.Edge1.Length)/mm
 					print j
 					j=j*0.5
-					obj.source.ViewObject.LineColor=(.0,1.0,0)
+					obj.source.ViewObject.LineColor=(.0,1.0,0.)
 				elif obj.source.Shape.Edge1.Length>obj.maxVal:
 					obj.source.ViewObject.LineColor=(1.0,0.0,.0)
 				obj.val=obj.source.Shape.Edge1.Length
@@ -177,7 +177,10 @@ class Monitor(PartFeature):
 
 def run():
 	a=FreeCAD.activeDocument().addObject("Part::FeaturePython","MyMonitor")
+
 	m=Monitor(a)
+	a.source=Gui.Selection.getSelection()[0]
+	a.source2=Gui.Selection.getSelection()[1]
 
 
 
