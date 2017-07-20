@@ -160,12 +160,12 @@ class Monitor(PartFeature):
 					j=1-(obj.minVal+mm-obj.source.Shape.Edge1.Length)/mm
 					print j
 					j=j*0.5
-					obj.source.ViewObject.LineColor=(j,j,1.0)
+					obj.source.ViewObject.LineColor=(0.,1.0,.0)
 				elif obj.source.Shape.Edge1.Length<obj.maxVal and obj.source.Shape.Edge1.Length>obj.maxVal-mm:
 					j=(obj.maxVal-obj.source.Shape.Edge1.Length)/mm
 					print j
 					j=j*0.5
-					obj.source.ViewObject.LineColor=(1.0,j,j)
+					obj.source.ViewObject.LineColor=(.0,1.0,0)
 				elif obj.source.Shape.Edge1.Length>obj.maxVal:
 					obj.source.ViewObject.LineColor=(1.0,0.0,.0)
 				obj.val=obj.source.Shape.Edge1.Length
