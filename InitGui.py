@@ -333,6 +333,8 @@ if FreeCAD.GuiUp:
 	c2a(["Faces","create"],always,'Nurbs Editor','nurbs','creates a test nurbs','/../icons/zebra.svg',"runtest()")
 	c2a(["Faces","create"],onselection,'UV Grid Generator','uvgrid_generator','create UV grid of the partr','/../icons/nurbs.svg',"runSel()")
 	c2a(["Faces","create"],onselection,'Nurbs Helper','helper','create helper objects of the part','/../icons/nurbs.svg',"makeHelperSel()")
+	c2a(["Faces","create"],ondocument,'Create QR Code','createbitmap','create a qr code surface','/../icons/nurbs.svg',"run()")
+
 	c2a(["Faces"],always,'filledface','filledface','createFilledFace','/../icons/nurbs.svg',"createFilledFace()")
 
 	c2a(["Faces"],always,'ZebraTool','zebratool','ZebraTool','/../icons/zebra.svg',"run()")
