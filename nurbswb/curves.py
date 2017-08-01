@@ -137,7 +137,7 @@ class Ufo(nurbswb.pyob.FeaturePython):
 	def myExecute(proxy,obj):
 		print "ufo my execute "
 		return
-			ofsi.recompute()
+		#	ofsi.recompute()
 
 
 ##\cond
