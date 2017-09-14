@@ -17,57 +17,77 @@ def createsole(sk):
 		if ll>0:
 			sk.addConstraint(Sketcher.Constraint('Coincident',ll-1,2,ll,1)) 
 			sk.addConstraint(Sketcher.Constraint('Equal',0,ll)) 
-
+		llast=ll
 	sk.addConstraint(Sketcher.Constraint('Coincident',0,1,-1,1)) 
 
-	for p in range(1,12):
+	#for p in range(1,12):
+	for p in range(0,12):
 		ll=sk.addGeometry(Part.LineSegment(App.Vector(10*p,0,0),App.Vector(10*p,20,0)),False)
 		sk.toggleConstruction(ll) 
 		sk.addConstraint(Sketcher.Constraint('Vertical',ll)) 
 		sk.addConstraint(Sketcher.Constraint('Coincident',p,1,ll,1)) 
 
-	for p in range(1,12):
+	p=12
+	ll=sk.addGeometry(Part.LineSegment(App.Vector(10*p,0,0),App.Vector(10*p,20,0)),False)
+#	sk.toggleConstruction(ll) 
+	sk.addConstraint(Sketcher.Constraint('Vertical',ll)) 
+	sk.addConstraint(Sketcher.Constraint('Coincident',llast,2,ll,1)) 
+
+
+	#for p in range(1,12):
+	for p in range(0,12):
 		ll=sk.addGeometry(Part.LineSegment(App.Vector(10*p,0,0),App.Vector(10*p,-20,0)),False)
 		sk.toggleConstruction(ll) 
 		sk.addConstraint(Sketcher.Constraint('Vertical',ll)) 
 		sk.addConstraint(Sketcher.Constraint('Coincident',p,1,ll,1)) 
 
+	p=12
+	ll=sk.addGeometry(Part.LineSegment(App.Vector(10*p,0,0),App.Vector(10*p,-20,0)),False)
+#	sk.toggleConstruction(ll) 
+	sk.addConstraint(Sketcher.Constraint('Vertical',ll)) 
+	sk.addConstraint(Sketcher.Constraint('Coincident',llast,2,ll,1)) 
+
 
 	cLL=sk.addConstraint(Sketcher.Constraint('DistanceX',11,2,LL)) 
 	# App.ActiveDocument.sohle.renameConstraint(cLL, u'LL')
 
-
-	for p in range(11):
+	for p in range(12):
 		print p
-		if p<>10:
-			ll=sk.addGeometry(Part.LineSegment(App.Vector(10*p,-40.,0),App.Vector(10*p+10,-40.,0)),False)
-			sk.addConstraint(Sketcher.Constraint('Coincident',23+p,2,ll,1)) 
-			sk.addConstraint(Sketcher.Constraint('Coincident',24+p,2,ll,2)) 
-		else:
-			ll=sk.addGeometry(Part.LineSegment(App.Vector(10*p,-50.,0),App.Vector(10*p+10,-50.,0)),False)
-			sk.addConstraint(Sketcher.Constraint('Coincident',23+p,2,ll,1)) 
-			sk.addConstraint(Sketcher.Constraint('Coincident',11,2,ll,2)) 
+		p=11-p
+		#	if p<>12:
+		#ll=sk.addGeometry(Part.LineSegment(App.Vector(10*p,-40.,0),App.Vector(10*p+10,-40.,0)),False)
+		ll=sk.addGeometry(Part.LineSegment(App.Vector(10*p+10,-40.,0),App.Vector(10*p+0,-40.,0)),False)
+		sk.addConstraint(Sketcher.Constraint('Coincident',25+p,2,ll,1)) 
+		sk.addConstraint(Sketcher.Constraint('Coincident',26+p,2,ll,2)) 
+#			else:
+#				ll=sk.addGeometry(Part.LineSegment(App.Vector(10*p,-50.,0),App.Vector(10*p+10,-50.,0)),False)
+#				sk.addConstraint(Sketcher.Constraint('Coincident',23+p,2,ll,1)) 
+#				sk.addConstraint(Sketcher.Constraint('Coincident',11,2,ll,2)) 
 
 
-	for p in range(11):
-		print p
-		if p<>10:
+
+	for p in range(12):
+			print p
 			ll=sk.addGeometry(Part.LineSegment(App.Vector(10*p,40.,0),App.Vector(10*p+10,40.,0)),False)
 			sk.addConstraint(Sketcher.Constraint('Coincident',12+p,2,ll,1)) 
 			sk.addConstraint(Sketcher.Constraint('Coincident',13+p,2,ll,2)) 
-		else:
-			ll=sk.addGeometry(Part.LineSegment(App.Vector(10*p,50.,0),App.Vector(10*p+10,50.,0)),False)
-			sk.addConstraint(Sketcher.Constraint('Coincident',12+p,2,ll,1)) 
-			sk.addConstraint(Sketcher.Constraint('Coincident',11,2,ll,2)) 
 
-	if 1:
-			ll=sk.addGeometry(Part.LineSegment(App.Vector(10*p,-50.,0),App.Vector(10*p+10,-50.,0)),False)
-			sk.addConstraint(Sketcher.Constraint('Coincident',0,1,ll,1)) 
-			sk.addConstraint(Sketcher.Constraint('Coincident',23,2,ll,2)) 
+#			else:
+#				ll=sk.addGeometry(Part.LineSegment(App.Vector(10*p,50.,0),App.Vector(10*p+10,50.,0)),False)
+#				sk.addConstraint(Sketcher.Constraint('Coincident',12+p,2,ll,1)) 
+#				sk.addConstraint(Sketcher.Constraint('Coincident',11,2,ll,2)) 
 
-			ll=sk.addGeometry(Part.LineSegment(App.Vector(10*p,-50.,0),App.Vector(10*p+10,-50.,0)),False)
-			sk.addConstraint(Sketcher.Constraint('Coincident',0,1,ll,1)) 
-			sk.addConstraint(Sketcher.Constraint('Coincident',12,2,ll,2)) 
+	if 0:
+
+
+		if 1:
+				ll=sk.addGeometry(Part.LineSegment(App.Vector(10*p,-50.,0),App.Vector(10*p+10,-50.,0)),False)
+				sk.addConstraint(Sketcher.Constraint('Coincident',0,1,ll,1)) 
+				sk.addConstraint(Sketcher.Constraint('Coincident',23,2,ll,2)) 
+
+				ll=sk.addGeometry(Part.LineSegment(App.Vector(10*p,-50.,0),App.Vector(10*p+10,-50.,0)),False)
+				sk.addConstraint(Sketcher.Constraint('Coincident',0,1,ll,1)) 
+				sk.addConstraint(Sketcher.Constraint('Coincident',12,2,ll,2)) 
 
 	App.ActiveDocument.recompute()
 
@@ -111,9 +131,17 @@ def runSole(name="meineSohle",LL=260):
 
 	Sole(obj)
 
+
 	createsole(obj)
 	obj.ViewObject.hide()
 	App.activeDocument().recompute()
+	
+	import Draft
+	img=Draft.makeRectangle(length=280.,height=280.,face=True,support=None)
+	img.ViewObject.TextureImage = "/home/thomas/Dokumente/freecad_buch/b235_shoe/Foot_bg.png"
+	img.Placement = App.Placement(App.Vector(-6,151,0),App.Rotation(App.Vector(0,0,-1),90))
+	img.ViewObject.Selectable = False
+
 	return obj
 
 
