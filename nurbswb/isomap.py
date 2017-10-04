@@ -103,7 +103,7 @@ def runA(obj, mpv=0.5, mpu=0.5, fx=-1, fy=-1, vc=30, uc=30 ):
 		# display square grid
 		run_2(obj,bs,xy2u,xy2v,fx,fy,refpos)
 
-	if 0:
+	if 10:
 		bs=obj.Shape.Face1.Surface
 		drawcircle2(bs,xy2u,xy2v)
 
@@ -205,12 +205,15 @@ def run_2(obj,bs,xy2u,xy2v,fx,fy,refpos):
 			
 			d *= 100/r
 			d -= 100
+			try:
+				#if np.abs(d).max()>10:
+				if np.abs(d).mean()>5:
+					col2 += [Part.makePolygon([ze,zn,zw,zs,ze])]
+				else:
+					col += [Part.makePolygon([ze,zn,zw,zs,ze])]
+			except:
+				print "error polxygon"
 
-			#if np.abs(d).max()>10:
-			if np.abs(d).mean()>5:
-				col2 += [Part.makePolygon([ze,zn,zw,zs,ze])]
-			else:
-				col += [Part.makePolygon([ze,zn,zw,zs,ze])]
 
 #			print(m-10,n-13,"!", np.round(d,1))
 
@@ -334,16 +337,22 @@ def drawcircle2(bs,xy2u,xy2v,RM=5,uc=10,vc=10):
 
 			for a in range(17):
 				r=0.03
-				for i in range(5):
-					pa=bs.value(um+r*np.cos(np.pi*a/8),vm+r*np.sin(np.pi*a/8))
-				#	print ((pa-pm).Length, RM/(pa-pm).Length)
-					r=r*RM/(pa-pm).Length
-					pa=bs.value(um+r*np.cos(np.pi*a/8),vm+r*np.sin(np.pi*a/8))
-				#print ((pa-pm).Length, RM/(pa-pm).Length)
-				#print
-				l=(pa-pm).Length
-				pss.append(pa)
-			col +=[Part.makePolygon(pss+[pm])]
+				try:
+					for i in range(5):
+						pa=bs.value(um+r*np.cos(np.pi*a/8),vm+r*np.sin(np.pi*a/8))
+						print ((pa-pm).Length, RM/(pa-pm).Length)
+						r=r*RM/(pa-pm).Length
+						pa=bs.value(um+r*np.cos(np.pi*a/8),vm+r*np.sin(np.pi*a/8))
+					#print ((pa-pm).Length, RM/(pa-pm).Length)
+					#print
+					l=(pa-pm).Length
+					pss.append(pa)
+				except:
+					print "error circle2 line near 340"
+			try:
+				col +=[Part.makePolygon(pss+[pm])]
+			except:
+				print "error 352"
 
 	Part.show(Part.Compound(col))
 	App.ActiveDocument.ActiveObject.ViewObject.LineColor=(1.,1.,0.)

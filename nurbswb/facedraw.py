@@ -71,14 +71,15 @@ class EventFilter(QtCore.QObject):
 #						if tt['Object']=='Sphere' and tt['Component']=='Face1':
 						if tt['Object']==self.objname and tt['Component']==self.subelement:
 
-							print (tt['x'],tt['y'],tt['z'])
+							#print ("!",tt['x'],tt['y'],tt['z'])
+							#print ("event buttons",event.buttons())
 							self.x,self.y,self.z=tt['x'],tt['y'],tt['z']
 							break
 					if event.buttons()==QtCore.Qt.LeftButton:
 						print "LEFT AA"
 						vf=FreeCAD.Vector(self.x,self.y,self.z)
 						bs=self.subobj.Surface
-						print bs
+						#print bs
 						(u,v)=bs.parameter(vf)
 						print (u,v)
 						lu=0.5
@@ -333,6 +334,7 @@ def drawcurve(wire,face):
 
 	pts2da=[sf.parameter(p) for p in pts[1:]]
 	pts2d=[FreeCAD.Base.Vector2d(p[0],p[1]) for p in pts2da]
+	FreeCAD.pts2d=pts2d
 
 	bs2d = Part.Geom2d.BSplineCurve2d()
 	bs2d.setPeriodic()

@@ -297,6 +297,9 @@ if FreeCAD.GuiUp:
 	c2a(["Curves"],always,'DraftBSpline Editor',"DraftBSplineEditor","Edit Draft Bspline",'/../icons/32px-draftbspline_edit.png',"run()")
 
 	c2a(["Curves"],always,'facedraw','facedraw','draw on a face','/../icons/draw.svg',"run()")
+	c2a(["Curves"],always,'isodraw32','isodraw','3D to 2D','/../icons/draw.svg',"map3Dto2D()")
+	c2a(["Curves"],always,'isodraw23','isodraw','2D to 3D','/../icons/draw.svg',"map2Dto3D()")
+
 	c2a(["Curves"],always,'transform_spline','transform_spline','perspective transformation of a Bbspline','/../icons/upgrade.svg',"run()")
 	c2a(["Curves"],ondocument,'createcloverleaf','createcloverleaf','create a cloverleaf','/../icons/cloverleaf.svg',"run()")
 	c2a(["Curves"],ondocument,'createshoerib','createshoerib','create a shoe last rib','/../icons/cloverleaf.svg',"run()")
@@ -386,7 +389,10 @@ if FreeCAD.GuiUp:
 	c2a(["Neo4j"],always,'Start_OF','openflights','import_Open Flights',"/../icons/openflights-import.png","load()","graphdb")
 	c2a(["Neo4j"],always,'Reset_OG','openflights','reset_Open Flights',"/../icons/openflights.png","reset()","graphdb")
 
-
+	c2a(["Sketchertools"],always,'Status1','feedbacksketch','fb sketch',"/../icons/neo4j_status.png","run()","sketcher")
+	c2a(["Sketchertools"],always,'Status2','feedbacksketch','revers order of constraints A',"/../icons/neo4j_status.png","runA()","sketcher")
+	c2a(["Sketchertools"],always,'Status3','feedbacksketch','create Example B',"/../icons/neo4j_status.png","runB()","sketcher")
+	c2a(["Sketchertools"],always,'Status4','feedbacksketch','Copy 1.Sketch into 2nd Sketch',"/../icons/neo4j_status.png","runC()","sketcher")
 
 #	for cmd in FreeCADGui.listCommands():
 #		if cmd.startswith("Nurbs_"):
