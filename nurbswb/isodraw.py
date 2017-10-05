@@ -59,7 +59,8 @@ class ViewProvider:
 		return None
 
 	def onChanged(self, fp, prop):
-		print ("onChanged",prop)
+		#print ("onChanged",prop)
+		pass
 
 
 import nurbswb.isomap
@@ -75,27 +76,34 @@ def createShape(obj):
 	mpv=0.5
 	mpu=0.5
 
-	mpv=.0
-	mpu=.0
+#	mpv=.0
+#	mpu=.0
 
 
 	# skalierung/lage
 	fx=-1.
 	fy=-1.
 	
-	fy=-0.5
+#	fy=-0.5
+#	fx=-0.5
+#	fy=-0.5
 	
-	[uv2x,uv2y,xy2u,xy2v]=nurbswb.isomap.getmap(obj.face)
+	#[uv2x,uv2y,xy2u,xy2v]=nurbswb.isomap.getmap(obj.face)
+	[uv2x,uv2y,xy2u,xy2v]=[obj.mapobject.Proxy.uv2x,obj.mapobject.Proxy.uv2y,obj.mapobject.Proxy.xy2u,obj.mapobject.Proxy.xy2v]
+	
 	print "getmap done2"
 	
-	u0=0.
-	v0=0.
+	u0=0
+	v0=0
 	
+	fy=-1.1
+	fx=-1.1
+
 	y=uv2y(u0,v0)
 	x=uv2x(u0,v0)
 	u=xy2v(x,y)
 	v=xy2u(x,y)
-	print (u0,v0,x,y,u,v)
+	# print (u0,v0,x,y,u,v)
 	bs=obj.face.Shape.Face1.Surface
 	w=obj.wire.Shape.Wires[0]
 
@@ -104,16 +112,16 @@ def createShape(obj):
 		pts=w.discretize(30)
 		pts2=[]
 		
-#		refpos=bs.value(mpu,mpv)
+		refpos=bs.value(mpu,mpv)
 		
-		refpos=FreeCAD.Vector()
+		refpos=FreeCAD.Vector(0,0,0)
 
 		for p in pts:
 			x=fx*(p.x-refpos.x)
 			y=fy*(p.y-refpos.y)
 			u=xy2u(x,y)
 			v=xy2v(x,y)
-			print (round(x,2),round(y,2),round(u,2),round(v,2))
+			# print (round(x,2),round(y,2),round(u,2),round(v,2))
 
 			p2=bs.value(u,v)
 			pts2.append(p2)
@@ -124,7 +132,7 @@ def createShape(obj):
 
 		pts3=[]
 		for p in FreeCAD.pts2:
-			print p
+			# print p
 			if p.Length<1000:
 				pts3.append(p)
 			else:
@@ -139,11 +147,49 @@ def createShape(obj):
 	# pp=Part.makePolygon(pts)
 
 	pp=Part.Compound(ppall)
-	obj.Shape=pp
+
+	#-----------------
+	if 1:
+		pass
+
+	ppall=[]
+	for w in obj.wire.Shape.Wires:
+
+		#w=obj.wire.Shape.Wires[0]
+		pts=w.discretize(30)
+#		print pts
+
+		#[uv2x,uv2y,xy2u,xy2v]=nurbswb.isomap.getmap(face)
+		
+		[uv2x,uv2y,xy2u,xy2v]=[obj.mapobject.Proxy.uv2x,obj.mapobject.Proxy.uv2y,obj.mapobject.Proxy.xy2u,obj.mapobject.Proxy.xy2v]
+		
+		ptbb=[]
+		for p in pts:
+#			print "--",p
+			x=-p.y
+			y=-p.x
+			u=xy2v(x,y)
+			v=xy2u(x,y)
+			pt=bs.value(u,v)
+			ptbb.append(pt)
+#			print pt
+
+		#Draft.makeWire(ptbb)
+#		print "yy"
+#		print ptbb
+#		print "xx"
+		pp=Part.makePolygon(ptbb)
+		ppall.append(pp)
+	#---------------
+
+
+	ppc=Part.Compound(ppall)
+	obj.Shape=ppc
 	obj.Label="3D for " + obj.wire.Label+" "
 	
 	print ("Mittelpunkt ", bs.value(0.5,0.5))
-	
+	print "MOA:",obj.mapobject.Label
+	#print "MOA:",obj.mapobject.Proxy.uv2x
 
 
 
@@ -154,6 +200,7 @@ class Isodraw(PartFeature):
 		obj.addProperty("App::PropertyVector","Size","Base").Size=FreeCAD.Vector(300,-100,200)
 		obj.addProperty("App::PropertyLink","face","Base")
 		obj.addProperty("App::PropertyLink","wire","Base")
+		obj.addProperty("App::PropertyLink","mapobject","Base")
 		obj.addProperty("App::PropertyInteger","n1","Base")
 		obj.addProperty("App::PropertyInteger","n2","Base")
 		obj.addProperty("App::PropertyInteger","n3","Base")
@@ -188,6 +235,60 @@ def createIsodrawFace():
 	return b
 
 #------------------------------------------------------
+
+
+class Map(PartFeature):
+	def __init__(self, obj):
+		PartFeature.__init__(self, obj)
+		obj.addProperty("App::PropertyVector","Size","Base").Size=FreeCAD.Vector(300,-100,200)
+		obj.addProperty("App::PropertyLink","face","Base")
+		#obj.addProperty("App::PropertyLink","wire","Base")
+		#raender
+		obj.addProperty("App::PropertyInteger","ub","Base")
+		obj.addProperty("App::PropertyInteger","ue","Base")
+		obj.addProperty("App::PropertyInteger","vb","Base")
+		obj.addProperty("App::PropertyInteger","ve","Base")
+		#mitte
+		obj.addProperty("App::PropertyFloat","vm","Base")
+		obj.addProperty("App::PropertyFloat","um","Base")
+
+		obj.addProperty("App::PropertyFloat","fx","Base").fx=-1.
+		obj.addProperty("App::PropertyFloat","fy","Base").fy=-1.
+
+
+		obj.vm=0.4
+		obj.um=0.5
+		obj.ve=-1
+		obj.ue=-1
+
+		obj.addProperty("App::PropertyLink","backref","Base")
+
+		ViewProvider(obj.ViewObject)
+		obj.ViewObject.LineColor=(1.,0.,1.)
+		#createShape(obj)
+
+#	def onChanged(self, fp, prop):
+#		print ("onChanged",prop)
+#		if prop=="Size" or prop in ["uMin","uMax","n2","e1","e2","e3"]:
+#			createShape(fp)
+
+	def execute(proxy,obj):
+
+		[uv2x,uv2y,xy2u,xy2v]=nurbswb.isomap.getmap(obj.face)
+		proxy.uv2x=uv2x
+		proxy.uv2y=uv2y
+		proxy.xy2u=xy2u
+		proxy.xy2v=xy2v
+		print "getmap done"
+
+		if obj.backref <>None:
+			obj.backref.touch()
+			obj.backref.Document.recompute()
+
+def createMap():
+	b=FreeCAD.activeDocument().addObject("Part::FeaturePython","MAP")
+	bn=Map(b)
+	return b
 
 
 
@@ -358,7 +459,7 @@ class Drawgrid(PartFeature):
 
 	def onChanged(self, obj, prop):
 		if obj == None: return
-		print ("onChanged",prop,obj)
+		# print ("onChanged",prop,obj)
 		if prop in ["uMin","uMax","vMin","vMax","e2","e3"]:
 				obj.Shape=createGrid(obj)
 
@@ -404,7 +505,7 @@ class Draw3Dgrid(PartFeature):
 class ViewProviderSL(ViewProvider):
 
 	def onChanged(self, obj, prop):
-		print ("onChanged",prop)
+		#print ("onChanged",prop)
 		if obj.Visibility:
 			ws=WorkSpace(obj.Object.workspace)
 			ws.show()
@@ -739,7 +840,7 @@ if 0:
 def map3Dto2D():
 	# 3D Kante zu 2D Kante
 	face=App.ActiveDocument.Poles
-	wire=App.ActiveDocument.UUUU_Drawing_on_Poles__Face1002_Spline
+	#wire=App.ActiveDocument.UUUU_Drawing_on_Poles__Face1002_Spline
 	s=Gui.Selection.getSelection()
 	for wire in s:
 		#wire=s[0]
@@ -748,6 +849,7 @@ def map3Dto2D():
 		bs=face.Shape.Face1.Surface
 		for e in wire.Shape.Edges:
 			pts=e.discretize(10)
+			FreeCAD.ptsaa=pts
 			pts2=[]
 			for p in pts:
 				(u,v)=bs.parameter(p)
@@ -763,9 +865,80 @@ def map3Dto2D():
 def map2Dto3D():
 	# 2D Kante(Sketch) auf  3D Flaeche Poles
 	#import nurbswb.isodraw
-	f=createIsodrawFace()
-	f.face=App.ActiveDocument.Poles
-	f.wire=App.ActiveDocument.Sketch
+	moa=createMap()
+	moa.face=App.ActiveDocument.Poles
+	
 	s=Gui.Selection.getSelection()
-	f.wire=s[0]
-	App.activeDocument().recompute()
+	for w in s:
+		f=createIsodrawFace()
+		f.mapobject=moa
+		f.face=App.ActiveDocument.Poles
+		#f.wire=App.ActiveDocument.Sketch
+		try:f.wire=w
+		except:f.wire=App.ActiveDocument.DWire
+		App.activeDocument().recompute()
+
+
+
+# pruefe qualitaet der umrechnung
+if 0:
+	face=App.ActiveDocument.Poles
+	#face=App.ActiveDocument.MySegment
+	bs=face.Shape.Face1.Surface
+	#wire=App.ActiveDocument.UUUU_Drawing_on_Poles__Face1002_Spline
+	wire=App.ActiveDocument.UUUU_Drawing_on_Poles__Face1001_Spline
+	#wire=App.ActiveDocument.Shape001
+	p=wire.Shape.Vertex1.Point
+	p
+	print "huu"
+	[uv2x,uv2y,xy2u,xy2v]=nurbswb.isomap.getmap(face)
+
+	(u,v)=bs.parameter(p)
+	(u,v)=bs.parameter(p)
+	pt0=bs.value(u,v)
+	print (u,v)
+	x=uv2x(u,v)
+	y=uv2y(u,v)
+	print (x,y)
+	u=xy2v(x,y)
+	v=xy2u(x,y)
+	print(u,v)
+	pt=bs.value(u,v)
+#	print pt
+#	print p
+	print p-pt
+
+if 0:
+#	kku2=np.array(FreeCAD.kku).reshape(31,31,3)
+#	kku=kku2[10:25,10:20].reshape(150,3)
+
+	ptsu=[FreeCAD.Vector(tuple(i)) for i in kku]
+	Draft.makeWire(ptsu)
+	Points.show(Points.Points(ptsu))
+
+
+	mode='thin_plate'
+	xy2u = scipy.interpolate.Rbf(kku[:,0],kku[:,1],kku[:,2], function=mode)
+
+
+if 0:
+	[uv2x,uv2y,xy2u,xy2v]=nurbswb.isomap.getmap(face)
+	ptbb=[]
+	for p in FreeCAD.ptsaa:
+		(u,v)=bs.parameter(p)
+		(u,v)=bs.parameter(p)
+		pt0=bs.value(u,v)
+#		print (u,v)
+		x=uv2x(u,v)
+		y=uv2y(u,v)
+#		print (x,y)
+		u=xy2v(x,y)
+		v=xy2u(x,y)
+#		print(u,v)
+		pt=bs.value(u,v)
+	#	print pt
+	#	print p
+		print p-pt
+		ptbb.append(pt)
+
+	Draft.makeWire(ptbb)

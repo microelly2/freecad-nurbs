@@ -273,7 +273,6 @@ def getmap(obj, mpv=0.5, mpu=0.5, fx=-1, fy=-1, vc=30, uc=30 ):
 	uv2x = scipy.interpolate.interp2d(us, vs, ptsa[:,:,0], kind='cubic')
 	uv2y = scipy.interpolate.interp2d(us, vs, ptsa[:,:,1], kind='cubic')
 
-
 	kku=[]
 	for ui in range(uc+1):
 		for vi in range(vc+1):
@@ -286,13 +285,99 @@ def getmap(obj, mpv=0.5, mpu=0.5, fx=-1, fy=-1, vc=30, uc=30 ):
 			kkv.append([ptsa[ui,vi,0],ptsa[ui,vi,1], vs[vi]])
 	kkv=np.array(kkv)
 
+
+#------------------------------------------------------
+
+	d=0
+	kku=[]
+
+	for ui in range(d,uc+1-d):
+		for vi in range(d,vc+1-d):
+			#if ptsa[ui,vi,1]>0:
+			kku.append([ptsa[ui,vi,0],ptsa[ui,vi,1], us[ui]])
+	kku=np.array(kku)
+
+	kkv=[]
+	for ui in range(d,uc+1-d):
+		for vi in range(d,vc+1-d):
+			#if ptsa[ui,vi,1]>0:
+			kkv.append([ptsa[ui,vi,0],ptsa[ui,vi,1], vs[vi]])
+	kkv=np.array(kkv)
+
+	FreeCAD.kku=kku
+
+
+# ideas
+# https://stackoverflow.com/questions/34820612/scipy-interp2d-warning-and-different-result-than-expected
+#
+
+#	print kku.shape
+#	print "aaaaa"
+
+	if 0:
+		y=[]
+		kku2=[tuple(k) for k in kku]
+		for k in kku2:
+			if k not in y:
+				y.append(k)
+		kku=y
+
+		y=[]
+		kkv2=[tuple(k) for k in kkv]
+		for k in kkv2:
+			if k not in y:
+				y.append(k)
+		kkv=y
+
+		
+		kku2=[[x,y,z] for (x,y,z) in kku]
+		kkv2=[[x,y,z] for (x,y,z) in kkv]
+		kku=np.array(kku2)
+		kkv=np.array(kkv2)
+
+	# anpassung der teilmenge, dass es passt
+	FreeCAD.kku=kku
+	FreeCAD.kkv=kkv
+
+	dx=29
+	dy=31
+	sx=2
+	sy=0
+
+	kku2=np.array(kku).reshape(31,31,3)
+	kku=kku2[sx:sx+dx,sy:sy+dy].reshape(dx*dy,3)
+
+	kkv2=np.array(kkv).reshape(31,31,3)
+	kkv=kkv2[sx:sx+dx,sy:sy+dy].reshape(dx*dy,3)
+
+	print "isomap.py: kku shape",kku.shape
+
+
+#		ptsu=[FreeCAD.Vector(tuple(i)) for i in kku]
+#		Draft.makeWire(ptsu)
+#		Points.show(Points.Points(ptsu))
+
+
+
 	try:
 		mode='thin_plate'
 		xy2u = scipy.interpolate.Rbf(kku[:,0],kku[:,1],kku[:,2], function=mode)
+#		xy2v = scipy.interpolate.Rbf(kkv[:,0],kkv[:,1],kkv[:,2], function=mode)
+	except:
+		mode='cubic'
+		mode='linear'
+#		print "aex"
+		xy2u = scipy.interpolate.interp2d(kku[:,0],kku[:,1],kku[:,2], kind=mode)
+#		xy2u = scipy.interpolate.interp2d(kku[5:65,0],kku[5:65,1],kku[5:65,2], kind=mode)
+#		xy2v = scipy.interpolate.interp2d(kkv[:,0],kkv[:,1],kkv[:,2], kind=mode)
+	try:
+		mode='thin_plate'
+#		xy2u = scipy.interpolate.Rbf(kku[:,0],kku[:,1],kku[:,2], function=mode)
 		xy2v = scipy.interpolate.Rbf(kkv[:,0],kkv[:,1],kkv[:,2], function=mode)
 	except:
 		mode='cubic'
-		xy2u = scipy.interpolate.interp2d(kku[:,0],kku[:,1],kku[:,2], kind=mode)
+#		print "bex"
+#		xy2u = scipy.interpolate.interp2d(kku[:,0],kku[:,1],kku[:,2], kind=mode)
 		xy2v = scipy.interpolate.interp2d(kkv[:,0],kkv[:,1],kkv[:,2], kind=mode)
 
 
