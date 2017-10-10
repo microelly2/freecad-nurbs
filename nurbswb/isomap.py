@@ -89,7 +89,9 @@ def runA(obj, mpv=0.5, mpu=0.5, fx=-1, fy=-1, vc=30, uc=30 ):
 				comps += [ Part.makePolygon([FreeCAD.Vector(fx*p[0],fy*p[1],0) for p in pts]) ]
 
 			Part.show(Part.Compound(comps))
-			App.ActiveDocument.ActiveObject.Placement.Base=refpos
+			
+			# App.ActiveDocument.ActiveObject.Placement.Base=refpos
+			
 			App.ActiveDocument.ActiveObject.Label="planar Map of Grid"
 
 
@@ -103,7 +105,7 @@ def runA(obj, mpv=0.5, mpu=0.5, fx=-1, fy=-1, vc=30, uc=30 ):
 		# display square grid
 		run_2(obj,bs,xy2u,xy2v,fx,fy,refpos)
 
-	if 10:
+	if 0:
 		bs=obj.Shape.Face1.Surface
 		drawcircle2(bs,xy2u,xy2v)
 
@@ -163,7 +165,7 @@ def run_2(obj,bs,xy2u,xy2v,fx,fy,refpos):
 	col=[]
 	col2=[]
 
-	for m in range(-2,24):
+	for m in range(-2,20):
 		for n in range(2,24):
 			ptsk=[]
 			ptss=[]
@@ -407,7 +409,7 @@ def drawcircle2(bs,xy2u,xy2v,RM=5,uc=10,vc=10):
 
 	col=[]
 
-	for m in range(-2,24):
+	for m in range(-2,20):
 		for n in range(2,24):
 			ptsk=[]
 			ptss=[]
