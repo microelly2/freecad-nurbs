@@ -348,6 +348,38 @@ def drawcurve(wire,face):
 	sp.ViewObject.LineColor=wire.ViewObject.LineColor
 	wire.ViewObject.hide()
 
+	# flaeche erzeugen
+
+
+	face=App.ActiveDocument.Poles.Shape.Face1
+	edges=e1.Edges
+
+
+	ee=edges[0]
+	splita=[(ee,face)]
+	r=Part.makeSplitShape(face, splita)
+#	Part.show(r[0][0])
+
+	ee.reverse()
+	splitb=[(ee,face)]
+	r2=Part.makeSplitShape(face, splitb)
+#	Part.show(r2[0][0])
+
+	#r=Part.makeSplitShape(face, splita)
+	#Part.show(r[0][0])
+	sp=App.ActiveDocument.addObject("Part::Spline",wire.Label+" SplineFaceA")
+	sp.Shape=r[0][0]
+	sp.ViewObject.ShapeColor=(random.random(),random.random(),random.random())
+	sp.ViewObject.LineColor=sp.ViewObject.ShapeColor
+
+	sp=App.ActiveDocument.addObject("Part::Spline",wire.Label+" SplineFaceB")
+	sp.Shape=r2[0][0]
+	sp.ViewObject.ShapeColor=(random.random(),random.random(),random.random())
+	sp.ViewObject.LineColor=sp.ViewObject.ShapeColor
+
+
+
+
 import random
 
 def createnewwire(widget):
@@ -520,13 +552,13 @@ def start(source='Backbone'):
 	mw.installEventFilter(ef)
 	ef.keyPressed2=False
 
-	w=App.ActiveDocument.addObject("Part::Feature","UUUU Drawing on " + ef.objname + ": "+ ef.subelement)
+	w=App.ActiveDocument.addObject("Part::Feature","Drawing on " + ef.objname + ": "+ ef.subelement)
 	w.Shape=Part.Shape()
 
 	w.ViewObject.LineColor=(1.0,0.0,0.0)
 	w.ViewObject.LineWidth=10
 
-	wam=App.ActiveDocument.addObject("Part::Feature","ZZZZ Drawing on " + ef.objname + ": "+ ef.subelement)
+	wam=App.ActiveDocument.addObject("Part::Feature","Drawing on " + ef.objname + ": "+ ef.subelement)
 	wam.Shape=Part.Shape()
 
 	wam.ViewObject.LineColor=(1.0,0.0,1.0)
