@@ -570,6 +570,21 @@ def start(source='Backbone'):
 	ef.dialog=dialog(source)
 	ef.dialog.ef=ef
 
+	# beispiel - erzeuge hilfsobjekte
+	import nurbswb.isodraw
+	b=FreeCAD.activeDocument().addObject("Part::FeaturePython","MyDrawGrid")
+
+	nurbswb.isodraw.Drawgrid(b)
+	b.faceObject=App.ActiveDocument.Poles
+
+	b.ViewObject.Transparency=60
+	App.activeDocument().recompute()
+
+	b=FreeCAD.activeDocument().addObject("Part::FeaturePython","MyGrid")
+	nurbswb.isodraw.Draw3Dgrid(b)
+	b.drawgrid=App.ActiveDocument.MyDrawGrid
+
+
 
 	ef.dialog.show()
 
