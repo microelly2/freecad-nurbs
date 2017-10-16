@@ -116,12 +116,20 @@ def createShape(obj):
 		
 		refpos=FreeCAD.Vector(0,0,0)
 
+		print "uv fuer Wires ..."
 		for p in pts:
 			x=fx*(p.x-refpos.x)
 			y=fy*(p.y-refpos.y)
 			u=xy2u(x,y)
 			v=xy2v(x,y)
 			# print (round(x,2),round(y,2),round(u,2),round(v,2))
+			# nicht ausreisen lassen
+			print (u,v)
+			if u<0: u=0
+			if u>1: u=1
+			if v<0: v=0
+			if v>1: v=1
+			
 
 			p2=bs.value(u,v)
 			pts2.append(p2)
@@ -136,7 +144,7 @@ def createShape(obj):
 			if p.Length<1000:
 				pts3.append(p)
 			else:
-				print ("Fehler bei ",p)
+				print ("AFehler bei ",p)
 
 		#Draft.makeWire(pts3)
 
@@ -344,6 +352,7 @@ def createGrid(obj,upmode=False):
 	vc=obj.uCount
 	uc=obj.vCount
 
+
 	ptsa=[]
 	ptska=[]
 
@@ -374,23 +383,39 @@ def createGrid(obj,upmode=False):
 
 			kx=bbc.length(mpu,uv)
 			if uv<mpu: kx =-kx
-			ptsk.append(bs.value(vm,uv))
+
+			# ptsk.append(bs.value(vm,uv))
+			ptsk.append(bs.value(uv,vm))
 
 			pts.append([kx,ky,0])
 		ptsa.append(pts)
 		ptska.append(ptsk)
 
-		comps += [ Part.makePolygon(ptsk[obj.vMin:obj.vMax])]
+#	comps += [ Part.makePolygon(ptsk[obj.vMin:obj.vMax])]
 
-	comps =[]
+
+#	comps =[]
+
+#	for pts in ptska[obj.vMin:obj.vMax]:
+#		comps += [ Part.makePolygon([FreeCAD.Vector(tuple(p)) for p in pts[obj.uMin:obj.uMax]]) ]
+
+#	ptska=np.array(ptska).swapaxes(0,1)
+
+#	for pts in ptska[obj.uMin:obj.uMax]:
+#		comps += [ Part.makePolygon([FreeCAD.Vector(tuple(p)) for p in pts[obj.vMin:obj.vMax]]) ]
+
+
+
+	comps=[]
+	for pts in ptska[obj.uMin:obj.uMax]:
+		comps += [ Part.makePolygon([FreeCAD.Vector(tuple(p)) for p in pts[obj.vMin:obj.vMax]]) ]
+
+	ptska=np.array(ptska).swapaxes(0,1)
 
 	for pts in ptska[obj.vMin:obj.vMax]:
 		comps += [ Part.makePolygon([FreeCAD.Vector(tuple(p)) for p in pts[obj.uMin:obj.uMax]]) ]
 
-	ptska=np.array(ptska).swapaxes(0,1)
 
-	for pts in ptska[obj.uMin:obj.uMax]:
-		comps += [ Part.makePolygon([FreeCAD.Vector(tuple(p)) for p in pts[obj.vMin:obj.vMax]]) ]
 
 	if upmode:
 		return Part.Compound(comps)
@@ -448,13 +473,13 @@ class Drawgrid(PartFeature):
 		ViewProvider(obj.ViewObject)
 		obj.ViewObject.LineColor=(1.,0.,1.)
 
-		obj.uCount=30
-		obj.vCount=30
+		obj.uCount=40
+		obj.vCount=40
 
-		obj.uMax=30
-		obj.uMin=0
-		obj.vMax=30
-		obj.vMin=0
+		obj.uMax=-1
+		obj.uMin=1
+		obj.vMax=-1
+		obj.vMin=1
 
 
 	def onChanged(self, obj, prop):
