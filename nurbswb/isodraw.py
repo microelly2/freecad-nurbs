@@ -473,8 +473,8 @@ class Drawgrid(PartFeature):
 		ViewProvider(obj.ViewObject)
 		obj.ViewObject.LineColor=(1.,0.,1.)
 
-		obj.uCount=40
-		obj.vCount=40
+		obj.uCount=30
+		obj.vCount=30
 
 		obj.uMax=-1
 		obj.uMin=1
