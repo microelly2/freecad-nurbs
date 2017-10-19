@@ -231,7 +231,7 @@ def run_2(obj,bs,xy2u,xy2v,fx,fy,refpos):
 #----------------------------------------------------------------------
 
 
-def getmap(obj, mpv=0.5, mpu=0.5, fx=-1, fy=-1, vc=30, uc=30 ):
+def getmap(mapobj,obj, mpv=0.5, mpu=0.5, fx=-1, fy=-1, vc=30, uc=30 ):
 	'''  berechnet vier interpolatoren zum umrechnen von xy(isomap) in uv(nurbs) und zurueck 
 	mittelpunkt in uv: mpv, mpu
 	skalierung/lage der xy-Ebene: fx,fy 
@@ -239,6 +239,13 @@ def getmap(obj, mpv=0.5, mpu=0.5, fx=-1, fy=-1, vc=30, uc=30 ):
 	'''
 
 	bs=obj.Shape.Face1.Surface
+	
+	
+	print "DATA for getmap object"
+	#print obj.vc
+	#print obj.uc
+	#print mapobj.Name
+	#print mapobj.border
 
 	# skalierung/lage
 	#fx,fy=1,1
@@ -275,6 +282,13 @@ def getmap(obj, mpv=0.5, mpu=0.5, fx=-1, fy=-1, vc=30, uc=30 ):
 	uv2x = scipy.interpolate.interp2d(us, vs, ptsa[:,:,0], kind='cubic')
 	uv2y = scipy.interpolate.interp2d(us, vs, ptsa[:,:,1], kind='cubic')
 
+	if mapobj == None:
+		xy2v=None
+		xy2u=None
+		return [uv2x,uv2y,xy2u,xy2v]
+
+
+
 	kku=[]
 	for ui in range(uc+1):
 		for vi in range(vc+1):
@@ -290,7 +304,9 @@ def getmap(obj, mpv=0.5, mpu=0.5, fx=-1, fy=-1, vc=30, uc=30 ):
 
 #------------------------------------------------------
 
+	d=mapobj.border
 	d=0
+
 	kku=[]
 
 	for ui in range(d,uc+1-d):
@@ -341,38 +357,55 @@ def getmap(obj, mpv=0.5, mpu=0.5, fx=-1, fy=-1, vc=30, uc=30 ):
 	FreeCAD.kku=kku
 	FreeCAD.kkv=kkv
 
+	print "AAA isomap.py: kku shape",kku.shape
+
+	if 0:
+		try:
+
+			dx=29
+			dy=31
+			sx=2
+			sy=0
+
+			sx=0+d
+			sy=0+d
+			dx=31-d
+			dy=31-d
+
+			kku=np.array(kku).reshape(31,31,3)
+			kkua=kku2[sx:sx+dx,sy:sy+dy].reshape(dx*dy,3)
+
+			kkv2=np.array(kkv).reshape(31,31,3)
+			kkva=kkv2[sx:sx+dx,sy:sy+dy].reshape(dx*dy,3)
+
+			print "isomap.py: kku shape",kku.shape
+
+
+	#		ptsu=[FreeCAD.Vector(tuple(i)) for i in kku]
+	#		Draft.makeWire(ptsu)
+	#		Points.show(Points.Points(ptsu))
+
+			mode='thin_plate'
+			xy2u = scipy.interpolate.Rbf(kkua[:,0],kkua[:,1],kkua[:,2], function=mode)
+			xy2v = scipy.interpolate.Rbf(kkva[:,0],kkva[:,1],kkva[:,2], function=mode)
+			print "geschafft------AAAAA-----------------------------"
+			return [uv2x,uv2y,xy2u,xy2v]
+		except:
+			pass
+
 	try:
-
-		dx=29
-		dy=31
-		sx=2
-		sy=0
-
-
-		kku=np.array(kku).reshape(31,31,3)
-		kkua=kku2[sx:sx+dx,sy:sy+dy].reshape(dx*dy,3)
-
-		kkv2=np.array(kkv).reshape(31,31,3)
-		kkva=kkv2[sx:sx+dx,sy:sy+dy].reshape(dx*dy,3)
-
-		print "isomap.py: kku shape",kku.shape
+		dx=mapobj.ue
+		dy=mapobj.ve
+		sx=mapobj.ub
+		sy=mapobj.vb
 
 
-#		ptsu=[FreeCAD.Vector(tuple(i)) for i in kku]
-#		Draft.makeWire(ptsu)
-#		Points.show(Points.Points(ptsu))
+#		dx=20
+#		dy=20
+#		sx=8
+#		sy=8
 
-		mode='thin_plate'
-		xy2u = scipy.interpolate.Rbf(kkua[:,0],kkua[:,1],kkua[:,2], function=mode)
-		xy2v = scipy.interpolate.Rbf(kkva[:,0],kkva[:,1],kkva[:,2], function=mode)
-		print "geschafft-----------------------------------"
-		return [uv2x,uv2y,xy2u,xy2v]
-	except:
 
-		dx=24
-		dy=24
-		sx=4
-		sy=4
 
 		kku2=np.array(kku).reshape(31,31,3)
 		kkua=kku2[sx:sx+dx,sy:sy+dy].reshape(dx*dy,3)
@@ -386,7 +419,13 @@ def getmap(obj, mpv=0.5, mpu=0.5, fx=-1, fy=-1, vc=30, uc=30 ):
 		xy2u = scipy.interpolate.Rbf(kkua[:,0],kkua[:,1],kkua[:,2], function=mode)
 		xy2v = scipy.interpolate.Rbf(kkva[:,0],kkva[:,1],kkva[:,2], function=mode)
 		print "geschafft-----------------------------------"
-		return [uv2x,uv2y,xy2u,xy2v]
+	except:
+		xy2v=None
+		xy2u=None
+		print "FEHLER BERECHNUNG bUMKEHRfunktionen"
+
+
+	return [uv2x,uv2y,xy2u,xy2v]
 
 
 

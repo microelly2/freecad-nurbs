@@ -68,7 +68,7 @@ reload(nurbswb.isomap)
 
 def createShape(obj):
 	
-	pointCount=20
+	pointCount=obj.pointcount
 
 
 	# mittelpunkt
@@ -108,6 +108,11 @@ def createShape(obj):
 
 	y=uv2y(u0,v0)
 	x=uv2x(u0,v0)
+	
+	if xy2v==None:
+		print "Kann umkerhung nicht berechnen xy2v nicht vorhanden"
+		return
+
 	u=xy2v(x,y)
 	v=xy2u(x,y)
 
@@ -171,7 +176,7 @@ def createShape(obj):
 #			u=0.5-u
 #			v=v-1.0
 
-			print (u,v)
+#			print (u,v)
 			
 			if 0:
 				if u<0: u=0
@@ -182,7 +187,7 @@ def createShape(obj):
 			#bsa=App.ActiveDocument.Nurbs.Shape.Face1.Surface
 			bsa=bs
 			p2=bsa.value(u,v)
-			print p2
+#			print p2
 #			p2=bs.value(v,u)
 
 			pts2.append(p2)
@@ -291,22 +296,19 @@ def createShape(obj):
 class Isodraw(PartFeature):
 	def __init__(self, obj):
 		PartFeature.__init__(self, obj)
-		obj.addProperty("App::PropertyVector","Size","Base").Size=FreeCAD.Vector(300,-100,200)
-		obj.addProperty("App::PropertyLink","face","Base")
-		obj.addProperty("App::PropertyLink","wire","Base")
-		obj.addProperty("App::PropertyLink","mapobject","Base")
-		obj.addProperty("App::PropertyInteger","n1","Base")
-		obj.addProperty("App::PropertyInteger","n2","Base")
-		obj.addProperty("App::PropertyInteger","n3","Base")
-		obj.n1=1
-		obj.n2=1
-		obj.n3=1
+#		obj.addProperty("App::PropertyVector","Size","Base").Size=FreeCAD.Vector(300,-100,200)
+		obj.addProperty("App::PropertyLink","face","Source")
+		obj.addProperty("App::PropertyLink","wire","Source")
+		obj.addProperty("App::PropertyLink","mapobject","Details","configuration objekt for mapping")
+		obj.addProperty("App::PropertyBool","drawFace","Output","display subface cut by the wire projection")
+		obj.addProperty("App::PropertyBool","reverseFace","Output","display inner or outer subface")
+		obj.addProperty("App::PropertyInteger","pointcount","Details","count of points to discretize source wire")
+		obj.pointcount=20
 
-		obj.addProperty("App::PropertyLink","backref","Base")
+		obj.addProperty("App::PropertyLink","backref","Workspace")
 
 		ViewProvider(obj.ViewObject)
 		obj.ViewObject.LineColor=(1.,0.,1.)
-		#createShape(obj)
 
 #	def onChanged(self, fp, prop):
 #		print ("onChanged",prop)
@@ -342,37 +344,42 @@ class Map(PartFeature):
 		obj.addProperty("App::PropertyLink","face","Base")
 		#obj.addProperty("App::PropertyLink","wire","Base")
 		#raender
-		obj.addProperty("App::PropertyInteger","ub","Base")
-		obj.addProperty("App::PropertyInteger","ue","Base")
-		obj.addProperty("App::PropertyInteger","vb","Base")
-		obj.addProperty("App::PropertyInteger","ve","Base")
+		obj.addProperty("App::PropertyInteger","border","Interpolation","border offset in uv space")
+		obj.addProperty("App::PropertyInteger","ub","Interpolation","minimum u value for interpolation base")
+		obj.addProperty("App::PropertyInteger","ue","Interpolation","maximum u value for interpolation base")
+		obj.addProperty("App::PropertyInteger","vb","Interpolation","minimum v value for interpolation base")
+		obj.addProperty("App::PropertyInteger","ve","Interpolation","minimum v value for interpolation base")
+		
 		#mitte
-		obj.addProperty("App::PropertyFloat","vm","Base")
-		obj.addProperty("App::PropertyFloat","um","Base")
+		obj.addProperty("App::PropertyFloat","vm","Map","v center")
+		obj.addProperty("App::PropertyFloat","um","Map","u center")
 
-		obj.addProperty("App::PropertyFloat","fx","Base").fx=-1.
-		obj.addProperty("App::PropertyFloat","fy","Base").fy=-1.
+		obj.addProperty("App::PropertyFloat","fx","Map","Scale factor for x").fx=-1.
+		obj.addProperty("App::PropertyFloat","fy","Map","Scale factor for y").fy=-1.
 
 
 		obj.vm=0.4
 		obj.um=0.5
 		obj.ve=-1
 		obj.ue=-1
+		
+		obj.border=14
+		obj.ub=8
+		obj.vb=8
+		obj.ue=20
+		obj.ve=20
 
 		obj.addProperty("App::PropertyLink","backref","Base")
 
 		ViewProvider(obj.ViewObject)
 		obj.ViewObject.LineColor=(1.,0.,1.)
-		#createShape(obj)
 
 #	def onChanged(self, fp, prop):
 #		print ("onChanged",prop)
-#		if prop=="Size" or prop in ["uMin","uMax","n2","e1","e2","e3"]:
-#			createShape(fp)
 
 	def execute(proxy,obj):
 
-		[uv2x,uv2y,xy2u,xy2v]=nurbswb.isomap.getmap(obj.face)
+		[uv2x,uv2y,xy2u,xy2v]=nurbswb.isomap.getmap(obj,obj.face)
 		proxy.uv2x=uv2x
 		proxy.uv2y=uv2y
 		proxy.xy2u=xy2u
@@ -385,7 +392,7 @@ class Map(PartFeature):
 
 def createMap():
 	b=FreeCAD.activeDocument().addObject("Part::FeaturePython","MAP")
-	bn=Map(b)
+	Map(b)
 	return b
 
 
@@ -550,10 +557,10 @@ class Drawgrid(PartFeature):
 		obj.addProperty("App::PropertyVector","Size","Base").Size=FreeCAD.Vector(300,-100,200)
 		obj.addProperty("App::PropertyLink","faceObject","Base")
 		obj.addProperty("App::PropertyInteger","faceNumber","Base")
-		
+
 
 		obj.addProperty("App::PropertyLink","wire","Base")
-		
+
 		obj.addProperty("App::PropertyInteger","uMin","Base")
 		obj.addProperty("App::PropertyInteger","uMax","Base")
 		obj.addProperty("App::PropertyInteger","uCenter","Base")
@@ -965,14 +972,14 @@ def map3Dto2D():
 	# 3D Kante zu 2D Kante
 	#face=App.ActiveDocument.Poles
 	#wire=App.ActiveDocument.UUUU_Drawing_on_Poles__Face1002_Spline
+
 	s0=Gui.Selection.getSelection()
 	face=s0[-1]
 	s=s0[:-1]
-	print "#-#",face.Label
-	for w in s:  print w.Label
+
+
 	for wire in s:
-		#wire=s[0]
-		[uv2x,uv2y,xy2u,xy2v]=nurbswb.isomap.getmap(face)
+		[uv2x,uv2y,xy2u,xy2v]=nurbswb.isomap.getmap(None,face)
 
 		bs=face.Shape.Face1.Surface
 		for e in wire.Shape.Edges:
@@ -995,27 +1002,28 @@ def map3Dto2D():
 
 
 def map2Dto3D():
-	# 2D Kante(Sketch) auf  3D Flaeche Poles
-	#import nurbswb.isodraw
-	moa=createMap()
+	''' 2D Kante(Sketch) auf  3D Flaeche Poles '''
+
+	# last selection == face
+	# other sels: wires to project
 
 	s0=Gui.Selection.getSelection()
 	face=s0[-1]
 	s=s0[:-1]
 
-
+	moa=createMap()
 	moa.face=face
 
-	#s=Gui.Selection.getSelection()
 	for w in s:
 		f=createIsodrawFace()
 		f.mapobject=moa
 		f.face=face
-		#f.wire=App.ActiveDocument.Sketch
-		try:f.wire=w
-		except:f.wire=App.ActiveDocument.DWire
+		f.wire=w
+
 		App.activeDocument().recompute()
 
+
+#------------------------
 
 
 # pruefe qualitaet der umrechnung

@@ -320,6 +320,7 @@ class EventFilter(QtCore.QObject):
 
 
 def drawcurve(wire,face):
+	'''draw a curve on a face and create the two subfaces defined by the curve'''
 	print "drawcurve"
 
 	#w=App.ActiveDocument.Drawing_on_MyShoe__Face2.Shape
@@ -342,8 +343,10 @@ def drawcurve(wire,face):
 	bs2d.setPeriodic()
 
 	e1 = bs2d.toShape(t)
-#	Part.show(e1)
-	sp=App.ActiveDocument.addObject("Part::Spline",wire.Label+" Spline")
+
+	sp=App.ActiveDocument.getObject(wire.Label+"_Spline")
+	if sp==None:
+		sp=App.ActiveDocument.addObject("Part::Spline",wire.Label+"_Spline")
 	sp.Shape=e1
 	sp.ViewObject.LineColor=wire.ViewObject.LineColor
 	wire.ViewObject.hide()
@@ -359,24 +362,23 @@ def drawcurve(wire,face):
 	ee=edges[0]
 	splita=[(ee,face)]
 	r=Part.makeSplitShape(face, splita)
-#	Part.show(r[0][0])
 
 	ee.reverse()
 	splitb=[(ee,face)]
 	r2=Part.makeSplitShape(face, splitb)
-#	Part.show(r2[0][0])
+	
+	if wire.drawFace:
+			sp=App.ActiveDocument.getObject(wire.Label+"_SplineFaceA")
+			if sp==None:
+				sp=App.ActiveDocument.addObject("Part::Spline",wire.Label+"_SplineFaceA")
 
-	#r=Part.makeSplitShape(face, splita)
-	#Part.show(r[0][0])
-	sp=App.ActiveDocument.addObject("Part::Spline",wire.Label+" SplineFaceA")
-	sp.Shape=r[0][0]
-	sp.ViewObject.ShapeColor=(random.random(),random.random(),random.random())
-	sp.ViewObject.LineColor=sp.ViewObject.ShapeColor
+			if wire.reverseFace:
+				sp.Shape=r2[0][0]
+			else:
+				sp.Shape=r[0][0]
 
-	sp=App.ActiveDocument.addObject("Part::Spline",wire.Label+" SplineFaceB")
-	sp.Shape=r2[0][0]
-	sp.ViewObject.ShapeColor=(random.random(),random.random(),random.random())
-	sp.ViewObject.LineColor=sp.ViewObject.ShapeColor
+			sp.ViewObject.ShapeColor=(random.random(),random.random(),random.random())
+			sp.ViewObject.LineColor=sp.ViewObject.ShapeColor
 
 
 
