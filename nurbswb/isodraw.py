@@ -68,7 +68,9 @@ reload(nurbswb.isomap)
 
 def createShape(obj):
 	
-	
+	pointCount=20
+
+
 	# mittelpunkt
 #	mpv=0.5
 #	mpu=0.5
@@ -99,48 +101,105 @@ def createShape(obj):
 	fy=-1.1
 	fx=-1.1
 
+	#fuer torus
+#	fy=1.
+#	fx=1.
+
+
 	y=uv2y(u0,v0)
 	x=uv2x(u0,v0)
 	u=xy2v(x,y)
 	v=xy2u(x,y)
+
+	# hack fier torus
+	u=xy2v(-x,-y)
+	v=xy2u(-x,-y)
+
+
+
 	# print (u0,v0,x,y,u,v)
 	bs=obj.face.Shape.Face1.Surface
 	w=obj.wire.Shape.Wires[0]
 
 	ppall=[]
 	for w in obj.wire.Shape.Wires:
-		pts=w.discretize(30)
+		pts=w.discretize(pointCount)
 		pts2=[]
 		
 		refpos=bs.value(mpu,mpv)
 		
 		refpos=FreeCAD.Vector(0,0,0)
 
-		print "uv fuer Wires ..."
+		print "uv fuer Wires ... c"
 		for p in pts:
+			
+			fx=-1.
+			fy=-1.
 			x=fx*(p.x-refpos.x)
 			y=fy*(p.y-refpos.y)
+			
+			#----------------------
+			x=-p.y
+			y=-p.x
+
+
+
+	#rc=Draft.makePoint(xX,yX,0)
+
+	#zurueck -- vertauschen und gegenzahl
+	#u=xy2u(-yX,-xX)
+	#v=xy2v(-yX,-xX)
+	#print (u,v)
+	#vp=sf.value(u,v)
+	#Draft.makePoint(vp)
+
+
+
+
 			u=xy2u(x,y)
 			v=xy2v(x,y)
+
+			# hack fier torus
+#			v=xy2v(-x,-y)
+#			u=xy2u(-x,-y)
+#			u,v=v,u
+
+
 			# print (round(x,2),round(y,2),round(u,2),round(v,2))
 			# nicht ausreisen lassen
-			print (u,v)
-			if u<0: u=0
-			if u>1: u=1
-			if v<0: v=0
-			if v>1: v=1
-			
 
-			p2=bs.value(u,v)
+#			u=0.5-u
+#			v=v-1.0
+
+			print (u,v)
+			
+			if 0:
+				if u<0: u=0
+				if u>1: u=1
+				if v<0: v=0
+				if v>1: v=1
+
+			#bsa=App.ActiveDocument.Nurbs.Shape.Face1.Surface
+			bsa=bs
+			p2=bsa.value(u,v)
+			print p2
+#			p2=bs.value(v,u)
+
 			pts2.append(p2)
 		
 		#Draft.makeWire(pts2)
 	#	print pts2
-		FreeCAD.pts2=pts2
+		FreeCAD.pts2a=pts2
+		pol=Part.makePolygon(pts2)
+		#b=FreeCAD.activeDocument().addObject("Part::Spline","pts2a")
+		#b.Shape=pol
+
+		obj.Shape=pol
+		return
 
 		pts3=[]
-		for p in FreeCAD.pts2:
-			# print p
+		for p in FreeCAD.pts2a:
+			#print p
 			if p.Length<1000:
 				pts3.append(p)
 			else:
@@ -150,8 +209,10 @@ def createShape(obj):
 
 		# return
 
-		pp=Part.makePolygon(pts3)
+		pp=Part.makePolygon(pts2)
+		
 		ppall.append(pp)
+		#Part.show(pp)
 	# pp=Part.makePolygon(pts)
 
 	pp=Part.Compound(ppall)
@@ -181,6 +242,31 @@ def createShape(obj):
 			pt=bs.value(u,v)
 			ptbb.append(pt)
 #			print pt
+
+#----------------
+			x=-p.y
+			y=-p.x
+
+
+
+	#rc=Draft.makePoint(xX,yX,0)
+
+	#zurueck -- vertauschen und gegenzahl
+	#u=xy2u(-yX,-xX)
+	#v=xy2v(-yX,-xX)
+	#print (u,v)
+	#vp=sf.value(u,v)
+	#Draft.makePoint(vp)
+
+
+
+
+			u=xy2u(x,y)
+			v=xy2v(x,y)
+
+
+
+#----------------
 
 		#Draft.makeWire(ptbb)
 #		print "yy"
@@ -232,6 +318,10 @@ class Isodraw(PartFeature):
 		if obj.backref <>None:
 			obj.backref.touch()
 			obj.backref.Document.recompute()
+		import nurbswb.facedraw
+		reload (nurbswb.facedraw)
+		face=obj.face.Shape.Face1
+		nurbswb.facedraw.drawcurve(obj,face)
 
 
 
@@ -405,27 +495,35 @@ def createGrid(obj,upmode=False):
 #		comps += [ Part.makePolygon([FreeCAD.Vector(tuple(p)) for p in pts[obj.vMin:obj.vMax]]) ]
 
 
-
-	comps=[]
-	for pts in ptska[obj.uMin:obj.uMax]:
-		comps += [ Part.makePolygon([FreeCAD.Vector(tuple(p)) for p in pts[obj.vMin:obj.vMax]]) ]
-
-	ptska=np.array(ptska).swapaxes(0,1)
-
-	for pts in ptska[obj.vMin:obj.vMax]:
-		comps += [ Part.makePolygon([FreeCAD.Vector(tuple(p)) for p in pts[obj.uMin:obj.uMax]]) ]
-
-
-
 	if upmode:
+
+		comps=[]
+		for pts in ptska[obj.uMin:obj.uMax]:
+			comps += [ Part.makePolygon([FreeCAD.Vector(tuple(p)) for p in pts[obj.vMin:obj.vMax]]) ]
+
+		ptska=np.array(ptska).swapaxes(0,1)
+
+		for pts in ptska[obj.vMin:obj.vMax]:
+			comps += [ Part.makePolygon([FreeCAD.Vector(tuple(p)) for p in pts[obj.uMin:obj.uMax]]) ]
+
 		return Part.Compound(comps)
-		#return Part.Compound(comps[obj.vMin:obj.vMax])
 
 
 
 	print ("ptsa.shape",np.array(ptsa).shape)
 
-	if 10:
+	if obj.flipxy:
+		comps=[]
+		for pts in ptsa[obj.uMin:obj.uMax]:
+			comps += [ Part.makePolygon([FreeCAD.Vector(fx*p[1],fy*p[0],0) for p in pts[obj.vMin:obj.vMax]]) ]
+
+		ptsa=np.array(ptsa).swapaxes(0,1)
+
+		for pts in ptsa[obj.vMin:obj.vMax]:
+			comps += [ Part.makePolygon([FreeCAD.Vector(fx*p[1],fy*p[0],0) for p in pts[obj.uMin:obj.uMax]]) ]
+		return Part.Compound(comps)
+
+	else :
 		comps=[]
 		for pts in ptsa[obj.uMin:obj.uMax]:
 			comps += [ Part.makePolygon([FreeCAD.Vector(fx*p[0],fy*p[1],0) for p in pts[obj.vMin:obj.vMax]]) ]
@@ -434,8 +532,6 @@ def createGrid(obj,upmode=False):
 
 		for pts in ptsa[obj.vMin:obj.vMax]:
 			comps += [ Part.makePolygon([FreeCAD.Vector(fx*p[0],fy*p[1],0) for p in pts[obj.uMin:obj.uMax]]) ]
-
-
 		return Part.Compound(comps)
 
 
@@ -469,16 +565,19 @@ class Drawgrid(PartFeature):
 		obj.addProperty("App::PropertyInteger","vCount","Base")
 
 		obj.addProperty("App::PropertyLink","backref","Base")
+		obj.addProperty("App::PropertyBool","flipuv","Base")
+		obj.addProperty("App::PropertyBool","flipxy","Base")
+		
 
 		ViewProvider(obj.ViewObject)
 		obj.ViewObject.LineColor=(1.,0.,1.)
 
 		obj.uCount=30
-		obj.vCount=30
+		obj.vCount=10
 
-		obj.uMax=-1
+		obj.uMax=31
 		obj.uMin=1
-		obj.vMax=-1
+		obj.vMax=11
 		obj.vMin=1
 
 
@@ -864,24 +963,32 @@ if 0:
 
 def map3Dto2D():
 	# 3D Kante zu 2D Kante
-	face=App.ActiveDocument.Poles
+	#face=App.ActiveDocument.Poles
 	#wire=App.ActiveDocument.UUUU_Drawing_on_Poles__Face1002_Spline
-	s=Gui.Selection.getSelection()
+	s0=Gui.Selection.getSelection()
+	face=s0[-1]
+	s=s0[:-1]
+	print "#-#",face.Label
+	for w in s:  print w.Label
 	for wire in s:
 		#wire=s[0]
 		[uv2x,uv2y,xy2u,xy2v]=nurbswb.isomap.getmap(face)
 
 		bs=face.Shape.Face1.Surface
 		for e in wire.Shape.Edges:
-			pts=e.discretize(10)
+			# auf 5 millimeter genau
+			dd=int(round(e.Length/5))
+			pts=e.discretize(dd)
 			FreeCAD.ptsaa=pts
 			pts2=[]
 			for p in pts:
 				(u,v)=bs.parameter(p)
+				(v,u)=bs.parameter(p)
 				print (u,v)
 				x=uv2x(u,v)
 				y=uv2y(u,v)
 				p2=FreeCAD.Vector(-y,-x,0)
+#				p2=FreeCAD.Vector(y,x,0)
 				pts2.append(p2)
 
 			Draft.makeWire(pts2)
@@ -891,13 +998,19 @@ def map2Dto3D():
 	# 2D Kante(Sketch) auf  3D Flaeche Poles
 	#import nurbswb.isodraw
 	moa=createMap()
-	moa.face=App.ActiveDocument.Poles
-	
-	s=Gui.Selection.getSelection()
+
+	s0=Gui.Selection.getSelection()
+	face=s0[-1]
+	s=s0[:-1]
+
+
+	moa.face=face
+
+	#s=Gui.Selection.getSelection()
 	for w in s:
 		f=createIsodrawFace()
 		f.mapobject=moa
-		f.face=App.ActiveDocument.Poles
+		f.face=face
 		#f.wire=App.ActiveDocument.Sketch
 		try:f.wire=w
 		except:f.wire=App.ActiveDocument.DWire

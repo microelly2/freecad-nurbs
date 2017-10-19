@@ -351,7 +351,8 @@ def drawcurve(wire,face):
 	# flaeche erzeugen
 
 
-	face=App.ActiveDocument.Poles.Shape.Face1
+	#face=App.ActiveDocument.Poles.Shape.Face1
+
 	edges=e1.Edges
 
 
@@ -533,6 +534,8 @@ def start(source='Backbone'):
 	ef.mouseWheel=0
 	ef.mode='r'
 	try:
+			sel=Gui.Selection.getSelection()
+			fob=sel[0]
 			s=Gui.Selection.getSelectionEx()
 			ef.subobj=s[0].SubObjects[0]
 			ef.objname=s[0].Object.Name
@@ -575,7 +578,7 @@ def start(source='Backbone'):
 	b=FreeCAD.activeDocument().addObject("Part::FeaturePython","MyDrawGrid")
 
 	nurbswb.isodraw.Drawgrid(b)
-	b.faceObject=App.ActiveDocument.Poles
+	b.faceObject=fob
 
 	b.ViewObject.Transparency=60
 	App.activeDocument().recompute()

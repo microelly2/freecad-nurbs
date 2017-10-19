@@ -341,44 +341,83 @@ def getmap(obj, mpv=0.5, mpu=0.5, fx=-1, fy=-1, vc=30, uc=30 ):
 	FreeCAD.kku=kku
 	FreeCAD.kkv=kkv
 
-	dx=29
-	dy=31
-	sx=2
-	sy=0
+	try:
 
-	kku2=np.array(kku).reshape(31,31,3)
-	kku=kku2[sx:sx+dx,sy:sy+dy].reshape(dx*dy,3)
+		dx=29
+		dy=31
+		sx=2
+		sy=0
 
-	kkv2=np.array(kkv).reshape(31,31,3)
-	kkv=kkv2[sx:sx+dx,sy:sy+dy].reshape(dx*dy,3)
 
-	print "isomap.py: kku shape",kku.shape
+		kku=np.array(kku).reshape(31,31,3)
+		kkua=kku2[sx:sx+dx,sy:sy+dy].reshape(dx*dy,3)
+
+		kkv2=np.array(kkv).reshape(31,31,3)
+		kkva=kkv2[sx:sx+dx,sy:sy+dy].reshape(dx*dy,3)
+
+		print "isomap.py: kku shape",kku.shape
 
 
 #		ptsu=[FreeCAD.Vector(tuple(i)) for i in kku]
 #		Draft.makeWire(ptsu)
 #		Points.show(Points.Points(ptsu))
 
+		mode='thin_plate'
+		xy2u = scipy.interpolate.Rbf(kkua[:,0],kkua[:,1],kkua[:,2], function=mode)
+		xy2v = scipy.interpolate.Rbf(kkva[:,0],kkva[:,1],kkva[:,2], function=mode)
+		print "geschafft-----------------------------------"
+		return [uv2x,uv2y,xy2u,xy2v]
+	except:
 
+		dx=24
+		dy=24
+		sx=4
+		sy=4
+
+		kku2=np.array(kku).reshape(31,31,3)
+		kkua=kku2[sx:sx+dx,sy:sy+dy].reshape(dx*dy,3)
+
+		kkv2=np.array(kkv).reshape(31,31,3)
+		kkva=kkv2[sx:sx+dx,sy:sy+dy].reshape(dx*dy,3)
+
+		print "isomap.py: kku shape",kku.shape
+
+		mode='thin_plate'
+		xy2u = scipy.interpolate.Rbf(kkua[:,0],kkua[:,1],kkua[:,2], function=mode)
+		xy2v = scipy.interpolate.Rbf(kkva[:,0],kkva[:,1],kkva[:,2], function=mode)
+		print "geschafft-----------------------------------"
+		return [uv2x,uv2y,xy2u,xy2v]
+
+
+
+
+
+
+
+
+#-----------------------
 
 	try:
+		print "try thinplate for u"
 		mode='thin_plate'
 		xy2u = scipy.interpolate.Rbf(kku[:,0],kku[:,1],kku[:,2], function=mode)
 #		xy2v = scipy.interpolate.Rbf(kkv[:,0],kkv[:,1],kkv[:,2], function=mode)
 	except:
 		mode='cubic'
 		mode='linear'
-#		print "aex"
+		print "use linear"
 		xy2u = scipy.interpolate.interp2d(kku[:,0],kku[:,1],kku[:,2], kind=mode)
 #		xy2u = scipy.interpolate.interp2d(kku[5:65,0],kku[5:65,1],kku[5:65,2], kind=mode)
 #		xy2v = scipy.interpolate.interp2d(kkv[:,0],kkv[:,1],kkv[:,2], kind=mode)
 	try:
+		print "try thinplate for v"
 		mode='thin_plate'
 #		xy2u = scipy.interpolate.Rbf(kku[:,0],kku[:,1],kku[:,2], function=mode)
 		xy2v = scipy.interpolate.Rbf(kkv[:,0],kkv[:,1],kkv[:,2], function=mode)
 	except:
 		mode='cubic'
 #		print "bex"
+		print "use cubic"
 #		xy2u = scipy.interpolate.interp2d(kku[:,0],kku[:,1],kku[:,2], kind=mode)
 		xy2v = scipy.interpolate.interp2d(kkv[:,0],kkv[:,1],kkv[:,2], kind=mode)
 
