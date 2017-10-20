@@ -67,230 +67,73 @@ import nurbswb.isomap
 reload(nurbswb.isomap)
 
 def createShape(obj):
-	
+	'''create 2D or 3D mapping of a object'''
+
+	print "CreateShape for obj:",obj.Label
+
 	pointCount=obj.pointcount
 
+	[uv2x,uv2y,xy2u,xy2v]=[obj.mapobject.Proxy.uv2x,obj.mapobject.Proxy.uv2y,obj.mapobject.Proxy.xy2u,obj.mapobject.Proxy.xy2v]
 
-	# mittelpunkt
-#	mpv=0.5
-#	mpu=0.5
+	if xy2v==None:
+		print "Kann umkehrung nicht berechnen xy2v nicht vorhanden"
+		return
+
+	# diese daten vom mapobjekt lesen #+#
 
 	mpv=0.5
 	mpu=0.5
 
-#	mpv=.0
-#	mpu=.0
-
-
-	# skalierung/lage
-	fx=-1.
-	fy=-1.
-	
-#	fy=-0.5
-#	fx=-0.5
-#	fy=-0.5
-	
-	#[uv2x,uv2y,xy2u,xy2v]=nurbswb.isomap.getmap(obj.face)
-	[uv2x,uv2y,xy2u,xy2v]=[obj.mapobject.Proxy.uv2x,obj.mapobject.Proxy.uv2y,obj.mapobject.Proxy.xy2u,obj.mapobject.Proxy.xy2v]
-	
-	print "getmap done2"
-	
 	u0=0
 	v0=0
-	
+
 	fy=-1.1
 	fx=-1.1
 
-	#fuer torus
-#	fy=1.
-#	fx=1.
-
-
-	y=uv2y(u0,v0)
-	x=uv2x(u0,v0)
-	
-	if xy2v==None:
-		print "Kann umkerhung nicht berechnen xy2v nicht vorhanden"
-		return
-
-	u=xy2v(x,y)
-	v=xy2u(x,y)
-
-	# hack fier torus
-	u=xy2v(-x,-y)
-	v=xy2u(-x,-y)
-
-
-
-	# print (u0,v0,x,y,u,v)
+	#+# facenumer aus obj param holen
 	bs=obj.face.Shape.Face1.Surface
 	w=obj.wire.Shape.Wires[0]
 
 	ppall=[]
-	for w in obj.wire.Shape.Wires:
+
+	for i,w in enumerate(obj.wire.Shape.Wires):
+		print "Wire ...",i
 		pts=w.discretize(pointCount)
 		pts2=[]
-		
+
+		#refpos geht noch nicht
+		mpv=0.
+		mpu=0.
+
 		refpos=bs.value(mpu,mpv)
-		
+		print ("refpos",mpu,mpv)
+		print refpos
+
 		refpos=FreeCAD.Vector(0,0,0)
 
-		print "uv fuer Wires ... c"
 		for p in pts:
-			
-			fx=-1.
-			fy=-1.
+
 			x=fx*(p.x-refpos.x)
 			y=fy*(p.y-refpos.y)
-			
-			#----------------------
-			x=-p.y
-			y=-p.x
-
-
-
-	#rc=Draft.makePoint(xX,yX,0)
-
-	#zurueck -- vertauschen und gegenzahl
-	#u=xy2u(-yX,-xX)
-	#v=xy2v(-yX,-xX)
-	#print (u,v)
-	#vp=sf.value(u,v)
-	#Draft.makePoint(vp)
-
-
-
 
 			u=xy2u(x,y)
 			v=xy2v(x,y)
+			print(round(u,2),round(v,2))
 
-			# hack fier torus
-#			v=xy2v(-x,-y)
-#			u=xy2u(-x,-y)
-#			u,v=v,u
-
-
-			# print (round(x,2),round(y,2),round(u,2),round(v,2))
-			# nicht ausreisen lassen
-
-#			u=0.5-u
-#			v=v-1.0
-
-#			print (u,v)
-			
-			if 0:
+			if 0: #macht nur Sinn fuer Bsplines 
 				if u<0: u=0
 				if u>1: u=1
 				if v<0: v=0
 				if v>1: v=1
 
-			#bsa=App.ActiveDocument.Nurbs.Shape.Face1.Surface
-			bsa=bs
-			p2=bsa.value(u,v)
-#			print p2
-#			p2=bs.value(v,u)
-
+			p2=bs.value(u,v)
 			pts2.append(p2)
-		
-		#Draft.makeWire(pts2)
-	#	print pts2
+
 		FreeCAD.pts2a=pts2
 		pol=Part.makePolygon(pts2)
-		#b=FreeCAD.activeDocument().addObject("Part::Spline","pts2a")
-		#b.Shape=pol
 
 		obj.Shape=pol
 		return
-
-		pts3=[]
-		for p in FreeCAD.pts2a:
-			#print p
-			if p.Length<1000:
-				pts3.append(p)
-			else:
-				print ("AFehler bei ",p)
-
-		#Draft.makeWire(pts3)
-
-		# return
-
-		pp=Part.makePolygon(pts2)
-		
-		ppall.append(pp)
-		#Part.show(pp)
-	# pp=Part.makePolygon(pts)
-
-	pp=Part.Compound(ppall)
-
-	#-----------------
-	if 1:
-		pass
-
-	ppall=[]
-	for w in obj.wire.Shape.Wires:
-
-		#w=obj.wire.Shape.Wires[0]
-		pts=w.discretize(30)
-#		print pts
-
-		#[uv2x,uv2y,xy2u,xy2v]=nurbswb.isomap.getmap(face)
-		
-		[uv2x,uv2y,xy2u,xy2v]=[obj.mapobject.Proxy.uv2x,obj.mapobject.Proxy.uv2y,obj.mapobject.Proxy.xy2u,obj.mapobject.Proxy.xy2v]
-		
-		ptbb=[]
-		for p in pts:
-#			print "--",p
-			x=-p.y
-			y=-p.x
-			u=xy2v(x,y)
-			v=xy2u(x,y)
-			pt=bs.value(u,v)
-			ptbb.append(pt)
-#			print pt
-
-#----------------
-			x=-p.y
-			y=-p.x
-
-
-
-	#rc=Draft.makePoint(xX,yX,0)
-
-	#zurueck -- vertauschen und gegenzahl
-	#u=xy2u(-yX,-xX)
-	#v=xy2v(-yX,-xX)
-	#print (u,v)
-	#vp=sf.value(u,v)
-	#Draft.makePoint(vp)
-
-
-
-
-			u=xy2u(x,y)
-			v=xy2v(x,y)
-
-
-
-#----------------
-
-		#Draft.makeWire(ptbb)
-#		print "yy"
-#		print ptbb
-#		print "xx"
-		pp=Part.makePolygon(ptbb)
-		ppall.append(pp)
-	#---------------
-
-
-	ppc=Part.Compound(ppall)
-	obj.Shape=ppc
-	obj.Label="3D for " + obj.wire.Label+" "
-	
-	print ("Mittelpunkt ", bs.value(0.5,0.5))
-	print "MOA:",obj.mapobject.Label
-	#print "MOA:",obj.mapobject.Proxy.uv2x
-
-
 
 
 class Isodraw(PartFeature):
@@ -312,8 +155,6 @@ class Isodraw(PartFeature):
 
 #	def onChanged(self, fp, prop):
 #		print ("onChanged",prop)
-#		if prop=="Size" or prop in ["uMin","uMax","n2","e1","e2","e3"]:
-#			createShape(fp)
 
 	def execute(proxy,obj):
 		createShape(obj)
@@ -324,9 +165,6 @@ class Isodraw(PartFeature):
 		reload (nurbswb.facedraw)
 		face=obj.face.Shape.Face1
 		nurbswb.facedraw.drawcurve(obj,face)
-
-
-
 
 
 def createIsodrawFace():
@@ -424,17 +262,6 @@ import Draft
 import numpy as np
 import scipy
 import scipy.interpolate
-
-
-
-
-#def interpolate(x,y,z, gridsize,mode=,rbfmode=True,shape=None):
-
-
-#		rbf = scipy.interpolate.Rbf(x, y, z, function='thin_plate')
-	#	rbf = scipy.interpolate.interp2d(x, y, z, kind=mode)
-
-	#	zi=rbf2(yi,xi)
 
 
 
@@ -562,7 +389,6 @@ def createGrid(obj,upmode=False):
 
 	if obj.flipxy:
 
-
 		for pts in ptsa[obj.uMin:obj.uMax]:
 			comps += [ Part.makePolygon([FreeCAD.Vector(fx*p[1],fy*p[0],0) for p in pts[obj.vMin:obj.vMax]]) ]
 
@@ -570,10 +396,8 @@ def createGrid(obj,upmode=False):
 
 		for pts in ptsa[obj.vMin:obj.vMax]:
 			comps += [ Part.makePolygon([FreeCAD.Vector(fx*p[1],fy*p[0],0) for p in pts[obj.uMin:obj.uMax]]) ]
-		return Part.Compound(comps)
 
 	else :
-		#comps=[]
 		for pts in ptsa[obj.uMin:obj.uMax]:
 			comps += [ Part.makePolygon([FreeCAD.Vector(fx*p[0],fy*p[1],0) for p in pts[obj.vMin:obj.vMax]]) ]
 
@@ -581,7 +405,8 @@ def createGrid(obj,upmode=False):
 
 		for pts in ptsa[obj.vMin:obj.vMax]:
 			comps += [ Part.makePolygon([FreeCAD.Vector(fx*p[0],fy*p[1],0) for p in pts[obj.uMin:obj.uMax]]) ]
-		return Part.Compound(comps)
+
+	return Part.Compound(comps)
 
 
 
@@ -599,7 +424,6 @@ class Drawgrid(PartFeature):
 		obj.addProperty("App::PropertyVector","Size","Base").Size=FreeCAD.Vector(300,-100,200)
 		obj.addProperty("App::PropertyLink","faceObject","Base")
 		obj.addProperty("App::PropertyInteger","faceNumber","Base")
-
 
 		obj.addProperty("App::PropertyLink","wire","Base")
 
