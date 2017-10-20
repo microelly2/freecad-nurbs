@@ -1,24 +1,162 @@
-
+# -*- coding: utf-8 -*-
+#-------------------------------------------------
+#-- isomap calculation
+#--
+#-- microelly 2017 v 0.1
+#--
+#-- GNU Lesser General Public License (LGPL)
+#-------------------------------------------------
 
 
 import FreeCAD,FreeCADGui
 App=FreeCAD
 Gui=FreeCADGui
 
-
-from PySide import QtGui
 import Part,Mesh,Draft,Points
 
 import numpy as np
 import scipy
 from scipy import interpolate
 
-import matplotlib.pyplot as plt
+
+# altes interface
+# def getmap(mapobj,obj, mpv=0.5, mpu=0.5, fx=-1, fy=-1, vc=30, uc=30 ):
+def getmap(mapobj,obj):
+	'''  berechnet vier interpolatoren zum umrechnen von xy(isomap) in uv(nurbs) und zurueck 
+	mittelpunkt in uv: mpv, mpu
+	skalierung/lage der xy-Ebene: fx,fy 
+	anzahl der gitterlinien: vc,uc
+	'''
+
+	mpv=0.5
+	mpu=0.5
+	fx=-1
+	fy=-1
+	vc=30
+	uc=30
+	modeA='cubic'
+	modeB='thin_plate'
+
+	bs=obj.Shape.Face1.Surface
+
+	if mapobj<>None:
+		mpv=mapobj.vm
+		mpu=mapobj.um
+		fx=mapobj.fx
+		fy=mapobj.fy
+		vc=mapobj.vc
+		uc=mapobj.uc
+		modeA=mapobj.modeA
+		modeB=mapobj.modeB
+
+
+	refpos=bs.value(mpv,mpu)
+	ptsa=[] # abbildung des uv-iso-gitter auf die xy-Ebene
+
+	for v in range(vc+1):
+		pts=[]
+		vaa=1.0/vc*v
+
+		bbc=bs.vIso(vaa)
+
+		for u in range(uc+1):
+			uaa=1.0/uc*u
+			ba=bs.uIso(uaa)
+
+			ky=ba.length(vaa,mpv)
+			if vaa<mpv: ky =-ky
+
+			kx=bbc.length(mpu,uaa)
+			if uaa<mpu: kx =-kx
+
+			pts.append([kx,ky,0])
+
+		ptsa.append(pts)
+
+
+	ptsa=np.array(ptsa).swapaxes(0,1)
+
+	vs=[1.0/vc*v for v in range(vc+1)]
+	us=[1.0/uc*u for u in range(uc+1)]
+
+	uv2x = scipy.interpolate.interp2d(us, vs, ptsa[:,:,0], kind=modeA)
+	uv2y = scipy.interpolate.interp2d(us, vs, ptsa[:,:,1], kind=modeA)
+
+	# if only 3D to 2D is needed, exit here
+	if mapobj == None:
+		xy2v=None
+		xy2u=None
+		return [uv2x,uv2y,xy2u,xy2v]
+
+#------------------------------------------------------
+
+	d=mapobj.border
+	d=0
+
+	kku=[]
+
+	for ui in range(d,uc+1-d):
+		for vi in range(d,vc+1-d):
+			kku.append([ptsa[ui,vi,0],ptsa[ui,vi,1], us[ui]])
+	kku=np.array(kku)
+
+	kkv=[]
+	for ui in range(d,uc+1-d):
+		for vi in range(d,vc+1-d):
+			kkv.append([ptsa[ui,vi,0],ptsa[ui,vi,1], vs[vi]])
+	kkv=np.array(kkv)
 
 
 
 
-def runA(obj, mpv=0.5, mpu=0.5, fx=-1, fy=-1, vc=30, uc=30 ):
+#			mode='thin_plate'
+
+	try:
+		dx=mapobj.ue
+		dy=mapobj.ve
+		sx=mapobj.ub
+		sy=mapobj.vb
+
+		kku2=np.array(kku).reshape(uc+1,vc+1,3)
+		kkua=kku2[sx:sx+dx,sy:sy+dy].reshape(dx*dy,3)
+
+		kkv2=np.array(kkv).reshape(uc+1,vc+1,3)
+		kkva=kkv2[sx:sx+dx,sy:sy+dy].reshape(dx*dy,3)
+
+		xy2u = scipy.interpolate.Rbf(kkua[:,0],kkua[:,1],kkua[:,2], function=modeB)
+		xy2v = scipy.interpolate.Rbf(kkva[:,0],kkva[:,1],kkva[:,2], function=modeB)
+#		xy2v = scipy.interpolate.interp2d(kkv[:,0],kkv[:,1],kkv[:,2], kind=mode)
+# ideas for error
+# https://stackoverflow.com/questions/34820612/scipy-interp2d-warning-and-different-result-than-expected
+
+
+	except:
+		xy2v=None
+		xy2u=None
+		print "FEHLER BERECHNUNG bUMKEHRfunktionen"
+
+
+	return [uv2x,uv2y,xy2u,xy2v]
+
+	if 0: # testrechnung sollte auf gleiche stelle zurueck kommen
+		u0=0.2
+		v0=0.6
+
+		y=uv2y(u0,v0)
+		x=uv2x(u0,v0)
+		u=xy2v(x,y)
+		v=xy2u(x,y)
+
+		print (u0,v0,x,y,u,v)
+
+	return [uv2x,uv2y,xy2u,xy2v]
+
+
+
+
+def run_fulltest(obj, mpv=0.5, mpu=0.5, fx=-1, fy=-1, vc=30, uc=30 ):
+	'''testmethode'''
+
 	'''  Hilfsobjekte zeichnen   
 	mittelpunkt in uv: mpv, mpu
 	skalierung/lage der xy-Ebene: fx,fy 
@@ -89,9 +227,9 @@ def runA(obj, mpv=0.5, mpu=0.5, fx=-1, fy=-1, vc=30, uc=30 ):
 				comps += [ Part.makePolygon([FreeCAD.Vector(fx*p[0],fy*p[1],0) for p in pts]) ]
 
 			Part.show(Part.Compound(comps))
-			
+
 			# App.ActiveDocument.ActiveObject.Placement.Base=refpos
-			
+
 			App.ActiveDocument.ActiveObject.Label="planar Map of Grid"
 
 
@@ -101,17 +239,20 @@ def runA(obj, mpv=0.5, mpu=0.5, fx=-1, fy=-1, vc=30, uc=30 ):
 
 	if 0:
 		# display 2 curves
-		run_1(obj,bs,uv2x,uv2y,fx,fy,refpos)
+		run_test_1(obj,bs,uv2x,uv2y,fx,fy,refpos)
 		# display square grid
-		run_2(obj,bs,xy2u,xy2v,fx,fy,refpos)
+		run_test2_2(obj,bs,xy2u,xy2v,fx,fy,refpos)
 
 	if 0:
+		#display gird of circles 
 		bs=obj.Shape.Face1.Surface
-		drawcircle2(bs,xy2u,xy2v)
+		run_test_circle(bs,xy2u,xy2v)
 
 
 
-def run_1(obj,bs,uv2x,uv2y,fx,fy,refpos):
+
+def run_test_1(obj,bs,uv2x,uv2y,fx,fy,refpos):
+	'''testmethode'''
 	
 	ptss=[]
 	ptsk=[]
@@ -160,7 +301,8 @@ def run_1(obj,bs,uv2x,uv2y,fx,fy,refpos):
 
 
 
-def run_2(obj,bs,xy2u,xy2v,fx,fy,refpos):
+def run_test_2(obj,bs,xy2u,xy2v,fx,fy,refpos):
+	'''testmethode'''
 
 	col=[]
 	col2=[]
@@ -226,274 +368,19 @@ def run_2(obj,bs,xy2u,xy2v,fx,fy,refpos):
 	App.ActiveDocument.ActiveObject.ViewObject.LineColor=(1.,0.,0.)
 
 
-
-
-#----------------------------------------------------------------------
-
-
-def getmap(mapobj,obj, mpv=0.5, mpu=0.5, fx=-1, fy=-1, vc=30, uc=30 ):
-	'''  berechnet vier interpolatoren zum umrechnen von xy(isomap) in uv(nurbs) und zurueck 
-	mittelpunkt in uv: mpv, mpu
-	skalierung/lage der xy-Ebene: fx,fy 
-	anzahl der gitterlinien: vc,uc
-	'''
-
-	bs=obj.Shape.Face1.Surface
-	
-	
-	print "DATA for getmap object"
-	#print obj.vc
-	#print obj.uc
-	#print mapobj.Name
-	#print mapobj.border
-
-	# skalierung/lage
-	#fx,fy=1,1
-
-	refpos=bs.value(mpv,mpu)
-	ptsa=[] # abbildung des uv-iso-gitter auf die xy-Ebene
-
-	for v in range(vc+1):
-		pts=[]
-		vaa=1.0/vc*v
-
-		bbc=bs.vIso(vaa)
-
-		for u in range(uc+1):
-			uaa=1.0/uc*u
-			ba=bs.uIso(uaa)
-
-			ky=ba.length(vaa,mpv)
-			if vaa<mpv: ky =-ky
-
-			kx=bbc.length(mpu,uaa)
-			if uaa<mpu: kx =-kx
-
-			pts.append([kx,ky,0])
-
-		ptsa.append(pts)
-
-
-	ptsa=np.array(ptsa).swapaxes(0,1)
-
-	vs=[1.0/vc*v for v in range(vc+1)]
-	us=[1.0/uc*u for u in range(uc+1)]
-
-	uv2x = scipy.interpolate.interp2d(us, vs, ptsa[:,:,0], kind='cubic')
-	uv2y = scipy.interpolate.interp2d(us, vs, ptsa[:,:,1], kind='cubic')
-
-	if mapobj == None:
-		xy2v=None
-		xy2u=None
-		return [uv2x,uv2y,xy2u,xy2v]
-
-
-
-	kku=[]
-	for ui in range(uc+1):
-		for vi in range(vc+1):
-			kku.append([ptsa[ui,vi,0],ptsa[ui,vi,1], us[ui]])
-	kku=np.array(kku)
-
-	kkv=[]
-	for ui in range(uc+1):
-		for vi in range(vc+1):
-			kkv.append([ptsa[ui,vi,0],ptsa[ui,vi,1], vs[vi]])
-	kkv=np.array(kkv)
-
-
-#------------------------------------------------------
-
-	d=mapobj.border
-	d=0
-
-	kku=[]
-
-	for ui in range(d,uc+1-d):
-		for vi in range(d,vc+1-d):
-			#if ptsa[ui,vi,1]>0:
-			kku.append([ptsa[ui,vi,0],ptsa[ui,vi,1], us[ui]])
-	kku=np.array(kku)
-
-	kkv=[]
-	for ui in range(d,uc+1-d):
-		for vi in range(d,vc+1-d):
-			#if ptsa[ui,vi,1]>0:
-			kkv.append([ptsa[ui,vi,0],ptsa[ui,vi,1], vs[vi]])
-	kkv=np.array(kkv)
-
-	FreeCAD.kku=kku
-
-
-# ideas
-# https://stackoverflow.com/questions/34820612/scipy-interp2d-warning-and-different-result-than-expected
-#
-
-#	print kku.shape
-#	print "aaaaa"
-
-	if 0:
-		y=[]
-		kku2=[tuple(k) for k in kku]
-		for k in kku2:
-			if k not in y:
-				y.append(k)
-		kku=y
-
-		y=[]
-		kkv2=[tuple(k) for k in kkv]
-		for k in kkv2:
-			if k not in y:
-				y.append(k)
-		kkv=y
-
-		
-		kku2=[[x,y,z] for (x,y,z) in kku]
-		kkv2=[[x,y,z] for (x,y,z) in kkv]
-		kku=np.array(kku2)
-		kkv=np.array(kkv2)
-
-	# anpassung der teilmenge, dass es passt
-	FreeCAD.kku=kku
-	FreeCAD.kkv=kkv
-
-	print "AAA isomap.py: kku shape",kku.shape
-
-	if 0:
-		try:
-
-			dx=29
-			dy=31
-			sx=2
-			sy=0
-
-			sx=0+d
-			sy=0+d
-			dx=31-d
-			dy=31-d
-
-			kku=np.array(kku).reshape(31,31,3)
-			kkua=kku2[sx:sx+dx,sy:sy+dy].reshape(dx*dy,3)
-
-			kkv2=np.array(kkv).reshape(31,31,3)
-			kkva=kkv2[sx:sx+dx,sy:sy+dy].reshape(dx*dy,3)
-
-			print "isomap.py: kku shape",kku.shape
-
-
-	#		ptsu=[FreeCAD.Vector(tuple(i)) for i in kku]
-	#		Draft.makeWire(ptsu)
-	#		Points.show(Points.Points(ptsu))
-
-			mode='thin_plate'
-			xy2u = scipy.interpolate.Rbf(kkua[:,0],kkua[:,1],kkua[:,2], function=mode)
-			xy2v = scipy.interpolate.Rbf(kkva[:,0],kkva[:,1],kkva[:,2], function=mode)
-			print "geschafft------AAAAA-----------------------------"
-			return [uv2x,uv2y,xy2u,xy2v]
-		except:
-			pass
-
-	try:
-		dx=mapobj.ue
-		dy=mapobj.ve
-		sx=mapobj.ub
-		sy=mapobj.vb
-
-
-#		dx=20
-#		dy=20
-#		sx=8
-#		sy=8
-
-
-
-		kku2=np.array(kku).reshape(31,31,3)
-		kkua=kku2[sx:sx+dx,sy:sy+dy].reshape(dx*dy,3)
-
-		kkv2=np.array(kkv).reshape(31,31,3)
-		kkva=kkv2[sx:sx+dx,sy:sy+dy].reshape(dx*dy,3)
-
-		print "isomap.py: kku shape",kku.shape
-
-		mode='thin_plate'
-		xy2u = scipy.interpolate.Rbf(kkua[:,0],kkua[:,1],kkua[:,2], function=mode)
-		xy2v = scipy.interpolate.Rbf(kkva[:,0],kkva[:,1],kkva[:,2], function=mode)
-		print "geschafft-----------------------------------"
-	except:
-		xy2v=None
-		xy2u=None
-		print "FEHLER BERECHNUNG bUMKEHRfunktionen"
-
-
-	return [uv2x,uv2y,xy2u,xy2v]
-
-
-
-
-
-
-
-
-#-----------------------
-
-	try:
-		print "try thinplate for u"
-		mode='thin_plate'
-		xy2u = scipy.interpolate.Rbf(kku[:,0],kku[:,1],kku[:,2], function=mode)
-#		xy2v = scipy.interpolate.Rbf(kkv[:,0],kkv[:,1],kkv[:,2], function=mode)
-	except:
-		mode='cubic'
-		mode='linear'
-		print "use linear"
-		xy2u = scipy.interpolate.interp2d(kku[:,0],kku[:,1],kku[:,2], kind=mode)
-#		xy2u = scipy.interpolate.interp2d(kku[5:65,0],kku[5:65,1],kku[5:65,2], kind=mode)
-#		xy2v = scipy.interpolate.interp2d(kkv[:,0],kkv[:,1],kkv[:,2], kind=mode)
-	try:
-		print "try thinplate for v"
-		mode='thin_plate'
-#		xy2u = scipy.interpolate.Rbf(kku[:,0],kku[:,1],kku[:,2], function=mode)
-		xy2v = scipy.interpolate.Rbf(kkv[:,0],kkv[:,1],kkv[:,2], function=mode)
-	except:
-		mode='cubic'
-#		print "bex"
-		print "use cubic"
-#		xy2u = scipy.interpolate.interp2d(kku[:,0],kku[:,1],kku[:,2], kind=mode)
-		xy2v = scipy.interpolate.interp2d(kkv[:,0],kkv[:,1],kkv[:,2], kind=mode)
-
-
-
-
-	if 0: # testrechnung sollte auf geliche stelle zurueck kommen
-		u0=0.2
-		v0=0.6
-
-		y=uv2y(u0,v0)
-		x=uv2x(u0,v0)
-		u=xy2v(x,y)
-		v=xy2u(x,y)
-
-		print (u0,v0,x,y,u,v)
-
-	return [uv2x,uv2y,xy2u,xy2v]
-
-
-
-#-----------------------------------------------------------------------
-
-
-
-def drawcircle2(bs,xy2u,xy2v,RM=5,uc=10,vc=10):
+# drawcircle2
+def run_test_circle(bs,xy2u,xy2v,RM=15,uc=10,vc=10):
 	''' zeichnet Kreise auf die Flaeche bs '''
 
 	col=[]
 
-	for m in range(-2,20):
-		for n in range(2,24):
+	for m in range(-10,10):
+		for n in range(-10,10):
 			ptsk=[]
 			ptss=[]
 
-			xm=-100+10*m
-			ym=-130+10*n
+			xm=10*m
+			ym=10*n
 			um=xy2u(xm,ym)
 			vm=xy2v(xm,ym)
 
@@ -505,7 +392,7 @@ def drawcircle2(bs,xy2u,xy2v,RM=5,uc=10,vc=10):
 				try:
 					for i in range(5):
 						pa=bs.value(um+r*np.cos(np.pi*a/8),vm+r*np.sin(np.pi*a/8))
-						print ((pa-pm).Length, RM/(pa-pm).Length)
+#						print ((pa-pm).Length, RM/(pa-pm).Length)
 						r=r*RM/(pa-pm).Length
 						pa=bs.value(um+r*np.cos(np.pi*a/8),vm+r*np.sin(np.pi*a/8))
 					#print ((pa-pm).Length, RM/(pa-pm).Length)
@@ -513,25 +400,29 @@ def drawcircle2(bs,xy2u,xy2v,RM=5,uc=10,vc=10):
 					l=(pa-pm).Length
 					pss.append(pa)
 				except:
-					print "error circle2 line near 340"
+					print "error circle2 line near 408"
 			try:
 				col +=[Part.makePolygon(pss+[pm])]
 			except:
-				print "error 352"
+				print "error 412"
 
 	Part.show(Part.Compound(col))
 	App.ActiveDocument.ActiveObject.ViewObject.LineColor=(1.,1.,0.)
 
 
-
-
 def run():
+	''' main test'''
+
+
 	[source]=Gui.Selection.getSelection()
 
-	getmap(source)
+	mapa=App.ActiveDocument.MAP
+	[uv2x,uv2y,xy2u,xy2v]=getmap(mapa,source)
 	
-	# zum testen oder debuggen
-	runA(source)
+	bs=source.Shape.Face1.Surface
+
+	run_test_circle(bs,xy2u,xy2v,RM=5,uc=10,vc=10)
 
 
 
+#run()

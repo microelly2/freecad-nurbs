@@ -349,7 +349,7 @@ def drawcurve(wire,face):
 		sp=App.ActiveDocument.addObject("Part::Spline",wire.Label+"_Spline")
 	sp.Shape=e1
 	sp.ViewObject.LineColor=wire.ViewObject.LineColor
-	wire.ViewObject.hide()
+	
 
 	# flaeche erzeugen
 
@@ -577,7 +577,10 @@ def start(source='Backbone'):
 
 	# beispiel - erzeuge hilfsobjekte
 	import nurbswb.isodraw
-	b=FreeCAD.activeDocument().addObject("Part::FeaturePython","MyDrawGrid")
+	name="MyGrid"
+	b=FreeCAD.activeDocument().addObject("Part::FeaturePython",name)
+	#b.Label=name+"_3D_"
+	name=b.Name
 
 	nurbswb.isodraw.Drawgrid(b)
 	b.faceObject=fob
@@ -585,9 +588,12 @@ def start(source='Backbone'):
 	b.ViewObject.Transparency=60
 	App.activeDocument().recompute()
 
-	b=FreeCAD.activeDocument().addObject("Part::FeaturePython","MyGrid")
-	nurbswb.isodraw.Draw3Dgrid(b)
-	b.drawgrid=App.ActiveDocument.MyDrawGrid
+	b2=FreeCAD.activeDocument().addObject("Part::FeaturePython",name+"_2_")
+	
+	b2.Label=name+"_2D_"
+	
+	nurbswb.isodraw.Draw3Dgrid(b2)
+	b2.drawgrid=b
 
 
 

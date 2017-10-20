@@ -349,7 +349,17 @@ class Map(PartFeature):
 		obj.addProperty("App::PropertyInteger","ue","Interpolation","maximum u value for interpolation base")
 		obj.addProperty("App::PropertyInteger","vb","Interpolation","minimum v value for interpolation base")
 		obj.addProperty("App::PropertyInteger","ve","Interpolation","minimum v value for interpolation base")
-		
+		obj.addProperty("App::PropertyInteger","uc","Interpolation","count u segments")
+		obj.addProperty("App::PropertyInteger","vc","Interpolation","count v segments")
+
+		obj.addProperty("App::PropertyEnumeration","modeA","Interpolation","interpolation mode uv to iso-xy")
+		obj.modeA=['cubic','linear']
+		obj.addProperty("App::PropertyEnumeration","modeB","Interpolation","interpolation mode iso-xy to uv")
+		obj.modeB=['thin_plate','cubic','linear']
+
+
+
+
 		#mitte
 		obj.addProperty("App::PropertyFloat","vm","Map","v center")
 		obj.addProperty("App::PropertyFloat","um","Map","u center")
@@ -358,7 +368,7 @@ class Map(PartFeature):
 		obj.addProperty("App::PropertyFloat","fy","Map","Scale factor for y").fy=-1.
 
 
-		obj.vm=0.4
+		obj.vm=0.5
 		obj.um=0.5
 		obj.ve=-1
 		obj.ue=-1
@@ -368,6 +378,9 @@ class Map(PartFeature):
 		obj.vb=8
 		obj.ue=20
 		obj.ve=20
+
+		obj.uc=30
+		obj.vc=30
 
 		obj.addProperty("App::PropertyLink","backref","Base")
 
@@ -502,6 +515,7 @@ def createGrid(obj,upmode=False):
 #		comps += [ Part.makePolygon([FreeCAD.Vector(tuple(p)) for p in pts[obj.vMin:obj.vMax]]) ]
 
 
+
 	if upmode:
 
 		comps=[]
@@ -513,14 +527,42 @@ def createGrid(obj,upmode=False):
 		for pts in ptska[obj.vMin:obj.vMax]:
 			comps += [ Part.makePolygon([FreeCAD.Vector(tuple(p)) for p in pts[obj.uMin:obj.uMax]]) ]
 
+		# markiere zentrum der karte
+		z=bs.value(0.5,0.5)
+		print z
+		
+		circ=Part.Circle()
+		circ.Radius=10
+		circ.Location=z
+		comps += [circ.toShape()]
+
 		return Part.Compound(comps)
 
 
 
 	print ("ptsa.shape",np.array(ptsa).shape)
 
+	comps=[]
+
+	# markiere zentrum der karte
+	uv=0.5
+	vm=0.5
+	
+	ky=ba.length(vm,mpv)
+	if vm<mpv: ky =-ky
+
+	kx=bbc.length(mpu,uv)
+	if uv<mpu: kx =-kx
+
+	z=FreeCAD.Vector(kx,ky,0)
+	circ=Part.Circle()
+	circ.Radius=10
+	circ.Location=z
+	comps += [circ.toShape()]
+
 	if obj.flipxy:
-		comps=[]
+
+
 		for pts in ptsa[obj.uMin:obj.uMax]:
 			comps += [ Part.makePolygon([FreeCAD.Vector(fx*p[1],fy*p[0],0) for p in pts[obj.vMin:obj.vMax]]) ]
 
@@ -531,7 +573,7 @@ def createGrid(obj,upmode=False):
 		return Part.Compound(comps)
 
 	else :
-		comps=[]
+		#comps=[]
 		for pts in ptsa[obj.uMin:obj.uMax]:
 			comps += [ Part.makePolygon([FreeCAD.Vector(fx*p[0],fy*p[1],0) for p in pts[obj.vMin:obj.vMax]]) ]
 
