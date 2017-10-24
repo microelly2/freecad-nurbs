@@ -153,9 +153,13 @@ def createShape(obj):
 			if sv>1000: sv=face.ParameterRange[3]
 
 #			print ("Skalierung ",su,sv)
-			p2=bs.value(u*su,v*sv)
+			p2=bs.value(u/sv,v/su)
+			p2=bs.value(u,v)
+			#pts2.append(p2)
 			
+			p2=bs.value(u*sv,v*su)
 			pts2.append(p2)
+
 
 		FreeCAD.pts2a=pts2
 		pol=Part.makePolygon(pts2)
@@ -325,11 +329,11 @@ class Map(PartFeature):
 		obj.ve=-1
 		obj.ue=-1
 		
-		obj.border=14
-		obj.ub=8
-		obj.vb=8
-		obj.ue=20
-		obj.ve=20
+		obj.border=5
+		obj.ub=10
+		obj.vb=10
+		obj.ue=21
+		obj.ve=21
 
 		obj.uc=30
 		obj.vc=30
@@ -379,9 +383,9 @@ class Map(PartFeature):
 		obj.vCount=30
 
 		obj.uMax=31
-		obj.uMin=0
+		obj.uMin=1
 		obj.vMax=31
-		obj.vMin=0
+		obj.vMin=1
 
 
 
@@ -429,8 +433,6 @@ def createGrid(obj,upmode=False):
 	except: return Part.Shape()
 
 	face=obj.faceObject.Shape.Face1
-	
-
 
 	mpu=obj.uMapCenter/100
 	mpv=obj.vMapCenter/100
@@ -446,6 +448,8 @@ def createGrid(obj,upmode=False):
 
 	su=bs.UPeriod()
 	sv=bs.VPeriod()
+	print ("su,sv",su,sv)
+	
 	if su>1000: su=face.ParameterRange[1]
 	if sv>1000: sv=face.ParameterRange[3]
 
@@ -524,17 +528,18 @@ def createGrid(obj,upmode=False):
 			comps += [ Part.makePolygon([FreeCAD.Vector(tuple(p)) for p in pts[obj.uMin:obj.uMax]]) ]
 
 		# markiere zentrum der karte
-		z=bs.value(0.5*su,0.5*sv)
+		print ("kkords mpu,mpv,su,sv",mpu,mpv,su,sv)
+		z=bs.value(0.5*sv,0.5*su)
 		print z
 		
 		circ=Part.Circle()
 		circ.Radius=10
 		circ.Location=z
-		circ.Axis=bs.normal(0.5*su,0.5*sv)
+		circ.Axis=bs.normal(0.5*sv,0.5*su)
 		comps += [circ.toShape()]
 
 		# mapcenter
-		z=bs.value(mpu,mpv)
+		z=bs.value(mpv,mpu)
 		print z
 		
 		circ=Part.Circle()
@@ -563,6 +568,7 @@ def createGrid(obj,upmode=False):
 
 	kx=bbc.length(mpu,uv)
 	if uv<mpu: kx =-kx
+
 	if obj.flipxy:
 		z=FreeCAD.Vector(fy*ky,fx*kx,0)
 	else:
@@ -1083,6 +1089,16 @@ def map3Dto2D():
 				(u,v)=bs.parameter(p)
 				(v,u)=bs.parameter(p)
 #				print (u,v)
+				#zurückrechnen
+				su=bs.UPeriod()
+				sv=bs.VPeriod()
+				if su>1000: su=face.ParameterRange[1]
+				if sv>1000: sv=face.ParameterRange[3]
+
+				v=v/sv
+				u=u/su
+				
+				
 				x=uv2x(u,v)
 				y=uv2y(u,v)
 				if mapobj<>None and mapobj.flipxy:
@@ -1090,6 +1106,8 @@ def map3Dto2D():
 				else:
 					p2=FreeCAD.Vector(-y,-x,0)
 #				p2=FreeCAD.Vector(y,x,0)
+				# warum diese verschiebung?
+				#p2 += FreeCAD.Vector(80,80,0)
 				pts2.append(p2)
 
 		Draft.makeWire(pts2)

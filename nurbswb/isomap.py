@@ -7,10 +7,12 @@
 #-- GNU Lesser General Public License (LGPL)
 #-------------------------------------------------
 
+from nurbswb.say import *
 
 import FreeCAD,FreeCADGui
 App=FreeCAD
 Gui=FreeCADGui
+
 
 import Part,Mesh,Draft,Points
 
@@ -27,6 +29,8 @@ def getmap(mapobj,obj):
 	skalierung/lage der xy-Ebene: fx,fy 
 	anzahl der gitterlinien: vc,uc
 	'''
+
+	print "getmap HHHHH"
 
 	mpv=0.5
 	mpu=0.5
@@ -45,8 +49,6 @@ def getmap(mapobj,obj):
 	if su>1000: su=face.ParameterRange[1]
 	if sv>1000: sv=face.ParameterRange[3]
 
-
-
 	if mapobj<>None:
 		if hasattr(mapobj,'faceObject'):
 			mpv=mapobj.vMapCenter/100
@@ -56,14 +58,14 @@ def getmap(mapobj,obj):
 			vc=mapobj.vCount
 			uc=mapobj.uCount
 
-
 		else:
-			mpv=mapobj.vm
-			mpu=mapobj.um
+			mpv=mapobj.vMapCenter/100
+			mpu=mapobj.uMapCenter/100
+			vc=mapobj.vCount
+			uc=mapobj.uCount
+
 			fx=mapobj.fx
 			fy=mapobj.fy
-			vc=mapobj.vc
-			uc=mapobj.uc
 			modeA=mapobj.modeA
 			modeB=mapobj.modeB
 
@@ -103,6 +105,11 @@ def getmap(mapobj,obj):
 	uv2x = scipy.interpolate.interp2d(us, vs, ptsa[:,:,0], kind=modeA)
 	uv2y = scipy.interpolate.interp2d(us, vs, ptsa[:,:,1], kind=modeA)
 
+	# test
+	print "abbidlung von u=0 v=0"
+	print(uv2x(0.5,0.5),uv2y(0.5,0.5))
+
+
 	# if only 3D to 2D is needed, exit here
 	if mapobj == None:
 		xy2v=None
@@ -138,20 +145,25 @@ def getmap(mapobj,obj):
 		sx=mapobj.ub
 		sy=mapobj.vb
 
+		print ("Shape",uc+1,vc+1,(uc+1)*(vc+1),np.array(kku).shape)
 		kku2=np.array(kku).reshape(uc+1,vc+1,3)
-		kkua=kku2[sx:sx+dx,sy:sy+dy].reshape(dx*dy,3)
+		print(dx,dy,sx,sy)
+		print ("Shape aa",dx,dy,dx*dy,np.array(kku2[sx:sx+dx,sy:sy+dy]).shape)
+		kkua=kku2[sx:sx+dx,sy:sy+dy].reshape((dx)*(dy),3)
 
 		kkv2=np.array(kkv).reshape(uc+1,vc+1,3)
 		kkva=kkv2[sx:sx+dx,sy:sy+dy].reshape(dx*dy,3)
 
 		xy2u = scipy.interpolate.Rbf(kkua[:,0],kkua[:,1],kkua[:,2], function=modeB)
 		xy2v = scipy.interpolate.Rbf(kkva[:,0],kkva[:,1],kkva[:,2], function=modeB)
+
 #		xy2v = scipy.interpolate.interp2d(kkv[:,0],kkv[:,1],kkv[:,2], kind=mode)
 # ideas for error
 # https://stackoverflow.com/questions/34820612/scipy-interp2d-warning-and-different-result-than-expected
 
 
 	except Exception as err:
+		sayexc()
 		print('Handling  error:', err)
 		xy2v=None
 		xy2u=None
