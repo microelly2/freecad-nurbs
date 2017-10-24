@@ -1275,7 +1275,7 @@ def makeNurbs(uc=5,vc=7):
 	Nurbs(a,uc,vc)
 	ViewProviderNurbs(a.ViewObject)
 	a.ViewObject.ShapeColor=(0.00,1.00,1.00)
-	a.ViewObject.Transparency = 70
+	a.ViewObject.Transparency = 50
 	return a
 
 

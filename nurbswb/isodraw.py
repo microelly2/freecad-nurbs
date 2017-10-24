@@ -20,7 +20,19 @@ import Part,Mesh,Draft,Points
 import numpy as np
 import random
 
-import os, nurbswb
+import os
+import scipy
+import scipy.interpolate
+
+import nurbswb
+import nurbswb.facedraw
+reload (nurbswb.facedraw)
+
+import nurbswb.isomap
+reload(nurbswb.isomap)
+
+
+
 
 global __dir__
 __dir__ = os.path.dirname(nurbswb.__file__)
@@ -63,8 +75,6 @@ class ViewProvider:
 		pass
 
 
-import nurbswb.isomap
-reload(nurbswb.isomap)
 
 def createShape(obj):
 	'''create 2D or 3D mapping of a object'''
@@ -72,6 +82,7 @@ def createShape(obj):
 	print "CreateShape for obj:",obj.Label
 
 	pointCount=obj.pointcount
+	pointCount=50
 
 	[uv2x,uv2y,xy2u,xy2v]=[obj.mapobject.Proxy.uv2x,obj.mapobject.Proxy.uv2y,obj.mapobject.Proxy.xy2u,obj.mapobject.Proxy.xy2v]
 
@@ -87,17 +98,18 @@ def createShape(obj):
 	u0=0
 	v0=0
 
-	fy=-1.1
-	fx=-1.1
+	fy=-1.
+	fx=-1.
 
 	#+# facenumer aus obj param holen
+	face=obj.face.Shape.Face1
 	bs=obj.face.Shape.Face1.Surface
 	w=obj.wire.Shape.Wires[0]
 
 	ppall=[]
 
 	for i,w in enumerate(obj.wire.Shape.Wires):
-		print "Wire ...",i
+		print "X Wire ...",i
 		pts=w.discretize(pointCount)
 		pts2=[]
 
@@ -105,19 +117,27 @@ def createShape(obj):
 		mpv=0.
 		mpu=0.
 
-		refpos=bs.value(mpu,mpv)
-		print ("refpos",mpu,mpv)
-		print refpos
+#		refpos=bs.value(mpu,mpv)
+#		print ("refpos",mpu,mpv)
+#		print refpos
 
 		refpos=FreeCAD.Vector(0,0,0)
 
 		for p in pts:
 
-			x=fx*(p.x-refpos.x)
-			y=fy*(p.y-refpos.y)
+			y=fx*(p.x-refpos.x)
+			x=fy*(p.y-refpos.y)
 
+			#fuer ruled surface !!
+			x=p.y
+			y=p.x
+
+			print  ("a",x,y)
+			
 			u=xy2u(x,y)
 			v=xy2v(x,y)
+
+
 			print(round(u,2),round(v,2))
 
 			if 0: #macht nur Sinn fuer Bsplines 
@@ -126,7 +146,15 @@ def createShape(obj):
 				if v<0: v=0
 				if v>1: v=1
 
-			p2=bs.value(u,v)
+			#faktor dazu
+			su=bs.UPeriod()
+			sv=bs.VPeriod()
+			if su>1000: su=face.ParameterRange[1]
+			if sv>1000: sv=face.ParameterRange[3]
+
+#			print ("Skalierung ",su,sv)
+			p2=bs.value(u*su,v*sv)
+			
 			pts2.append(p2)
 
 		FreeCAD.pts2a=pts2
@@ -134,6 +162,89 @@ def createShape(obj):
 
 		obj.Shape=pol
 		return
+
+#---------------
+
+def createShapeA(obj):
+	
+	pointCount=obj.pointcount
+
+
+	# mittelpunkt
+
+	mpv=0.5
+	mpu=0.5
+
+	[uv2x,uv2y,xy2u,xy2v]=[obj.mapobject.Proxy.uv2x,obj.mapobject.Proxy.uv2y,obj.mapobject.Proxy.xy2u,obj.mapobject.Proxy.xy2v]
+
+	u0=0
+	v0=0
+
+	fy=-1.1
+	fx=-1.1
+
+	y=uv2y(u0,v0)
+	x=uv2x(u0,v0)
+	
+	if xy2v==None:
+		print "Kann umkerhung nicht berechnen xy2v nicht vorhanden"
+		return
+
+	u=xy2v(x,y)
+	v=xy2u(x,y)
+
+	# hack fier torus
+	u=xy2v(-x,-y)
+	v=xy2u(-x,-y)
+
+	# print (u0,v0,x,y,u,v)
+	bs=obj.face.Shape.Face1.Surface
+	w=obj.wire.Shape.Wires[0]
+
+	ppall=[]
+	for w in obj.wire.Shape.Wires:
+		pts=w.discretize(pointCount)
+		pts2=[]
+
+		refpos=bs.value(mpu,mpv)
+		refpos=FreeCAD.Vector(0,0,0)
+
+		for p in pts:
+
+			x=fx*(p.x-refpos.x)
+			y=fy*(p.y-refpos.y)
+
+			x=-p.y
+			y=-p.x
+			u=xy2u(x,y)
+			v=xy2v(x,y)
+
+			if 0:
+				if u<0: u=0
+				if u>1: u=1
+				if v<0: v=0
+				if v>1: v=1
+
+
+			p2=bs.value(u,v)
+
+			pts2.append(p2)
+
+		FreeCAD.pts2a=pts2
+		pol=Part.makePolygon(pts2)
+
+		obj.Shape=pol
+		return
+
+
+
+
+
+
+
+#---------------
+
+
 
 
 class Isodraw(PartFeature):
@@ -161,14 +272,12 @@ class Isodraw(PartFeature):
 		if obj.backref <>None:
 			obj.backref.touch()
 			obj.backref.Document.recompute()
-		import nurbswb.facedraw
-		reload (nurbswb.facedraw)
 		face=obj.face.Shape.Face1
 		nurbswb.facedraw.drawcurve(obj,face)
 
 
 def createIsodrawFace():
-	b=FreeCAD.activeDocument().addObject("Part::FeaturePython","MyFilledFace")
+	b=FreeCAD.activeDocument().addObject("Part::FeaturePython","IsoDrawFace")
 	bn=Isodraw(b)
 	return b
 
@@ -180,6 +289,7 @@ class Map(PartFeature):
 		PartFeature.__init__(self, obj)
 		obj.addProperty("App::PropertyVector","Size","Base").Size=FreeCAD.Vector(300,-100,200)
 		obj.addProperty("App::PropertyLink","face","Base")
+		obj.addProperty("App::PropertyLink","faceObject","Base")
 		#obj.addProperty("App::PropertyLink","wire","Base")
 		#raender
 		obj.addProperty("App::PropertyInteger","border","Interpolation","border offset in uv space")
@@ -189,6 +299,9 @@ class Map(PartFeature):
 		obj.addProperty("App::PropertyInteger","ve","Interpolation","minimum v value for interpolation base")
 		obj.addProperty("App::PropertyInteger","uc","Interpolation","count u segments")
 		obj.addProperty("App::PropertyInteger","vc","Interpolation","count v segments")
+#		obj.addProperty("App::PropertyInteger","uCount","Interpolation","count u segments").uCount=30
+#		obj.addProperty("App::PropertyInteger","vCount","Interpolation","count v segments").vCount=30
+
 
 		obj.addProperty("App::PropertyEnumeration","modeA","Interpolation","interpolation mode uv to iso-xy")
 		obj.modeA=['cubic','linear']
@@ -196,18 +309,19 @@ class Map(PartFeature):
 		obj.modeB=['thin_plate','cubic','linear']
 
 
-
+		obj.addProperty("App::PropertyInteger","pointsPerEdge","Map","discretize for 3D to 2D")
+		obj.pointsPerEdge=3
 
 		#mitte
-		obj.addProperty("App::PropertyFloat","vm","Map","v center")
-		obj.addProperty("App::PropertyFloat","um","Map","u center")
+#		obj.addProperty("App::PropertyFloat","vm","Map","v center")
+#		obj.addProperty("App::PropertyFloat","um","Map","u center")
 
-		obj.addProperty("App::PropertyFloat","fx","Map","Scale factor for x").fx=-1.
-		obj.addProperty("App::PropertyFloat","fy","Map","Scale factor for y").fy=-1.
+#		obj.addProperty("App::PropertyFloat","fx","Map","Scale factor for x").fx=-1.
+#		obj.addProperty("App::PropertyFloat","fy","Map","Scale factor for y").fy=-1.
 
 
-		obj.vm=0.5
-		obj.um=0.5
+#		obj.vm=0.5
+#		obj.um=0.5
 		obj.ve=-1
 		obj.ue=-1
 		
@@ -221,6 +335,57 @@ class Map(PartFeature):
 		obj.vc=30
 
 		obj.addProperty("App::PropertyLink","backref","Base")
+
+
+		obj.addProperty("App::PropertyLink","faceObject","Base")
+		obj.addProperty("App::PropertyInteger","faceNumber","Base")
+
+		obj.addProperty("App::PropertyLink","wire","Base")
+
+		obj.addProperty("App::PropertyInteger","uMin","Base")
+		obj.addProperty("App::PropertyInteger","uMax","Base")
+		obj.addProperty("App::PropertyInteger","uCenter","Base")
+		obj.addProperty("App::PropertyInteger","uCount","Base")
+		
+		obj.addProperty("App::PropertyInteger","vMin","Base")
+		obj.addProperty("App::PropertyInteger","vMax","Base")
+		obj.addProperty("App::PropertyInteger","vCenter","Base")
+		obj.addProperty("App::PropertyInteger","vCount","Base")
+
+		obj.addProperty("App::PropertyLink","backref","Base")
+		obj.addProperty("App::PropertyBool","flipuv","Base")
+		obj.addProperty("App::PropertyBool","flipxy","Base")
+
+		obj.addProperty("App::PropertyFloat","fx","Base")
+		obj.addProperty("App::PropertyFloat","fy","Base")
+		
+		obj.addProperty("App::PropertyFloat","vMapCenter","Map")
+		obj.addProperty("App::PropertyFloat","uMapCenter","Map")
+
+		obj.addProperty("App::PropertyBool","display2d","Map")
+		obj.addProperty("App::PropertyBool","display3d","Map")
+		
+		obj.display2d=True
+	
+		obj.fx=1.
+		obj.fy=1.
+		obj.flipxy=True
+
+		obj.uMapCenter=50
+		obj.vMapCenter=50
+
+
+		obj.uCount=30
+		obj.vCount=30
+
+		obj.uMax=31
+		obj.uMin=0
+		obj.vMax=31
+		obj.vMin=0
+
+
+
+
 
 		ViewProvider(obj.ViewObject)
 		obj.ViewObject.LineColor=(1.,0.,1.)
@@ -237,6 +402,16 @@ class Map(PartFeature):
 		proxy.xy2v=xy2v
 		print "getmap done"
 
+		print "erzeuge grid"
+		obj.faceObject=obj.face
+		cps=[]
+		if obj.display2d:
+			cps.append(createGrid(obj))
+		if obj.display3d:
+			cps.append(createGrid(obj,upmode=True))
+		obj.Shape=	Part.Compound(cps)
+
+
 		if obj.backref <>None:
 			obj.backref.touch()
 			obj.backref.Document.recompute()
@@ -248,43 +423,37 @@ def createMap():
 
 
 
-import FreeCAD,FreeCADGui
-App=FreeCAD
-Gui=FreeCADGui
-
-
-from PySide import QtGui
-import Part,Mesh,Draft,Points
-
-
-
-import Draft
-import numpy as np
-import scipy
-import scipy.interpolate
-
-
-
 
 def createGrid(obj,upmode=False):
 	try: bs=obj.faceObject.Shape.Face1.Surface
 	except: return Part.Shape()
 
-	# mittelpunkt
-	mpv=0.5
-	mpu=0.5
+	face=obj.faceObject.Shape.Face1
+	
+
+
+	mpu=obj.uMapCenter/100
+	mpv=obj.vMapCenter/100
 
 	# skalierung/lage
-	fx=-1
-	fy=-1
+	fx=obj.fx
+	fy=obj.fy
 
-	#fx,fy=1,1
 
 	comps=[]
 
-
 	refpos=bs.value(mpv,mpu)
 
+	su=bs.UPeriod()
+	sv=bs.VPeriod()
+	if su>1000: su=face.ParameterRange[1]
+	if sv>1000: sv=face.ParameterRange[3]
+
+	# mittelpunkt
+	mpu2=mpu*sv
+	mpv2=mpv*su
+	mpu=mpv2
+	mpv=mpu2
 
 	vc=obj.uCount
 	uc=obj.vCount
@@ -299,7 +468,7 @@ def createGrid(obj,upmode=False):
 
 	for v in range(vc+1):
 		pts=[]
-		vm=1.0/vc*v
+		vm=1.0/vc*v*sv
 
 		ky=ba.length(vm,mpv)
 
@@ -310,7 +479,7 @@ def createGrid(obj,upmode=False):
 
 		ptsk=[]
 		for u in range(uc+1):
-			uv=1.0/uc*u
+			uv=1.0/uc*u*su
 
 			ba=bs.uIso(uv)
 
@@ -355,15 +524,29 @@ def createGrid(obj,upmode=False):
 			comps += [ Part.makePolygon([FreeCAD.Vector(tuple(p)) for p in pts[obj.uMin:obj.uMax]]) ]
 
 		# markiere zentrum der karte
-		z=bs.value(0.5,0.5)
+		z=bs.value(0.5*su,0.5*sv)
 		print z
 		
 		circ=Part.Circle()
 		circ.Radius=10
 		circ.Location=z
+		circ.Axis=bs.normal(0.5*su,0.5*sv)
 		comps += [circ.toShape()]
 
+		# mapcenter
+		z=bs.value(mpu,mpv)
+		print z
+		
+		circ=Part.Circle()
+		circ.Radius=20
+		circ.Location=z
+		circ.Axis=bs.normal(mpu,mpv)
+		comps += [circ.toShape()]
+
+
 		return Part.Compound(comps)
+
+
 
 
 
@@ -372,20 +555,31 @@ def createGrid(obj,upmode=False):
 	comps=[]
 
 	# markiere zentrum der karte
-	uv=0.5
-	vm=0.5
+	uv=0.5*su
+	vm=0.5*sv
 	
 	ky=ba.length(vm,mpv)
 	if vm<mpv: ky =-ky
 
 	kx=bbc.length(mpu,uv)
 	if uv<mpu: kx =-kx
-
-	z=FreeCAD.Vector(kx,ky,0)
+	if obj.flipxy:
+		z=FreeCAD.Vector(fy*ky,fx*kx,0)
+	else:
+		z=FreeCAD.Vector(fx*kx,fy*ky,0)
 	circ=Part.Circle()
 	circ.Radius=10
 	circ.Location=z
 	comps += [circ.toShape()]
+
+	z=FreeCAD.Vector(0,0,0)
+	circ=Part.Circle()
+	circ.Radius=20
+	circ.Location=z
+	comps += [circ.toShape()]
+
+
+
 
 	if obj.flipxy:
 
@@ -440,18 +634,29 @@ class Drawgrid(PartFeature):
 		obj.addProperty("App::PropertyLink","backref","Base")
 		obj.addProperty("App::PropertyBool","flipuv","Base")
 		obj.addProperty("App::PropertyBool","flipxy","Base")
+		obj.addProperty("App::PropertyFloat","fx","Base")
+		obj.addProperty("App::PropertyFloat","fy","Base")
 		
+		obj.addProperty("App::PropertyFloat","vMapCenter","Map")
+		obj.addProperty("App::PropertyFloat","uMapCenter","Map")
+		
+		obj.fx=1.
+		obj.fy=1.
+		obj.flipxy=True
+
+		obj.uMapCenter=50
+		obj.vMapCenter=50
 
 		ViewProvider(obj.ViewObject)
 		obj.ViewObject.LineColor=(1.,0.,1.)
 
 		obj.uCount=30
-		obj.vCount=10
+		obj.vCount=30
 
 		obj.uMax=31
-		obj.uMin=1
-		obj.vMax=11
-		obj.vMin=1
+		obj.uMin=0
+		obj.vMax=31
+		obj.vMin=0
 
 
 	def onChanged(self, obj, prop):
@@ -712,9 +917,9 @@ def createWsLink(dokname="Linkdok"):
 	bares=ad.addObject("Part::FeaturePython","WS "+dokname+"")
 	WSLink(bares,dokname)
 	return bares
-	
 
-if 0:
+
+def testF():
 
 	link.source=obj
 
@@ -783,7 +988,7 @@ if __name__=='__main__':
 
 '''
 
-if 0:
+def testA():
 	ad=App.ActiveDocument
 	App.ActiveDocument=ad
 
@@ -803,7 +1008,7 @@ if 0:
 
 
 
-if 0:
+def testB():
 	wl=createWsLink("Sole")
 	App.ActiveDocument=ad
 	ad.recompute()
@@ -840,31 +1045,54 @@ def map3Dto2D():
 	#wire=App.ActiveDocument.UUUU_Drawing_on_Poles__Face1002_Spline
 
 	s0=Gui.Selection.getSelection()
-	face=s0[-1]
+	base=s0[-1]
+
+	if hasattr(base,"faceObject"):
+		face=base.faceObject
+		mapobj=base
+	else:
+		face=base
+		mapobj=None
+
 	s=s0[:-1]
 
 
 	for wire in s:
-		[uv2x,uv2y,xy2u,xy2v]=nurbswb.isomap.getmap(None,face)
+		[uv2x,uv2y,xy2u,xy2v]=nurbswb.isomap.getmap(mapobj,face)
 
 		bs=face.Shape.Face1.Surface
+		pts2=[]
+		firstEdge=True
 		for e in wire.Shape.Edges:
 			# auf 5 millimeter genau
-			dd=int(round(e.Length/5))
-			pts=e.discretize(dd)
+			if mapobj<>None:
+				dd=mapobj.pointsPerEdge
+			else:
+				dd=int(round(e.Length/5))
+				dd=30
+			ptsa=e.discretize(dd)
+			if not firstEdge:
+				pts=ptsa[1:]
+			else:
+				pts=ptsa
+			firstEdge=False
+
 			FreeCAD.ptsaa=pts
-			pts2=[]
+			
 			for p in pts:
 				(u,v)=bs.parameter(p)
 				(v,u)=bs.parameter(p)
-				print (u,v)
+#				print (u,v)
 				x=uv2x(u,v)
 				y=uv2y(u,v)
-				p2=FreeCAD.Vector(-y,-x,0)
+				if mapobj<>None and mapobj.flipxy:
+					p2=FreeCAD.Vector(y,x,0)
+				else:
+					p2=FreeCAD.Vector(-y,-x,0)
 #				p2=FreeCAD.Vector(y,x,0)
 				pts2.append(p2)
 
-			Draft.makeWire(pts2)
+		Draft.makeWire(pts2)
 
 
 def map2Dto3D():
@@ -874,18 +1102,18 @@ def map2Dto3D():
 	# other sels: wires to project
 
 	s0=Gui.Selection.getSelection()
-	face=s0[-1]
+	moa=s0[-1]
 	s=s0[:-1]
 
-	moa=createMap()
-	moa.face=face
+#	moa=createMap()
+#	moa.face=face
 
 	for w in s:
 		f=createIsodrawFace()
 		f.mapobject=moa
-		f.face=face
+		f.face=moa.face
 		f.wire=w
-
+		f.Label="map3D_for_"+w.Label+"_on_"+f.face.Label + "_by_" + moa.Label
 		App.activeDocument().recompute()
 
 
@@ -893,7 +1121,7 @@ def map2Dto3D():
 
 
 # pruefe qualitaet der umrechnung
-if 0:
+def testC():
 	face=App.ActiveDocument.Poles
 	#face=App.ActiveDocument.MySegment
 	bs=face.Shape.Face1.Surface
@@ -920,7 +1148,7 @@ if 0:
 #	print p
 	print p-pt
 
-if 0:
+def testD():
 #	kku2=np.array(FreeCAD.kku).reshape(31,31,3)
 #	kku=kku2[10:25,10:20].reshape(150,3)
 
@@ -933,7 +1161,7 @@ if 0:
 	xy2u = scipy.interpolate.Rbf(kku[:,0],kku[:,1],kku[:,2], function=mode)
 
 
-if 0:
+def testE():
 	[uv2x,uv2y,xy2u,xy2v]=nurbswb.isomap.getmap(face)
 	ptbb=[]
 	for p in FreeCAD.ptsaa:

@@ -38,29 +38,50 @@ def getmap(mapobj,obj):
 	modeB='thin_plate'
 
 	bs=obj.Shape.Face1.Surface
+	face=obj.Shape.Face1
+
+	su=bs.UPeriod()
+	sv=bs.VPeriod()
+	if su>1000: su=face.ParameterRange[1]
+	if sv>1000: sv=face.ParameterRange[3]
+
+
 
 	if mapobj<>None:
-		mpv=mapobj.vm
-		mpu=mapobj.um
-		fx=mapobj.fx
-		fy=mapobj.fy
-		vc=mapobj.vc
-		uc=mapobj.uc
-		modeA=mapobj.modeA
-		modeB=mapobj.modeB
+		if hasattr(mapobj,'faceObject'):
+			mpv=mapobj.vMapCenter/100
+			mpu=mapobj.uMapCenter/100
+			fx=mapobj.fx
+			fy=mapobj.fy
+			vc=mapobj.vCount
+			uc=mapobj.uCount
+
+
+		else:
+			mpv=mapobj.vm
+			mpu=mapobj.um
+			fx=mapobj.fx
+			fy=mapobj.fy
+			vc=mapobj.vc
+			uc=mapobj.uc
+			modeA=mapobj.modeA
+			modeB=mapobj.modeB
 
 
 	refpos=bs.value(mpv,mpu)
 	ptsa=[] # abbildung des uv-iso-gitter auf die xy-Ebene
 
+	mpv *=sv
+	mpu *=su
+
 	for v in range(vc+1):
 		pts=[]
-		vaa=1.0/vc*v
+		vaa=1.0/vc*v*sv
 
 		bbc=bs.vIso(vaa)
 
 		for u in range(uc+1):
-			uaa=1.0/uc*u
+			uaa=1.0/uc*u*su
 			ba=bs.uIso(uaa)
 
 			ky=ba.length(vaa,mpv)
@@ -90,7 +111,7 @@ def getmap(mapobj,obj):
 
 #------------------------------------------------------
 
-	d=mapobj.border
+	#d=mapobj.border
 	d=0
 
 	kku=[]
@@ -130,7 +151,8 @@ def getmap(mapobj,obj):
 # https://stackoverflow.com/questions/34820612/scipy-interp2d-warning-and-different-result-than-expected
 
 
-	except:
+	except Exception as err:
+		print('Handling  error:', err)
 		xy2v=None
 		xy2u=None
 		print "FEHLER BERECHNUNG bUMKEHRfunktionen"

@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 #-------------------------------------------------
-#-- event filter for nurbs-needle editor 
+#-- intreactive draw on face
 #--
-#-- microelly 2016
+#-- microelly 2017  0.2
 #--
 #-- GNU Lesser General Public License (LGPL)
 #-------------------------------------------------
@@ -12,6 +12,14 @@ from nurbswb.say import *
 
 import FreeCAD
 import sys,time
+import random
+
+
+
+import nurbswb.isodraw
+reload(nurbswb.isodraw)
+
+
 
 '''
 # parameter
@@ -37,6 +45,11 @@ class EventFilter(QtCore.QObject):
 		self.posy=-1
 		self.lasttime=time.time()
 		self.lastkey='#'
+		self.colorA=0
+		self.colors=[]
+		self.pts=[]
+		self.ptsm=[]
+		self.mode='n'
 
 
 	def eventFilter(self, o, e):
@@ -57,31 +70,22 @@ class EventFilter(QtCore.QObject):
 			return QtGui.QWidget.eventFilter(self, o, e)
 
 		if event.type() == QtCore.QEvent.MouseMove:
-			#if event.buttons() == QtCore.Qt.NoButton:
-				#print ("vetnbuttons",event.buttons() )
-				pos = event.pos()
-				x=pos.x()
-				y=pos.y()
-#				print ("mouse pos ",x,y)
 				(x,y)=Gui.ActiveDocument.ActiveView.getCursorPos()
-#				print ("cursor pos",x,y)
 				t=Gui.ActiveDocument.ActiveView.getObjectsInfo((x,y))
-				if t<>None:
-					for tt in t:
-#						if tt['Object']=='Sphere' and tt['Component']=='Face1':
-						if tt['Object']==self.objname and tt['Component']==self.subelement:
 
-							#print ("!",tt['x'],tt['y'],tt['z'])
-							#print ("event buttons",event.buttons())
+				if t<>None: # if objects are under the mouse
+					for tt in t:
+						if tt['Object']==self.objname and tt['Component']==self.subelement:
 							self.x,self.y,self.z=tt['x'],tt['y'],tt['z']
 							break
+
 					if event.buttons()==QtCore.Qt.LeftButton:
-						print "LEFT AA"
+						#print "LEFT BUTTON drawing"
 						vf=FreeCAD.Vector(self.x,self.y,self.z)
 						bs=self.subobj.Surface
-						#print bs
+
 						(u,v)=bs.parameter(vf)
-						print (u,v)
+						#print (u,v)
 						lu=0.5
 						lv=0.5
 
@@ -92,30 +96,22 @@ class EventFilter(QtCore.QObject):
 						bbc=bs.vIso(v)
 						kx=bbc.length(lu,u)
 						if u<0.5: kx =-kx
-						
-						
-						
+
 						mf=FreeCAD.Vector(self.x,self.y,0)
 						mf=FreeCAD.Vector(-1*ky,-1*kx,0)
-						
-						try:
-							self.pts += [vf]
-							self.ptsm += [mf]
-						except:
-							self.pts = [vf]
-							self.ptsm = [mf]
 
+						self.pts += [vf]
+						self.ptsm += [mf]
 
+						self.colors += [self.colorA]
+						drawColorpath(self.pts,self.colors,self.colorA)
+						self.wire.ViewObject.Visibility=False
 
 						if len(self.pts)>1:
-
 							self.wire.Shape=Part.makePolygon(self.pts)
 							self.wirem.Shape=Part.makePolygon(self.ptsm)
-							self.wire.ViewObject.PointSize=int(self.dialog.dial.value()+1)
-							self.wire.ViewObject.LineWidth=int(self.dialog.dial.value()+1)
 
-
-
+						return True
 
 		if z == 'PySide.QtCore.QEvent.Type.KeyPress':
 			# http://doc.qt.io/qt-4.8/qkeyevent.html
@@ -140,10 +136,10 @@ class EventFilter(QtCore.QObject):
 					# only two function keys implemented, no modifieres
 					if e.key()== QtCore.Qt.Key_F2:
 						say("------------F2-- show mode and moddata---------------")
-						print self.mode
 						return False
+
 					elif e.key()== QtCore.Qt.Key_Escape:
-						say("------------Escape-----------------")
+						say("------------Escape = Stop-----------------")
 						stop()
 
 					elif e.key()== QtCore.Qt.Key_F3 :
@@ -151,6 +147,7 @@ class EventFilter(QtCore.QObject):
 						stop()
 
 
+# some key bindings not used at teh moment
 #					elif  e.key()== QtCore.Qt.Key_Return:
 #						say("------------Enter-----------------")
 #						self.update()
@@ -180,24 +177,51 @@ class EventFilter(QtCore.QObject):
 						self.mouseWheel -= FreeCAD.ParamGet('User parameter:Plugins/nurbs').GetFloat("MovePageStep",50)
 						self.dialog.ef_action("down!",self,self.mouseWheel)
 						return True
+
 					if e.key()== QtCore.Qt.Key_Enter or e.key()== QtCore.Qt.Key_Return:
-							vf=FreeCAD.Vector(self.x,self.y,self.z)
-							try:
-								self.pts += [vf]
-							except:
-								self.pts = [vf]
-							if len(self.pts)>1:
-								self.wire.Shape=Part.makePolygon(self.pts)
-								self.wire.ViewObject.PointSize=int(self.dialog.dial.value()+1)
+						# enter creates a new point ...
+						vf=FreeCAD.Vector(self.x,self.y,self.z)
+						self.colors += [self.colorA]
+						self.pts += [vf]
+
+						if len(self.pts)>1:
+							self.wire.Shape=Part.makePolygon(self.pts)
+							drawColorpath(self.pts,self.colors,self.colorA)
 
 					else: # letter key pressed
 						ee=e.text()
-						if len(ee)>0: 
-							r=ee[0]
-							
+						if len(ee)>0: r=ee[0]
 						else: r="key:"+ str(e.key())
-						#say("-------action for key ----!!------" + r)
+
 						self.lastkey=e.text()
+
+						#color select for drawing
+						if r=='h':
+							self.colorA=0
+							return True
+						if r=='y':
+							self.colorA=1
+							return True
+						if r=='n':
+							self.colorA=2
+							return True
+						if r=='g':
+							self.colorA=3
+							return True
+						if r=='j':
+							self.colorA=4
+							return True
+						if r=='z':
+							self.colorA=6
+							return True
+						if r=='x':
+							self.colorA=5
+							return True
+						if r=='#':
+							self.colorA=7
+							return True
+
+						# zooming +-*
 						if r=='+':
 							Gui.activeDocument().ActiveView.zoomIn()
 							return True
@@ -207,32 +231,17 @@ class EventFilter(QtCore.QObject):
 						if r=='*':
 							Gui.activeDocument().ActiveView.fitAll()
 							return True
- 						if r in ['a']:
+
+
+ 						if r in ['a','b','c']:
 
 								print ("KEY pressed ----------------------",r)
-
-						vf=FreeCAD.Vector(self.x,self.y,self.z)
-						mf=FreeCAD.Vector(self.x,self.y,0)
-
-						try:
-							self.pts += [vf]
-							self.ptsm += [mf]
-						except:
-							self.pts = [vf]
-							self.ptsm = [mf]
-
-						if len(self.pts)>1:
-							self.wire.Shape=Part.makePolygon(self.pts)
-							self.wire.ViewObject.PointSize=int(self.dialog.dial.value()+1)
-							self.wire.ViewObject.LineWidth=int(self.dialog.dial.value()+1)
-							self.wirem.Shape=Part.makePolygon(self.ptsm)
-							self.wirem.ViewObject.PointSize=int(self.dialog.dial.value()+1)
-							self.wirem.ViewObject.LineWidth=int(self.dialog.dial.value()+1)
 
 
 
 				except:
 					sayexc()
+
 
 		# end of a single key pressed
 		if z == 'PySide.QtCore.QEvent.Type.KeyRelease':
@@ -255,87 +264,29 @@ class EventFilter(QtCore.QObject):
 		if z == 'PySide.QtCore.QEvent.Type.HoverMove' :
 			pass
 
-
-
-		event=e
-		try:
-
-			if event.type() == QtCore.QEvent.ContextMenu : #and o.__class__ == QtGui.QWidget:
-					# hier contextmenue rechte maus auschalten
-					FreeCAD.Console.PrintMessage('!! cancel -------------------------------------context-----------\n')
-					return False
-					pass
-
-			# wheel rotation
-			if event.type()== QtCore.QEvent.Type.Wheel:
-
-				self.mouseWheel += e.delta()/120
-				pos=e.pos()
-				self.posx=pos.x()
-				self.posy=pos.y()
-
-				##FreeCAD.Console.PrintMessage("wheel: " + str(self.mouseWheel) + " pos: " +str(e.pos())+ "\n")
-				#self.modedat[self.mode]=self.mouseWheel
-				self.dialog.ef_action("wheel",self,self.mouseWheel)
-
-				noDefaultWheel = self.mode<>'n'
-				
-				if noDefaultWheel:
-					return True 
-				else:
-					return False
-
-			# mouse clicks
-			if event.type() == QtCore.QEvent.MouseButtonPress or \
-					event.type() == QtCore.QEvent.MouseButtonRelease or\
-					event.type() == QtCore.QEvent.MouseButtonDblClick:
-
-#				FreeCAD.Console.PrintMessage(str(event.type())+ " " + str(o) +'!!\n')
-
-				if event.button() == QtCore.Qt.MidButton or  event.button() == QtCore.Qt.MiddleButton:
-#					FreeCAD.Console.PrintMessage('!-------------------------------------!!  X middle \n')
-					return False
-
-				if event.button() == QtCore.Qt.LeftButton:
-#					FreeCAD.Console.PrintMessage('!! X one left\n')
-
-
-
-					return False
-
-				elif event.button() == QtCore.Qt.RightButton:
-#					FreeCAD.Console.PrintMessage('!! X one right\n')
-					return False
-
-		except:
-			sayexc()
-
 		return QtGui.QWidget.eventFilter(self, o, e)
-
-
-	def update(self):
-		self.dialog.commit_noclose()
-
 
 
 
 def drawcurve(wire,face):
 	'''draw a curve on a face and create the two subfaces defined by the curve'''
-	print "drawcurve"
 
-	#w=App.ActiveDocument.Drawing_on_MyShoe__Face2.Shape
-	#t=App.ActiveDocument.MyShoe.Shape.Face2
+	print "drawcurve"
 
 	w=wire.Shape
 	t=face
 
-
 	pts=[p.Point for p in w.Vertexes]
 	sf=t.Surface
 
+	bs=sf
+	su=bs.UPeriod()
+	sv=bs.VPeriod()
+	if su>1000: su=face.ParameterRange[1]
+	if sv>1000: sv=face.ParameterRange[3]
+
 	pts2da=[sf.parameter(p) for p in pts[1:]]
 	pts2d=[FreeCAD.Base.Vector2d(p[0],p[1]) for p in pts2da]
-	FreeCAD.pts2d=pts2d
 
 	bs2d = Part.Geom2d.BSplineCurve2d()
 	bs2d.setPeriodic()
@@ -349,16 +300,10 @@ def drawcurve(wire,face):
 		sp=App.ActiveDocument.addObject("Part::Spline",wire.Label+"_Spline")
 	sp.Shape=e1
 	sp.ViewObject.LineColor=wire.ViewObject.LineColor
-	
 
 	# flaeche erzeugen
 
-
-	#face=App.ActiveDocument.Poles.Shape.Face1
-
 	edges=e1.Edges
-
-
 	ee=edges[0]
 	splita=[(ee,face)]
 	r=Part.makeSplitShape(face, splita)
@@ -367,15 +312,14 @@ def drawcurve(wire,face):
 	splitb=[(ee,face)]
 	r2=Part.makeSplitShape(face, splitb)
 	
-	if wire.drawFace:
+	if hasattr(wire,"drawFace"):
+
 			sp=App.ActiveDocument.getObject(wire.Label+"_SplineFaceA")
 			if sp==None:
 				sp=App.ActiveDocument.addObject("Part::Spline",wire.Label+"_SplineFaceA")
 
-			if wire.reverseFace:
-				sp.Shape=r2[0][0]
-			else:
-				sp.Shape=r[0][0]
+			if wire.reverseFace: sp.Shape=r2[0][0]
+			else: sp.Shape=r[0][0]
 
 			sp.ViewObject.ShapeColor=(random.random(),random.random(),random.random())
 			sp.ViewObject.LineColor=sp.ViewObject.ShapeColor
@@ -383,28 +327,23 @@ def drawcurve(wire,face):
 
 
 
-import random
 
 def createnewwire(widget):
+	'''new wire for next drawing'''
 
-	print "new wire"
 	ef=widget.ef
+
 	w=App.ActiveDocument.addObject("Part::Feature","A Drawing on " + ef.objname + ": "+ ef.subelement +"#")
 	w.Shape=Part.Shape()
 	wam=App.ActiveDocument.addObject("Part::Feature","YY Drawing on " + ef.objname + ": "+ ef.subelement +"#")
 	wam.Shape=Part.Shape()
 
-	if 0:
+	if 10:
 		c=PySide.QtGui.QColorDialog.getColor(QtGui.QColor(random.randint(10,255),random.randint(10,255),random.randint(10,255)))
-		print (c.red(),c.green(),c.blue())
-
 		w.ViewObject.LineColor=(1.0/255*c.red(),1.0/255*c.green(),1.0/255*c.blue())
-		w.ViewObject.LineWidth=int(widget.dial.value()+1)
 		w.ViewObject.PointColor=(1.0/255*c.red(),1.0/255*c.green(),1.0/255*c.blue())
-		w.ViewObject.PointSize=int(widget.dial.value()+1)
-	# w.Label=str(w.ViewObject.LineColor)
-
-	w.ViewObject.LineColor=(random.random(),random.random(),random.random())
+	else:
+		w.ViewObject.LineColor=(random.random(),random.random(),random.random())
 
 	ef.wire=w
 	ef.wirem=wam
@@ -420,35 +359,28 @@ class MyWidget(QtGui.QWidget):
 		stop()
 
 	def apply(self):
-		try:
-			drawcurve(self.ef.wire,self.ef.subobj)
-		except:
-			sayexc()
+		try: drawcurve(self.ef.wire,self.ef.subobj)
+		except: sayexc2()
 		stop()
 
 	def applyandnew(self):
-		try:
-			drawcurve(self.ef.wire,self.ef.subobj)
-		except:
-			sayexc()
+		try: drawcurve(self.ef.wire,self.ef.subobj)
+		except: sayexc2()
 		createnewwire(self)
 
-
-
 	def update(self):
-		mode=self.imode
-		print ("focus",focus())
+		# dummy method
 		ef=self.ef
 		print ("val,x,y,k",ef.mouseWheel,ef.posx,ef.posy,ef.key)
 		return 
 
 	def ef_action(self,*args):
+		# dummy method
 		return
 
 
-def dialog(source):
+def dialog(source=None):
 	''' create dialog widget'''
-
 
 	w=MyWidget()
 	w.setWindowFlags(QtCore.Qt.WindowStaysOnTopHint)
@@ -457,20 +389,19 @@ def dialog(source):
 	w.imode=-1
 	w.ef="no eventfilter defined"
 
-
-	mode=QtGui.QComboBox()
-	mode.addItem("move pole") #0
-	mode.addItem("move pole and neighbors") #1
-	mode.addItem("sharpen/smooth edge") #2
-	mode.addItem("colinear neighbors") #3
-	mode.addItem("rotate neighbors") #4
-
-	w.mode=mode
-
+#	mode=QtGui.QComboBox()
+#	mode.addItem("move pole") #0
+#	mode.addItem("move pole and neighbors") #1
+#	mode.addItem("sharpen/smooth edge") #2
+#	mode.addItem("colinear neighbors") #3
+#	mode.addItem("rotate neighbors") #4
+#
+	w.mode='n'
+#
 	editorkey=FreeCAD.ParamGet('User parameter:Plugins/nurbs').GetString("editorKey","h")
-	lab=QtGui.QLabel("Direction: " + editorkey)
+#	lab=QtGui.QLabel("Direction: " + editorkey)
 	w.key=editorkey
-	w.modelab=lab
+#	w.modelab=lab
 
 	btn=QtGui.QPushButton("Apply and close")
 	btn.clicked.connect(w.apply)
@@ -478,77 +409,154 @@ def dialog(source):
 	cobtn=QtGui.QPushButton("Apply and new")
 	cobtn.clicked.connect(w.applyandnew)
 
-
 	cbtn=QtGui.QPushButton("Stop Dialog (preserve Aux)")
 	cbtn.clicked.connect(stop)
 
-	poll=QtGui.QLabel("Selected  Pole:")
+#	poll=QtGui.QLabel("Selected  Pole:")
 
-	dial=QtGui.QDial() 
-	dial.setMaximum(10)
-	dial.setNotchesVisible(True)
-	dial.setValue(FreeCAD.ParamGet('User parameter:Plugins/nurbs').GetInt("Cursor",0))
+#	dial=QtGui.QDial() 
+#	dial.setMaximum(10)
+#	dial.setNotchesVisible(True)
+#	dial.setValue(FreeCAD.ParamGet('User parameter:Plugins/nurbs').GetInt("Cursor",0))
 #	dial.valueChanged.connect(w.setcursor2)
-	w.dial=dial
+#	w.dial=dial
 
 
 	box = QtGui.QVBoxLayout()
 	w.setLayout(box)
 	
-	for ww in [btn,cobtn,dial] :
+	for ww in [btn,cobtn] :
 		box.addWidget(ww)
 
 	return w
 
 
 
+
 def createRibCage(bs):
+	'''creatre the u-ribs and v-meridians for a surface'''
 
-		rc=100
-		ribs=[]
-		for i in range(rc+1):
-			f=bs.uIso(1.0/rc*i)
-			ribs.append(f.toShape())
+	rc=100
 
-		comp=Part.Compound(ribs)
-		RibCage=App.activeDocument().addObject('Part::Feature','Ribs')
-		RibCage.Shape=comp
+	ribs=[]
+	for i in range(rc+1):
+		f=bs.uIso(1.0/rc*i)
+		ribs.append(f.toShape())
 
-		mers=[]
-		for i in range(rc+1):
-			f=bs.vIso(1.0/rc*i)
-			mers.append(f.toShape())
-		comp=Part.Compound(mers)
-		Meridians=App.activeDocument().addObject('Part::Feature','Meridians')
-		Meridians.Shape=comp
-		return (RibCage,Meridians)
+	comp=Part.Compound(ribs)
+	RibCage=App.activeDocument().addObject('Part::Feature','Ribs')
+	RibCage.Shape=comp
+	RibCage.ViewObject.LineWidth=1
+	RibCage.ViewObject.Visibility=False
+
+	mers=[]
+	for i in range(rc+1):
+		f=bs.vIso(1.0/rc*i)
+		mers.append(f.toShape())
+	comp=Part.Compound(mers)
+	Meridians=App.activeDocument().addObject('Part::Feature','Meridians')
+	Meridians.Shape=comp
+	Meridians.ViewObject.LineWidth=1
+	Meridians.ViewObject.Visibility=False
+	return (RibCage,Meridians)
 
 
 
 
+def genbuffer(pts,colors=None):
+	'''create the inventor string for the colored wire'''
 
-def start(source='Backbone'):
+	colix=""
+	pix=""
+	cordix=""
+	for i,p in enumerate(pts):
+		if i>0:
+			if colors==None:colix += " "+str(random.randint(0,7))
+			else:
+				colix += " "+str(colors[i])
+		pix += str(p.x)+" "+str(p.y) +" " +str(p.z+30)+"\n"
+		if i>0:cordix +=  str(i-1)+" "+str(i)+" -1\n" 
+
+	buff ='''#Inventor V2.1 ascii
+	Separator {
+		Transform {
+			translation 0 0 0
+			rotation 0 0 1  0
+			scaleFactor 1 1 1
+			center 0 0 0
+		}
+		Separator {
+			VRMLGroup {
+				children 
+				VRMLShape {
+					geometry 
+						VRMLIndexedLineSet {
+							coord 
+								VRMLCoordinate {
+									point 
+	'''
+
+	buff += " [" + pix + "]}\n"
+
+	buff +='''
+						color 
+							VRMLColor {
+								color [ 0 0 0, 1 0 0, 0 1 0,
+										0 0 1, 1 1 0, 0 1 1, 1 0 1 , 1 1 1,
+									]
+							  }
+						colorPerVertex FALSE
+	'''
+
+	buff += "colorIndex [" + colix + "]\n"
+	buff += "coordIndex [" + cordix + "]\n"
+	buff += "}}}}}"
+
+	return buff
+
+
+def drawColorpath(pts,colors,colorB=None,name='ColorPath'):
+
+	iv=App.ActiveDocument.getObject(name)
+	if iv==None:iv=App.ActiveDocument.addObject("App::InventorObject",name)
+	iv.Buffer=genbuffer(pts,colors)
+
+
+
+def start():
 	'''create and initialize the event filter'''
-
-
 
 	ef=EventFilter()
 	ef.mouseWheel=0
-	ef.mode='r'
 	try:
 			sel=Gui.Selection.getSelection()
 			fob=sel[0]
 			s=Gui.Selection.getSelectionEx()
-			ef.subobj=s[0].SubObjects[0]
-			ef.objname=s[0].Object.Name
-			ef.subelement=s[0].SubElementNames[0]
-			s[0].Object.ViewObject.Transparency=70
+			print s,s[0].SubObjects
+
+			if len(s[0].SubObjects)>0:
+				ef.subobj=s[0].SubObjects[0]
+				ef.objname=s[0].Object.Name
+				ef.subelement=s[0].SubElementNames[0]
+			else:
+				ef.subobj=fob.Shape.Face1
+				ef.objname=fob.Name
+				ef.subelement="Face1"
+
 			if ef.subobj.Surface.__class__.__name__ == 'BSplineSurface':
-				rc=createRibCage(ef.subobj.Surface)
-				ef.rc=rc
+				ef.rc=createRibCage(ef.subobj.Surface)
+
+			ef.stack=[fob.ViewObject.Visibility,fob.ViewObject.Transparency,fob.ViewObject.Selectable]
+			ef.fob=fob
+
+			fob.ViewObject.Visibility=True
+			fob.ViewObject.Transparency=70
+			fob.ViewObject.Selectable=False
+
+			Gui.Selection.clearSelection()
 
 	except:
-		sayexc("no surface selected")
+		sayexc2("no surface selected","Select first a face you want to draw on it")
 		return
 
 	FreeCAD.eventfilter=ef
@@ -557,31 +565,37 @@ def start(source='Backbone'):
 	mw.installEventFilter(ef)
 	ef.keyPressed2=False
 
+	# the result wire
 	w=App.ActiveDocument.addObject("Part::Feature","Drawing on " + ef.objname + ": "+ ef.subelement)
 	w.Shape=Part.Shape()
-
+	w.ViewObject.Visibility=False
 	w.ViewObject.LineColor=(1.0,0.0,0.0)
 	w.ViewObject.LineWidth=10
 
-	wam=App.ActiveDocument.addObject("Part::Feature","Drawing on " + ef.objname + ": "+ ef.subelement)
+	# the helper wire
+	wam=App.ActiveDocument.addObject("Part::Feature","M_Drawing on " + ef.objname + ": "+ ef.subelement)
 	wam.Shape=Part.Shape()
-
+	wam.ViewObject.Visibility=False
 	wam.ViewObject.LineColor=(1.0,0.0,1.0)
 	wam.ViewObject.LineWidth=10
 
 	ef.wire=w
 	ef.wirem=wam
 
-	ef.dialog=dialog(source)
+	ef.dialog=dialog()
 	ef.dialog.ef=ef
+	ef.dialog.show()
 
-	# beispiel - erzeuge hilfsobjekte
-	import nurbswb.isodraw
-	name="MyGrid"
+
+def createGrid(name="MyGrid"):
+	'''create the 2D or 3D grid for the first face of a selected object'''
+
+	sel=Gui.Selection.getSelection()
+	fob=sel[0]
+
 	b=FreeCAD.activeDocument().addObject("Part::FeaturePython",name)
-	#b.Label=name+"_3D_"
-	name=b.Name
 
+	name=b.Name
 	nurbswb.isodraw.Drawgrid(b)
 	b.faceObject=fob
 
@@ -589,15 +603,22 @@ def start(source='Backbone'):
 	App.activeDocument().recompute()
 
 	b2=FreeCAD.activeDocument().addObject("Part::FeaturePython",name+"_2_")
-	
-	b2.Label=name+"_2D_"
-	
+	b2.Label=name+"_3D_"
 	nurbswb.isodraw.Draw3Dgrid(b2)
 	b2.drawgrid=b
 
 
+def createMap():
+	''' create a mpa control for the first face of the selected object '''
 
-	ef.dialog.show()
+	# last selection == face
+	# other sels: wires to project
+
+	s0=Gui.Selection.getSelection()
+	face=s0[-1]
+
+	moa=nurbswb.isodraw.createMap()
+	moa.face=face
 
 
 
@@ -608,34 +629,27 @@ def stop():
 	ef=FreeCAD.eventfilter
 	mw.removeEventFilter(ef)
 	ef.keyPressed2=False
-	
+
 	ef.dialog.hide()
+
 	try:
 		App.ActiveDocument.removeObject(ef.rc[0].Name)
 		App.ActiveDocument.removeObject(ef.rc[1].Name) 
 	except:
 		pass
 
+	fob=ef.fob
+	[fob.ViewObject.Visibility,fob.ViewObject.Transparency,fob.ViewObject.Selectable]=ef.stack
+
+	App.ActiveDocument.removeObject(ef.wirem.Name)
+
+
+
 
 
 def run():
-	tts=time.time()
 
 	try: stop()
 	except: pass
-
-	print time.time()-tts
-
-	tts=time.time()
-
 	start()
 
-	print time.time()-tts
-
-	tts=time.time()
-
-
-'''
-
-
-'''
