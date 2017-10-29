@@ -1,12 +1,15 @@
 # -*- coding: utf-8 -*-
+'''interactive drawing of a curve onto a face'''
 #-------------------------------------------------
-#-- intreactive draw on face
+#-- interctive draw on face
 #--
 #-- microelly 2017  0.2
 #--
 #-- GNU Lesser General Public License (LGPL)
 #-------------------------------------------------
 
+
+##\cond
 from PySide import QtGui,QtCore
 from nurbswb.say import *
 
@@ -30,8 +33,14 @@ FreeCAD.ParamGet('User parameter:Plugins/nurbs').GetFloat("MoveCursorStep",10)
 '''
 
 
+##\endcond
+
+## Eventfilter for facedrawing
 
 class EventFilter(QtCore.QObject):
+	'''Eventfilter for facedrawing'''
+
+##\cond
 
 	def __init__(self):
 		QtCore.QObject.__init__(self)
@@ -51,8 +60,8 @@ class EventFilter(QtCore.QObject):
 		self.ptsm=[]
 		self.mode='n'
 
-
 	def eventFilter(self, o, e):
+		''' the eventfilter for the facedraw server'''
 
 		z=str(e.type())
 
@@ -266,7 +275,9 @@ class EventFilter(QtCore.QObject):
 
 		return QtGui.QWidget.eventFilter(self, o, e)
 
+##\endcond
 
+## draw a curve on a face and create the two subfaces defined by the curve
 
 def drawcurve(wire,face):
 	'''draw a curve on a face and create the two subfaces defined by the curve'''
@@ -326,7 +337,7 @@ def drawcurve(wire,face):
 
 
 
-
+## 	new wire for next drawing
 
 def createnewwire(widget):
 	'''new wire for next drawing'''
@@ -351,31 +362,35 @@ def createnewwire(widget):
 
 
 
+## dialog fpr facedrwaing options
 
 class MyWidget(QtGui.QWidget):
-	'''edit pole mastre dialog'''
+	'''dialog for facedrawing '''
 
 	def commit(self):
+		'''stop the dialog and server'''
 		stop()
 
 	def apply(self):
+		'''draw the curve and stop'''
 		try: drawcurve(self.ef.wire,self.ef.subobj)
 		except: sayexc2()
 		stop()
 
 	def applyandnew(self):
+		'''draw the curve and start a new curve'''
 		try: drawcurve(self.ef.wire,self.ef.subobj)
 		except: sayexc2()
 		createnewwire(self)
 
 	def update(self):
-		# dummy method
+		''' dummy method'''
 		ef=self.ef
 		print ("val,x,y,k",ef.mouseWheel,ef.posx,ef.posy,ef.key)
 		return 
 
 	def ef_action(self,*args):
-		# dummy method
+		''' dummy method'''
 		return
 
 
@@ -430,13 +445,13 @@ def dialog(source=None):
 
 	return w
 
+## create the u-ribs and v-meridians for a surface
 
-
-
-def createRibCage(bs):
-	'''creatre the u-ribs and v-meridians for a surface'''
-
-	rc=100
+def createRibCage(bs,rc=100):
+	'''create the u-ribs and v-meridians for a surface
+	bs is a Bspline surface
+	rc count of curves
+	'''
 
 	ribs=[]
 	for i in range(rc+1):
@@ -461,10 +476,13 @@ def createRibCage(bs):
 	return (RibCage,Meridians)
 
 
-
+## create the inventor string for the colored wire
 
 def genbuffer(pts,colors=None):
-	'''create the inventor string for the colored wire'''
+	'''create the inventor string for the colored wire
+	pts - list of points
+	colors - list of color indexes
+	'''
 
 	colix=""
 	pix=""
@@ -515,13 +533,19 @@ def genbuffer(pts,colors=None):
 	return buff
 
 
+## create a vrml indexed color path as an inventor object
+
 def drawColorpath(pts,colors,colorB=None,name='ColorPath'):
+	'''create a vrml indexed color path as an inventor object
+	pts is the list of points
+	colors is the list of color indexes
+	'''
 
 	iv=App.ActiveDocument.getObject(name)
 	if iv==None:iv=App.ActiveDocument.addObject("App::InventorObject",name)
 	iv.Buffer=genbuffer(pts,colors)
 
-
+## create and initialize the event filter
 
 def start():
 	'''create and initialize the event filter'''
@@ -586,6 +610,7 @@ def start():
 	ef.dialog.ef=ef
 	ef.dialog.show()
 
+## create the 2D or 3D grid for the first face of a selected object
 
 def createGrid(name="MyGrid"):
 	'''create the 2D or 3D grid for the first face of a selected object'''
@@ -607,6 +632,7 @@ def createGrid(name="MyGrid"):
 	nurbswb.isodraw.Draw3Dgrid(b2)
 	b2.drawgrid=b
 
+## create a map control for the first face of the selected object
 
 def createMap():
 	''' create a mpa control for the first face of the selected object '''
@@ -621,6 +647,7 @@ def createMap():
 	moa.face=face
 
 
+## stop the facecdraw eventserver
 
 def stop():
 	''' stop eventserver'''
@@ -645,9 +672,10 @@ def stop():
 
 
 
-
+## start the facedraw eventserver
 
 def run():
+	'''start the facedraw dialog and eventmanager'''
 
 	try: stop()
 	except: pass

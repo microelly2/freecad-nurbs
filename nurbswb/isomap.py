@@ -1,11 +1,15 @@
 # -*- coding: utf-8 -*-
+'''
 #-------------------------------------------------
 #-- isomap calculation
 #--
-#-- microelly 2017 v 0.1
+#-- microelly 2017 v 0.2
 #--
 #-- GNU Lesser General Public License (LGPL)
 #-------------------------------------------------
+'''
+
+##\cond
 
 from nurbswb.say import *
 
@@ -23,15 +27,17 @@ from scipy import interpolate
 
 # altes interface
 # def getmap(mapobj,obj, mpv=0.5, mpu=0.5, fx=-1, fy=-1, vc=30, uc=30 ):
+
+##\endcond
+
 def getmap(mapobj,obj):
 	'''  berechnet vier interpolatoren zum umrechnen von xy(isomap) in uv(nurbs) und zurueck 
-	mittelpunkt in uv: mpv, mpu
-	skalierung/lage der xy-Ebene: fx,fy 
-	anzahl der gitterlinien: vc,uc
+	mapobj liefert die parameter
+	obj ist das Part mit der benutzten Face
 	'''
 
-	print "getmap HHHHH"
 
+	#default values 
 	mpv=0.5
 	mpu=0.5
 	fx=-1
@@ -134,11 +140,6 @@ def getmap(mapobj,obj):
 			kkv.append([ptsa[ui,vi,0],ptsa[ui,vi,1], vs[vi]])
 	kkv=np.array(kkv)
 
-
-
-
-#			mode='thin_plate'
-
 	try:
 		dx=mapobj.ue
 		dy=mapobj.ve
@@ -187,6 +188,7 @@ def getmap(mapobj,obj):
 
 
 
+##\cond
 
 def run_fulltest(obj, mpv=0.5, mpu=0.5, fx=-1, fy=-1, vc=30, uc=30 ):
 	'''testmethode'''
@@ -460,3 +462,4 @@ def run():
 
 
 #run()
+##\endcond

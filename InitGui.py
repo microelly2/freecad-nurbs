@@ -356,7 +356,8 @@ if FreeCAD.GuiUp:
 	c2a(["Faces"],always,'Tangent','tangentsurface','create a tangent Face','/../icons/nurbs.svg',"runtangentsurface()")
 	c2a(["Faces"],always,'Seam','tangentsurface','create a Seam','/../icons/nurbs.svg',"runseam()")
 	c2a(["Faces"],always,'Grid generator','uvgrid_generator','create a uv-grid for a Face','/../icons/nurbs.svg',"run()")
-
+	c2a(["Faces"],always,'Topological Analyse','analyse_topology_v2','topological analyse','/../icons/nurbs.svg',"run()")
+	
 
 	c2a(["Workspace"],ondocument,'Create Workspace',None,"Create workspace",'/../icons/plane.svg',"createws()","workspace")
 	c2a(["Workspace"],ondocument,'Create Link',None,"Create workspace link",'/../icons/plane.svg',"createlink()","workspace")

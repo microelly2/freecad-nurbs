@@ -1,14 +1,15 @@
 # -*- coding: utf-8 -*-
+'''
 #-------------------------------------------------
-#-- create a parametric
+#-- methods for drawing on faces 
 #--
-#-- microelly 2017 v 0.1
+#-- microelly 2017 v 0.2
 #--
 #-- GNU Lesser General Public License (LGPL)
 #-------------------------------------------------
+'''
 
-
-
+##\cond
 import FreeCAD,FreeCADGui
 App=FreeCAD
 Gui=FreeCADGui
@@ -25,8 +26,8 @@ import scipy
 import scipy.interpolate
 
 import nurbswb
-import nurbswb.facedraw
-reload (nurbswb.facedraw)
+#import nurbswb.facedraw
+#reload (nurbswb.facedraw)
 
 import nurbswb.isomap
 reload(nurbswb.isomap)
@@ -75,9 +76,12 @@ class ViewProvider:
 		pass
 
 
+##\endcond
 
 def createShape(obj):
-	'''create 2D or 3D mapping of a object'''
+	'''create the 2D or 3D mapping Shape for a wire and a base face
+	the data are parameters of the obj
+	 '''
 
 	print "CreateShape for obj:",obj.Label
 
@@ -167,91 +171,11 @@ def createShape(obj):
 		obj.Shape=pol
 		return
 
-#---------------
-
-def createShapeA(obj):
-	
-	pointCount=obj.pointcount
-
-
-	# mittelpunkt
-
-	mpv=0.5
-	mpu=0.5
-
-	[uv2x,uv2y,xy2u,xy2v]=[obj.mapobject.Proxy.uv2x,obj.mapobject.Proxy.uv2y,obj.mapobject.Proxy.xy2u,obj.mapobject.Proxy.xy2v]
-
-	u0=0
-	v0=0
-
-	fy=-1.1
-	fx=-1.1
-
-	y=uv2y(u0,v0)
-	x=uv2x(u0,v0)
-	
-	if xy2v==None:
-		print "Kann umkerhung nicht berechnen xy2v nicht vorhanden"
-		return
-
-	u=xy2v(x,y)
-	v=xy2u(x,y)
-
-	# hack fier torus
-	u=xy2v(-x,-y)
-	v=xy2u(-x,-y)
-
-	# print (u0,v0,x,y,u,v)
-	bs=obj.face.Shape.Face1.Surface
-	w=obj.wire.Shape.Wires[0]
-
-	ppall=[]
-	for w in obj.wire.Shape.Wires:
-		pts=w.discretize(pointCount)
-		pts2=[]
-
-		refpos=bs.value(mpu,mpv)
-		refpos=FreeCAD.Vector(0,0,0)
-
-		for p in pts:
-
-			x=fx*(p.x-refpos.x)
-			y=fy*(p.y-refpos.y)
-
-			x=-p.y
-			y=-p.x
-			u=xy2u(x,y)
-			v=xy2v(x,y)
-
-			if 0:
-				if u<0: u=0
-				if u>1: u=1
-				if v<0: v=0
-				if v>1: v=1
-
-
-			p2=bs.value(u,v)
-
-			pts2.append(p2)
-
-		FreeCAD.pts2a=pts2
-		pol=Part.makePolygon(pts2)
-
-		obj.Shape=pol
-		return
-
-
-
-
-
-
-
-#---------------
-
 
 
 
 class Isodraw(PartFeature):
+	'''a Drawing of a curve onto a Face with the points of a wire'''
 	def __init__(self, obj):
 		PartFeature.__init__(self, obj)
 #		obj.addProperty("App::PropertyVector","Size","Base").Size=FreeCAD.Vector(300,-100,200)
@@ -281,8 +205,9 @@ class Isodraw(PartFeature):
 
 
 def createIsodrawFace():
+	'''creates a IsoDrawFace object'''
 	b=FreeCAD.activeDocument().addObject("Part::FeaturePython","IsoDrawFace")
-	bn=Isodraw(b)
+	Isodraw(b)
 	return b
 
 #------------------------------------------------------
@@ -398,6 +323,7 @@ class Map(PartFeature):
 #		print ("onChanged",prop)
 
 	def execute(proxy,obj):
+		'''get the mapping of the obj.face, create the 2D and 3D grid for teh mapping'''
 
 		[uv2x,uv2y,xy2u,xy2v]=nurbswb.isomap.getmap(obj,obj.face)
 		proxy.uv2x=uv2x
@@ -421,14 +347,17 @@ class Map(PartFeature):
 			obj.backref.Document.recompute()
 
 def createMap():
+	'''create a Map object'''
 	b=FreeCAD.activeDocument().addObject("Part::FeaturePython","MAP")
 	Map(b)
 	return b
 
 
 
-
-def createGrid(obj,upmode=False):
+def createGrid(mapobj,upmode=False):
+	'''create a 2D grid  or 3D grid (if upmode) for the map obj'''
+ 
+	obj=mapobj
 	try: bs=obj.faceObject.Shape.Face1.Surface
 	except: return Part.Shape()
 
