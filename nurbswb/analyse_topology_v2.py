@@ -148,9 +148,10 @@ def displayMatplot():
 
 def getkey(n):
 	l=g.node[n]['vs'].Length
-	if l == 0: l= 100000
+	if l < 1: l= 100000
 
-	return (g.node[n]['ec'],round(g.node[n]['sl']/l,16),round(g.node[n]['vds']/l,14))
+	return (g.node[n]['ec'],round(g.node[n]['sl']/l,4),round(g.node[n]['vds']/l,4))
+	#return (g.node[n]['ec'],round(g.node[n]['sl']/l,16),round(g.node[n]['vds']/l,14))
 
 
 #---------------------------------------------------------------------------------
@@ -218,6 +219,10 @@ def berechneKeyLevel(i=1):
 			aas += a
 			bbs += b
 			ccs += c
+#		aas=round(aas,4)
+#		bbs=round(bbs,4)
+#		ccs=round(ccs,4)
+
 		try: g.node[n]['keys'][i]=(aas,bbs,ccs)
 		except: g.node[n]['keys'].append((aas,bbs,ccs))
 
@@ -319,12 +324,14 @@ def run():
 			gi=points[pp]
 
 			g.node[gi]["label"]=bm.Label+":Vertex"+str(i+1)
-			print g.node[gi]
+#			print g.node[gi]
 		except: 
 			print "NOT FOUND"
 			pass
 
-	print len(sp.Vertexes)
+#	print len(sp.Vertexes)
+	addToVertexStore()
+
 
 
 
@@ -338,7 +345,7 @@ def displayQualityPoints():
 			#print g.node[v]['quality']
 			if  g.node[v]['quality']==q: pts.append(g.node[v]['vector'])
 
-		print pts
+#		print pts
 		if pts<>[]:
 			Points.show(Points.Points(pts))
 			App.ActiveDocument.ActiveObject.ViewObject.ShapeColor=(
@@ -374,7 +381,7 @@ def addToVertexStore():
 		except: g.node[v]['label']='----'
 		print g.node[v]['label']
 
-		key=(a.Label,g.node[v]['label'],v,g.node[v]['keys'][g.node[v]['quality']-1],g.node[v]['quality'])
+		key=(a.Label,g.node[v]['label'],v,g.node[v]['keys'][g.node[v]['quality']-1],"!>",g.node[v]['quality'],"<!",g.node[v]['keys'])
 		try:
 			if key not in FreeCAD.PT[g.node[v]['vector']]:
 				FreeCAD.PT[g.node[v]['vector']] += [key]
@@ -392,6 +399,8 @@ def resetVertexStore():
 #print "count of points and helper points"
 #len(points)
 
+
+
 def printVertexStore(): 
 	'''print the vertex store'''
 	print "The vertex Store"
@@ -400,7 +409,105 @@ def printVertexStore():
 		print j
 		vs=FreeCAD.PT[j]
 		for v in vs:
-			print v
+			if str(v[1])<>'----':
+				print v[:-1]
+				print "	",v[-1]
+
+
+def yprintVertexStore(): 
+	'''print the vertex store'''
+	print "The vertex Store compare"
+	found=0
+	for j in FreeCAD.PT:
+		print
+		print j
+		vs=FreeCAD.PT[j]
+		keys={}
+		for v in vs:
+				k=v[3]
+				try: keys[k] += 1
+				except: keys[k]=1 
+		for k in keys:
+			if keys[k]>1:
+				found += 1
+				print k
+				for v in vs:
+					if v[3]==k:
+						print v[:-1]
+
+	print "common found:",found
+	print len(FreeCAD.PT.keys())
+
+def printVertexStore(): 
+	'''print the vertex store'''
+	print "The vertex Store compare"
+	found=0
+	count=0
+	keys={}
+	keyd={}
+
+	for j in FreeCAD.PT:
+		#print
+		#print j
+		vs=FreeCAD.PT[j]
+		for v in vs:
+				if str(v[1]) =='----': continue
+				k=v[3]
+				count +=1
+				try: 
+					keys[k] += 1
+					keyd[k] += [(j,v[:-2])]
+					# print v
+				except: 
+					keys[k]=1 
+					keyd[k] = [(j,v[:-2])]
+	pts=[]
+	for k in keys:
+		if keys[k]>1:
+			found += 1
+			#print k,keys[k]
+			#print keyd[k]
+			pts.append(keyd[k][0][0])
+			pts.append(keyd[k][1][0])
+			# moeglich sortieren auf koerper einzeln
+			#print keyd[k][0][1]
+			# print keyd[k][1][1]
+
+	if pts<>[]:
+		#print pts
+		Points.show(Points.Points(pts))
+		App.ActiveDocument.ActiveObject.ViewObject.ShapeColor=(
+			random.random(),random.random(),random.random())
+		App.ActiveDocument.ActiveObject.ViewObject.PointSize= 10
+
+		App.ActiveDocument.ActiveObject.Label="Common Points "
+
+
+#	print "no found -----------------------------"
+	pts=[]
+	for k in keys:
+		if keys[k]==1:
+#			print k,keys[k]
+#			print keyd[k]
+#			print "!!",keyd[k][0][0]
+			pts.append(keyd[k][0][0])
+
+	if pts<>[]:
+		#print pts
+		Points.show(Points.Points(pts))
+		App.ActiveDocument.ActiveObject.ViewObject.ShapeColor=(
+			random.random(),random.random(),random.random())
+		App.ActiveDocument.ActiveObject.ViewObject.PointSize= 10
+
+		App.ActiveDocument.ActiveObject.Label="No common Points "
+
+
+
+
+	print "common found:",found
+	print count
+
+
 
 def loadTest1():
 	print __file__
@@ -422,3 +529,13 @@ def loadTest2():
 	App.setActiveDocument("zwei_gleiche_fenster")
 	App.ActiveDocument=App.getDocument("zwei_gleiche_fenster")
 	Gui.ActiveDocument=Gui.getDocument("zwei_gleiche_fenster")
+
+
+
+
+'''
+
+s=Gui.Selection.getSelection()
+len(s[0].Shape.Vertexes)
+
+'''
