@@ -368,7 +368,6 @@ def runC():
 		print "select source and target sketch!"
 		return
 	copySketch(ss[0],ss[1])
-	
 
 
 def run1C():
