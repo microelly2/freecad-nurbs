@@ -402,7 +402,9 @@ if FreeCAD.GuiUp:
 	c2a(["Sketchertools"],always,'Status2','feedbacksketch','revers order of constraints A',"/../icons/neo4j_status.png","runA()","sketcher")
 	c2a(["Sketchertools"],always,'Status3','feedbacksketch','create Example B',"/../icons/neo4j_status.png","runB()","sketcher")
 	c2a(["Sketchertools"],always,'Status4','feedbacksketch','Copy 1.Sketch into 2nd Sketch',"/../icons/neo4j_status.png","runC()","sketcher")
-
+	c2a(["Sketchertools"],always,'Status51','feedbacksketch','Create FeedBack with 1 client',"/../icons/neo4j_status.png","run1C()","sketcher")
+	c2a(["Sketchertools"],always,'Status52','feedbacksketch','Create FeedBack with 2 clients',"/../icons/neo4j_status.png","run2C()","sketcher")
+	c2a(["Sketchertools"],always,'Status53','feedbacksketch','Create FeedBack with 3 clients',"/../icons/neo4j_status.png","run3C()","sketcher")
 #	for cmd in FreeCADGui.listCommands():
 #		if cmd.startswith("Nurbs_"):
 #			print cmd
