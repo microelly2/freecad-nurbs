@@ -2,7 +2,7 @@
 #-------------------------------------------------
 #--
 #--
-#-- microelly 2017 v 0.1
+#-- microelly 2017 v 0.2
 #--
 #-- GNU Lesser General Public License (LGPL)
 #-------------------------------------------------
@@ -53,9 +53,14 @@ def createFaceMidPointmodel(a):
 			col.append(Part.makeLine(rf(c),rf(p)))
 
 	import Points
-	Points.show(Points.Points(pts))
+	# Points.show(Points.Points(pts))
 
 	Part.show(Part.Compound(col))
+	App.ActiveDocument.ActiveObject.ViewObject.hide()
+	App.ActiveDocument.ActiveObject.ViewObject.PointSize=6.
+	App.ActiveDocument.ActiveObject.ViewObject.LineWidth=1.
+	App.ActiveDocument.ActiveObject.Label="Face Extend for " + a.Label
+	App.ActiveDocument.ActiveObject.Label="Face Extend for " + a.Label
 	
 	return App.ActiveDocument.ActiveObject
 
@@ -278,7 +283,11 @@ def zeigeQ(i):
 
 def run():
 	s=Gui.Selection.getSelection()
-	mp=createFaceMidPointmodel(s[0])
+	model=s[0]
+	runAna(model)
+
+def runAna(model,silent=False):
+	mp=createFaceMidPointmodel(model)
 	loadModel(mp)
 	kp=createKeys()
 	setQuality(g.nodes(),kp)
@@ -291,10 +300,11 @@ def run():
 			if g.node[n]['quality']==1:
 				ns.append(n)
 		# print ns
-		displayNB(ns)
-		App.ActiveDocument.ActiveObject.Label="Top Quality"
-		App.ActiveDocument.ActiveObject.ViewObject.LineColor=(
-				random.random(),random.random(),random.random())
+		if not silent:
+			displayNB(ns)
+			App.ActiveDocument.ActiveObject.Label="Top Quality"
+			App.ActiveDocument.ActiveObject.ViewObject.LineColor=(
+					random.random(),random.random(),random.random())
 
 
 
@@ -307,13 +317,14 @@ def run():
 
 	last=i
 	# zeige alle indentifizierten Punkte im Verbund
-	for i in range(1,last):
-		zeigeQ(i)
-	
-	FreeCAD.g=g
-	FreeCAD.a=s[0]
+	if not silent:
+		for i in range(1,last):
+			zeigeQ(i)
 
-	bm=s[0]
+	FreeCAD.g=g
+	FreeCAD.a=model
+
+	bm=model
 	sp=bm.Shape
 	
 	for i,v in enumerate(sp.Vertexes):
@@ -329,9 +340,33 @@ def run():
 			print "NOT FOUND"
 			pass
 
+
+	for i,f in enumerate(sp.Faces):
+		c=f.CenterOfMass
+		pp=(round(c.x,2),round(c.y,2),round(c.z,2))
+		try:
+#			print (pp,i) 
+#			print ("found ",points[pp])
+			gi=points[pp]
+
+			g.node[gi]["label"]=bm.Label+":Face"+str(i+1)
+#			print g.node[gi]
+		except: 
+			print "NOT FOUND"
+			pass
+
+
+
 #	print len(sp.Vertexes)
 	addToVertexStore()
 
+
+def runCompare():
+	resetVertexStore()
+	s=Gui.Selection.getSelection()
+	for model in s:
+		runAna(model,silent=True)
+	displayVertexStore()
 
 
 
@@ -438,7 +473,7 @@ def yprintVertexStore():
 	print "common found:",found
 	print len(FreeCAD.PT.keys())
 
-def printVertexStore(): 
+def displayVertexStore(): 
 	'''print the vertex store'''
 	print "The vertex Store compare"
 	found=0

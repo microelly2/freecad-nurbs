@@ -359,16 +359,20 @@ if FreeCAD.GuiUp:
 
 
 	c2a(["Topology"],always,'Topological Analyse','analyse_topology_v2','topological analysis','/../icons/nurbs.svg',"run()")
+	c2a(["Topology"],always,'Topological Compare','analyse_topology_v2','topological compare','/../icons/nurbs.svg',"runCompare()")
 	c2a(["Topology"],always,'Topo8','analyse_topology_v2','display Quality Points','/../icons/nurbs.svg',"displayQualityPoints()")
 	c2a(["Topology"],always,'Topo5','analyse_topology_v2','print Graph Data','/../icons/nurbs.svg',"printData()")
 
 	c2a(["Topology"],always,'Topo4','analyse_topology_v2','add to Vertex Store','/../icons/nurbs.svg',"addToVertexStore()")
-	c2a(["Topology"],always,'Topo2','analyse_topology_v2','display Vertex Store','/../icons/nurbs.svg',"printVertexStore()")
+	c2a(["Topology"],always,'Topo2','analyse_topology_v2','print Vertex Store Dump','/../icons/nurbs.svg',"printVertexStore()")
+	c2a(["Topology"],always,'Topo2a','analyse_topology_v2','display Vertex Store Common Points','/../icons/nurbs.svg',"displayVertexStore()")
+	
 	c2a(["Topology"],always,'Topo3','analyse_topology_v2','reset Vertex Store','/../icons/nurbs.svg',"resetVertexStore()")
 	
 	c2a(["Topology"],always,'Topo6','analyse_topology_v2','load Test 1','/../icons/nurbs.svg',"loadTest1()")
 	c2a(["Topology"],always,'Topo7','analyse_topology_v2','load Test 2','/../icons/nurbs.svg',"loadTest2()")
-
+	c2a(["Topology"],always,'Topo10','analyse_topology_v2','Test 3','/../icons/nurbs.svg',"Test3()")
+	c2a(["Topology"],always,'Topo9','analyse_topology_v2','Test 4','/../icons/nurbs.svg',"Test4()")
 
 
 
