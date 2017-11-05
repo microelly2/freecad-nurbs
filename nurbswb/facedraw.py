@@ -293,6 +293,16 @@ def drawcurve(wire,face):
 	bs=sf
 	su=bs.UPeriod()
 	sv=bs.VPeriod()
+
+	print "hacks etze uv, sv auf 1"
+	su=face.ParameterRange[1]
+	sv=face.ParameterRange[3]
+
+	print "debug mapp"
+	print "su ",su
+	print "sv ",sv
+	print "param range ", face.ParameterRange
+	
 	if su>1000: su=face.ParameterRange[1]
 	if sv>1000: sv=face.ParameterRange[3]
 
@@ -312,7 +322,6 @@ def drawcurve(wire,face):
 	sp.Shape=e1
 	sp.ViewObject.LineColor=wire.ViewObject.LineColor
 
-	# flaeche erzeugen
 
 	edges=e1.Edges
 	ee=edges[0]

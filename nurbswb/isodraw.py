@@ -29,8 +29,9 @@ import nurbswb
 #import nurbswb.facedraw
 #reload (nurbswb.facedraw)
 
-import nurbswb.isomap
-reload(nurbswb.isomap)
+
+import nurbswb.facedraw
+reload(nurbswb.facedraw)
 
 
 
@@ -86,7 +87,7 @@ def createShape(obj):
 	print "CreateShape for obj:",obj.Label
 
 	pointCount=obj.pointcount
-	pointCount=50
+	#pointCount=50
 
 	[uv2x,uv2y,xy2u,xy2v]=[obj.mapobject.Proxy.uv2x,obj.mapobject.Proxy.uv2y,obj.mapobject.Proxy.xy2u,obj.mapobject.Proxy.xy2v]
 
@@ -153,6 +154,11 @@ def createShape(obj):
 			#faktor dazu
 			su=bs.UPeriod()
 			sv=bs.VPeriod()
+			print "hack su sv"
+			su=face.ParameterRange[1]
+			sv=face.ParameterRange[3]
+
+
 			if su>1000: su=face.ParameterRange[1]
 			if sv>1000: sv=face.ParameterRange[3]
 
@@ -378,6 +384,11 @@ def createGrid(mapobj,upmode=False):
 	su=bs.UPeriod()
 	sv=bs.VPeriod()
 	print ("su,sv",su,sv)
+	
+	print "hack suu asv"
+	su=face.ParameterRange[1]
+	sv=face.ParameterRange[3]
+
 	
 	if su>1000: su=face.ParameterRange[1]
 	if sv>1000: sv=face.ParameterRange[3]
@@ -1026,6 +1037,13 @@ def map3Dto2D():
 				#zurückrechnen
 				su=bs.UPeriod()
 				sv=bs.VPeriod()
+				
+				print "hack su sv aa bb"
+				#print base.faceobject
+				print face
+				su=face.Shape.Face1.ParameterRange[1]
+				sv=face.Shape.Face1.ParameterRange[3]
+
 				if su>1000: su=face.ParameterRange[1]
 				if sv>1000: sv=face.ParameterRange[3]
 
@@ -1039,6 +1057,8 @@ def map3Dto2D():
 					p2=FreeCAD.Vector(y,x,0)
 				else:
 					p2=FreeCAD.Vector(-y,-x,0)
+				# hack richgtung beim Schuh
+				p2=FreeCAD.Vector(y,x,0)
 #				p2=FreeCAD.Vector(y,x,0)
 				# warum diese verschiebung?
 				#p2 += FreeCAD.Vector(80,80,0)
