@@ -1,15 +1,23 @@
-import time
+# -*- coding: utf-8 -*-
+#-------------------------------------------------
+#-- feedbacksketch
+#--
+#-- microelly 2017 v 0.3
+#--
+#-- GNU Lesser General Public License (LGPL)
+#-------------------------------------------------
+
+
 # from say import *
 # import nurbswb.pyob
-
 #------------------------------
-import FreeCAD,Sketcher,Part
-import FreeCADGui
+import FreeCAD,FreeCADGui,Sketcher,Part
+
 App = FreeCAD
 Gui = FreeCADGui
 
-import Part
 import numpy as np
+import time
 
 
 class FeaturePython:
@@ -49,6 +57,7 @@ class ViewProvider:
 
 
 def createGeometryS(obj=None):
+	'''create a testcase sketch'''
 
 	if obj==None:
 		sk=App.ActiveDocument.addObject('Sketcher::SketchObject','Sketch')
@@ -103,6 +112,16 @@ def getNamedConstraint(sketch,name):
 
 
 
+def clearReportView(name):
+	from PySide import QtGui
+	mw=Gui.getMainWindow()
+	r=mw.findChild(QtGui.QTextEdit, "Report view")
+	r.clear()
+	import time
+	now = time.ctime(int(time.time()))
+	App.Console.PrintWarning("Cleared Report view " +str(now)+" by " + name+"\n")
+
+
 
 class FeedbackSketch(FeaturePython):
 	'''Sketch Object with Python''' 
@@ -113,11 +132,10 @@ class FeedbackSketch(FeaturePython):
 		self.Type = self.__class__.__name__
 		self.obj2 = obj
 		self.aa = None
+		obj.addProperty("App::PropertyBool",'clearReportview', 'Base',"clear window for every execute")
+		obj.addProperty("App::PropertyBool",'error', 'Base',"error solving sketch")
 		ViewProvider(obj.ViewObject)
-		# _ViewProvider(obj.ViewObject, icon) 
-
 	##\endcond
-
 
 #	def onChanged(proxy,obj,prop):
 #		'''run myExecute for property prop: relativePosition and vertexNumber'''
@@ -128,13 +146,20 @@ class FeedbackSketch(FeaturePython):
 
 	def myExecute(proxy,obj):
 
-		print "execute vor try"
+
+		if obj.clearReportview:
+			clearReportView(obj.Label)
+
+
+
+		print (obj.Label,"execute vor try")
 		try: 
 			if proxy.exflag: pass
 		except: proxy.exflag=True
 
 		if  not proxy.exflag: 
 			proxy.exflag=True
+			print "no execute"
 			return
 
 		proxy.exflag=False
@@ -152,21 +177,45 @@ class FeedbackSketch(FeaturePython):
 					g.setDriving(ci,False)
 
 				for gets in getattr(obj,"get"+subs):
-					print gets
 					cgi=getNamedConstraint(g,gets)
 					val_cgi=g.Constraints[cgi].Value
-					print val_cgi
+					print ("got ",gets,val_cgi)
 					# set the own geometry
 					ci=getNamedConstraint(obj,gets)
-					obj.setDatum(ci,val_cgi)
+					valwar=obj.Constraints[ci].Value
+					try:
+						obj.setDatum(ci,val_cgi)
+					except:
+						FreeCAD.Console.PrintError("cannot set datum\n")
+						print "old value ",valwar
+						obj.setDriving(ci,False)
+						rc=obj.solve()
+						valneu=obj.Constraints[ci].Value
+						print "possible value",valneu
+						print(obj.Label, "solved with possible value",rc) 
+						obj.setDriving(ci,True)
+						#hier abbrechen
+						# wert zurück schreiben
+						print "schreibe wert zurück nach bbase"
+						g.setDatum(cgi,valneu)
+						print "gemacht"
+						rc=g.solve()
+						print(obj.Label, "solve after rollback ",rc)
+						obj.error=True
+
+
+						raise Exception("Problem on Constraints no feedback data")
+
 
 				# solve the tasks
-				obj.solve()
+				
+				rc=obj.solve()
+				print(obj.Label, "solve after get",rc) 
 
 				for sets in getattr(obj,"set"+subs):
 					cgi=getNamedConstraint(obj,sets)
 					val_cgi=obj.Constraints[cgi].Value
-					print "setze",sets,val_cgi
+					print ("set ",sets,val_cgi)
 					# set the data back 
 					ci=getNamedConstraint(g,sets)
 
@@ -174,37 +223,33 @@ class FeedbackSketch(FeaturePython):
 					g.setDriving(ci,True)
 
 					g.setDatum(ci,val_cgi)
-					g.solve()
+					
+					rc=g.solve()
+					print(obj.Label, "solve after set",rc) 
 
 					if not isdriving:
 						g.setDriving(ci,False)
-						g.solve()
+						rc=g.solve()
+						print(obj.Label, "solve after set and switch back to blue",rc) 
 
 				for sof in getattr(obj,"seton"+subs):
 					ci=getNamedConstraint(g,sof)
 					g.setDriving(ci,True)
 
 
-			g.solve()
+			rc=g.solve()
+			print(obj.Label, "final solve",rc) 
 
 		return
 
-#example read and set geometry 
-#			# daten von parent skp zu obj
-#			ep=skp.Geometry[0].StartPoint
-#			obj.setDatum(3,ep.x)
-#			obj.setDatum(4,ep.y)
-#
-#			ep=skp.Geometry[-1].EndPoint
-#			obj.setDatum(5,ep.x)
-#			obj.setDatum(6,ep.y)
-#
-#			obj.recompute()
-
-
-
 
 	def execute(self,obj):
+
+		if obj.error:
+				obj.error=False
+				raise Exception("Obj -- Error")
+
+
 		obj.recompute() 
 		try: self.Lock
 		except: self.Lock=False
@@ -218,6 +263,8 @@ class FeedbackSketch(FeaturePython):
 				print(ex)
 				print('myExecute error')
 #				sayexc("myExecute Error")
+				self.Lock=False
+				raise Exception("myExecute Error AA")
 			self.Lock=False
 
 
@@ -229,18 +276,15 @@ class FeedbackSketch(FeaturePython):
 ##\endcond
 
 
-import Sketcher
 
-def runFBS(name="MyFeedbackSketch"):
+
+def createFeedbackSketch(name="MyFeedbackSketch"):
 	'''runS(name="MyFeedbackSketch"): 
 		creates a Demo Feedbacksketch
 	'''
 
 	obj = FreeCAD.ActiveDocument.addObject("Sketcher::SketchObjectPython",name)
-#	obj.addProperty("App::PropertyLink", "parent", "Parent", )
-
 	FeedbackSketch(obj)
-
 	return obj
 
 def copySketch(source,target):
@@ -251,10 +295,9 @@ def copySketch(source,target):
 		target.addConstraint(c)
 
 
-
 ## \cond
 if __name__=='__main__':
-	fbs=runFBS()
+	fbs=createFeedbackSketch()
 	fbs.parent=App.ActiveDocument.Sketch
 	fbs.addProperty("App::PropertyLink", "grand", "Parent", )
 	fbs.grand=App.ActiveDocument.Sketch001
@@ -267,22 +310,10 @@ if __name__=='__main__':
 #----------------------
 
 
-def run(): 
-	import FreeCAD
-	FreeCAD.open(u"/home/thomas/freecad_buch/b248_stassenbau/beuger.fcstd")
-	App.setActiveDocument("beuger")
-	App.ActiveDocument=App.getDocument("beuger")
-	Gui.ActiveDocument=Gui.getDocument("beuger")
-
-	fbs=runFBS()
-	fbs.parent=App.ActiveDocument.Sketch
-#	fbs.addProperty("App::PropertyLink", "grand", "Parent", )
-	fbs.grand=App.ActiveDocument.Sketch001
-	copySketch(App.ActiveDocument.Sketch002,fbs)
-	App.activeDocument().recompute()
-
 
 def addgrp(fbs,grpname):
+	'''add a parameter group to a fbs'''
+
 	if hasattr(fbs,'active'+grpname): return
 
 	fbs.addProperty("App::PropertyBool",'active'+grpname, grpname, )
@@ -292,8 +323,19 @@ def addgrp(fbs,grpname):
 	fbs.addProperty("App::PropertyStringList",'seton'+grpname, grpname, )
 	fbs.addProperty("App::PropertyStringList",'setoff'+grpname, grpname, )
 
-def runA():
-	fbs=runFBS(name="MultiFB")
+def run_test_two_clients():
+	'''example with two sketches both 1 in and 1 out parameter'''
+
+	try: App.closeDocument("beuger")
+	except: pass
+
+	FreeCAD.open(u"/home/thomas/freecad_buch/b248_stassenbau/beuger.fcstd")
+	App.setActiveDocument("beuger")
+	App.ActiveDocument=App.getDocument("beuger")
+	Gui.ActiveDocument=Gui.getDocument("beuger")
+
+	fbs=createFeedbackSketch(name="MultiFB")
+	fbs.clearReportview=True
 	copySketch(App.ActiveDocument.Sketch002,fbs)
 
 	fbs.addProperty("App::PropertyBool",'active', 'Base', )
@@ -314,8 +356,8 @@ def runA():
 	fbs.setTBB=['result_g']
 
 
-def runA():
-	'''reorder the constraints'''
+def run_test_reverse_Constraints():
+	'''testcase reorder the constraints'''
 	targ=App.ActiveDocument.Sketch002
 	csts=targ.Constraints
 	yy=targ.ConstraintCount
@@ -341,27 +383,25 @@ def runA():
 
 
 def runB():
-	fbs=runFBS(name="MultiFB")
+	# testcase example
 
- 	copySketch(App.ActiveDocument.Sketch,fbs)
+	fbs=createFeedbackSketch(name="MultiFB")
+	copySketch(App.ActiveDocument.Sketch,fbs)
 
 
 	fbs.addProperty("App::PropertyBool",'active', 'Base', )
 	fbs.addProperty("App::PropertyStringList",'bases', 'Base', )
 	fbs.active=True
-	fbs.bases=['ClientA','UFO']
+	fbs.bases=['ClientA','ClientB']
 	for b in fbs.bases: addgrp(fbs,b)
-
 	fbs.baseClientA=App.ActiveDocument.Sketch001
 	fbs.getClientA=['a','b']
 	fbs.setClientA=['c','bm']
-#	fbs.setoffTAA=['b']
-	#fbs.setonTAA=['b']
 	fbs.activeClientA=True
 
 
 
-def runC():
+def run_copySketch():
 	'''copy Sketch'''
 	ss=Gui.Selection.getSelection()
 	if len(ss)<>2:
@@ -370,64 +410,36 @@ def runC():
 	copySketch(ss[0],ss[1])
 
 
-def run1C():
-	fbs=runFBS(name="SingleClientFeedback")
-
-#	copySketch(App.ActiveDocument.Sketch,fbs)
-
-
+def run_createFBS_with_one_Client():
+	'''feedbacksketch with one client'''
+	fbs=createFeedbackSketch(name="SingleClientFeedback")
 	fbs.addProperty("App::PropertyBool",'active', 'Base', )
 	fbs.addProperty("App::PropertyStringList",'bases', 'Base', )
 	fbs.active=True
 	fbs.bases=['Client']
 	for b in fbs.bases: addgrp(fbs,b)
-
-#	fbs.baseClientA=App.ActiveDocument.Sketch001
-#	fbs.getClientA=['a','b']
-#	fbs.setClientA=['c','bm']
-#	fbs.setoffTAA=['b']
-	#fbs.setonTAA=['b']
 	fbs.activeClient=True
 
 
-def run2C():
-	fbs=runFBS(name="TwoClientsFeedback")
-
-#	copySketch(App.ActiveDocument.Sketch,fbs)
-
-
+def run_createFBS_with_two_Clients():
+	'''feedbacksketch with 2 clients'''
+	fbs=createFeedbackSketch(name="TwoClientsFeedback")
 	fbs.addProperty("App::PropertyBool",'active', 'Base', )
 	fbs.addProperty("App::PropertyStringList",'bases', 'Base', )
 	fbs.active=True
 	fbs.bases=['ClientA','ClientB']
 	for b in fbs.bases: addgrp(fbs,b)
-
-#	fbs.baseClientA=App.ActiveDocument.Sketch001
-#	fbs.getClientA=['a','b']
-#	fbs.setClientA=['c','bm']
-#	fbs.setoffTAA=['b']
-	#fbs.setonTAA=['b']
 	fbs.activeClientA=True
 	fbs.activeClientB=True
 
-
-def run3C():
-	fbs=runFBS(name="ThreeClientsFeedback")
-
-
-
-
+def run_createFBS_with_three_Clients():
+	'''feedbacksketch with 3 clients'''
+	fbs=createFeedbackSketch(name="ThreeClientsFeedback")
 	fbs.addProperty("App::PropertyBool",'active', 'Base', )
 	fbs.addProperty("App::PropertyStringList",'bases', 'Base', )
 	fbs.active=True
 	fbs.bases=['ClientA','ClientB','ClientC']
 	for b in fbs.bases: addgrp(fbs,b)
-
-#	fbs.baseClientA=App.ActiveDocument.Sketch001
-#	fbs.getClientA=['a','b']
-#	fbs.setClientA=['c','bm']
-#	fbs.setoffTAA=['b']
-	#fbs.setonTAA=['b']
 	fbs.activeClientA=True
 	fbs.activeClientB=True
 	fbs.activeClientC=True

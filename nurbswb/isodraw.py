@@ -458,23 +458,28 @@ def createGrid(mapobj,upmode=False):
 
 		# markiere zentrum der karte
 		print ("kkords mpu,mpv,su,sv",mpu,mpv,su,sv)
-		z=bs.value(0.5*sv,0.5*su)
+		# z=bs.value(0.5*sv,0.5*su)
+		z=bs.value(0.5*su,0.5*sv)
 		print z
 		
 		circ=Part.Circle()
 		circ.Radius=10
 		circ.Location=z
-		circ.Axis=bs.normal(0.5*sv,0.5*su)
+		#circ.Axis=bs.normal(0.5*sv,0.5*su)
+		circ.Axis=bs.normal(0.5*su,0.5*sv)
+
+
 		comps += [circ.toShape()]
 
 		# mapcenter
-		z=bs.value(mpv,mpu)
+		z=bs.value(mpu,mpv)
 		print z
-		
+
 		circ=Part.Circle()
 		circ.Radius=20
 		circ.Location=z
 		circ.Axis=bs.normal(mpu,mpv)
+
 		comps += [circ.toShape()]
 
 

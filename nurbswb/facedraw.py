@@ -492,7 +492,7 @@ def genbuffer(pts,colors=None):
 			if colors==None:colix += " "+str(random.randint(0,7))
 			else:
 				colix += " "+str(colors[i])
-		pix += str(p.x)+" "+str(p.y) +" " +str(p.z+30)+"\n"
+		pix += str(p.x)+" "+str(p.y) +" " +str(p.z)+"\n"
 		if i>0:cordix +=  str(i-1)+" "+str(i)+" -1\n" 
 
 	buff ='''#Inventor V2.1 ascii

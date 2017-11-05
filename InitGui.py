@@ -415,13 +415,13 @@ if FreeCAD.GuiUp:
 	c2a(["Neo4j"],always,'Start_OF','openflights','import_Open Flights',"/../icons/openflights-import.png","load()","graphdb")
 	c2a(["Neo4j"],always,'Reset_OG','openflights','reset_Open Flights',"/../icons/openflights.png","reset()","graphdb")
 
-	c2a(["Sketchertools"],always,'Status1','feedbacksketch','fb sketch',"/../icons/neo4j_status.png","run()","sketcher")
-	c2a(["Sketchertools"],always,'Status2','feedbacksketch','revers order of constraints A',"/../icons/neo4j_status.png","runA()","sketcher")
+	c2a(["Sketchertools"],always,'Status1','feedbacksketch','fb sketch',"/../icons/neo4j_status.png","run_test_two_clients()","sketcher")
+	c2a(["Sketchertools"],always,'Status2','feedbacksketch','revers order of constraints A',"/../icons/neo4j_status.png","run_test_reverse_Constraints()","sketcher")
 	c2a(["Sketchertools"],always,'Status3','feedbacksketch','create Example B',"/../icons/neo4j_status.png","runB()","sketcher")
-	c2a(["Sketchertools"],always,'Status4','feedbacksketch','Copy 1.Sketch into 2nd Sketch',"/../icons/neo4j_status.png","runC()","sketcher")
-	c2a(["Sketchertools"],always,'Status51','feedbacksketch','Create FeedBack with 1 client',"/../icons/neo4j_status.png","run1C()","sketcher")
-	c2a(["Sketchertools"],always,'Status52','feedbacksketch','Create FeedBack with 2 clients',"/../icons/neo4j_status.png","run2C()","sketcher")
-	c2a(["Sketchertools"],always,'Status53','feedbacksketch','Create FeedBack with 3 clients',"/../icons/neo4j_status.png","run3C()","sketcher")
+	c2a(["Sketchertools"],always,'Status4','feedbacksketch','Copy 1.Sketch into 2nd Sketch',"/../icons/neo4j_status.png","run_copySketch()","sketcher")
+	c2a(["Sketchertools"],always,'Status51','feedbacksketch','Create FeedBack with 1 client',"/../icons/neo4j_status.png","run_createFBS_with_one_Client()","sketcher")
+	c2a(["Sketchertools"],always,'Status52','feedbacksketch','Create FeedBack with 2 clients',"/../icons/neo4j_status.png","run_createFBS_with_two_Clients()","sketcher")
+	c2a(["Sketchertools"],always,'Status53','feedbacksketch','Create FeedBack with 3 clients',"/../icons/neo4j_status.png","run_createFBS_with_three_Clients()","sketcher")
 #	for cmd in FreeCADGui.listCommands():
 #		if cmd.startswith("Nurbs_"):
 #			print cmd

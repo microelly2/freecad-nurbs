@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 #-------------------------------------------------
+#-- analyse topology of parts
 #--
-#--
-#-- microelly 2017 v 0.2
+#-- microelly 2017 v 0.3
 #--
 #-- GNU Lesser General Public License (LGPL)
 #-------------------------------------------------
@@ -13,22 +13,23 @@ import FreeCAD,FreeCADGui
 App=FreeCAD
 Gui=FreeCADGui
 
-
 import Part,Points
 
 import networkx as nx
 import matplotlib.pyplot as plt
-
-import networkx as nx
-
 import random
+import os 
+import nurbswb
+
+# modul variables
+g=nx.Graph()
+points={}
 
 
 
 def ptokey(v):
+	''' simplify vectors'''
 	return (round(v.x,2),round(v.y,2),round(v.z,2))
-
-
 
 def rf(v):
 	''' vector modification hook'''
@@ -39,6 +40,7 @@ def rf(v):
 
 def createFaceMidPointmodel(a):
 	'''create an extented model with facepoints'''
+
 	fs=a.Shape.Faces
 
 	pts=[]
@@ -52,7 +54,6 @@ def createFaceMidPointmodel(a):
 			pts.append(p)
 			col.append(Part.makeLine(rf(c),rf(p)))
 
-	import Points
 	# Points.show(Points.Points(pts))
 
 	Part.show(Part.Compound(col))
@@ -60,24 +61,21 @@ def createFaceMidPointmodel(a):
 	App.ActiveDocument.ActiveObject.ViewObject.PointSize=6.
 	App.ActiveDocument.ActiveObject.ViewObject.LineWidth=1.
 	App.ActiveDocument.ActiveObject.Label="Face Extend for " + a.Label
-	App.ActiveDocument.ActiveObject.Label="Face Extend for " + a.Label
-	
+
 	return App.ActiveDocument.ActiveObject
 
 
 
-g=nx.Graph()
-points={}
-
-
 
 def loadModel(s):
+	''' map the Part <s> to a networx graph <g> with points set <points>'''
 
 	sp=s.Shape
 
-
 	for i,v in enumerate(sp.Vertexes):
+
 		pp=(round(v.Point.x,2),round(v.Point.y,2),round(v.Point.z,2))
+
 		try: points[pp]
 		except: 
 			points[pp]=i
@@ -94,16 +92,15 @@ def loadModel(s):
 		ge=g.add_edge(points[i1],points[i2],
 			weight=round(e.Length,2),
 			vector=p2-p1,
-			fcedge=e
+			fcedge=e # the real edge
 			)
-
 
 	# calculate some topological/metrical information for the vertexes
 
 	for n in g.nodes():
 		es=g.edge[n]
-		sl=0
-		vs=FreeCAD.Vector()
+		sl=0 # sum of vector length
+		vs=FreeCAD.Vector() # sum of vectors
 		vds=0
 
 		if len(es)>0:
@@ -115,21 +112,18 @@ def loadModel(s):
 
 			vsn=FreeCAD.Vector(vs)
 
-	#		print vsn,vsn.Lengt
-
-			if 0:
+			# some trouble ist the sum of all vectors is zero
+			if 0: # still look for a better solution
 				if vsn.Length < 1: 
 					vsn= g.edge[n][esl[0]]['vector'].cross(g.edge[n][esl[2]]['vector'])
 
 				if vsn.Length < 1: 
 					vsn= g.edge[n][esl[0]]['vector'].cross(g.edge[n][esl[1]]['vector'])
 
-	#		for  jj in range(len(esl)):
-	#			print ("!---",jj,g.edge[n][esl[jj]]['vector'])
-	#		print vsn
+
 			if vsn.Length > 1: 
 				vsn.normalize()
-			else: vsn=0
+			else: vsn=0 
 
 			for e in es:
 				v = FreeCAD.Vector(g.edge[n][e]['vector'])
@@ -168,6 +162,7 @@ def createKeys():
 	for n in g.nodes():
 			key=getkey(n)
 			g.node[n]['keys']= [key]
+			g.node[n]['key']= key
 			try: kp[key] += 1
 			except: kp[key] = 1
 
@@ -177,12 +172,12 @@ def createKeys():
 		print (k,kp[k])
 		if kp[k]==1: anz += 1
 
-	print ("top level marker points", len(g.nodes()),anz)
+	print ("number of top level marker points:", len(g.nodes()),anz)
 	return kp
 
 def setQuality(nodes,kp):
 	for n in nodes:
-		key=getkey(n)
+		key=g.node[n]['key']
 		if kp[key]==1:
 			g.node[n]['quality']=1
 
@@ -192,9 +187,7 @@ def getNeighborEdges(n):
 	''' freecad edges from a point n '''
 	col=[]
 	nbs=g.neighbors(n)
-	#print nbs
 	for nb in nbs:
-	#	print g.edge[n][nb]
 		col +=  [g.edge[n][nb]['fcedge']]
 	return col
 
@@ -212,7 +205,6 @@ def displayNB(nodes):
 def berechneKeyLevel(i=1):
 	'''key for level i is the i-th neighbor sum of the keys'''
 
-	# berechen keys level i>0
 	for n in g.nodes():
 		nbs=g.neighbors(n)
 		kka={}
@@ -224,16 +216,13 @@ def berechneKeyLevel(i=1):
 			aas += a
 			bbs += b
 			ccs += c
-#		aas=round(aas,4)
-#		bbs=round(bbs,4)
-#		ccs=round(ccs,4)
 
 		try: g.node[n]['keys'][i]=(aas,bbs,ccs)
 		except: g.node[n]['keys'].append((aas,bbs,ccs))
 
 
 def werteausLevel(i=1):
-	''' whichpoint have uniqe keys at level i'''
+	''' which points have uniqe keys at level i'''
 
 	# count the key occurences
 	kp={}
@@ -264,14 +253,14 @@ def werteausLevel(i=1):
 	print ("level",i,"found",anz,"found overall",anzg, "not identified till now",len(g.nodes())-anzg)
 	return anz
 
-
-import random
 def zeigeQ(i):
 	''' display the indetification quality level as Sub Grid '''
+
 	ns=[]
 	for n in g.nodes():
 		if g.node[n]['quality']==i:
 			ns.append(n)
+
 	# print ns
 	displayNB(ns)
 	App.ActiveDocument.ActiveObject.Label="Quality" +str(i)
@@ -280,18 +269,20 @@ def zeigeQ(i):
 
 
 
-
 def run():
+	'''run anlysis for one selected object'''
 	s=Gui.Selection.getSelection()
 	model=s[0]
 	runAna(model)
 
+
 def runAna(model,silent=False):
+	'''main analysis method'''
+
 	mp=createFaceMidPointmodel(model)
 	loadModel(mp)
 	kp=createKeys()
 	setQuality(g.nodes(),kp)
-
 
 	#calculate ans display top quality nodes
 	if 1:
@@ -306,9 +297,6 @@ def runAna(model,silent=False):
 			App.ActiveDocument.ActiveObject.ViewObject.LineColor=(
 					random.random(),random.random(),random.random())
 
-
-
-
 	# calculate all levels
 	for i in range(1,10):
 		berechneKeyLevel(i=i)
@@ -321,12 +309,12 @@ def runAna(model,silent=False):
 		for i in range(1,last):
 			zeigeQ(i)
 
-	FreeCAD.g=g
-	FreeCAD.a=model
 
+
+	# link labels and geometry from freecad to networkx
 	bm=model
 	sp=bm.Shape
-	
+
 	for i,v in enumerate(sp.Vertexes):
 		pp=(round(v.Point.x,2),round(v.Point.y,2),round(v.Point.z,2))
 		try:
@@ -335,6 +323,7 @@ def runAna(model,silent=False):
 			gi=points[pp]
 
 			g.node[gi]["label"]=bm.Label+":Vertex"+str(i+1)
+			g.node[gi]["Vertex"]=v
 #			print g.node[gi]
 		except: 
 			print "NOT FOUND"
@@ -350,18 +339,22 @@ def runAna(model,silent=False):
 			gi=points[pp]
 
 			g.node[gi]["label"]=bm.Label+":Face"+str(i+1)
+			g.node[gi]["Face"]=f
 #			print g.node[gi]
 		except: 
 			print "NOT FOUND"
 			pass
 
-
+	# hold the data for postprocessing in a global variable
+	FreeCAD.g=g
+	FreeCAD.a=model
 
 #	print len(sp.Vertexes)
 	addToVertexStore()
 
 
 def runCompare():
+	'''run analysis for more parts and display the results'''
 	resetVertexStore()
 	s=Gui.Selection.getSelection()
 	for model in s:
@@ -427,13 +420,9 @@ def addToVertexStore():
 
 
 def resetVertexStore():
+	'''clear the vertex store for next analysis'''
 	FreeCAD.PT={}
 	print FreeCAD.PT
-
-#points=nurbswb.analyse_topology_v2.points
-#print "count of points and helper points"
-#len(points)
-
 
 
 def printVertexStore(): 
@@ -448,30 +437,6 @@ def printVertexStore():
 				print v[:-1]
 				print "	",v[-1]
 
-
-def yprintVertexStore(): 
-	'''print the vertex store'''
-	print "The vertex Store compare"
-	found=0
-	for j in FreeCAD.PT:
-		print
-		print j
-		vs=FreeCAD.PT[j]
-		keys={}
-		for v in vs:
-				k=v[3]
-				try: keys[k] += 1
-				except: keys[k]=1 
-		for k in keys:
-			if keys[k]>1:
-				found += 1
-				print k
-				for v in vs:
-					if v[3]==k:
-						print v[:-1]
-
-	print "common found:",found
-	print len(FreeCAD.PT.keys())
 
 def displayVertexStore(): 
 	'''print the vertex store'''
@@ -536,26 +501,19 @@ def displayVertexStore():
 
 		App.ActiveDocument.ActiveObject.Label="No common Points "
 
-
-
-
 	print "common found:",found
 	print count
-
 
 
 def loadTest1():
 	print __file__
 	# hier relativen pfad reintun
-	import FreeCAD
 	FreeCAD.open(u"/home/thomas/Schreibtisch/zwei_gleiche_fenster.fcstd")
 	App.setActiveDocument("zwei_gleiche_fenster")
 	App.ActiveDocument=App.getDocument("zwei_gleiche_fenster")
 	Gui.ActiveDocument=Gui.getDocument("zwei_gleiche_fenster")
 
 
-
-import os, nurbswb
 
 def loadTest2():
 	__dir__ = os.path.dirname(nurbswb.__file__)
