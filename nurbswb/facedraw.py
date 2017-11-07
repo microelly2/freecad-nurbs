@@ -298,19 +298,23 @@ def drawcurve(wire,face):
 	su=face.ParameterRange[1]
 	sv=face.ParameterRange[3]
 
-	print "debug mapp"
-	print "su ",su
-	print "sv ",sv
-	print "param range ", face.ParameterRange
-	
+#	print "debug mapp"
+#	print "su ",su
+#	print "sv ",sv
+#	print "param range ", face.ParameterRange
+
 	if su>1000: su=face.ParameterRange[1]
 	if sv>1000: sv=face.ParameterRange[3]
 
+	print "A"
 	pts2da=[sf.parameter(p) for p in pts[1:]]
+	print "B"
 	pts2d=[FreeCAD.Base.Vector2d(p[0],p[1]) for p in pts2da]
 
 	bs2d = Part.Geom2d.BSplineCurve2d()
 	bs2d.setPeriodic()
+	print "pts2d ..."
+	print pts2d
 	bs2d.interpolate(pts2d)
 	bs2d.setPeriodic()
 

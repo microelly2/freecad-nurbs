@@ -302,6 +302,7 @@ if FreeCAD.GuiUp:
 	
 	c2a(["Curves"],always,'isodraw32','isodraw','3D to 2D','/../icons/draw.svg',"map3Dto2D()")
 	c2a(["Curves"],always,'isodraw23','isodraw','2D to 3D','/../icons/draw.svg',"map2Dto3D()")
+	c2a(["Curves"],always,'isodraw24','isodraw','3D Grid to 2D Grid','/../icons/draw.svg',"map3Dgridto2Dgrid()")
 #	c2a(["Curves"],always,'importColorSVG','shoe_importSVG','import SVG for shoes','/../icons/draw.svg',"import_test()")
 	c2a(["Curves"],always,'linkSVG','shoe_importSVG','create link to SVG file','/../icons/draw.svg',"create_svglink()")
 	c2a(["Curves"],always,'beziera','bezier','selected face to sketch','/../icons/draw.svg',"faceToSketch()")

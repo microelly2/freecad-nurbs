@@ -26,12 +26,12 @@ import scipy
 import scipy.interpolate
 
 import nurbswb
+import nurbswb.isomap
+reload (nurbswb.isomap)
+
+
 #import nurbswb.facedraw
-#reload (nurbswb.facedraw)
-
-
-import nurbswb.facedraw
-reload(nurbswb.facedraw)
+#reload(nurbswb.facedraw)
 
 
 
@@ -114,7 +114,7 @@ def createShape(obj):
 	ppall=[]
 
 	for i,w in enumerate(obj.wire.Shape.Wires):
-		print "X Wire ...",i
+		print ("Wire ...",i,pointCount)
 		pts=w.discretize(pointCount)
 		pts2=[]
 
@@ -137,13 +137,13 @@ def createShape(obj):
 			x=p.y
 			y=p.x
 
-			print  ("a",x,y)
+#			print  ("a",x,y)
 			
 			u=xy2u(x,y)
 			v=xy2v(x,y)
 
 
-			print(round(u,2),round(v,2))
+#			print(round(u,2),round(v,2))
 
 			if 0: #macht nur Sinn fuer Bsplines 
 				if u<0: u=0
@@ -154,7 +154,7 @@ def createShape(obj):
 			#faktor dazu
 			su=bs.UPeriod()
 			sv=bs.VPeriod()
-			print "hack su sv"
+#			print "hack su sv"
 			su=face.ParameterRange[1]
 			sv=face.ParameterRange[3]
 
@@ -207,6 +207,8 @@ class Isodraw(PartFeature):
 			obj.backref.touch()
 			obj.backref.Document.recompute()
 		face=obj.face.Shape.Face1
+		import nurbswb.facedraw
+		#reload(nurbswb.facedraw)
 		nurbswb.facedraw.drawcurve(obj,face)
 
 
@@ -325,8 +327,30 @@ class Map(PartFeature):
 		ViewProvider(obj.ViewObject)
 		obj.ViewObject.LineColor=(1.,0.,1.)
 
-#	def onChanged(self, fp, prop):
-#		print ("onChanged",prop)
+	def onBeforeChange(self, fp, prop):
+		print ("onbeforeChange", fp.Label,prop,getattr(fp,prop))
+		if prop=="uCount":
+			self.pc=prop
+			self.val=getattr(fp,prop)
+		if prop=="vCount":
+			self.pc=prop
+			self.val=getattr(fp,prop)
+
+
+
+	def onChanged(self, fp, prop):
+		print ("onChanged", fp.Label,prop,getattr(fp,prop))
+		if prop=="uCount":
+			vn=getattr(fp,prop)
+			vo=self.val
+			fp.uMax=fp.uMax*vn/vo
+			fp.uMin=fp.uMin*vn/vo
+		if prop=="vCount":
+			vn=getattr(fp,prop)
+			vo=self.val
+			fp.vMax=fp.vMax*vn/vo
+			fp.vMin=fp.vMin*vn/vo
+
 
 	def execute(proxy,obj):
 		'''get the mapping of the obj.face, create the 2D and 3D grid for teh mapping'''
@@ -351,6 +375,21 @@ class Map(PartFeature):
 		if obj.backref <>None:
 			obj.backref.touch()
 			obj.backref.Document.recompute()
+
+
+	def onDocumentRestored(proxy,obj):
+
+		print  ("onDocumentRestored(proxy,obj)",proxy,obj,obj.Label)
+
+		[uv2x,uv2y,xy2u,xy2v]=nurbswb.isomap.getmap(obj,obj.face)
+		proxy.uv2x=uv2x
+		proxy.uv2y=uv2y
+		proxy.xy2u=xy2u
+		proxy.xy2v=xy2v
+		print "getmap done"
+
+	
+
 
 def createMap():
 	'''create a Map object'''
@@ -440,6 +479,32 @@ def createGrid(mapobj,upmode=False):
 			pts.append([kx,ky,0])
 		ptsa.append(pts)
 		ptska.append(ptsk)
+
+#-----------------------------------------------
+
+	[uv2x,uv2y,xy2u,xy2v]=nurbswb.isomap.getmap(mapobj,obj.faceObject)
+	ptsa=[]
+	for v in range(vc+1):
+		pts=[]
+		for u in range(uc+1):
+#				uv=1.0/uc*u*su
+#				vv=1.0/vc*v*sv
+
+				vv=1.0/uc*u*su
+				uv=1.0/vc*v*sv
+
+				x=uv2x(uv,vv)
+				y=uv2y(uv,vv)
+				pts.append(FreeCAD.Vector(x,y,0))
+
+		ptsa.append(pts)
+	
+	print "huhuhu ptsa:",ptsa
+
+
+#------------------------------------------------
+
+
 
 #	comps += [ Part.makePolygon(ptsk[obj.vMin:obj.vMax])]
 
@@ -1090,6 +1155,112 @@ def map2Dto3D():
 
 
 #------------------------
+
+def map3Dgridto2Dgrid():
+	# 3D Edges auf 2D Edges
+	#face=App.ActiveDocument.Poles
+	#wire=App.ActiveDocument.UUUU_Drawing_on_Poles__Face1002_Spline
+
+	s0=Gui.Selection.getSelection()
+	base=s0[-1]
+
+	if hasattr(base,"faceObject"):
+		face=base.faceObject
+		mapobj=base
+	else:
+		face=base
+		mapobj=None
+
+	s=s0[:-1]
+	if len(s0)==1:
+		s=s0
+
+	print "GEsTARTET -- weiter"
+	#return
+	print "s",s
+	print s0
+	
+	
+
+	polcol=[]
+	for wire in s:
+		print wire.Label
+		[uv2x,uv2y,xy2u,xy2v]=nurbswb.isomap.getmap(mapobj,face)
+
+		bs=face.Shape.Face1.Surface
+		pts2=[]
+		firstEdge=True
+		n=0
+		for e in wire.Shape.Edges:
+			#print e
+			n +=1
+			# if n>6: break
+			# auf 5 millimeter genau
+			if mapobj<>None:
+				dd=mapobj.pointsPerEdge
+			else:
+				dd=int(round(e.Length/5))
+				dd=30
+			dd=3
+			ptsa=e.discretize(dd)
+			#if not firstEdge:
+			#	pts=ptsa[1:]
+			#else:
+			pts=ptsa
+			firstEdge=False
+
+			FreeCAD.ptsaa=pts
+			
+			ptsb=[]
+			for p in pts:
+				(u,v)=bs.parameter(p)
+				(v,u)=bs.parameter(p)
+#				print (u,v)
+				#zurückrechnen
+				su=bs.UPeriod()
+				sv=bs.VPeriod()
+
+				print "hack su sv aa bb"
+				#print base.faceobject
+				print face
+				su=face.Shape.Face1.ParameterRange[1]
+				sv=face.Shape.Face1.ParameterRange[3]
+
+				if su>1000: su=face.ParameterRange[1]
+				if sv>1000: sv=face.ParameterRange[3]
+
+				v=v/sv
+				u=u/su
+				
+				
+				x=uv2x(u,v)
+				y=uv2y(u,v)
+				if mapobj<>None and mapobj.flipxy:
+					p2=FreeCAD.Vector(y,x,0)
+				else:
+					p2=FreeCAD.Vector(-y,-x,0)
+				# hack richgtung beim Schuh
+				p2=FreeCAD.Vector(y,x,0)
+#				p2=FreeCAD.Vector(y,x,0)
+				# warum diese verschiebung?
+				#p2 += FreeCAD.Vector(80,80,0)
+				ptsb.append(p2)
+			
+			#print pts
+			#print ptsb
+			if len(ptsb)>1:
+				try:
+					polcol += [Part.makePolygon(ptsb)]
+				except:
+					print "kann kein polygon bauen"
+					print ptsb
+	print "huhwa"
+	print polcol
+
+		#Draft.makeWire(pts2)
+	Part.show(Part.Compound(polcol))
+
+
 
 
 # pruefe qualitaet der umrechnung

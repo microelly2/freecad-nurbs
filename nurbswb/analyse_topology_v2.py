@@ -45,6 +45,7 @@ def createFaceMidPointmodel(a):
 
 	pts=[]
 	col=[]
+	col=a.Shape.Edges
 
 	for f in fs:
 		c=f.CenterOfMass
@@ -89,6 +90,7 @@ def loadModel(s):
 		p2=e.Vertexes[1].Point
 		i2=ptokey(p2)
 
+		print ("addedge",points[i1],points[i2])
 		ge=g.add_edge(points[i1],points[i2],
 			weight=round(e.Length,2),
 			vector=p2-p1,
@@ -102,6 +104,7 @@ def loadModel(s):
 		sl=0 # sum of vector length
 		vs=FreeCAD.Vector() # sum of vectors
 		vds=0
+		edirs=[]
 
 		if len(es)>0:
 			esl=[]
@@ -109,6 +112,7 @@ def loadModel(s):
 				esl.append(e)
 				sl += g.edge[n][e]['vector'].Length
 				vs += g.edge[n][e]['vector']
+				edirs += [g.edge[n][e]['vector']] 
 
 			vsn=FreeCAD.Vector(vs)
 
@@ -136,6 +140,9 @@ def loadModel(s):
 		g.node[n]['sl']=sl
 		g.node[n]['vds']=vds
 		g.node[n]['vs']=vs
+		g.node[n]['edirs']=edirs
+		#g.node[n]['fdirs']=[]
+
 
 def displayMatplot():
 	# display in matplotlib
@@ -152,7 +159,75 @@ def getkey(n):
 	return (g.node[n]['ec'],round(g.node[n]['sl']/l,4),round(g.node[n]['vds']/l,4))
 	#return (g.node[n]['ec'],round(g.node[n]['sl']/l,16),round(g.node[n]['vds']/l,14))
 
+def getkey(n):
+	v2es=FreeCAD.Vector()
+	for v in g.node[n]['edirs']:
+		v2=FreeCAD.Vector(v).normalize()
+		v2es += v2
 
+#	print "huhu ", len( g.node[n]['fdirs'])
+	v2fs=FreeCAD.Vector()
+	for v in g.node[n]['fdirs']:
+#		print v
+		v2=FreeCAD.Vector(v)
+		v2.normalize()
+		v2fs += v2
+
+#	return (#g.node[n]['ec'],
+#		0,
+#		FreeCAD.Vector(ptokey(v2fs)).Length,
+#		FreeCAD.Vector(ptokey(v2es)).Length
+#		)
+
+
+#	print v2fs
+#	print v2es
+#	print "fdirs",len(g.node[n]['fdirs'])
+#	print "edirs",len(g.node[n]['edirs'])
+
+#	print "getkey",(
+#		g.node[n]['ec'],
+#		0,
+#		FreeCAD.Vector(v2fs).Length,
+#		FreeCAD.Vector(v2es).Length
+#		)
+
+#----------------
+	return (
+		#g.node[n]['ec'],
+		#0,
+		len(g.node[n]['fdirs'])+100*len(g.node[n]['edirs']),
+		round(FreeCAD.Vector(ptokey(v2fs)).Length,2),
+		round(FreeCAD.Vector(ptokey(v2es)).Length,2)
+		)
+
+#-----------------------------------------------------------------------------------
+def getkeyg(g,n):
+	v2es=FreeCAD.Vector()
+	for v in g.node[n]['edirs']:
+		v2=FreeCAD.Vector(v).normalize()
+		v2es += v2
+
+	if len(g.node[n]['edirs'])==4 and round(FreeCAD.Vector(ptokey(v2es)).Length,2) == 0.0:
+		v0=FreeCAD.Vector(g.node[n]['edirs'][0]).normalize()
+		v1=FreeCAD.Vector(g.node[n]['edirs'][1]).normalize()
+		v2=FreeCAD.Vector(g.node[n]['edirs'][2]).normalize()
+		v2es=v0.cross(v1)
+		if v2es==FreeCAD.Vector():
+			v2es=v0.cross(v2)
+
+	v2fs=FreeCAD.Vector()
+	for v in g.node[n]['fdirs']:
+		v2=FreeCAD.Vector(v)
+		v2.normalize()
+		v2fs += v2
+
+
+	return (
+		len(g.node[n]['fdirs'])+100*len(g.node[n]['edirs']),
+		round(FreeCAD.Vector(ptokey(v2fs)).Length,2),
+		round(FreeCAD.Vector(ptokey(v2es)).Length,2)
+		)
 #---------------------------------------------------------------------------------
 
 def createKeys():
@@ -160,6 +235,10 @@ def createKeys():
 	kp={}
 
 	for n in g.nodes():
+#			print n
+#			print g.node[n]
+			try: g.node[n]['fdirs']
+			except: g.node[n]['fdirs']=[]
 			key=getkey(n)
 			g.node[n]['keys']= [key]
 			g.node[n]['key']= key
@@ -279,10 +358,74 @@ def run():
 def runAna(model,silent=False):
 	'''main analysis method'''
 
+	print "NodesA",g.nodes()
 	mp=createFaceMidPointmodel(model)
+	print "NodesB",g.nodes()
 	loadModel(mp)
+
+	print "Model ",mp.Label
+	print "NodesC",g.nodes()
+
+
+	# link labels and geometry from freecad to networkx
+	bm=model
+	sp=bm.Shape
+
+	for i,v in enumerate(sp.Vertexes):
+		pp=(round(v.Point.x,2),round(v.Point.y,2),round(v.Point.z,2))
+		try:
+#			print (pp,i) 
+#			print ("found ",points[pp])
+			gi=points[pp]
+
+			g.node[gi]["label"]=bm.Label+":Vertex"+str(i+1)
+			g.node[gi]["Vertex"]=v
+#			print g.node[gi]
+		except: 
+			print "NOT FOUND"
+			pass
+
+
+	for i,f in enumerate(sp.Faces):
+		print ("Face ",i,len(f.Vertexes))
+		for v in f.Vertexes:
+#			print (v,ptokey(v.Point),points[ptokey(v.Point)])
+			pix=points[ptokey(v.Point)]
+#			print g.node[pix]
+			
+			#flaechennormale anfuegen
+			(u,v)=f.Surface.parameter(v.Point)
+#			print( pix,"Addiere Flaechennoirmalw",(u,v),f.normalAt(u,v))
+			try:
+				g.node[pix]['fdirs'].append(f.normalAt(u,v))
+			except:
+				g.node[pix]['fdirs'] = [(f.normalAt(u,v))]
+			print "len fdirs",len(g.node[pix]['fdirs'] )
+
+
+		c=f.CenterOfMass
+		pp=(round(c.x,2),round(c.y,2),round(c.z,2))
+		try:
+#			print (pp,i) 
+#			print ("found ",points[pp])
+			gi=points[pp]
+
+			g.node[gi]["label"]=bm.Label+":Face"+str(i+1)
+			g.node[gi]["Face"]=f
+#			print g.node[gi]
+		except: 
+			print "NOT FOUND"
+			pass
+
+
+
 	kp=createKeys()
+	print g.nodes()
+	
 	setQuality(g.nodes(),kp)
+	
+	#hack
+	#return
 
 	#calculate ans display top quality nodes
 	if 1:
@@ -311,39 +454,6 @@ def runAna(model,silent=False):
 
 
 
-	# link labels and geometry from freecad to networkx
-	bm=model
-	sp=bm.Shape
-
-	for i,v in enumerate(sp.Vertexes):
-		pp=(round(v.Point.x,2),round(v.Point.y,2),round(v.Point.z,2))
-		try:
-#			print (pp,i) 
-#			print ("found ",points[pp])
-			gi=points[pp]
-
-			g.node[gi]["label"]=bm.Label+":Vertex"+str(i+1)
-			g.node[gi]["Vertex"]=v
-#			print g.node[gi]
-		except: 
-			print "NOT FOUND"
-			pass
-
-
-	for i,f in enumerate(sp.Faces):
-		c=f.CenterOfMass
-		pp=(round(c.x,2),round(c.y,2),round(c.z,2))
-		try:
-#			print (pp,i) 
-#			print ("found ",points[pp])
-			gi=points[pp]
-
-			g.node[gi]["label"]=bm.Label+":Face"+str(i+1)
-			g.node[gi]["Face"]=f
-#			print g.node[gi]
-		except: 
-			print "NOT FOUND"
-			pass
 
 	# hold the data for postprocessing in a global variable
 	FreeCAD.g=g
@@ -358,6 +468,16 @@ def runCompare():
 	resetVertexStore()
 	s=Gui.Selection.getSelection()
 	for model in s:
+#		g=nx.Graph()
+#		FreeCAD.g=g
+		print "Startrnstand"
+		for v in g.nodes():
+			print g.node[v]['fdirs']
+			print g.node[v]['edirs']
+			g.node[v]['fdirs']=[]
+			g.node[v]['edirs']=[]
+		print "--------------"
+		print "NodesA",g.nodes()
 		runAna(model,silent=True)
 	displayVertexStore()
 
@@ -407,13 +527,24 @@ def addToVertexStore():
 		
 		try: g.node[v]['label']
 		except: g.node[v]['label']='----'
-		print g.node[v]['label']
 
-		key=(a.Label,g.node[v]['label'],v,g.node[v]['keys'][g.node[v]['quality']-1],"!>",g.node[v]['quality'],"<!",g.node[v]['keys'])
+		print "kkkk"
+		print g.node[v]['label']
+		print g.node[v]['quality']-1
+		print g.node[v]['keys']
+#		print g.node[v]['keys'][g.node[v]['quality']-1]
+		print "ha"
+
+#		key=(a.Label,g.node[v]['label'],v,g.node[v]['keys'][g.node[v]['quality']-1],"!>",
+#			g.node[v]['quality'],"<!",g.node[v]['keys'])
+
+		key=(a.Label,g.node[v]['label'],v,g.node[v]['keys'][0],"!>",
+			g.node[v]['quality'],"<!",g.node[v]['keys'])
+
 		try:
 			if key not in FreeCAD.PT[g.node[v]['vector']]:
 				FreeCAD.PT[g.node[v]['vector']] += [key]
-				print "added"
+				# print "added"
 		except:
 			#FreeCAD.PT[g.node[v]['vector']] =[(a.Label,g.node[v]['label'],v,g.node[v]['keys'][g.node[v]['quality']-1],g.node[v]['quality'])]
 			FreeCAD.PT[g.node[v]['vector']] = [key]
@@ -434,8 +565,11 @@ def printVertexStore():
 		vs=FreeCAD.PT[j]
 		for v in vs:
 			if str(v[1])<>'----':
-				print v[:-1]
-				print "	",v[-1]
+				print v[1:-1]
+#				print "	",v[-1]
+
+
+
 
 
 def displayVertexStore(): 
@@ -473,14 +607,14 @@ def displayVertexStore():
 			#print keyd[k][0][1]
 			# print keyd[k][1][1]
 
-	if pts<>[]:
-		#print pts
-		Points.show(Points.Points(pts))
-		App.ActiveDocument.ActiveObject.ViewObject.ShapeColor=(
-			random.random(),random.random(),random.random())
-		App.ActiveDocument.ActiveObject.ViewObject.PointSize= 10
-
-		App.ActiveDocument.ActiveObject.Label="Common Points "
+#	if pts<>[]:
+#		#print pts
+#		Points.show(Points.Points(pts))
+#		App.ActiveDocument.ActiveObject.ViewObject.ShapeColor=(
+#			random.random(),random.random(),random.random())
+#		App.ActiveDocument.ActiveObject.ViewObject.PointSize= 10
+#
+#		App.ActiveDocument.ActiveObject.Label="Common Points "
 
 
 #	print "no found -----------------------------"
@@ -492,17 +626,59 @@ def displayVertexStore():
 #			print "!!",keyd[k][0][0]
 			pts.append(keyd[k][0][0])
 
-	if pts<>[]:
-		#print pts
-		Points.show(Points.Points(pts))
+	print
+	print "nach keys ausgegeben"
+	for k in keys:
+		if k[0] %100 <>0: #ignore reine flaechen
+			print
+			print k
+			for p in keyd[k]:
+				print p[1]
+
+	anz=0
+	gps=[]
+	print
+	print "nach keys ausgegeben nur noch paare-------------------------------"
+	for k in keys:
+		first=True
+		if k[0] %100 <>0: #ignore reine flaechen
+			if len(keyd[k])==2:
+				[p,q] = keyd[k]
+				if p[1][0] <> q[1][0]:
+					if p[1][1].startswith( p[1][0]):
+						if first:
+							print
+							print k
+							first=False
+						print p[1]
+#						print p
+						print q[1]
+						anz +=1
+						gps += [FreeCAD.Vector(p[0]),FreeCAD.Vector(q[0])]
+
+	print "gefundene paare ",anz
+
+	if gps<>[]:
+		Points.show(Points.Points(gps))
 		App.ActiveDocument.ActiveObject.ViewObject.ShapeColor=(
 			random.random(),random.random(),random.random())
 		App.ActiveDocument.ActiveObject.ViewObject.PointSize= 10
 
-		App.ActiveDocument.ActiveObject.Label="No common Points "
+		App.ActiveDocument.ActiveObject.Label="Gefundene unique keys -- bestes ergebnis"
 
-	print "common found:",found
-	print count
+
+
+#	if pts<>[]:
+#		#print pts
+#		Points.show(Points.Points(pts))
+#		App.ActiveDocument.ActiveObject.ViewObject.ShapeColor=(
+#			random.random(),random.random(),random.random())
+#		App.ActiveDocument.ActiveObject.ViewObject.PointSize= 10
+#
+#		App.ActiveDocument.ActiveObject.Label="No common Points "
+#
+#	print "common found:",found
+#	print count
 
 
 def loadTest1():
@@ -523,7 +699,110 @@ def loadTest2():
 	App.ActiveDocument=App.getDocument("zwei_gleiche_fenster")
 	Gui.ActiveDocument=Gui.getDocument("zwei_gleiche_fenster")
 
+def getkeytab(g,nodes):
+	keys={}
+	for n in nodes:
+#		print n
+#		print g.node[n]
+		k=getkeyg(g,n)
+		try: keys[k] += [n]
+		except: keys[k] = [n]
+	return keys
 
+def getUniques(keys):
+	us=[]
+	for k in keys:
+		if len(keys[k])==1:
+			us += keys[k]
+	return us
+
+	
+def Test4():
+	g=FreeCAD.g
+	print "Test 4"
+#	print g.nodes()
+
+	keys=getkeytab(g,g.nodes())
+
+	print "keytab all results ..."
+	for k in keys:
+		print (k,keys[k])
+		
+	uniqs=getUniques(keys)
+	print "uniques start "
+	print uniqs
+
+	for n in uniqs:
+		g.node[n]['upath']=[n]
+
+
+	found=True
+	for i in range(8):
+		if not found: break
+		
+		found=False
+		print "loop i= ",i
+		for n in uniqs:
+			nbs=g.neighbors(n)
+			nbs2=[]
+			for na in nbs:
+				if na not in uniqs:
+					nbs2.append(na)
+
+			keys=getkeytab(g,nbs2)
+			
+#			print
+#			print ("node ",n,getkeyg(g,n),nbs2)
+#			print nbs
+			
+			for k in keys:
+				print (k,keys[k])
+
+			uniqs2=getUniques(keys)
+			if uniqs2<>[]:
+				print "----------------------------------uniques2: ",uniqs2
+				for u in uniqs2:
+					if u not in uniqs: 
+		#				print "-add--------------------",u
+						found=True
+						uniqs += [u]
+						g.node[u]['upath']= g.node[n]['upath']+[u]
+
+	print
+	print ("all uniqs ",uniqs)
+
+	for n in uniqs:
+		print (k,n,g.node[n]['label'],g.node[n]['upath'])
+
+	ups=[]
+	for n in uniqs:
+			ups.append(FreeCAD.Vector(g.node[n]['vector']))
+
+	Points.show(Points.Points(ups))
+	App.ActiveDocument.ActiveObject.ViewObject.ShapeColor=(
+		random.random(),random.random(),random.random())
+	App.ActiveDocument.ActiveObject.ViewObject.PointSize= 10
+
+	App.ActiveDocument.ActiveObject.Label="Eindeutige Punkte"
+
+	print
+	print "nicht zuordenbar ..."
+	noups=[]
+	for n in g.nodes():
+		if n not in uniqs:
+			k=getkeyg(g,n)
+			print (k,n,g.node[n]['label'],g.node[n]['vector'])
+#			print (n,g.node[n]['label'])
+#			print g.node[n]['edirs']
+#			print g.node[n]['fdirs']
+			noups.append(FreeCAD.Vector(g.node[n]['vector']))
+
+	Points.show(Points.Points(noups))
+	App.ActiveDocument.ActiveObject.ViewObject.ShapeColor=(
+		random.random(),random.random(),random.random())
+	App.ActiveDocument.ActiveObject.ViewObject.PointSize= 10
+
+	App.ActiveDocument.ActiveObject.Label="Nich eindeutige Punkte"
 
 
 '''

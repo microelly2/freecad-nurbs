@@ -52,6 +52,15 @@ def getmap(mapobj,obj):
 
 	su=bs.UPeriod()
 	sv=bs.VPeriod()
+
+	print "hack su sv aa bb"
+	#print base.faceobject
+	print face
+	su=face.ParameterRange[1]
+	sv=face.ParameterRange[3]
+
+
+
 	if su>1000: su=face.ParameterRange[1]
 	if sv>1000: sv=face.ParameterRange[3]
 
@@ -74,6 +83,11 @@ def getmap(mapobj,obj):
 			fy=mapobj.fy
 			modeA=mapobj.modeA
 			modeB=mapobj.modeB
+
+
+	vc=mapobj.vc
+	uc=mapobj.uc
+
 
 
 	refpos=bs.value(mpv,mpu)
