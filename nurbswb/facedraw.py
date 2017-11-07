@@ -348,7 +348,9 @@ def drawcurve(wire,face):
 			sp.ViewObject.ShapeColor=(random.random(),random.random(),random.random())
 			sp.ViewObject.LineColor=sp.ViewObject.ShapeColor
 
-
+			wire.ViewObject.LineColor=sp.ViewObject.ShapeColor
+			wire.ViewObject.ShapeColor=sp.ViewObject.ShapeColor
+			print "HHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHH"
 
 ## 	new wire for next drawing
 

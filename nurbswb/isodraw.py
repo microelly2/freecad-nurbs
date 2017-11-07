@@ -191,7 +191,7 @@ class Isodraw(PartFeature):
 		obj.addProperty("App::PropertyBool","drawFace","Output","display subface cut by the wire projection")
 		obj.addProperty("App::PropertyBool","reverseFace","Output","display inner or outer subface")
 		obj.addProperty("App::PropertyInteger","pointcount","Details","count of points to discretize source wire")
-		obj.pointcount=20
+		obj.pointcount=100
 
 		obj.addProperty("App::PropertyLink","backref","Workspace")
 
@@ -1071,6 +1071,10 @@ def map3Dto2D():
 		mapobj=None
 
 	s=s0[:-1]
+	if len(s0)==1:
+		s=s0
+		mapobj=base.mapobject
+		face=mapobj.faceObject
 
 
 	for wire in s:
@@ -1129,7 +1133,10 @@ def map3Dto2D():
 				#p2 += FreeCAD.Vector(80,80,0)
 				pts2.append(p2)
 
-		Draft.makeWire(pts2)
+		a=Draft.makeWire(pts2,closed=True)
+		a.Label="map2D_for_"+wire.Label
+		a.ViewObject.ShapeColor=wire.ViewObject.LineColor
+		
 
 
 def map2Dto3D():
@@ -1151,6 +1158,9 @@ def map2Dto3D():
 		f.face=moa.face
 		f.wire=w
 		f.Label="map3D_for_"+w.Label+"_on_"+f.face.Label + "_by_" + moa.Label
+		color=(random.random(),random.random(),random.random())
+		w.ViewObject.ShapeColor=color
+		w.ViewObject.LineColor=color
 		App.activeDocument().recompute()
 
 
