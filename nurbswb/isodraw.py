@@ -113,9 +113,13 @@ def createShape(obj):
 
 	ppall=[]
 
+	pos=FreeCAD.Vector(obj.mapobject.Placement.Base.x,obj.mapobject.Placement.Base.y,0)
+
 	for i,w in enumerate(obj.wire.Shape.Wires):
 		print ("Wire ...",i,pointCount)
-		pts=w.discretize(pointCount)
+		ptsaa=w.discretize(pointCount)
+		pts=[p-pos for p in ptsaa]
+		
 		pts2=[]
 
 		#refpos geht noch nicht
@@ -209,6 +213,7 @@ class Isodraw(PartFeature):
 		face=obj.face.Shape.Face1
 		import nurbswb.facedraw
 		#reload(nurbswb.facedraw)
+		
 		nurbswb.facedraw.drawcurve(obj,face)
 
 
@@ -274,7 +279,6 @@ class Map(PartFeature):
 		obj.addProperty("App::PropertyLink","backref","Base")
 
 
-		obj.addProperty("App::PropertyLink","faceObject","Base")
 		obj.addProperty("App::PropertyInteger","faceNumber","Base")
 
 		obj.addProperty("App::PropertyLink","wire","Base")
@@ -289,7 +293,6 @@ class Map(PartFeature):
 		obj.addProperty("App::PropertyInteger","vCenter","Base")
 		obj.addProperty("App::PropertyInteger","vCount","Base")
 
-		obj.addProperty("App::PropertyLink","backref","Base")
 		obj.addProperty("App::PropertyBool","flipuv","Base")
 		obj.addProperty("App::PropertyBool","flipxy","Base")
 
@@ -303,7 +306,8 @@ class Map(PartFeature):
 		obj.addProperty("App::PropertyBool","display3d","Map")
 		
 		obj.display2d=True
-	
+		obj.display3d=True
+
 		obj.fx=1.
 		obj.fy=1.
 		obj.flipxy=True
@@ -328,7 +332,7 @@ class Map(PartFeature):
 		obj.ViewObject.LineColor=(1.,0.,1.)
 
 	def onBeforeChange(self, fp, prop):
-		print ("onbeforeChange", fp.Label,prop,getattr(fp,prop))
+#		print ("onbeforeChange", fp.Label,prop,getattr(fp,prop))
 		if prop=="uCount":
 			self.pc=prop
 			self.val=getattr(fp,prop)
@@ -339,15 +343,19 @@ class Map(PartFeature):
 
 
 	def onChanged(self, fp, prop):
-		print ("onChanged", fp.Label,prop,getattr(fp,prop))
+#		print ("onChanged", fp.Label,prop,getattr(fp,prop))
+		try: z=[fp.uMax,fp.vMax,fp.uMin,fp.vMin]
+		except: return
 		if prop=="uCount":
 			vn=getattr(fp,prop)
 			vo=self.val
+			if vo==0: return
 			fp.uMax=fp.uMax*vn/vo
 			fp.uMin=fp.uMin*vn/vo
 		if prop=="vCount":
 			vn=getattr(fp,prop)
 			vo=self.val
+			if vo==0: return
 			fp.vMax=fp.vMax*vn/vo
 			fp.vMin=fp.vMin*vn/vo
 
@@ -360,17 +368,17 @@ class Map(PartFeature):
 		proxy.uv2y=uv2y
 		proxy.xy2u=xy2u
 		proxy.xy2v=xy2v
-		print "getmap done"
 
-		print "erzeuge grid"
 		obj.faceObject=obj.face
 		cps=[]
 		if obj.display2d:
 			cps.append(createGrid(obj))
 		if obj.display3d:
 			cps.append(createGrid(obj,upmode=True))
-		obj.Shape=	Part.Compound(cps)
 
+		pl=obj.Placement
+		obj.Shape=	Part.Compound(cps)
+		obj.Placement=pl
 
 		if obj.backref <>None:
 			obj.backref.touch()
@@ -422,9 +430,8 @@ def createGrid(mapobj,upmode=False):
 
 	su=bs.UPeriod()
 	sv=bs.VPeriod()
-	print ("su,sv",su,sv)
 	
-	print "hack suu asv"
+	print "hack DD suu asv"
 	su=face.ParameterRange[1]
 	sv=face.ParameterRange[3]
 
@@ -499,7 +506,6 @@ def createGrid(mapobj,upmode=False):
 
 		ptsa.append(pts)
 	
-	print "huhuhu ptsa:",ptsa
 
 
 #------------------------------------------------
@@ -523,100 +529,84 @@ def createGrid(mapobj,upmode=False):
 
 	if upmode:
 
+		relpos=obj.Placement.Base*(-1)
+		
 		comps=[]
 		for pts in ptska[obj.uMin:obj.uMax]:
-			comps += [ Part.makePolygon([FreeCAD.Vector(tuple(p)) for p in pts[obj.vMin:obj.vMax]]) ]
+			comps += [ Part.makePolygon([FreeCAD.Vector(tuple(p))+relpos for p in pts[obj.vMin:obj.vMax]]) ]
 
 		ptska=np.array(ptska).swapaxes(0,1)
 
 		for pts in ptska[obj.vMin:obj.vMax]:
-			comps += [ Part.makePolygon([FreeCAD.Vector(tuple(p)) for p in pts[obj.uMin:obj.uMax]]) ]
+			comps += [ Part.makePolygon([FreeCAD.Vector(tuple(p))+relpos for p in pts[obj.uMin:obj.uMax]]) ]
 
 		# markiere zentrum der karte
-		print ("kkords mpu,mpv,su,sv",mpu,mpv,su,sv)
-		# z=bs.value(0.5*sv,0.5*su)
 		z=bs.value(0.5*su,0.5*sv)
-		print z
-		
 		circ=Part.Circle()
 		circ.Radius=10
-		circ.Location=z
-		#circ.Axis=bs.normal(0.5*sv,0.5*su)
+		circ.Location=z+relpos
 		circ.Axis=bs.normal(0.5*su,0.5*sv)
-
-
 		comps += [circ.toShape()]
 
 		# mapcenter
 		z=bs.value(mpu,mpv)
-		print z
-
 		circ=Part.Circle()
 		circ.Radius=20
-		circ.Location=z
+		circ.Location=z+relpos
 		circ.Axis=bs.normal(mpu,mpv)
-
 		comps += [circ.toShape()]
-
 
 		return Part.Compound(comps)
 
+	else: # 2d mode
+		comps=[]
+
+		# markiere zentrum der karte
+		uv=0.5*su
+		vm=0.5*sv
+		
+		ky=ba.length(vm,mpv)
+		if vm<mpv: ky =-ky
+
+		kx=bbc.length(mpu,uv)
+		if uv<mpu: kx =-kx
+
+		if obj.flipxy:
+			z=FreeCAD.Vector(fy*ky,fx*kx,0)
+		else:
+			z=FreeCAD.Vector(fx*kx,fy*ky,0)
+		circ=Part.Circle()
+		circ.Radius=10
+		circ.Location=z
+		comps += [circ.toShape()]
+
+		z=FreeCAD.Vector(0,0,0)
+		circ=Part.Circle()
+		circ.Radius=20
+		circ.Location=z
+		comps += [circ.toShape()]
 
 
+		if obj.flipxy:
 
+			for pts in ptsa[obj.uMin:obj.uMax]:
+				comps += [ Part.makePolygon([FreeCAD.Vector(fx*p[1],fy*p[0],0) for p in pts[obj.vMin:obj.vMax]]) ]
 
-	print ("ptsa.shape",np.array(ptsa).shape)
+			ptsa=np.array(ptsa).swapaxes(0,1)
 
-	comps=[]
+			for pts in ptsa[obj.vMin:obj.vMax]:
+				comps += [ Part.makePolygon([FreeCAD.Vector(fx*p[1],fy*p[0],0) for p in pts[obj.uMin:obj.uMax]]) ]
 
-	# markiere zentrum der karte
-	uv=0.5*su
-	vm=0.5*sv
-	
-	ky=ba.length(vm,mpv)
-	if vm<mpv: ky =-ky
+		else :
+			for pts in ptsa[obj.uMin:obj.uMax]:
+				comps += [ Part.makePolygon([FreeCAD.Vector(fx*p[0],fy*p[1],0) for p in pts[obj.vMin:obj.vMax]]) ]
 
-	kx=bbc.length(mpu,uv)
-	if uv<mpu: kx =-kx
+			ptsa=np.array(ptsa).swapaxes(0,1)
 
-	if obj.flipxy:
-		z=FreeCAD.Vector(fy*ky,fx*kx,0)
-	else:
-		z=FreeCAD.Vector(fx*kx,fy*ky,0)
-	circ=Part.Circle()
-	circ.Radius=10
-	circ.Location=z
-	comps += [circ.toShape()]
+			for pts in ptsa[obj.vMin:obj.vMax]:
+				comps += [ Part.makePolygon([FreeCAD.Vector(fx*p[0],fy*p[1],0) for p in pts[obj.uMin:obj.uMax]]) ]
 
-	z=FreeCAD.Vector(0,0,0)
-	circ=Part.Circle()
-	circ.Radius=20
-	circ.Location=z
-	comps += [circ.toShape()]
-
-
-
-
-	if obj.flipxy:
-
-		for pts in ptsa[obj.uMin:obj.uMax]:
-			comps += [ Part.makePolygon([FreeCAD.Vector(fx*p[1],fy*p[0],0) for p in pts[obj.vMin:obj.vMax]]) ]
-
-		ptsa=np.array(ptsa).swapaxes(0,1)
-
-		for pts in ptsa[obj.vMin:obj.vMax]:
-			comps += [ Part.makePolygon([FreeCAD.Vector(fx*p[1],fy*p[0],0) for p in pts[obj.uMin:obj.uMax]]) ]
-
-	else :
-		for pts in ptsa[obj.uMin:obj.uMax]:
-			comps += [ Part.makePolygon([FreeCAD.Vector(fx*p[0],fy*p[1],0) for p in pts[obj.vMin:obj.vMax]]) ]
-
-		ptsa=np.array(ptsa).swapaxes(0,1)
-
-		for pts in ptsa[obj.vMin:obj.vMax]:
-			comps += [ Part.makePolygon([FreeCAD.Vector(fx*p[0],fy*p[1],0) for p in pts[obj.uMin:obj.uMax]]) ]
-
-	return Part.Compound(comps)
+		return Part.Compound(comps)
 
 
 
@@ -1168,8 +1158,6 @@ def map2Dto3D():
 
 def map3Dgridto2Dgrid():
 	# 3D Edges auf 2D Edges
-	#face=App.ActiveDocument.Poles
-	#wire=App.ActiveDocument.UUUU_Drawing_on_Poles__Face1002_Spline
 
 	s0=Gui.Selection.getSelection()
 	base=s0[-1]
@@ -1181,16 +1169,12 @@ def map3Dgridto2Dgrid():
 		face=base
 		mapobj=None
 
+
 	s=s0[:-1]
 	if len(s0)==1:
 		s=s0
 
-	print "GEsTARTET -- weiter"
-	#return
-	print "s",s
 	print s0
-	
-	
 
 	polcol=[]
 	for wire in s:
@@ -1225,14 +1209,8 @@ def map3Dgridto2Dgrid():
 			for p in pts:
 				(u,v)=bs.parameter(p)
 				(v,u)=bs.parameter(p)
-#				print (u,v)
-				#zurückrechnen
-				su=bs.UPeriod()
-				sv=bs.VPeriod()
 
-				print "hack su sv aa bb"
-				#print base.faceobject
-				print face
+				print "hack A su sv aa bb"
 				su=face.Shape.Face1.ParameterRange[1]
 				sv=face.Shape.Face1.ParameterRange[3]
 
@@ -1242,7 +1220,6 @@ def map3Dgridto2Dgrid():
 				v=v/sv
 				u=u/su
 				
-				
 				x=uv2x(u,v)
 				y=uv2y(u,v)
 				if mapobj<>None and mapobj.flipxy:
@@ -1251,21 +1228,15 @@ def map3Dgridto2Dgrid():
 					p2=FreeCAD.Vector(-y,-x,0)
 				# hack richgtung beim Schuh
 				p2=FreeCAD.Vector(y,x,0)
-#				p2=FreeCAD.Vector(y,x,0)
-				# warum diese verschiebung?
-				#p2 += FreeCAD.Vector(80,80,0)
+
 				ptsb.append(p2)
-			
-			#print pts
-			#print ptsb
+
 			if len(ptsb)>1:
 				try:
 					polcol += [Part.makePolygon(ptsb)]
 				except:
 					print "kann kein polygon bauen"
 					print ptsb
-	print "huhwa"
-	print polcol
 
 		#Draft.makeWire(pts2)
 	Part.show(Part.Compound(polcol))

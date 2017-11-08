@@ -53,13 +53,10 @@ def getmap(mapobj,obj):
 	su=bs.UPeriod()
 	sv=bs.VPeriod()
 
-	print "hack su sv aa bb"
-	#print base.faceobject
-	print face
+	print "hack BB su sv aa bb"
+
 	su=face.ParameterRange[1]
 	sv=face.ParameterRange[3]
-
-
 
 	if su>1000: su=face.ParameterRange[1]
 	if sv>1000: sv=face.ParameterRange[3]
@@ -125,10 +122,6 @@ def getmap(mapobj,obj):
 	uv2x = scipy.interpolate.interp2d(us, vs, ptsa[:,:,0], kind=modeA)
 	uv2y = scipy.interpolate.interp2d(us, vs, ptsa[:,:,1], kind=modeA)
 
-	# test
-	print "abbidlung von u=0 v=0"
-	print(uv2x(0.5,0.5),uv2y(0.5,0.5))
-
 
 	# if only 3D to 2D is needed, exit here
 	if mapobj == None:
@@ -160,10 +153,10 @@ def getmap(mapobj,obj):
 		sx=mapobj.ub
 		sy=mapobj.vb
 
-		print ("Shape",uc+1,vc+1,(uc+1)*(vc+1),np.array(kku).shape)
+		#print ("Shape",uc+1,vc+1,(uc+1)*(vc+1),np.array(kku).shape)
 		kku2=np.array(kku).reshape(uc+1,vc+1,3)
-		print(dx,dy,sx,sy)
-		print ("Shape aa",dx,dy,dx*dy,np.array(kku2[sx:sx+dx,sy:sy+dy]).shape)
+		#print(dx,dy,sx,sy)
+		#print ("Shape aa",dx,dy,dx*dy,np.array(kku2[sx:sx+dx,sy:sy+dy]).shape)
 		kkua=kku2[sx:sx+dx,sy:sy+dy].reshape((dx)*(dy),3)
 
 		kkv2=np.array(kkv).reshape(uc+1,vc+1,3)

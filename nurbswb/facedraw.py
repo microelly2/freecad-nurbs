@@ -279,15 +279,24 @@ class EventFilter(QtCore.QObject):
 
 ## draw a curve on a face and create the two subfaces defined by the curve
 
-def drawcurve(wire,face):
+def drawcurve(wire,face,facepos=FreeCAD.Vector()):
 	'''draw a curve on a face and create the two subfaces defined by the curve'''
 
 	print "drawcurve"
 
+	#startposition
+	wplace=wire.Placement
+#	print wplace
+	wpos=wplace.Base
+#	print "facepos ",facepos
+
+
 	w=wire.Shape
 	t=face
 
-	pts=[p.Point for p in w.Vertexes]
+	#pts=[p.Point for p in w.Vertexes]
+	pts=[p.Point- wpos for p in w.Vertexes]
+	
 	sf=t.Surface
 
 	bs=sf
@@ -306,15 +315,14 @@ def drawcurve(wire,face):
 	if su>1000: su=face.ParameterRange[1]
 	if sv>1000: sv=face.ParameterRange[3]
 
-	print "A"
+	print "Ax"
 	pts2da=[sf.parameter(p) for p in pts[1:]]
 	print "B"
 	pts2d=[FreeCAD.Base.Vector2d(p[0],p[1]) for p in pts2da]
 
 	bs2d = Part.Geom2d.BSplineCurve2d()
 	bs2d.setPeriodic()
-	print "pts2d ..."
-	print pts2d
+
 	bs2d.interpolate(pts2d)
 	bs2d.setPeriodic()
 
