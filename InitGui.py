@@ -370,11 +370,14 @@ if FreeCAD.GuiUp:
 	
 	c2a(["Topology"],always,'Topo3','analyse_topology_v2','reset Vertex Store','/../icons/nurbs.svg',"resetVertexStore()")
 	
+	
 	c2a(["Topology"],always,'Topo6','analyse_topology_v2','load Test 1','/../icons/nurbs.svg',"loadTest1()")
 	c2a(["Topology"],always,'Topo7','analyse_topology_v2','load Test 2','/../icons/nurbs.svg',"loadTest2()")
-	c2a(["Topology"],always,'Topo10','analyse_topology_v2','Test 3','/../icons/nurbs.svg',"Test3()")
-	c2a(["Topology"],always,'Topo9','analyse_topology_v2','Test 4','/../icons/nurbs.svg',"Test4()")
+	c2a(["Topology"],always,'Topo10','fem_edgelength_mesh','Grid Tension Simulation','/../icons/nurbs.svg',"run()")
+	c2a(["Topology"],always,'Topo9','analyse_topology_v2','Identify Vertexes in a Shape','/../icons/nurbs.svg',"Test4()")
 
+	c2a(["Topology"],always,'Topo11','fem_edgelength_mesh','Grid Tension Animation','/../icons/nurbs.svg',"run(False)")
+	c2a(["Topology"],always,'Topo12','analyse_topology_v2','Test 4','/../icons/nurbs.svg',"Test4()")
 
 
 	c2a(["Workspace"],ondocument,'Create Workspace',None,"Create workspace",'/../icons/plane.svg',"createws()","workspace")

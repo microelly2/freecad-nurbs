@@ -804,6 +804,16 @@ def Test4():
 
 	App.ActiveDocument.ActiveObject.Label="Nich eindeutige Punkte"
 
+import time
+def Test3():
+	import nurbswb.fem_edgelength_mesh
+	for i in range(1):
+		reload (nurbswb.fem_edgelength_mesh)
+		nurbswb.fem_edgelength_mesh.run()
+		Gui.updateGui()
+		print "i ",i
+		time.sleep(0.01)
+	
 
 '''
 
