@@ -231,6 +231,91 @@ def createIsodrawFace():
 #------------------------------------------------------
 
 
+
+
+class Brezel(PartFeature):
+	'''a Drawing of a curve onto a Face with the points of a wire'''
+	def __init__(self, obj):
+		PartFeature.__init__(self, obj)
+#		obj.addProperty("App::PropertyVector","Size","Base").Size=FreeCAD.Vector(300,-100,200)
+		obj.addProperty("App::PropertyLink","face","Source")
+		obj.addProperty("App::PropertyLink","wire1","Source")
+		obj.addProperty("App::PropertyLink","wire2","Source")
+		obj.addProperty("App::PropertyLink","wire3","Source")
+		obj.addProperty("App::PropertyLink","wire4","Source")
+		obj.addProperty("App::PropertyBool","reverseWire1","Source")
+		obj.addProperty("App::PropertyBool","reverseWire2","Source")
+		obj.addProperty("App::PropertyBool","reverseWire3","Source")
+		obj.addProperty("App::PropertyBool","reverseWire4","Source")
+		#obj.addProperty("App::PropertyLink","mapobject","Details","configuration objekt for mapping")
+		#obj.addProperty("App::PropertyBool","drawFace","Output","display subface cut by the wire projection")
+		#obj.addProperty("App::PropertyBool","reverseFace","Output","display inner or outer subface")
+		#obj.addProperty("App::PropertyInteger","pointcount","Details","count of points to discretize source wire")
+		#obj.pointcount=100
+		obj.reverseWire2=True
+
+		obj.addProperty("App::PropertyLink","backref","Workspace")
+
+		ViewProvider(obj.ViewObject)
+		obj.ViewObject.LineColor=(1.,0.,1.)
+
+#	def onChanged(self, fp, prop):
+#		print ("onChanged",prop)
+
+	def execute(proxy,obj):
+		#createShape(obj)
+		if obj.backref <>None:
+			obj.backref.touch()
+			obj.backref.Document.recompute()
+		# face=obj.face.Shape.Face1
+		
+		import nurbswb.facedraw
+		#reload(nurbswb.facedraw)
+		try: obj.ViewObject.ShapeColor=obj.wire.ViewObject.ShapeColor
+		except:obj.ViewObject.ShapeColor=(1.,0.,0.)
+
+		# aussen rand
+		wire1=obj.wire1
+		# innenrand fuer erstes loch
+		wire2=obj.wire2
+
+		wires=[]
+		for w in [obj.wire1,obj.wire2,obj.wire3,obj.wire4]:
+			if w <> None: wires  += [w]
+
+
+		#faceobj=App.ActiveDocument.face
+		faceobj=obj.face #.Shape.Face1
+
+#		dirs=[False,True,True]
+		dirs=[obj.reverseWire1,obj.reverseWire2,obj.reverseWire3,obj.reverseWire4,]
+		nurbswb.facedraw.drawring(obj.Label,wires,dirs,faceobj,facepos=FreeCAD.Vector())
+
+
+
+
+def createBrezel():
+	'''creates a IsoDrawFace object'''
+	b=FreeCAD.activeDocument().addObject("Part::FeaturePython","Brezel")
+	Brezel(b)
+	if 1:
+		b.face=App.ActiveDocument.face
+		b.wire1=App.ActiveDocument.IsoDrawFace002
+		b.wire2=App.ActiveDocument.IsoDrawFace003
+		b.wire3=App.ActiveDocument.IsoDrawFace
+		b.wire4=App.ActiveDocument.IsoDrawFace004
+	return b
+
+#------------------------------------------------------
+
+
+
+
+
+
+
+#-------------------------------------------------------------
+
 class MapVP(ViewProvider):
 
 	def setupContextMenu(self, obj, menu):

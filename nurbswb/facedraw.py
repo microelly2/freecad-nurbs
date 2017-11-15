@@ -361,6 +361,159 @@ def drawcurve(wire,face,facepos=FreeCAD.Vector()):
 
 ## 	new wire for next drawing
 
+#-------------------- ring
+
+def _drawring(name,wires,dirs,face,facepos=FreeCAD.Vector()):
+	'''draw a curve on a face and create the two subfaces defined by the curve'''
+
+	print "drawring"
+
+	es=[]
+	for wireA in wires:
+		#startposition
+		wplace=wireA.Placement
+	#	print wplace
+		wpos=wplace.Base
+	#	print "facepos ",facepos
+		wire=wireA
+
+
+		#--------------- teil 1
+		w=wireA.Shape
+		t=face
+
+		#pts=[p.Point for p in w.Vertexes]
+		pts=[p.Point- wpos for p in w.Vertexes]
+		
+		sf=t.Surface
+
+		bs=sf
+		su=bs.UPeriod()
+		sv=bs.VPeriod()
+
+		print "hacks etze uv, sv auf 1"
+		su=face.ParameterRange[1]
+		sv=face.ParameterRange[3]
+
+	#	print "debug mapp"
+	#	print "su ",su
+	#	print "sv ",sv
+	#	print "param range ", face.ParameterRange
+
+		if su>1000: su=face.ParameterRange[1]
+		if sv>1000: sv=face.ParameterRange[3]
+
+		pts2da=[sf.parameter(p) for p in pts[1:]]
+		pts2d=[FreeCAD.Base.Vector2d(p[0],p[1]) for p in pts2da]
+
+		bs2d = Part.Geom2d.BSplineCurve2d()
+		bs2d.setPeriodic()
+
+		bs2d.interpolate(pts2d)
+		bs2d.setPeriodic()
+
+		e1_1 = bs2d.toShape(t)
+
+		print "huhuhu"
+		sp=App.ActiveDocument.getObject(wireA.Label+"_Spline")
+		print  sp
+		print wireA.Label
+		if sp==None:
+			sp=App.ActiveDocument.addObject("Part::Spline",wireA.Label+"_Spline")
+		sp.Shape=e1_1
+		sp.ViewObject.LineColor=wireA.ViewObject.ShapeColor
+		sp.ViewObject.ShapeColor=wireA.ViewObject.ShapeColor
+
+		es.append(e1_1)
+	#-------------------- teoil 2
+
+		if 0:
+			#--------------- teil 1
+			w=wire2.Shape
+			t=face
+
+			#pts=[p.Point for p in w.Vertexes]
+			pts=[p.Point- wpos for p in w.Vertexes]
+			
+			sf=t.Surface
+
+			bs=sf
+			su=bs.UPeriod()
+			sv=bs.VPeriod()
+
+			print "hacks etze uv, sv auf 1"
+			su=face.ParameterRange[1]
+			sv=face.ParameterRange[3]
+
+		#	print "debug mapp"
+		#	print "su ",su
+		#	print "sv ",sv
+		#	print "param range ", face.ParameterRange
+
+			if su>1000: su=face.ParameterRange[1]
+			if sv>1000: sv=face.ParameterRange[3]
+
+			pts2da=[sf.parameter(p) for p in pts[1:]]
+			pts2d=[FreeCAD.Base.Vector2d(p[0],p[1]) for p in pts2da]
+
+			bs2d = Part.Geom2d.BSplineCurve2d()
+			bs2d.setPeriodic()
+
+			bs2d.interpolate(pts2d)
+			bs2d.setPeriodic()
+
+			e1_2 = bs2d.toShape(t)
+
+			sp=App.ActiveDocument.getObject(wire2.Label+"_Spline")
+			if sp==None:
+				sp=App.ActiveDocument.addObject("Part::Spline",wire2.Label+"_Spline")
+			sp.Shape=e1_2
+			sp.ViewObject.LineColor=wire.ViewObject.ShapeColor
+			sp.ViewObject.ShapeColor=wire.ViewObject.ShapeColor
+
+		#--------------------------------------
+
+
+
+		splita=[]
+		for i,e in enumerate(es):
+
+			edges=e.Edges
+			ee=edges[0]
+			if dirs[i]: ee.reverse()
+
+			splita += [(ee,face)]
+
+		r=Part.makeSplitShape(face, splita)
+
+
+
+
+		if 1:
+
+				sp=App.ActiveDocument.getObject(name)
+				if sp==None:
+					sp=App.ActiveDocument.addObject("Part::Spline",name)
+
+				#if wire.reverseFace: sp.Shape=r2[0][0]
+				#else: 
+				
+				sp.Shape=r[0][0]
+
+				#sp.ViewObject.ShapeColor=(random.random(),random.random(),random.random())
+				sp.ViewObject.ShapeColor=wire.ViewObject.ShapeColor
+				#sp.ViewObject.LineColor=sp.ViewObject.ShapeColor
+
+				#wire.ViewObject.LineColor=sp.ViewObject.ShapeColor
+				#wire.ViewObject.ShapeColor=sp.ViewObject.ShapeColor
+				print "RRRRRRRRRRRRRRRRR"
+
+
+
+def drawring(name,wires,dirs,faceobj,facepos=FreeCAD.Vector()):
+		_drawring(name,wires,dirs,faceobj.Shape.Face1,facepos)
+
+
 def createnewwire(widget):
 	'''new wire for next drawing'''
 
@@ -703,3 +856,13 @@ def run():
 	except: pass
 	start()
 
+
+if 0:
+
+	# aussen rand
+	wire1=App.ActiveDocument.IsoDrawFace002
+	# innenrand fuer erstes loch
+	wire2=App.ActiveDocument.IsoDrawFace003
+	faceobj=App.ActiveDocument.face
+
+	drawring(wire1,wire2,faceobj,facepos=FreeCAD.Vector())
