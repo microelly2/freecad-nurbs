@@ -315,9 +315,7 @@ def drawcurve(wire,face,facepos=FreeCAD.Vector()):
 	if su>1000: su=face.ParameterRange[1]
 	if sv>1000: sv=face.ParameterRange[3]
 
-	print "Ax"
 	pts2da=[sf.parameter(p) for p in pts[1:]]
-	print "B"
 	pts2d=[FreeCAD.Base.Vector2d(p[0],p[1]) for p in pts2da]
 
 	bs2d = Part.Geom2d.BSplineCurve2d()
@@ -332,8 +330,8 @@ def drawcurve(wire,face,facepos=FreeCAD.Vector()):
 	if sp==None:
 		sp=App.ActiveDocument.addObject("Part::Spline",wire.Label+"_Spline")
 	sp.Shape=e1
-	sp.ViewObject.LineColor=wire.ViewObject.LineColor
-
+	sp.ViewObject.LineColor=wire.ViewObject.ShapeColor
+	sp.ViewObject.ShapeColor=wire.ViewObject.ShapeColor
 
 	edges=e1.Edges
 	ee=edges[0]
@@ -353,12 +351,13 @@ def drawcurve(wire,face,facepos=FreeCAD.Vector()):
 			if wire.reverseFace: sp.Shape=r2[0][0]
 			else: sp.Shape=r[0][0]
 
-			sp.ViewObject.ShapeColor=(random.random(),random.random(),random.random())
-			sp.ViewObject.LineColor=sp.ViewObject.ShapeColor
+			#sp.ViewObject.ShapeColor=(random.random(),random.random(),random.random())
+			sp.ViewObject.ShapeColor=wire.ViewObject.ShapeColor
+			#sp.ViewObject.LineColor=sp.ViewObject.ShapeColor
 
-			wire.ViewObject.LineColor=sp.ViewObject.ShapeColor
-			wire.ViewObject.ShapeColor=sp.ViewObject.ShapeColor
-			print "HHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHH"
+			#wire.ViewObject.LineColor=sp.ViewObject.ShapeColor
+			#wire.ViewObject.ShapeColor=sp.ViewObject.ShapeColor
+			print "HHHHHHHHHHHHHHHHH"
 
 ## 	new wire for next drawing
 

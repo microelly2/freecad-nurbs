@@ -84,7 +84,7 @@ def createShape(obj):
 	the data are parameters of the obj
 	 '''
 
-	print "CreateShape for obj:",obj.Label
+#	print "CreateShape for obj:",obj.Label
 
 	pointCount=obj.pointcount
 	#pointCount=50
@@ -109,14 +109,17 @@ def createShape(obj):
 	#+# facenumer aus obj param holen
 	face=obj.face.Shape.Face1
 	bs=obj.face.Shape.Face1.Surface
-	w=obj.wire.Shape.Wires[0]
+#	w=obj.wire.Shape.Wires[0]
+	wires=obj.wire.Shape.Wires
+	if len(wires)==0:
+		wires=obj.wire.Shape.Edges
 
 	ppall=[]
 
 	pos=FreeCAD.Vector(obj.mapobject.Placement.Base.x,obj.mapobject.Placement.Base.y,0)
 
-	for i,w in enumerate(obj.wire.Shape.Wires):
-		print ("Wire ...",i,pointCount)
+	for i,w in enumerate(wires):
+		# print ("Wire ...",i,pointCount)
 		ptsaa=w.discretize(pointCount)
 		pts=[p-pos for p in ptsaa]
 		
@@ -213,6 +216,8 @@ class Isodraw(PartFeature):
 		face=obj.face.Shape.Face1
 		import nurbswb.facedraw
 		#reload(nurbswb.facedraw)
+		try: obj.ViewObject.ShapeColor=obj.wire.ViewObject.ShapeColor
+		except:obj.ViewObject.ShapeColor=(1.,0.,0.)
 		
 		nurbswb.facedraw.drawcurve(obj,face)
 
@@ -226,6 +231,26 @@ def createIsodrawFace():
 #------------------------------------------------------
 
 
+class MapVP(ViewProvider):
+
+	def setupContextMenu(self, obj, menu):
+		menu.clear()
+		action = menu.addAction("Display 2D Grid")
+		action.triggered.connect(lambda:self.display2DGrid(obj.Object))
+		action = menu.addAction("Display 3D Grid")
+		action.triggered.connect(lambda:self.display3DGrid(obj.Object))
+
+	def display2DGrid(self,obj):
+		obj.display2d= not obj.display2d
+		obj.Proxy.execute(obj)
+		FreeCAD.activeDocument().recompute()
+
+	def display3DGrid(self,obj):
+		obj.display3d= not obj.display3d
+		obj.Proxy.execute(obj)
+		FreeCAD.activeDocument().recompute()
+
+
 class Map(PartFeature):
 	def __init__(self, obj):
 		PartFeature.__init__(self, obj)
@@ -234,20 +259,20 @@ class Map(PartFeature):
 		obj.addProperty("App::PropertyLink","faceObject","Base")
 		#obj.addProperty("App::PropertyLink","wire","Base")
 		#raender
-		obj.addProperty("App::PropertyInteger","border","Interpolation","border offset in uv space")
-		obj.addProperty("App::PropertyInteger","ub","Interpolation","minimum u value for interpolation base")
-		obj.addProperty("App::PropertyInteger","ue","Interpolation","maximum u value for interpolation base")
-		obj.addProperty("App::PropertyInteger","vb","Interpolation","minimum v value for interpolation base")
-		obj.addProperty("App::PropertyInteger","ve","Interpolation","minimum v value for interpolation base")
-		obj.addProperty("App::PropertyInteger","uc","Interpolation","count u segments")
-		obj.addProperty("App::PropertyInteger","vc","Interpolation","count v segments")
+		obj.addProperty("App::PropertyInteger","border","UV Interpolation","border offset in uv space")
+		obj.addProperty("App::PropertyInteger","ub","UV Interpolation","minimum u value for interpolation base")
+		obj.addProperty("App::PropertyInteger","ue","UV Interpolation","maximum u value for interpolation base")
+		obj.addProperty("App::PropertyInteger","vb","UV Interpolation","minimum v value for interpolation base")
+		obj.addProperty("App::PropertyInteger","ve","UV Interpolation","minimum v value for interpolation base")
+		obj.addProperty("App::PropertyInteger","uc","UV Interpolation","count u segments")
+		obj.addProperty("App::PropertyInteger","vc","UV Interpolation","count v segments")
 #		obj.addProperty("App::PropertyInteger","uCount","Interpolation","count u segments").uCount=30
 #		obj.addProperty("App::PropertyInteger","vCount","Interpolation","count v segments").vCount=30
 
 
-		obj.addProperty("App::PropertyEnumeration","modeA","Interpolation","interpolation mode uv to iso-xy")
+		obj.addProperty("App::PropertyEnumeration","modeA","UV Interpolation","interpolation mode uv to iso-xy")
 		obj.modeA=['cubic','linear']
-		obj.addProperty("App::PropertyEnumeration","modeB","Interpolation","interpolation mode iso-xy to uv")
+		obj.addProperty("App::PropertyEnumeration","modeB","UV Interpolation","interpolation mode iso-xy to uv")
 		obj.modeB=['thin_plate','cubic','linear']
 
 
@@ -328,7 +353,8 @@ class Map(PartFeature):
 
 
 
-		ViewProvider(obj.ViewObject)
+		#ViewProvider(obj.ViewObject)
+		MapVP(obj.ViewObject)
 		obj.ViewObject.LineColor=(1.,0.,1.)
 
 	def onBeforeChange(self, fp, prop):
@@ -1148,7 +1174,10 @@ def map2Dto3D():
 		f.face=moa.face
 		f.wire=w
 		f.Label="map3D_for_"+w.Label+"_on_"+f.face.Label + "_by_" + moa.Label
-		color=(random.random(),random.random(),random.random())
+		#color=(random.random(),random.random(),random.random())
+		color=w.ViewObject.ShapeColor
+		print "color",color
+		print w.Label
 		w.ViewObject.ShapeColor=color
 		w.ViewObject.LineColor=color
 		App.activeDocument().recompute()
