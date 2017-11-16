@@ -167,7 +167,7 @@ def add_zdim(g2):
 def calculateForce(g2,n):
 	'''calculate force and new position for node n'''
 
-	f=0.01
+	f=0.008
 
 	nbs=g2.neighbors(n)
 	v0=g2.node[n]['vector']
@@ -259,14 +259,14 @@ def run(animate=True,itercount=101):
 			n3.Shape=Part.Compound(col)
 
 			rc=App.activeDocument().recompute()
-			print ("SUM FORCES",sumforces)
+			print ("SUM FORCES",lp, sumforces)
 			Gui.updateGui()
 
 			for n in g2.nodes():
 				g2.node[n]['vector']=g2.node[n]['vector2']
 
 		# erzuegen einer flaeche
-		if 1:
+		if 0:
 			import numpy as np
 
 			pts=[]

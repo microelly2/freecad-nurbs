@@ -434,6 +434,12 @@ if FreeCAD.GuiUp:
 	c2a(["Sketchertools"],always,'Status51','feedbacksketch','Create FeedBack with 1 client',"/../icons/neo4j_status.png","run_createFBS_with_one_Client()","sketcher")
 	c2a(["Sketchertools"],always,'Status52','feedbacksketch','Create FeedBack with 2 clients',"/../icons/neo4j_status.png","run_createFBS_with_two_Clients()","sketcher")
 	c2a(["Sketchertools"],always,'Status53','feedbacksketch','Create FeedBack with 3 clients',"/../icons/neo4j_status.png","run_createFBS_with_three_Clients()","sketcher")
+
+	c2a(["Sketchertools"],always,'Status56','sketcher_grids','Create Sketcher Grid',"/../icons/neo4j_status.png","createGridSketch()","sketcher")
+
+
+
+
 #	for cmd in FreeCADGui.listCommands():
 #		if cmd.startswith("Nurbs_"):
 #			print cmd
