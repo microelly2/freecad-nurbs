@@ -200,6 +200,196 @@ def getmap(mapobj,obj):
 
 
 
+def getmap3(mapobj,obj,calcZ=None):
+	''' berechnet einen dritten wert für z'''
+	
+	print "berechne curvature gauss"
+	
+	def calcZ(face,u,v):
+		bs=face.Surface
+		ur= 1.0*(u)/30 #mapobj.uCount
+		vr= 1.0*(v)/30 #mapobj.vCount
+		z=(u-v)
+		#z=np.log(abs(bs.curvature(u,v,"Min")**-0.5))
+		cc=bs.curvature(ur,vr,"Gauss")
+		z=abs(cc)**0.5 * 1000
+		if z>30: z=30
+		if cc<0: z =-z
+		if z<>0: print (u,v,ur,vr,z) 
+		
+		return z
+
+	#default values 
+	mpv=0.5
+	mpu=0.5
+	fx=-1
+	fy=-1
+	vc=30
+	uc=30
+
+	modeA='cubic'
+	modeB='thin_plate'
+
+	bs=obj.Shape.Face1.Surface
+	face=obj.Shape.Face1
+
+	su=bs.UPeriod()
+	sv=bs.VPeriod()
+
+	print "hack BB su sv aa bb"
+
+	su=face.ParameterRange[1]
+	sv=face.ParameterRange[3]
+
+	if su>1000: su=face.ParameterRange[1]
+	if sv>1000: sv=face.ParameterRange[3]
+
+	if mapobj<>None:
+		if hasattr(mapobj,'faceObject'):
+
+			mpv=mapobj.uMapCenter/100
+			mpu=mapobj.vMapCenter/100
+
+			fx=mapobj.fx
+			fy=mapobj.fy
+			vc=mapobj.vCount
+			uc=mapobj.uCount
+
+		else:
+
+			mpv=mapobj.uMapCenter/100
+			mpu=mapobj.vMapCenter/100
+
+
+			vc=mapobj.vCount
+			uc=mapobj.uCount
+
+			fx=mapobj.fx
+			fy=mapobj.fy
+			modeA=mapobj.modeA
+			modeB=mapobj.modeB
+
+
+	vc=mapobj.vc
+	uc=mapobj.uc
+
+
+
+	refpos=bs.value(mpv,mpu)
+	ptsa=[] # abbildung des uv-iso-gitter auf die xy-Ebene
+
+	mpv *=sv
+	mpu *=su
+
+	for v in range(vc+1):
+		pts=[]
+		vaa=1.0/vc*v*sv
+
+		bbc=bs.vIso(vaa)
+
+		for u in range(uc+1):
+			uaa=1.0/uc*u*su
+			ba=bs.uIso(uaa)
+
+			ky=ba.length(vaa,mpv)
+			if vaa<mpv: ky =-ky
+
+			kx=bbc.length(mpu,uaa)
+			if uaa<mpu: kx =-kx
+
+			kz=calcZ(face,u,v)
+			pts.append([kx,ky,kz])
+
+		ptsa.append(pts)
+
+
+	ptsa=np.array(ptsa).swapaxes(0,1)
+
+	vs=[1.0/vc*v for v in range(vc+1)]
+	us=[1.0/uc*u for u in range(uc+1)]
+
+	uv2x = scipy.interpolate.interp2d(us, vs, ptsa[:,:,0], kind=modeA)
+	uv2y = scipy.interpolate.interp2d(us, vs, ptsa[:,:,1], kind=modeA)
+	uv2z = scipy.interpolate.interp2d(us, vs, ptsa[:,:,2], kind=modeA)
+
+
+	# if only 3D to 2D is needed, exit here
+	if mapobj == None:
+		xy2v=None
+		xy2u=None
+		
+		return [uv2x,uv2y,uv2z,xy2u,xy2v]
+
+	
+
+#------------------------------------------------------
+
+	#d=mapobj.border
+	d=0
+
+	kku=[]
+
+	for ui in range(d,uc+1-d):
+		for vi in range(d,vc+1-d):
+			kku.append([ptsa[ui,vi,0],ptsa[ui,vi,1], us[ui]])
+	kku=np.array(kku)
+
+	kkv=[]
+	for ui in range(d,uc+1-d):
+		for vi in range(d,vc+1-d):
+			kkv.append([ptsa[ui,vi,0],ptsa[ui,vi,1], vs[vi]])
+	kkv=np.array(kkv)
+
+	try:
+		dx=mapobj.ue
+		dy=mapobj.ve
+		sx=mapobj.ub
+		sy=mapobj.vb
+
+		#print ("Shape",uc+1,vc+1,(uc+1)*(vc+1),np.array(kku).shape)
+		kku2=np.array(kku).reshape(uc+1,vc+1,3)
+		#print(dx,dy,sx,sy)
+		#print ("Shape aa",dx,dy,dx*dy,np.array(kku2[sx:sx+dx,sy:sy+dy]).shape)
+		kkua=kku2[sx:sx+dx,sy:sy+dy].reshape((dx)*(dy),3)
+
+		kkv2=np.array(kkv).reshape(uc+1,vc+1,3)
+		kkva=kkv2[sx:sx+dx,sy:sy+dy].reshape(dx*dy,3)
+
+		xy2u = scipy.interpolate.Rbf(kkua[:,0],kkua[:,1],kkua[:,2], function=modeB)
+		xy2v = scipy.interpolate.Rbf(kkva[:,0],kkva[:,1],kkva[:,2], function=modeB)
+
+#		xy2v = scipy.interpolate.interp2d(kkv[:,0],kkv[:,1],kkv[:,2], kind=mode)
+# ideas for error
+# https://stackoverflow.com/questions/34820612/scipy-interp2d-warning-and-different-result-than-expected
+
+
+	except Exception as err:
+		sayexc()
+		print('Handling  error:', err)
+		xy2v=None
+		xy2u=None
+		print "FEHLER BERECHNUNG bUMKEHRfunktionen"
+
+
+	return [uv2x,uv2y,uv2z,xy2u,xy2v]
+
+	if 0: # testrechnung sollte auf gleiche stelle zurueck kommen
+		u0=0.2
+		v0=0.6
+
+		y=uv2y(u0,v0)
+		x=uv2x(u0,v0)
+		u=xy2v(x,y)
+		v=xy2u(x,y)
+
+		print (u0,v0,x,y,u,v)
+
+	return [uv2x,uv2y,xy2u,xy2v]
+
+
+
+
+
 ##\cond
 
 def run_fulltest(obj, mpv=0.5, mpu=0.5, fx=-1, fy=-1, vc=30, uc=30 ):

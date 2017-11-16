@@ -337,12 +337,12 @@ class MapVP(ViewProvider):
 
 
 class Map(PartFeature):
-	def __init__(self, obj):
+	def __init__(self, obj,mode=''):
 		PartFeature.__init__(self, obj)
 		obj.addProperty("App::PropertyVector","Size","Base").Size=FreeCAD.Vector(300,-100,200)
 		obj.addProperty("App::PropertyLink","face","Base")
 		obj.addProperty("App::PropertyLink","faceObject","Base")
-		#obj.addProperty("App::PropertyLink","wire","Base")
+		obj.addProperty("App::PropertyString","mode","Base")
 		#raender
 		obj.addProperty("App::PropertyInteger","border","UV Interpolation","border offset in uv space")
 		obj.addProperty("App::PropertyInteger","ub","UV Interpolation","minimum u value for interpolation base")
@@ -374,6 +374,8 @@ class Map(PartFeature):
 
 #		obj.vm=0.5
 #		obj.um=0.5
+
+		obj.mode=mode
 		obj.ve=-1
 		obj.ue=-1
 		
@@ -435,12 +437,22 @@ class Map(PartFeature):
 		obj.vMin=1
 
 
+		if obj.mode=='curvature':
 
+			obj.uCount=100
+			obj.vCount=100
+
+			obj.uMax=101
+			obj.uMin=1
+			obj.vMax=101
+			obj.vMin=1
+			obj.display3d=False
 
 
 		#ViewProvider(obj.ViewObject)
 		MapVP(obj.ViewObject)
 		obj.ViewObject.LineColor=(1.,0.,1.)
+		obj.ViewObject.LineWidth=1
 
 	def onBeforeChange(self, fp, prop):
 #		print ("onbeforeChange", fp.Label,prop,getattr(fp,prop))
@@ -510,10 +522,10 @@ class Map(PartFeature):
 	
 
 
-def createMap():
+def createMap(mode=''):
 	'''create a Map object'''
 	b=FreeCAD.activeDocument().addObject("Part::FeaturePython","MAP")
-	Map(b)
+	Map(b,mode=mode)
 	return b
 
 
@@ -538,6 +550,7 @@ def createGrid(mapobj,upmode=False):
 	fx=obj.fx
 	fy=obj.fy
 
+	fz=1.0
 
 	comps=[]
 
@@ -605,6 +618,10 @@ def createGrid(mapobj,upmode=False):
 #-----------------------------------------------
 
 	[uv2x,uv2y,xy2u,xy2v]=nurbswb.isomap.getmap(mapobj,obj.faceObject)
+
+	print "hier 3D Methode  ccc................"
+	if obj.mode=='curvature':
+		[uv2x,uv2y,uv2z,xy2u,xy2v]=nurbswb.isomap.getmap3(mapobj,obj.faceObject)
 	ptsa=[]
 	for v in range(vc+1):
 		pts=[]
@@ -617,10 +634,14 @@ def createGrid(mapobj,upmode=False):
 
 				x=uv2x(uv,vv)
 				y=uv2y(uv,vv)
-				pts.append(FreeCAD.Vector(x,y,0))
+				if obj.mode=='curvature':
+					z=uv2z(uv,vv)
+				else: z=0
+				#print z
+				pts.append(FreeCAD.Vector(x,y,z))
 
 		ptsa.append(pts)
-	
+
 
 
 #------------------------------------------------
@@ -712,21 +733,21 @@ def createGrid(mapobj,upmode=False):
 		if obj.flipxy:
 
 			for pts in ptsa[obj.uMin:obj.uMax]:
-				comps += [ Part.makePolygon([FreeCAD.Vector(fx*p[1],fy*p[0],0) for p in pts[obj.vMin:obj.vMax]]) ]
+				comps += [ Part.makePolygon([FreeCAD.Vector(fx*p[1],fy*p[0],fz*p[2]) for p in pts[obj.vMin:obj.vMax]]) ]
 
 			ptsa=np.array(ptsa).swapaxes(0,1)
 
 			for pts in ptsa[obj.vMin:obj.vMax]:
-				comps += [ Part.makePolygon([FreeCAD.Vector(fx*p[1],fy*p[0],0) for p in pts[obj.uMin:obj.uMax]]) ]
+				comps += [ Part.makePolygon([FreeCAD.Vector(fx*p[1],fy*p[0],fz*p[2]) for p in pts[obj.uMin:obj.uMax]]) ]
 
 		else :
 			for pts in ptsa[obj.uMin:obj.uMax]:
-				comps += [ Part.makePolygon([FreeCAD.Vector(fx*p[0],fy*p[1],0) for p in pts[obj.vMin:obj.vMax]]) ]
+				comps += [ Part.makePolygon([FreeCAD.Vector(fx*p[0],fy*p[1],fz*p[2]) for p in pts[obj.vMin:obj.vMax]]) ]
 
 			ptsa=np.array(ptsa).swapaxes(0,1)
 
 			for pts in ptsa[obj.vMin:obj.vMax]:
-				comps += [ Part.makePolygon([FreeCAD.Vector(fx*p[0],fy*p[1],0) for p in pts[obj.uMin:obj.uMax]]) ]
+				comps += [ Part.makePolygon([FreeCAD.Vector(fx*p[0],fy*p[1],fz*p[2]) for p in pts[obj.uMin:obj.uMax]]) ]
 
 		return Part.Compound(comps)
 

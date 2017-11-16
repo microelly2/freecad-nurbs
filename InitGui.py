@@ -298,6 +298,7 @@ if FreeCAD.GuiUp:
 
 	c2a(["Curves"],always,'facedraw','facedraw','draw on a face','/../icons/draw.svg',"run()")
 	c2a(["Curves"],always,'facedrawa','facedraw','create Map of a face','/../icons/draw.svg',"createMap()")
+	c2a(["Curves"],always,'facedrawa2','facedraw','create Curvature Map of a face','/../icons/draw.svg',"createMap(mode='curvature')")
 	c2a(["Curves"],always,'facedrawb','facedraw','create Grids for a face','/../icons/draw.svg',"createGrid()")
 	
 	c2a(["Curves"],always,'isodraw32','isodraw','3D to 2D','/../icons/draw.svg',"map3Dto2D()")

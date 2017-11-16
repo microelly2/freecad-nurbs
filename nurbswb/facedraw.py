@@ -809,7 +809,7 @@ def createGrid(name="MyGrid"):
 
 ## create a map control for the first face of the selected object
 
-def createMap():
+def createMap(mode=''):
 	''' create a mpa control for the first face of the selected object '''
 
 	# last selection == face
@@ -818,7 +818,7 @@ def createMap():
 	s0=Gui.Selection.getSelection()
 	face=s0[-1]
 
-	moa=nurbswb.isodraw.createMap()
+	moa=nurbswb.isodraw.createMap(mode)
 	moa.face=face
 
 
