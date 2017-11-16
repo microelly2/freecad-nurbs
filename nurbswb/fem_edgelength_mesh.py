@@ -167,7 +167,7 @@ def add_zdim(g2):
 def calculateForce(g2,n):
 	'''calculate force and new position for node n'''
 
-	f=0.008
+	f=0.003
 
 	nbs=g2.neighbors(n)
 	v0=g2.node[n]['vector']

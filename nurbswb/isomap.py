@@ -63,16 +63,21 @@ def getmap(mapobj,obj):
 
 	if mapobj<>None:
 		if hasattr(mapobj,'faceObject'):
-			mpv=mapobj.vMapCenter/100
-			mpu=mapobj.uMapCenter/100
+
+			mpv=mapobj.uMapCenter/100
+			mpu=mapobj.vMapCenter/100
+
 			fx=mapobj.fx
 			fy=mapobj.fy
 			vc=mapobj.vCount
 			uc=mapobj.uCount
 
 		else:
-			mpv=mapobj.vMapCenter/100
-			mpu=mapobj.uMapCenter/100
+
+			mpv=mapobj.uMapCenter/100
+			mpu=mapobj.vMapCenter/100
+
+
 			vc=mapobj.vCount
 			uc=mapobj.uCount
 

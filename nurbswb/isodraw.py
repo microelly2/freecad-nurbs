@@ -527,8 +527,12 @@ def createGrid(mapobj,upmode=False):
 
 	face=obj.faceObject.Shape.Face1
 
-	mpu=obj.uMapCenter/100
-	mpv=obj.vMapCenter/100
+#	mpu=obj.uMapCenter/100
+#	mpv=obj.vMapCenter/100
+
+	mpv=obj.uMapCenter/100
+	mpu=obj.vMapCenter/100
+
 
 	# skalierung/lage
 	fx=obj.fx
@@ -660,11 +664,17 @@ def createGrid(mapobj,upmode=False):
 		comps += [circ.toShape()]
 
 		# mapcenter
+		
 		z=bs.value(mpu,mpv)
+		z=bs.value(mpv,mpu)
+		
 		circ=Part.Circle()
 		circ.Radius=20
 		circ.Location=z+relpos
+
 		circ.Axis=bs.normal(mpu,mpv)
+		circ.Axis=bs.normal(mpv,mpu)
+
 		comps += [circ.toShape()]
 
 		return Part.Compound(comps)
@@ -682,10 +692,11 @@ def createGrid(mapobj,upmode=False):
 		kx=bbc.length(mpu,uv)
 		if uv<mpu: kx =-kx
 
-		if obj.flipxy:
+		if not obj.flipxy:
 			z=FreeCAD.Vector(fy*ky,fx*kx,0)
 		else:
 			z=FreeCAD.Vector(fx*kx,fy*ky,0)
+
 		circ=Part.Circle()
 		circ.Radius=10
 		circ.Location=z
