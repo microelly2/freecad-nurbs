@@ -819,7 +819,7 @@ def createMap(mode=''):
 	face=s0[-1]
 
 	moa=nurbswb.isodraw.createMap(mode)
-	moa.face=face
+	moa.faceObject=face
 
 
 ## stop the facecdraw eventserver
@@ -863,6 +863,6 @@ if 0:
 	wire1=App.ActiveDocument.IsoDrawFace002
 	# innenrand fuer erstes loch
 	wire2=App.ActiveDocument.IsoDrawFace003
-	faceobj=App.ActiveDocument.face
+	faceobj=App.ActiveDocument.faceObject
 
 	drawring(wire1,wire2,faceobj,facepos=FreeCAD.Vector())

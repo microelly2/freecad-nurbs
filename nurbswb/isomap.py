@@ -53,7 +53,7 @@ def getmap(mapobj,obj):
 	su=bs.UPeriod()
 	sv=bs.VPeriod()
 
-	print "hack BB su sv aa bb"
+	print "hack B-BB su sv aa bb"
 
 	su=face.ParameterRange[1]
 	sv=face.ParameterRange[3]
@@ -87,10 +87,11 @@ def getmap(mapobj,obj):
 			modeB=mapobj.modeB
 
 
-	vc=mapobj.vc
-	uc=mapobj.uc
+			vc=mapobj.vc
+			uc=mapobj.uc
 
 
+	print ("YYparameter",su,sv,uc,vc)
 
 	refpos=bs.value(mpv,mpu)
 	ptsa=[] # abbildung des uv-iso-gitter auf die xy-Ebene
@@ -123,6 +124,10 @@ def getmap(mapobj,obj):
 
 	vs=[1.0/vc*v for v in range(vc+1)]
 	us=[1.0/uc*u for u in range(uc+1)]
+
+	vs=[1.0/vc*v*sv for v in range(vc+1)]
+	us=[1.0/uc*u*su for u in range(uc+1)]
+
 
 	uv2x = scipy.interpolate.interp2d(us, vs, ptsa[:,:,0], kind=modeA)
 	uv2y = scipy.interpolate.interp2d(us, vs, ptsa[:,:,1], kind=modeA)
@@ -204,19 +209,40 @@ def getmap3(mapobj,obj,calcZ=None):
 	''' berechnet einen dritten wert für z'''
 	
 	print "berechne curvature gauss"
+	print mapobj.Label
+	print obj.Label
 	
 	def calcZ(face,u,v):
 		bs=face.Surface
 		ur= 1.0*(u)/30 #mapobj.uCount
 		vr= 1.0*(v)/30 #mapobj.vCount
-		z=(u-v)
-		#z=np.log(abs(bs.curvature(u,v,"Min")**-0.5))
-		cc=bs.curvature(ur,vr,"Gauss")
-		z=abs(cc)**0.5 * 1000
-		if z>30: z=30
-		if cc<0: z =-z
-		if z<>0: print (u,v,ur,vr,z) 
+
+		# umrechnung auf parametrrangen
+		su=face.ParameterRange[1]
+		sv=face.ParameterRange[3]
+
+		ur *= su
+		vr *= sv
+
+		tt=mapobj.modeCurvature
+		cc=bs.curvature(ur,vr,tt)
 		
+		# kewgelhack
+		cc=bs.curvature(vr,ur,tt)
+		
+		if tt=="Gauss":
+			z=abs(cc)**0.5 * 1000
+			# if z>30: z=30
+			if cc<0: z =-z
+		else:
+			z=cc *1000
+			# beschraenken nach oben
+			#if z>30: z=30
+			#if z<-30: z=-30
+		if z<>0: print ("!curvature ur,vr,z", ur,vr,z) 
+
+		if tt=="Mean":
+			z=10000*cc
 		return z
 
 	#default values 
@@ -236,10 +262,11 @@ def getmap3(mapobj,obj,calcZ=None):
 	su=bs.UPeriod()
 	sv=bs.VPeriod()
 
-	print "hack BB su sv aa bb"
+	print "hack BB su sv aa bb XX"
 
 	su=face.ParameterRange[1]
 	sv=face.ParameterRange[3]
+
 
 	if su>1000: su=face.ParameterRange[1]
 	if sv>1000: sv=face.ParameterRange[3]
@@ -307,6 +334,10 @@ def getmap3(mapobj,obj,calcZ=None):
 
 	vs=[1.0/vc*v for v in range(vc+1)]
 	us=[1.0/uc*u for u in range(uc+1)]
+
+	vs=[1.0/vc*v*sv for v in range(vc+1)]
+	us=[1.0/uc*u*su for u in range(uc+1)]
+
 
 	uv2x = scipy.interpolate.interp2d(us, vs, ptsa[:,:,0], kind=modeA)
 	uv2y = scipy.interpolate.interp2d(us, vs, ptsa[:,:,1], kind=modeA)

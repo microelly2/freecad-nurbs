@@ -313,7 +313,8 @@ if FreeCAD.GuiUp:
 	c2a(["Curves"],always,'impSVG','shoe_importSVG','import svg file','/../icons/draw.svg',"import_svg()")
 	c2a(["Curves"],always,'expSVG','shoe_importSVG','export svg file','/../icons/draw.svg',"export_svg()")
 
-
+	c2a(["Curves"],always,'cnotrol','controlpanel','create a controlpanel','/../icons/draw.svg',"run()")
+	
 	c2a(["Curves"],always,'beziera','bezier','selected face to sketch','/../icons/draw.svg',"faceToSketch()")
 	c2a(["Curves"],always,'bezierb','bezier','selected edges to sketches','/../icons/draw.svg',"subsToSketch()")
 
@@ -497,7 +498,7 @@ static char * nurbs_xpm[] = {
 		'Nurbs_scanbackbonecut','Nurbs_createsketchspline','Nurbs_Curves to Face', 'Nurbs_facedraw',
 		'Nurbs_createcloverleaf',
 		'Part_Cone', 'Part_Cylinder','Draft_Move','Draft_Rotate','Draft_Point','Draft_ToggleGrid',
-		'My_Test2','Nurbs_toggleSketch','Sketcher_NewSketch']
+		'My_Test2','Nurbs_toggleSketch','Sketcher_NewSketch','Nurbs_facedrawa']
 
 		if 1:
 			self.appendToolbar("Nurbs", cmds )

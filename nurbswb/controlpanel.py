@@ -264,11 +264,12 @@ def dialog(obj):
 	bmax=2
 	bmax=1
 	b=0;l=3
-	for i,p in enumerate(obj.props):
-		pw=createPropWidget( obj,p)
-		grid.addWidget(pw, l, b,)
-		b += 1
-		if b>bmax: b=0; l+=1
+	if hasattr(obj,"props"):
+		for i,p in enumerate(obj.props):
+			pw=createPropWidget( obj,p)
+			grid.addWidget(pw, l, b,)
+			b += 1
+			if b>bmax: b=0; l+=1
 
 	# common methods ...
 	w.r=QtGui.QPushButton("close")
@@ -301,11 +302,15 @@ class PartFeature:
 		return None
 
 
+
 class ViewProvider:
 
 	def __init__(self, obj):
 		obj.Proxy = self
 		self.Object=obj
+
+	def attach(self,vobj):
+		self.Object = vobj.Object
 
 	def __getstate__(self):
 		return None
@@ -317,12 +322,13 @@ class ViewProvider:
 # contextmenu und double click 
 
 	def setupContextMenu(self, obj, menu):
+		self.Object=obj.Object
 		action = menu.addAction("Open Editor Dialog ...")
 		action.triggered.connect(self.edit)
 
 
 	def edit(self):
-		obj=self.Object.Object
+		obj=self.Object
 		try: obj.Proxy.dialog.hide()
 		except: pass 
 		obj.Proxy.dialog=dialog(obj)
@@ -335,6 +341,7 @@ class ViewProvider:
 		return False
 
 	def doubleClicked(self,vobj):
+		print vobj
 		self.setEdit(vobj,1)
 
 #\endcond
