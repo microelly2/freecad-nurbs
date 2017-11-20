@@ -81,6 +81,15 @@ class EventFilter(QtCore.QObject):
 		if event.type() == QtCore.QEvent.MouseMove:
 				(x,y)=Gui.ActiveDocument.ActiveView.getCursorPos()
 				t=Gui.ActiveDocument.ActiveView.getObjectsInfo((x,y))
+				
+				#---------------------
+
+				cursor=QtGui.QCursor()
+				p = cursor.pos()
+				if p.x()<100 or p.y()<100: 
+					print "jump cursor facedraw 92"
+					cursor.setPos(p.x()+100, p.y()+100)
+				#-----------------------------------
 
 				if t<>None: # if objects are under the mouse
 					for tt in t:

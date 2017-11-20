@@ -313,6 +313,9 @@ if FreeCAD.GuiUp:
 	c2a(["Curves"],always,'impSVG','shoe_importSVG','import svg file','/../icons/draw.svg',"import_svg()")
 	c2a(["Curves"],always,'expSVG','shoe_importSVG','export svg file','/../icons/draw.svg',"export_svg()")
 
+	c2a(["Curves"],always,'geodesic1','geodesic_lines','create geodesic','/../icons/draw.svg',"run()")
+	c2a(["Curves"],always,'geodesic2','geodesic_lines','create geodesic bunch','/../icons/draw.svg',"runall()")
+	
 	c2a(["Curves"],always,'cnotrol','controlpanel','create a controlpanel','/../icons/draw.svg',"run()")
 	
 	c2a(["Curves"],always,'beziera','bezier','selected face to sketch','/../icons/draw.svg',"faceToSketch()")
@@ -344,6 +347,9 @@ if FreeCAD.GuiUp:
 	c2a(["Faces","create"],always,'Random Cylinder',"nurbs","Create cylinder with randomness",'/../icons/cylinder.svg',"testRandomCylinder()")
 	c2a(["Faces","create"],always,'Random Sphere',"nurbs","Create sphere with randomness",'/../icons/sphere.svg',"testRandomSphere()")
 	c2a(["Faces","create"],ondocument,'simple Hood','simplehood','create a simple hood','/../icons/nurbs.svg',"run()")
+
+
+	c2a(["Faces"],ondocument,'folda','folding','create a folding of a face','/../icons/nurbs.svg',"run()")
 
 
 	c2a(["Faces"],ondocument,'Sole Change Model','sole_change_model','Shoe Sole Change Model','/../icons/sole.svg',"run()")

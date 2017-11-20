@@ -641,32 +641,24 @@ def createGrid(mapobj,upmode=False):
 		z2=0
 		z=0
 		for u in range(uc+1):
-#				uv=1.0/uc*u*su
-#				vv=1.0/vc*v*sv
 
 				if mapobj.flipuv:
 					uv=1.0/uc*u*su
 					vv=1.0/vc*v*sv
 					vv2=1.0/uc*u*sv
 					uv2=1.0/vc*v*su
-
 				else:
 					vv=1.0/uc*u*su
 					uv=1.0/vc*v*sv
 
-#				print ("vv,uv",vv,uv)
-
 				x=uv2x(uv,vv)
 				y=uv2y(uv,vv)
+
 				if obj.mode=='curvature':
 					#z=uv2z(uv,vv)
 					# drekt nutzen statt interpolator
 					#z=bs.curvature(vv,uv,"Mean")
 					z2=bs.curvature(uv2,vv2,obj.modeCurvature)
-					z=z2*100000
-#					if z2<>0:
-#						z=1.0/z2
-#					else:
 					z=obj.factorCurvature*z2
 				else: z=0
 				#print z
@@ -679,26 +671,6 @@ def createGrid(mapobj,upmode=False):
 
 
 		ptsa.append(pts)
-
-
-
-#------------------------------------------------
-
-
-
-#	comps += [ Part.makePolygon(ptsk[obj.vMin:obj.vMax])]
-
-
-#	comps =[]
-
-#	for pts in ptska[obj.vMin:obj.vMax]:
-#		comps += [ Part.makePolygon([FreeCAD.Vector(tuple(p)) for p in pts[obj.uMin:obj.uMax]]) ]
-
-#	ptska=np.array(ptska).swapaxes(0,1)
-
-#	for pts in ptska[obj.uMin:obj.uMax]:
-#		comps += [ Part.makePolygon([FreeCAD.Vector(tuple(p)) for p in pts[obj.vMin:obj.vMax]]) ]
-
 
 
 	if upmode:
@@ -715,13 +687,11 @@ def createGrid(mapobj,upmode=False):
 				vh=FreeCAD.Vector(tuple(p))
 				th=FreeCAD.Placement()
 				th.Base=vh
-				t2=th.multiply(pmh)
 				t2=pmh.multiply(th)
 				vh2=t2.Base
 				ll += [vh2]
 
 			comps += [ Part.makePolygon(ll) ]
-			#comps += [ Part.makePolygon([FreeCAD.Vector(tuple(p))+relpos for p in pts[obj.vMin:obj.vMax]]) ]
 
 		ptska=np.array(ptska).swapaxes(0,1)
 
@@ -733,16 +703,12 @@ def createGrid(mapobj,upmode=False):
 				vh=FreeCAD.Vector(tuple(p))
 				th=FreeCAD.Placement()
 				th.Base=vh
-#				t2=th.multiply(pmh)
 				t2=pmh.multiply(th)
 				vh2=t2.Base
 				ll += [vh2]
 
 			comps += [ Part.makePolygon(ll) ]
 
-
-
-			#comps += [ Part.makePolygon([FreeCAD.Vector(tuple(p))+relpos for p in pts[obj.uMin:obj.uMax]]) ]
 
 		# markiere zentrum der karte
 		z=bs.value(0.5*su,0.5*sv)
@@ -751,30 +717,27 @@ def createGrid(mapobj,upmode=False):
 
 		th=FreeCAD.Placement()
 		th.Base=z
-#		t2=th.multiply(pmh)
 		t2=pmh.multiply(th)
 		circ.Location=t2.Base
 		
 		th=FreeCAD.Placement()
 		th.Base=bs.normal(0.5*su,0.5*sv)
-#		t2=th.multiply(pmh)
 		t2=pmh.multiply(th)
 
 		circ.Axis=t2.Base
 		comps += [circ.toShape()]
 
 		# mapcenter
-		
+
 		z=bs.value(mpu,mpv)
 		z=bs.value(mpv,mpu)
-		
+
 		circ=Part.Circle()
 		circ.Radius=20
 
 
 		th=FreeCAD.Placement()
 		th.Base=z
-#		t2=th.multiply(pmh)
 		t2=pmh.multiply(th)
 		circ.Location=t2.Base
 
