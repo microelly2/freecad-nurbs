@@ -57,6 +57,8 @@ class Folding(FeaturePython):
 		obj.addProperty("App::PropertyInteger","facenumber","config", "number of the face")
 		obj.addProperty("App::PropertyLink","trackobj","config","track for envelope")
 		obj.addProperty("App::PropertyLink","arcobj","config","curvature for envelope")
+		obj.addProperty("App::PropertyFloat","factor","config", "scale the curvature in percent").factor=100
+		obj.addProperty("App::PropertyBool","useSplines","config", "use Spline instead of Polylines").useSplines=True
 
 
 
@@ -65,7 +67,7 @@ class Folding(FeaturePython):
 		self.obj2 = vobj.Object
 
 	def onChanged(self, fp, prop):
-		if prop=="count" or prop=="maxi":
+		if prop=="count" or prop=="maxi" or prop=="factor":
 			try: fp.Shape=fold(fp)
 			except: pass
 
@@ -76,10 +78,8 @@ class Folding(FeaturePython):
 def createFolding(obj=None):
 
 	a=FreeCAD.ActiveDocument.addObject("Part::FeaturePython","Folding")
-
 	Folding(a)
 	ViewProvider(a.ViewObject)
-	#a.Label="Folding for "+obj.Label
 	return a
 
 
@@ -93,12 +93,12 @@ def fold(obj):
 
 	count=obj.count
 
-	pats=cuarcs.discretize(count+1)
+	pats=cuarcs.discretize(count)
 	arcs=[p.y for  p in pats]
 
 	ptsa=[]
 	ptsb=[]
-	
+
 	try: curve=track.Curve
 	except: curve=track.Edges[0].Curve
 
@@ -134,37 +134,48 @@ def fold(obj):
 
 
 	for i,p in enumerate(ptsa):
-		if i==0:continue
-		if i==len(ptsa)-1:continue
 
 		if i<obj.maxi or obj.maxi==0:
-			matrix3=FreeCAD.Placement(FreeCAD.Vector(0,0,0),
-				FreeCAD.Rotation(FreeCAD.Vector(0,
-				1,0),arcs[i+1]-arcs[i]),ptsa[i]).toMatrix()
 
-			matrix3=FreeCAD.Placement(FreeCAD.Vector(0,0,0),
-				FreeCAD.Rotation(ptsa[i]-ptsb[i],
-				arcs[i+1]-arcs[i]),ptsa[i]).toMatrix()
+			if i==0:
+				matrix3=FreeCAD.Placement(FreeCAD.Vector(0,0,0),
+					FreeCAD.Rotation(ptsa[i]-ptsb[i],
+					0.01*obj.factor*arcs[0]),ptsa[i]).toMatrix()
+			else:
+				matrix3=FreeCAD.Placement(FreeCAD.Vector(0,0,0),
+					FreeCAD.Rotation(ptsa[i]-ptsb[i],
+					0.01*obj.factor*(arcs[i]-arcs[i-1])),ptsa[i]).toMatrix()
 
-#			print ("arc",i,arcs[i+1]-arcs[i])
 		else:
 			matrix3=FreeCAD.Placement().toMatrix()
 
-		ppsa2=[  matrix3.multiply(p) for p in ppsa] + [ptsa[i]]
+		a=ptsa[i]
+		b=ptsb[i]
+
+		if i==len(ptsa)-1 or i==0: a,b=b,a
+
+		ppsa2=[  matrix3.multiply(p) for p in ppsa] + [a]
 		ppsa=ppsa2
 
-		ppsb2=[  matrix3.multiply(p) for p in ppsb] + [ptsb[i]]
+		ppsb2=[  matrix3.multiply(p) for p in ppsb] + [b]
 		ppsb=ppsb2
 
-	ll=Part.makeLoft([Part.makePolygon(ppsa),Part.makePolygon(ppsb)])
+	if obj.useSplines:
+		ca=Part.BSplineCurve()
+		ca.interpolate(ppsa)
+		cb=Part.BSplineCurve()
+		cb.interpolate(ppsb)
+		ll=Part.makeLoft([ca.toShape(),cb.toShape()])
+	else:
+		ll=Part.makeLoft([Part.makePolygon(ppsa),Part.makePolygon(ppsb)])
 	return ll
 
 
 
 def run():
-	
+
 	ss=Gui.Selection.getSelection()
-	
+
 	folder=createFolding(obj=None)
 	folder.faceobj=ss[0]
 	folder.trackobj=ss[1]
