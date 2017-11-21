@@ -60,7 +60,7 @@ class Geodesic(FeaturePython):
 
 		obj.addProperty("App::PropertyFloat","direction","Generator", "size of cell in u direction").direction=0
 		obj.addProperty("App::PropertyLink","obj","XYZ","")
-
+		obj.addProperty("App::PropertyInteger","facenumber","XYZ", "number of the face")
 
 
 	def attach(self,vobj):
@@ -102,18 +102,18 @@ def updateStar(fp):
 		u=fp.u
 		v=fp.v
 		obj=fp.obj
-		#u=0.4
-		#v=0.55
 		u *= 0.01
 		v *= 0.01
 
 		pts=[]
 
-
-		sf=App.ActiveDocument.Poles.Shape.Face1.Surface
-		sf=obj.Shape.Face1.Surface
-		f=obj.Shape.Face1
+		f=obj.Shape.Faces[fp.facenumber]
+		sf=f.Surface
+		print (f,sf,fp.facenumber,obj.Shape.Faces)
 		umin,umax,vmin,vmax=f.ParameterRange
+
+		u=umin + (umax-umin)*u
+		v=vmin + (vmax-vmin)*v
 
 		(t1,t2)=sf.tangent(u,v)
 		t=FreeCAD.Vector(np.cos(np.pi*d/180)*t1+np.sin(np.pi*d/180)*t2)
