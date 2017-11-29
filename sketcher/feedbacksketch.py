@@ -134,10 +134,15 @@ class FeedbackSketch(FeaturePython):
 		self.aa = None
 		obj.addProperty("App::PropertyBool",'clearReportview', 'Base',"clear window for every execute")
 		obj.addProperty("App::PropertyBool",'error', 'Base',"error solving sketch")
+		obj.addProperty("App::PropertyString",'shapeBuilder', 'Base',"method to build the shape")
 		ViewProvider(obj.ViewObject)
 	##\endcond
 
 #	def onChanged(proxy,obj,prop):
+#		print ("onChanged:",obj.Label,prop)
+#		print "Sketch",App.ActiveDocument.Sketch.State
+#		print "Sketch001",App.ActiveDocument.Sketch001.State
+
 #		'''run myExecute for property prop: relativePosition and vertexNumber'''
 #
 #		if prop in ["parent"]: 
@@ -165,6 +170,7 @@ class FeedbackSketch(FeaturePython):
 		proxy.exflag=False
 		print ("execute ",obj.Label)
 
+		changed={}
 
 		for subs in obj.bases:
 			print "Section ",subs
@@ -183,28 +189,51 @@ class FeedbackSketch(FeaturePython):
 					# set the own geometry
 					ci=getNamedConstraint(obj,gets)
 					valwar=obj.Constraints[ci].Value
-					try:
-						obj.setDatum(ci,val_cgi)
+					print ("old value was",gets,valwar)
+					print changed
+					if valwar == val_cgi:
+						print "nix zu aendern"
+						continue
+					try: 
+						print "A"
+						changed[gets]
+						#if valwar == val_cgi:
+						print "stoppe aenderung"
+						changed[gets]=2
 					except:
-						FreeCAD.Console.PrintError("cannot set datum\n")
-						print "old value ",valwar
-						obj.setDriving(ci,False)
-						rc=obj.solve()
-						valneu=obj.Constraints[ci].Value
-						print "possible value",valneu
-						print(obj.Label, "solved with possible value",rc) 
-						obj.setDriving(ci,True)
-						#hier abbrechen
-						# wert zurück schreiben
-						print "schreibe wert zurück nach bbase"
-						g.setDatum(cgi,valneu)
-						print "gemacht"
-						rc=g.solve()
-						print(obj.Label, "solve after rollback ",rc)
-						obj.error=True
+						print "B"
+						changed[gets]=0
+						if valwar <> val_cgi: 
+							changed[gets]=1
+						print "C"
+					print changed
+
+					if changed[gets]==2: 
+						print "bereits geaendert",gets
+						continue
+					else:
+						try:
+							obj.setDatum(ci,val_cgi)
+						except:
+							FreeCAD.Console.PrintError("cannot set datum\n")
+							print "old value ",valwar
+							obj.setDriving(ci,False)
+							rc=obj.solve()
+							valneu=obj.Constraints[ci].Value
+							print "possible value",valneu
+							print(obj.Label, "solved with possible value",rc) 
+							obj.setDriving(ci,True)
+							#hier abbrechen
+							# wert zurück schreiben
+							print "schreibe wert zurück nach bbase"
+							g.setDatum(cgi,valneu)
+							print "gemacht"
+							rc=g.solve()
+							print(obj.Label, "solve after rollback ",rc)
+							obj.error=True
 
 
-						raise Exception("Problem on Constraints no feedback data")
+							raise Exception("Problem on Constraints no feedback data")
 
 
 				# solve the tasks
@@ -240,6 +269,42 @@ class FeedbackSketch(FeaturePython):
 			rc=g.solve()
 			print(obj.Label, "final solve",rc) 
 
+		for subs in obj.bases:
+			print "Section ",subs
+			g=getattr(obj,"base"+subs)
+			if g == None: continue
+			print g.Label
+
+			if getattr(obj,"active"+subs):
+
+				for sets in getattr(obj,"set"+subs):
+					cgi=getNamedConstraint(obj,sets)
+					val_cgi=obj.Constraints[cgi].Value
+					print ("set ",sets,val_cgi)
+					# set the data back 
+					ci=getNamedConstraint(g,sets)
+
+					isdriving=g.getDriving(ci)
+					g.setDriving(ci,True)
+
+					g.setDatum(ci,val_cgi)
+					
+					rc=g.solve()
+					print(obj.Label, "solve after set",rc) 
+
+					if not isdriving:
+						g.setDriving(ci,False)
+						rc=g.solve()
+						print(obj.Label, "solve after set and switch back to blue",rc) 
+
+				for sof in getattr(obj,"seton"+subs):
+					ci=getNamedConstraint(g,sof)
+					g.setDriving(ci,True)
+
+
+
+
+
 		return
 
 
@@ -267,6 +332,13 @@ class FeedbackSketch(FeaturePython):
 				raise Exception("myExecute Error AA")
 			self.Lock=False
 
+		# eigene Figur berechnen
+		import sketcher.demoshapes
+		reload(sketcher.demoshapes)
+		
+		sh=sketcher.demoshapes.myShape(obj,obj.shapeBuilder)
+		if sh<>None: obj.Shape=sh
+
 
 ##\cond
 	def yexecute(self, obj):
@@ -276,7 +348,7 @@ class FeedbackSketch(FeaturePython):
 ##\endcond
 
 
-
+	
 
 def createFeedbackSketch(name="MyFeedbackSketch"):
 	'''runS(name="MyFeedbackSketch"): 

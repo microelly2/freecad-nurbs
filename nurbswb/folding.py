@@ -59,7 +59,7 @@ class Folding(FeaturePython):
 		obj.addProperty("App::PropertyLink","arcobj","config","curvature for envelope")
 		obj.addProperty("App::PropertyFloat","factor","config", "scale the curvature in percent").factor=100
 		obj.addProperty("App::PropertyBool","useSplines","config", "use Spline instead of Polylines").useSplines=True
-
+		obj.addProperty("App::PropertyBool","flipStart","config")
 
 
 	def attach(self,vobj):
@@ -102,12 +102,22 @@ def fold(obj):
 	try: curve=track.Curve
 	except: curve=track.Edges[0].Curve
 
+
+	#print track.Edges
+	
 	tps=track.discretize(count)
+#	aa=App.ActiveDocument.addObject("Part::Feature","aa")
+#	aa.Shape= Part.makePolygon(tps)
+	
+	col2=[]
 	for p in tps:
 			v=curve.parameter(p)
 			t=curve.tangent(v)
+	#		print (v,t,p)
 			n=t[0].cross(FreeCAD.Vector(0,0,1))
 			polg=Part.makePolygon([p+10000*n,p-10000*n])
+			col2 += [polg]
+			
 			ss=bs.makeParallelProjection(polg,FreeCAD.Vector(0,0,1))
 			sps=[v.Point for v in ss.Vertexes]
 			#print sps
@@ -125,12 +135,15 @@ def fold(obj):
 	if segments==None:
 		segments=App.ActiveDocument.addObject("Part::Feature","Segments")
 
+
+
 	comp=[]
 	for i,p in enumerate(ptsa):
 		if ptsa[i]<>ptsb[i]:
 			pol=Part.makePolygon([ptsa[i],ptsb[i]])
 			comp.append(pol)
 	segments.Shape=Part.Compound(comp)
+	#segments.Shape=Part.Compound(col2)
 
 
 	for i,p in enumerate(ptsa):
@@ -152,7 +165,8 @@ def fold(obj):
 		a=ptsa[i]
 		b=ptsb[i]
 
-		if i==len(ptsa)-1 or i==0: a,b=b,a
+		if obj.flipStart:
+			if i==len(ptsa)-1 or i==0: a,b=b,a
 
 		ppsa2=[  matrix3.multiply(p) for p in ppsa] + [a]
 		ppsa=ppsa2

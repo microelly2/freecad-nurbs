@@ -3,13 +3,15 @@
 #-------------------------------------------------
 #-- methods for drawing on faces 
 #--
-#-- microelly 2017 v 0.2
+#-- microelly 2017 v 0.3
 #--
 #-- GNU Lesser General Public License (LGPL)
 #-------------------------------------------------
 '''
 
 ##\cond
+from nurbswb.say import *
+
 import FreeCAD,FreeCADGui
 App=FreeCAD
 Gui=FreeCADGui
@@ -26,14 +28,6 @@ import scipy
 import scipy.interpolate
 
 import nurbswb
-import nurbswb.isomap
-reload (nurbswb.isomap)
-
-
-#import nurbswb.facedraw
-#reload(nurbswb.facedraw)
-
-
 
 
 global __dir__
@@ -103,12 +97,12 @@ def createShape(obj):
 	u0=0
 	v0=0
 
-	fy=-1.
-	fx=-1.
+	fy=1.
+	fx=1.
 
 	#+# facenumer aus obj param holen
 	face=obj.face.Shape.Face1
-	bs=obj.face.Shape.Face1.Surface
+	bs=face.Surface
 #	w=obj.wire.Shape.Wires[0]
 	wires=obj.wire.Shape.Wires
 	if len(wires)==0:
@@ -141,48 +135,25 @@ def createShape(obj):
 			x=fy*(p.y-refpos.y)
 
 			#fuer ruled surface !!
-			x=p.y
-			y=p.x
+			x=fx*p.y
+			y=fy*p.x
 
-#			print  ("a",x,y)
-			
 			u=xy2u(x,y)
 			v=xy2v(x,y)
 
-
-#			print(round(u,2),round(v,2))
-
-			if 0: #macht nur Sinn fuer Bsplines 
-				if u<0: u=0
-				if u>1: u=1
-				if v<0: v=0
-				if v>1: v=1
-
-			#faktor dazu
-			su=bs.UPeriod()
-			sv=bs.VPeriod()
-#			print "hack su sv"
 			su=face.ParameterRange[1]
 			sv=face.ParameterRange[3]
 
+			#try: sweep=obj.face.TypeId=='Part::Sweep'
+			#except: sweep=True
 
-			if su>1000: su=face.ParameterRange[1]
-			if sv>1000: sv=face.ParameterRange[3]
+			if obj.flipuv23: p2=bs.value(u,v)
+			else: p2=bs.value(u*sv,v*su)
 
-#			print ("Skalierung ",su,sv)
-			p2=bs.value(u/sv,v/su)
-			p2=bs.value(u,v)
-			#pts2.append(p2)
-			
-			p2=bs.value(u*sv,v*su)
 			pts2.append(p2)
 
-
 		FreeCAD.pts2a=pts2
-		pol=Part.makePolygon(pts2)
-
-		obj.Shape=pol
-		return
+		obj.Shape=Part.makePolygon(pts2)
 
 
 
@@ -215,7 +186,7 @@ class Isodraw(PartFeature):
 			obj.backref.Document.recompute()
 		face=obj.face.Shape.Face1
 		import nurbswb.facedraw
-		#reload(nurbswb.facedraw)
+		reload(nurbswb.facedraw)
 		try: obj.ViewObject.ShapeColor=obj.wire.ViewObject.ShapeColor
 		except:obj.ViewObject.ShapeColor=(1.,0.,0.)
 		
@@ -306,14 +277,6 @@ def createBrezel():
 		b.wire4=App.ActiveDocument.IsoDrawFace004
 	return b
 
-#------------------------------------------------------
-
-
-
-
-
-
-
 #-------------------------------------------------------------
 
 class MapVP(ViewProvider):
@@ -381,7 +344,7 @@ class Map(PartFeature):
 		obj.ve=-1
 		obj.ue=-1
 		
-		obj.border=5
+		obj.border=0
 		obj.ub=10
 		obj.vb=10
 		obj.ue=21
@@ -418,6 +381,8 @@ class Map(PartFeature):
 
 		obj.addProperty("App::PropertyBool","display2d","Map")
 		obj.addProperty("App::PropertyBool","display3d","Map")
+		obj.addProperty("App::PropertyBool","displayCircles","Map")
+		obj.addProperty("App::PropertyBool","flipuv23","Map").flipuv23=True
 		
 		obj.display2d=True
 		obj.display3d=True
@@ -453,7 +418,7 @@ class Map(PartFeature):
 		# test config
 		#obj.mode='curvature'
 		#obj.flipuv=True
-		obj.modeCurvature="Mean"
+		obj.modeCurvature="Gauss"
 
 		#ViewProvider(obj.ViewObject)
 		MapVP(obj.ViewObject)
@@ -492,7 +457,7 @@ class Map(PartFeature):
 	def execute(proxy,obj):
 		'''get the mapping of the obj.face, create the 2D and 3D grid for teh mapping'''
 
-		[uv2x,uv2y,xy2u,xy2v]=nurbswb.isomap.getmap(obj,obj.faceObject)
+		[uv2x,uv2y,xy2u,xy2v]=getmap(obj,obj.faceObject)
 		proxy.uv2x=uv2x
 		proxy.uv2y=uv2y
 		proxy.xy2u=xy2u
@@ -518,7 +483,7 @@ class Map(PartFeature):
 
 		print  ("onDocumentRestored(proxy,obj)",proxy,obj,obj.Label)
 
-		[uv2x,uv2y,xy2u,xy2v]=nurbswb.isomap.getmap(obj,obj.faceObject)
+		[uv2x,uv2y,xy2u,xy2v]=getmap(obj,obj.faceObject)
 		proxy.uv2x=uv2x
 		proxy.uv2y=uv2y
 		proxy.xy2u=xy2u
@@ -532,6 +497,14 @@ def createMap(mode=''):
 	'''create a Map object'''
 	b=FreeCAD.activeDocument().addObject("Part::FeaturePython","MAP")
 	Map(b,mode=mode)
+	# hack
+	b.displayCircles=True
+	if 0:
+		b.modeCurvature="Gauss"
+		b.uMin=20
+		b.vMin=0
+		b.uMax=50
+		b.vMax=101
 	return b
 
 
@@ -574,15 +547,34 @@ def createGrid(mapobj,upmode=False):
 	if sv>1000: sv=face.ParameterRange[3]
 
 	# mittelpunkt
-	mpu2=mpu*sv
-	mpv2=mpv*su
+	
+#	try: sweep=obj.Faceobject.TypeId=='Part::Sweep'
+#	except: sweep=True
+
+	if not obj.flipuv23:
+
+		mpu2=mpu*sv
+		mpv2=mpv*su
+
+	else:
+		if upmode:
+			mpu2=mpu*su
+			mpv2=mpv*sv
+		else:
+			mpu2=mpu*sv
+			mpv2=mpv*su
+
+
+
 	mpu=mpv2
 	mpv=mpu2
+
+
 
 	vc=obj.uCount
 	uc=obj.vCount
 
-	print "#ll"
+	print "isodraw #ll"
 	print (su,sv)
 	print (uc,vc)
 	print face.ParameterRange
@@ -623,19 +615,21 @@ def createGrid(mapobj,upmode=False):
 			ptsk.append(bs.value(uv,vm))
 
 			pts.append([kx,ky,0])
-			print (uv,vm,bs.value(uv,vm))
+			#print ("isodraw nknk",uv,vm,bs.value(uv,vm))
 
 		ptsa.append(pts)
 		ptska.append(ptsk)
 
 #-----------------------------------------------
 
-	[uv2x,uv2y,xy2u,xy2v]=nurbswb.isomap.getmap(mapobj,obj.faceObject)
+	[uv2x,uv2y,xy2u,xy2v]=getmap(mapobj,obj.faceObject)
 
 	print "hier 3D Methode  ccc..oo.............."
 	if obj.mode=='curvature':
-		[uv2x,uv2y,uv2z,xy2u,xy2v]=nurbswb.isomap.getmap3(mapobj,obj.faceObject)
+		[uv2x,uv2y,uv2z,xy2u,xy2v]=getmap3(mapobj,obj.faceObject)
 	ptsa=[]
+
+
 	for v in range(vc+1):
 		pts=[]
 		z2=0
@@ -650,24 +644,58 @@ def createGrid(mapobj,upmode=False):
 				else:
 					vv=1.0/uc*u*su
 					uv=1.0/vc*v*sv
+					uv2=1.0/uc*u*sv
+					vv2=1.0/vc*v*su
 
-				x=uv2x(uv,vv)
-				y=uv2y(uv,vv)
+
+#				try: sweep=face.TypeId=='Part::Sweep'
+#				except: sweep=True
+#
+#				sweep=True
+
+				if 1 or ( mapobj.flipuv23 and upmode):
+#					print "---------------------------RRRRRRRRRRRRRRRRRRR"
+#					x=uv2x(vv,uv)
+#					y=uv2y(vv,uv)
+					uv=1.0/uc*(uc-u)*su
+					uv=1.0/uc*(u)*su
+					vv=1.0/vc*(vc-v)*sv
+					vv=1.0/vc*(v)*sv
+
+					x=uv2x(uv,vv)
+					y=uv2y(uv,vv)
+#					x=uv2x(vv,uv)
+#					y=uv2y(vv,uv)
+
+
+
+				else:
+					x=uv2x(uv,vv)
+					y=uv2y(uv,vv)
 
 				if obj.mode=='curvature':
 					#z=uv2z(uv,vv)
 					# drekt nutzen statt interpolator
 					#z=bs.curvature(vv,uv,"Mean")
 					z2=bs.curvature(uv2,vv2,obj.modeCurvature)
+					if z2<>0:r=round(1.0/z2)
+					else: r='planar'
+					if u>=mapobj.vMin-1 and u<=mapobj.vMax+1 and v>=mapobj.uMin-1 and v<=mapobj.uMax+1:
+						print ("u,v, curvature,radius ",u,v,round(z2,6),r)
+
+						if abs(z2)>0.001:
+							print ("********** HIGH",u,v,z2,r)
+
 					z=obj.factorCurvature*z2
+
 				else: z=0
 				#print z
 #				print (x,y,z)
 				pts.append(FreeCAD.Vector(x,y,z))
 
-				if u==5: 
-					print ("ww--",uv,vv,z)
-					print (x,y)
+#				if u==5: 
+#					print ("aadfdbbw--",uv,vv,z)
+#					print (x,y)
 
 
 		ptsa.append(pts)
@@ -675,14 +703,27 @@ def createGrid(mapobj,upmode=False):
 
 	if upmode:
 
+
+		print ("Rahmen 3D",obj.uMin,obj.uMax,obj.vMin,obj.vMax)
+		print obj.faceObject.TypeId
+
+#		try: sweep=obj.faceObject.TypeId=='Part::Sweep'
+#		except: sweep=True
+
+#		sweep=True
+		if not obj.flipuv23:
+			uMin,uMax,vMin,vMax=obj.uMin,obj.uMax,obj.vMin,obj.vMax
+		else:
+			vMin,vMax,uMin,uMax=obj.uMin,obj.uMax,obj.vMin,obj.vMax
+
 		relpos=obj.Placement.Base*(-1)
 		
 		comps=[]
-		
-		for pts in ptska[obj.uMin:obj.uMax]:
+
+		for pts in ptska[uMin:uMax]:
 
 			ll=[]
-			for p in pts[obj.vMin:obj.vMax]:
+			for p in pts[vMin:vMax]:
 				pmh=obj.Placement.inverse()
 				vh=FreeCAD.Vector(tuple(p))
 				th=FreeCAD.Placement()
@@ -693,7 +734,8 @@ def createGrid(mapobj,upmode=False):
 
 			comps += [ Part.makePolygon(ll) ]
 
-		ptska=np.array(ptska).swapaxes(0,1)
+		'''
+		comps=[]
 
 		for pts in ptska[obj.vMin:obj.vMax]:
 
@@ -709,6 +751,27 @@ def createGrid(mapobj,upmode=False):
 
 			comps += [ Part.makePolygon(ll) ]
 
+		'''
+
+
+
+
+		ptska=np.array(ptska).swapaxes(0,1)
+
+		for pts in ptska[vMin:vMax]:
+
+			ll=[]
+			for p in pts[uMin:uMax]:
+				pmh=obj.Placement.inverse()
+				vh=FreeCAD.Vector(tuple(p))
+				th=FreeCAD.Placement()
+				th.Base=vh
+				t2=pmh.multiply(th)
+				vh2=t2.Base
+				ll += [vh2]
+
+			comps += [ Part.makePolygon(ll) ]
+		
 
 		# markiere zentrum der karte
 		z=bs.value(0.5*su,0.5*sv)
@@ -725,7 +788,8 @@ def createGrid(mapobj,upmode=False):
 		t2=pmh.multiply(th)
 
 		circ.Axis=t2.Base
-		comps += [circ.toShape()]
+		if obj.displayCircles:
+			comps += [circ.toShape()]
 
 		# mapcenter
 
@@ -749,7 +813,8 @@ def createGrid(mapobj,upmode=False):
 		# diese richtung stimmt noch nicht, deaktivert
 ##		circ.Axis=t2.Base
 
-		comps += [circ.toShape()]
+		if obj.displayCircles:
+			comps += [circ.toShape()]
 
 		return Part.Compound(comps)
 
@@ -774,33 +839,51 @@ def createGrid(mapobj,upmode=False):
 		circ=Part.Circle()
 		circ.Radius=10
 		circ.Location=z
-		comps += [circ.toShape()]
+		if obj.displayCircles:
+			comps += [circ.toShape()]
 
 		z=FreeCAD.Vector(0,0,0)
 		circ=Part.Circle()
 		circ.Radius=20
 		circ.Location=z
-		comps += [circ.toShape()]
+		if obj.displayCircles:
+			comps += [circ.toShape()]
 
+		print ("Rahmen 2D",obj.uMin,obj.uMax,obj.vMin,obj.vMax)
 
 		if obj.flipxy:
+			if 1:
+				for pts in ptsa[obj.uMin:obj.uMax]:
+					comps += [ Part.makePolygon([FreeCAD.Vector(fx*p[1],fy*p[0],fz*p[2]) for p in pts[obj.vMin:obj.vMax]]) ]
 
-			for pts in ptsa[obj.uMin:obj.uMax]:
-				comps += [ Part.makePolygon([FreeCAD.Vector(fx*p[1],fy*p[0],fz*p[2]) for p in pts[obj.vMin:obj.vMax]]) ]
+				ptsa=np.array(ptsa).swapaxes(0,1)
 
-			ptsa=np.array(ptsa).swapaxes(0,1)
+				for pts in ptsa[obj.vMin:obj.vMax]:
+					comps += [ Part.makePolygon([FreeCAD.Vector(fx*p[1],fy*p[0],fz*p[2]) for p in pts[obj.uMin:obj.uMax]]) ]
 
-			for pts in ptsa[obj.vMin:obj.vMax]:
-				comps += [ Part.makePolygon([FreeCAD.Vector(fx*p[1],fy*p[0],fz*p[2]) for p in pts[obj.uMin:obj.uMax]]) ]
+
 
 		else :
-			for pts in ptsa[obj.uMin:obj.uMax]:
-				comps += [ Part.makePolygon([FreeCAD.Vector(fx*p[0],fy*p[1],fz*p[2]) for p in pts[obj.vMin:obj.vMax]]) ]
+			if 1:
+				for pts in ptsa[obj.uMin:obj.uMax]:
+					comps += [ Part.makePolygon([FreeCAD.Vector(fx*p[0],fy*p[1],fz*p[2]) for p in pts[obj.vMin:obj.vMax]]) ]
 
-			ptsa=np.array(ptsa).swapaxes(0,1)
+				ptsa=np.array(ptsa).swapaxes(0,1)
 
-			for pts in ptsa[obj.vMin:obj.vMax]:
-				comps += [ Part.makePolygon([FreeCAD.Vector(fx*p[0],fy*p[1],fz*p[2]) for p in pts[obj.uMin:obj.uMax]]) ]
+				for pts in ptsa[obj.vMin:obj.vMax]:
+					comps += [ Part.makePolygon([FreeCAD.Vector(fx*p[0],fy*p[1],fz*p[2]) for p in pts[obj.uMin:obj.uMax]]) ]
+
+			else:
+				for pts in ptsa[obj.vMin:obj.vMax]:
+					comps += [ Part.makePolygon([FreeCAD.Vector(fx*p[0],fy*p[1],fz*p[2]) for p in pts[obj.vMin:obj.vMax]]) ]
+
+				ptsa=np.array(ptsa).swapaxes(0,1)
+
+				for pts in ptsa[obj.uMin:obj.uMax]:
+					comps += [ Part.makePolygon([FreeCAD.Vector(fx*p[0],fy*p[1],fz*p[2]) for p in pts[obj.uMin:obj.uMax]]) ]
+
+
+
 
 		return Part.Compound(comps)
 
@@ -1261,10 +1344,10 @@ def map3Dto2D():
 		s=s0
 		mapobj=base.mapobject
 		face=mapobj.faceObject
-
+	print face.Label
 
 	for wire in s:
-		[uv2x,uv2y,xy2u,xy2v]=nurbswb.isomap.getmap(mapobj,face)
+		[uv2x,uv2y,xy2u,xy2v]=getmap(mapobj,face)
 
 		bs=face.Shape.Face1.Surface
 		pts2=[]
@@ -1288,26 +1371,33 @@ def map3Dto2D():
 			for p in pts:
 				(u,v)=bs.parameter(p)
 				(v,u)=bs.parameter(p)
-#				print (u,v)
+				print (u,v)
 				#zurückrechnen
-				su=bs.UPeriod()
-				sv=bs.VPeriod()
+#				su=bs.UPeriod()
+#				sv=bs.VPeriod()
 
-				print "hack su sv aa bb"
+#				print "hack xx su sv aa bb"
 				#print base.faceobject
-				print face
+				# print face
 				su=face.Shape.Face1.ParameterRange[1]
 				sv=face.Shape.Face1.ParameterRange[3]
 
 				if su>10000: su=face.Shape.Face1.ParameterRange[1]
 				if sv>10000: sv=face.Shape.Face1.ParameterRange[3]
 
-				v=v/sv
-				u=u/su
-				
-				
+#				
+#				try: sweep=face.TypeId=='Part::Sweep'
+#				except: sweep=True
+
+				if not mapobj.flipuv23:
+					v=v/sv
+					u=u/su
+
 				x=uv2x(u,v)
 				y=uv2y(u,v)
+				
+
+#				print(u,v,x,y)
 				if mapobj<>None and mapobj.flipxy:
 					p2=FreeCAD.Vector(y,x,0)
 				else:
@@ -1341,7 +1431,8 @@ def map2Dto3D():
 	for w in s:
 		f=createIsodrawFace()
 		f.mapobject=moa
-		f.faceObject=moa.face
+		print moa.Label
+		f.face=moa.faceObject
 		f.wire=w
 		f.Label="map3D_for_"+w.Label+"_on_"+f.face.Label + "_by_" + moa.Label
 		#color=(random.random(),random.random(),random.random())
@@ -1378,7 +1469,7 @@ def map3Dgridto2Dgrid():
 	polcol=[]
 	for wire in s:
 		print wire.Label
-		[uv2x,uv2y,xy2u,xy2v]=nurbswb.isomap.getmap(mapobj,face)
+		[uv2x,uv2y,xy2u,xy2v]=getmap(mapobj,face)
 
 		bs=face.Shape.Face1.Surface
 		pts2=[]
@@ -1442,6 +1533,396 @@ def map3Dgridto2Dgrid():
 
 
 
+def getmap(mapobj,obj):
+	'''  berechnet vier interpolatoren zum umrechnen von xy(isomap) in uv(nurbs) und zurueck 
+	mapobj liefert die parameter
+	obj ist das Part mit der benutzten Face
+	'''
+
+
+	#default values 
+	mpv=0.5
+	mpu=0.5
+	fx=-1
+	fy=-1
+	vc=30
+	uc=30
+	modeA='cubic'
+	modeB='thin_plate'
+
+	bs=obj.Shape.Face1.Surface
+	face=obj.Shape.Face1
+
+	su=bs.UPeriod()
+	sv=bs.VPeriod()
+
+	print "hack B-BB su sv aa bb"
+
+	su=face.ParameterRange[1]
+	sv=face.ParameterRange[3]
+
+	if su>1000: su=face.ParameterRange[1]
+	if sv>1000: sv=face.ParameterRange[3]
+
+	if mapobj<>None:
+		if hasattr(mapobj,'faceObject'):
+
+			mpv=mapobj.uMapCenter/100
+			mpu=mapobj.vMapCenter/100
+
+			fx=mapobj.fx
+			fy=mapobj.fy
+			vc=mapobj.vCount
+			uc=mapobj.uCount
+
+		else:
+
+			mpv=mapobj.uMapCenter/100
+			mpu=mapobj.vMapCenter/100
+
+
+			vc=mapobj.vCount
+			uc=mapobj.uCount
+
+			fx=mapobj.fx
+			fy=mapobj.fy
+			modeA=mapobj.modeA
+			modeB=mapobj.modeB
+
+
+			vc=mapobj.vc
+			uc=mapobj.uc
+
+
+	print ("isomap YYparameter",su,sv,uc,vc)
+
+	refpos=bs.value(mpv,mpu)
+	ptsa=[] # abbildung des uv-iso-gitter auf die xy-Ebene
+
+	mpv *=sv
+	mpu *=su
+
+	for v in range(vc+1):
+		pts=[]
+		vaa=1.0/vc*v*sv
+
+		bbc=bs.vIso(vaa)
+
+		for u in range(uc+1):
+			uaa=1.0/uc*u*su
+			ba=bs.uIso(uaa)
+
+			ky=ba.length(vaa,mpv)
+			if vaa<mpv: ky =-ky
+
+			kx=bbc.length(mpu,uaa)
+			if uaa<mpu: kx =-kx
+
+			pts.append([kx,ky,0])
+
+		ptsa.append(pts)
+
+
+	ptsa=np.array(ptsa).swapaxes(0,1)
+
+	vs=[1.0/vc*v for v in range(vc+1)]
+	us=[1.0/uc*u for u in range(uc+1)]
+
+	vs=[1.0/vc*v*sv for v in range(vc+1)]
+	us=[1.0/uc*u*su for u in range(uc+1)]
+
+
+	uv2x = scipy.interpolate.interp2d(us, vs, ptsa[:,:,0], kind=modeA)
+	uv2y = scipy.interpolate.interp2d(us, vs, ptsa[:,:,1], kind=modeA)
+
+
+	# if only 3D to 2D is needed, exit here
+	if mapobj == None:
+		xy2v=None
+		xy2u=None
+		return [uv2x,uv2y,xy2u,xy2v]
+
+#------------------------------------------------------
+
+	#d=mapobj.border
+	d=0
+
+	kku=[]
+
+	for ui in range(d,uc+1-d):
+		for vi in range(d,vc+1-d):
+			kku.append([ptsa[ui,vi,0],ptsa[ui,vi,1], us[ui]])
+	kku=np.array(kku)
+
+	kkv=[]
+	for ui in range(d,uc+1-d):
+		for vi in range(d,vc+1-d):
+			kkv.append([ptsa[ui,vi,0],ptsa[ui,vi,1], vs[vi]])
+	kkv=np.array(kkv)
+
+	try:
+		dx=mapobj.ue
+		dy=mapobj.ve
+		sx=mapobj.ub
+		sy=mapobj.vb
+
+		#print ("Shape",uc+1,vc+1,(uc+1)*(vc+1),np.array(kku).shape)
+		kku2=np.array(kku).reshape(uc+1,vc+1,3)
+		#print(dx,dy,sx,sy)
+		#print ("Shape aa",dx,dy,dx*dy,np.array(kku2[sx:sx+dx,sy:sy+dy]).shape)
+		kkua=kku2[sx:sx+dx,sy:sy+dy].reshape((dx)*(dy),3)
+
+		kkv2=np.array(kkv).reshape(uc+1,vc+1,3)
+		kkva=kkv2[sx:sx+dx,sy:sy+dy].reshape(dx*dy,3)
+
+		xy2u = scipy.interpolate.Rbf(kkua[:,0],kkua[:,1],kkua[:,2], function=modeB)
+		xy2v = scipy.interpolate.Rbf(kkva[:,0],kkva[:,1],kkva[:,2], function=modeB)
+
+#		xy2v = scipy.interpolate.interp2d(kkv[:,0],kkv[:,1],kkv[:,2], kind=mode)
+# ideas for error
+# https://stackoverflow.com/questions/34820612/scipy-interp2d-warning-and-different-result-than-expected
+
+
+	except Exception as err:
+		sayexc()
+		print('Handling  error:', err)
+		xy2v=None
+		xy2u=None
+		print "FEHLER BERECHNUNG bUMKEHRfunktionen"
+
+
+	return [uv2x,uv2y,xy2u,xy2v]
+
+	if 0: # testrechnung sollte auf gleiche stelle zurueck kommen
+		u0=0.2
+		v0=0.6
+
+		y=uv2y(u0,v0)
+		x=uv2x(u0,v0)
+		u=xy2v(x,y)
+		v=xy2u(x,y)
+
+		print (u0,v0,x,y,u,v)
+
+	return [uv2x,uv2y,xy2u,xy2v]
+
+
+
+def getmap3(mapobj,obj,calcZ=None):
+	''' berechnet einen dritten wert für z'''
+	
+	print "berechne curvature gauss"
+	print mapobj.Label
+	print obj.Label
+	
+	def calcZ(face,u,v):
+		bs=face.Surface
+		ur= 1.0*(u)/30 #mapobj.uCount
+		vr= 1.0*(v)/30 #mapobj.vCount
+
+		# umrechnung auf parametrrangen
+		su=face.ParameterRange[1]
+		sv=face.ParameterRange[3]
+
+		ur *= su
+		vr *= sv
+
+		tt=mapobj.modeCurvature
+		cc=bs.curvature(ur,vr,tt)
+		
+		# kewgelhack
+		cc=bs.curvature(vr,ur,tt)
+		
+		if tt=="Gauss":
+			z=abs(cc)**0.5 * 1000
+			# if z>30: z=30
+			if cc<0: z =-z
+		else:
+			z=cc *1000
+			# beschraenken nach oben
+			#if z>30: z=30
+			#if z<-30: z=-30
+#		if z<>0: print ("!curvature ur,vr,z", round(ur),round(vr),z) 
+
+		if tt=="Mean":
+			z=10000*cc
+		return z
+
+	#default values 
+	mpv=0.5
+	mpu=0.5
+	fx=-1
+	fy=-1
+	vc=30
+	uc=30
+
+	modeA='cubic'
+	modeB='thin_plate'
+
+	bs=obj.Shape.Face1.Surface
+	face=obj.Shape.Face1
+
+	su=bs.UPeriod()
+	sv=bs.VPeriod()
+
+	print "hack BB su sv aa bb XX"
+
+	su=face.ParameterRange[1]
+	sv=face.ParameterRange[3]
+
+
+	if su>1000: su=face.ParameterRange[1]
+	if sv>1000: sv=face.ParameterRange[3]
+
+	if mapobj<>None:
+		if hasattr(mapobj,'faceObject'):
+
+			mpv=mapobj.uMapCenter/100
+			mpu=mapobj.vMapCenter/100
+
+			fx=mapobj.fx
+			fy=mapobj.fy
+			vc=mapobj.vCount
+			uc=mapobj.uCount
+
+		else:
+
+			mpv=mapobj.uMapCenter/100
+			mpu=mapobj.vMapCenter/100
+
+
+			vc=mapobj.vCount
+			uc=mapobj.uCount
+
+			fx=mapobj.fx
+			fy=mapobj.fy
+			modeA=mapobj.modeA
+			modeB=mapobj.modeB
+
+
+	vc=mapobj.vc
+	uc=mapobj.uc
+
+
+
+	refpos=bs.value(mpv,mpu)
+	ptsa=[] # abbildung des uv-iso-gitter auf die xy-Ebene
+
+	mpv *=sv
+	mpu *=su
+
+	for v in range(vc+1):
+		pts=[]
+		vaa=1.0/vc*v*sv
+
+		bbc=bs.vIso(vaa)
+
+		for u in range(uc+1):
+			uaa=1.0/uc*u*su
+			ba=bs.uIso(uaa)
+
+			ky=ba.length(vaa,mpv)
+			if vaa<mpv: ky =-ky
+
+			kx=bbc.length(mpu,uaa)
+			if uaa<mpu: kx =-kx
+
+			kz=calcZ(face,u,v)
+			pts.append([kx,ky,kz])
+
+		ptsa.append(pts)
+
+
+	ptsa=np.array(ptsa).swapaxes(0,1)
+
+	vs=[1.0/vc*v for v in range(vc+1)]
+	us=[1.0/uc*u for u in range(uc+1)]
+
+	vs=[1.0/vc*v*sv for v in range(vc+1)]
+	us=[1.0/uc*u*su for u in range(uc+1)]
+
+
+	uv2x = scipy.interpolate.interp2d(us, vs, ptsa[:,:,0], kind=modeA)
+	uv2y = scipy.interpolate.interp2d(us, vs, ptsa[:,:,1], kind=modeA)
+	uv2z = scipy.interpolate.interp2d(us, vs, ptsa[:,:,2], kind=modeA)
+
+
+	# if only 3D to 2D is needed, exit here
+	if mapobj == None:
+		xy2v=None
+		xy2u=None
+		
+		return [uv2x,uv2y,uv2z,xy2u,xy2v]
+
+	
+
+#------------------------------------------------------
+
+	#d=mapobj.border
+	d=0
+
+	kku=[]
+
+	for ui in range(d,uc+1-d):
+		for vi in range(d,vc+1-d):
+			kku.append([ptsa[ui,vi,0],ptsa[ui,vi,1], us[ui]])
+	kku=np.array(kku)
+
+	kkv=[]
+	for ui in range(d,uc+1-d):
+		for vi in range(d,vc+1-d):
+			kkv.append([ptsa[ui,vi,0],ptsa[ui,vi,1], vs[vi]])
+	kkv=np.array(kkv)
+
+	try:
+		dx=mapobj.ue
+		dy=mapobj.ve
+		sx=mapobj.ub
+		sy=mapobj.vb
+
+		#print ("Shape",uc+1,vc+1,(uc+1)*(vc+1),np.array(kku).shape)
+		kku2=np.array(kku).reshape(uc+1,vc+1,3)
+		#print(dx,dy,sx,sy)
+		#print ("Shape aa",dx,dy,dx*dy,np.array(kku2[sx:sx+dx,sy:sy+dy]).shape)
+		kkua=kku2[sx:sx+dx,sy:sy+dy].reshape((dx)*(dy),3)
+
+		kkv2=np.array(kkv).reshape(uc+1,vc+1,3)
+		kkva=kkv2[sx:sx+dx,sy:sy+dy].reshape(dx*dy,3)
+
+		xy2u = scipy.interpolate.Rbf(kkua[:,0],kkua[:,1],kkua[:,2], function=modeB)
+		xy2v = scipy.interpolate.Rbf(kkva[:,0],kkva[:,1],kkva[:,2], function=modeB)
+
+#		xy2v = scipy.interpolate.interp2d(kkv[:,0],kkv[:,1],kkv[:,2], kind=mode)
+# ideas for error
+# https://stackoverflow.com/questions/34820612/scipy-interp2d-warning-and-different-result-than-expected
+
+
+	except Exception as err:
+		sayexc()
+		print('Handling  error:', err)
+		xy2v=None
+		xy2u=None
+		print "FEHLER BERECHNUNG bUMKEHRfunktionen"
+
+
+	return [uv2x,uv2y,uv2z,xy2u,xy2v]
+
+	if 0: # testrechnung sollte auf gleiche stelle zurueck kommen
+		u0=0.2
+		v0=0.6
+
+		y=uv2y(u0,v0)
+		x=uv2x(u0,v0)
+		u=xy2v(x,y)
+		v=xy2u(x,y)
+
+		print (u0,v0,x,y,u,v)
+
+	return [uv2x,uv2y,xy2u,xy2v]
+
+
+
+
 
 # pruefe qualitaet der umrechnung
 def testC():
@@ -1454,7 +1935,7 @@ def testC():
 	p=wire.Shape.Vertex1.Point
 	p
 	print "huu"
-	[uv2x,uv2y,xy2u,xy2v]=nurbswb.isomap.getmap(face)
+	[uv2x,uv2y,xy2u,xy2v]=getmap(face)
 
 	(u,v)=bs.parameter(p)
 	(u,v)=bs.parameter(p)
@@ -1485,7 +1966,7 @@ def testD():
 
 
 def testE():
-	[uv2x,uv2y,xy2u,xy2v]=nurbswb.isomap.getmap(face)
+	[uv2x,uv2y,xy2u,xy2v]=getmap(face)
 	ptbb=[]
 	for p in FreeCAD.ptsaa:
 		(u,v)=bs.parameter(p)

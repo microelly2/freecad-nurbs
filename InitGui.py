@@ -297,8 +297,11 @@ if FreeCAD.GuiUp:
 	c2a(["Curves"],always,'DraftBSpline Editor',"DraftBSplineEditor","Edit Draft Bspline",'/../icons/32px-draftbspline_edit.png',"run()")
 
 	c2a(["Curves"],always,'facedraw','facedraw','draw on a face','/../icons/draw.svg',"run()")
+	c2a(["Curves"],always,'facedraws','facedraw_segments','draw over segments','/../icons/draw.svg',"run()")
 	c2a(["Curves"],always,'facedrawa','facedraw','create Map of a face','/../icons/draw.svg',"createMap()")
 	c2a(["Curves"],always,'facedrawa2','facedraw','create Curvature Map of a face','/../icons/draw.svg',"createMap(mode='curvature')")
+	c2a(["Curves"],always,'curvaturea','curvatureplot','draw the curvature net','/../icons/draw.svg',"run()")
+	
 	c2a(["Curves"],always,'facedrawb','facedraw','create Grids for a face','/../icons/draw.svg',"createGrid()")
 	
 	c2a(["Curves"],always,'isodraw32','isodraw','3D to 2D','/../icons/draw.svg',"map3Dto2D()")
@@ -313,6 +316,7 @@ if FreeCAD.GuiUp:
 	c2a(["Curves"],always,'impSVG','shoe_importSVG','import svg file','/../icons/draw.svg',"import_svg()")
 	c2a(["Curves"],always,'expSVG','shoe_importSVG','export svg file','/../icons/draw.svg',"export_svg()")
 
+	c2a(["Curves"],always,'geodesic3','geodesic_lines','create curvature star','/../icons/draw.svg',"runC()")
 	c2a(["Curves"],always,'geodesic1','geodesic_lines','create geodesic','/../icons/draw.svg',"run()")
 	c2a(["Curves"],always,'geodesic2','geodesic_lines','create geodesic bunch','/../icons/draw.svg',"runall()")
 	
@@ -504,7 +508,7 @@ static char * nurbs_xpm[] = {
 		'Nurbs_scanbackbonecut','Nurbs_createsketchspline','Nurbs_Curves to Face', 'Nurbs_facedraw',
 		'Nurbs_createcloverleaf',
 		'Part_Cone', 'Part_Cylinder','Draft_Move','Draft_Rotate','Draft_Point','Draft_ToggleGrid',
-		'My_Test2','Nurbs_toggleSketch','Sketcher_NewSketch','Nurbs_facedrawa']
+		'My_Test2','Nurbs_toggleSketch','Sketcher_NewSketch','Nurbs_facedraws']
 
 		if 1:
 			self.appendToolbar("Nurbs", cmds )

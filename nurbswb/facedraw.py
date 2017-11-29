@@ -309,30 +309,29 @@ def drawcurve(wire,face,facepos=FreeCAD.Vector()):
 	sf=t.Surface
 
 	bs=sf
-	su=bs.UPeriod()
-	sv=bs.VPeriod()
 
-	print "hacks etze uv, sv auf 1"
+	print "hacks SSetze uv, sv auf 1"
 	su=face.ParameterRange[1]
 	sv=face.ParameterRange[3]
 
-#	print "debug mapp"
-#	print "su ",su
-#	print "sv ",sv
-#	print "param range ", face.ParameterRange
 
-	if su>1000: su=face.ParameterRange[1]
-	if sv>1000: sv=face.ParameterRange[3]
+	if 0:
+		pts2da=[sf.parameter(p) for p in pts[1:]]
+		pts2d=[FreeCAD.Base.Vector2d(p[0],p[1]) for p in pts2da]
 
-	pts2da=[sf.parameter(p) for p in pts[1:]]
-	pts2d=[FreeCAD.Base.Vector2d(p[0],p[1]) for p in pts2da]
+		bs2d = Part.Geom2d.BSplineCurve2d()
+		bs2d.setPeriodic()
+
+		bs2d.interpolate(pts2d)
+		bs2d.setPeriodic()
+
+		e1 = bs2d.toShape(t)
+
 
 	bs2d = Part.Geom2d.BSplineCurve2d()
-	bs2d.setPeriodic()
-
-	bs2d.interpolate(pts2d)
-	bs2d.setPeriodic()
-
+	pts2da=[sf.parameter(p) for p in pts]
+	pts2d=[FreeCAD.Base.Vector2d(p[0],p[1]) for p in pts2da]
+	bs2d.buildFromPolesMultsKnots(pts2d,[1]*(len(pts2d)+1),range(len(pts2d)+1),True,1)
 	e1 = bs2d.toShape(t)
 
 	sp=App.ActiveDocument.getObject(wire.Label+"_Spline")
@@ -352,6 +351,11 @@ def drawcurve(wire,face,facepos=FreeCAD.Vector()):
 	r2=Part.makeSplitShape(face, splitb)
 	
 	if hasattr(wire,"drawFace"):
+
+			try: 
+				rc=r2[0][0]
+				rc=r[0][0]
+			except: return
 
 			sp=App.ActiveDocument.getObject(wire.Label+"_SplineFaceA")
 			if sp==None:
@@ -397,23 +401,13 @@ def _drawring(name,wires,dirs,face,facepos=FreeCAD.Vector()):
 		sf=t.Surface
 
 		bs=sf
-		su=bs.UPeriod()
-		sv=bs.VPeriod()
 
-		print "hacks etze uv, sv auf 1"
 		su=face.ParameterRange[1]
 		sv=face.ParameterRange[3]
 
-	#	print "debug mapp"
-	#	print "su ",su
-	#	print "sv ",sv
-	#	print "param range ", face.ParameterRange
-
-		if su>1000: su=face.ParameterRange[1]
-		if sv>1000: sv=face.ParameterRange[3]
-
 		pts2da=[sf.parameter(p) for p in pts[1:]]
 		pts2d=[FreeCAD.Base.Vector2d(p[0],p[1]) for p in pts2da]
+		
 
 		bs2d = Part.Geom2d.BSplineCurve2d()
 		bs2d.setPeriodic()
@@ -423,8 +417,10 @@ def _drawring(name,wires,dirs,face,facepos=FreeCAD.Vector()):
 
 		e1_1 = bs2d.toShape(t)
 
-		print "huhuhu"
-		sp=App.ActiveDocument.getObject(wireA.Label+"_Spline")
+
+		print "huhuhu22"
+
+		sp=App.ActiveDocument.getObject(wireA.Label+"_ASpline")
 		print  sp
 		print wireA.Label
 		if sp==None:
