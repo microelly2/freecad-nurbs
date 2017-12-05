@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #-------------------------------------------------
-#-- feedbacksketch
+#-- feedbacksketch shape models
 #--
 #-- microelly 2017 v 0.3
 #--
@@ -23,6 +23,10 @@ import time
 
 def myShape(obj,shapeBuilder):
 	print (shapeBuilder) 
+	try:
+		return methods[shapeBuilder](obj)
+	except:
+		return None
 	if shapeBuilder=="xy+xz":
 		return methodA(obj)
 	else:
@@ -30,15 +34,16 @@ def myShape(obj,shapeBuilder):
 
 
 def methodA(obj):
-	#v1=App.ActiveDocument.Sketch.Shape.Vertexes
-	#v2=App.ActiveDocument.Sketch001.Shape.Vertexes
 	try:
 		v1=obj.baseClientA.Shape.Vertexes
 		v2=obj.baseClientB.Shape.Vertexes
 	except:
-		print "cannont buid shape"
+		print "cannont build shape for .." 
+		print obj.Label
+		print obj.baseClientA.Label
+		print obj.baseClientB.Label
 		return Part.Shape()
-	
+
 	pts=[]
 	pts2=[]
 	for i,v in enumerate(v1):
@@ -48,8 +53,17 @@ def methodA(obj):
 		pts2.append(FreeCAD.Vector(p.x,p.y+25,z+10))
 
 	print pts
-	
+
 	sh=Part.makeLoft([Part.makePolygon(pts),Part.makePolygon(pts2)])
 	print sh
 	return Part.Compound([sh])
 
+
+def methodB(obj):
+	print "method B not impl."
+	return None
+
+methods={
+"xy+xz":methodA,
+"abc": methodB,
+}

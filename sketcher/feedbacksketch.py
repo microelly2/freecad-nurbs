@@ -16,6 +16,9 @@ import FreeCAD,FreeCADGui,Sketcher,Part
 App = FreeCAD
 Gui = FreeCADGui
 
+from PySide import QtCore
+
+
 import numpy as np
 import time
 
@@ -134,6 +137,8 @@ class FeedbackSketch(FeaturePython):
 		self.aa = None
 		obj.addProperty("App::PropertyBool",'clearReportview', 'Base',"clear window for every execute")
 		obj.addProperty("App::PropertyBool",'error', 'Base',"error solving sketch")
+		obj.addProperty("App::PropertyBool",'autoupdate', 'Base',"auto recompute")
+		
 		obj.addProperty("App::PropertyString",'shapeBuilder', 'Base',"method to build the shape")
 		ViewProvider(obj.ViewObject)
 	##\endcond
@@ -151,32 +156,35 @@ class FeedbackSketch(FeaturePython):
 
 	def myExecute(proxy,obj):
 
+		debug=False
 
 		if obj.clearReportview:
 			clearReportView(obj.Label)
 
 
 
-		print (obj.Label,"execute vor try")
+
+
+		if debug: print (obj.Label,"execute vor try")
 		try: 
 			if proxy.exflag: pass
 		except: proxy.exflag=True
 
 		if  not proxy.exflag: 
 			proxy.exflag=True
-			print "no execute"
+			if debug: print "no execute"
 			return
 
 		proxy.exflag=False
-		print ("execute ",obj.Label)
+		if debug: print ("execute ",obj.Label)
 
 		changed={}
 
 		for subs in obj.bases:
-			print "Section ",subs
+			if debug: print "Section ",subs
 			g=getattr(obj,"base"+subs)
 			if g == None: continue
-			print g.Label
+			if debug: print g.Label
 			if getattr(obj,"active"+subs):
 				for sof in getattr(obj,"setoff"+subs):
 					ci=getNamedConstraint(g,sof)
@@ -185,51 +193,45 @@ class FeedbackSketch(FeaturePython):
 				for gets in getattr(obj,"get"+subs):
 					cgi=getNamedConstraint(g,gets)
 					val_cgi=g.Constraints[cgi].Value
-					print ("got ",gets,val_cgi)
+					if debug: print ("got ",gets,val_cgi)
 					# set the own geometry
 					ci=getNamedConstraint(obj,gets)
 					valwar=obj.Constraints[ci].Value
-					print ("old value was",gets,valwar)
-					print changed
+					if debug: print ("old value was",gets,valwar)
 					if valwar == val_cgi:
-						print "nix zu aendern"
+						if debug: print "nix zu aendern"
 						continue
 					try: 
-						print "A"
 						changed[gets]
 						#if valwar == val_cgi:
-						print "stoppe aenderung"
+						if debug: print "stopp change"
 						changed[gets]=2
 					except:
-						print "B"
 						changed[gets]=0
 						if valwar <> val_cgi: 
 							changed[gets]=1
-						print "C"
-					print changed
 
 					if changed[gets]==2: 
-						print "bereits geaendert",gets
+						if debug: print "already changed",gets
 						continue
 					else:
 						try:
 							obj.setDatum(ci,val_cgi)
 						except:
 							FreeCAD.Console.PrintError("cannot set datum\n")
-							print "old value ",valwar
+							if debug: print "old value ",valwar
 							obj.setDriving(ci,False)
 							rc=obj.solve()
 							valneu=obj.Constraints[ci].Value
-							print "possible value",valneu
-							print(obj.Label, "solved with possible value",rc) 
+							if debug:
+								print "possible value",valneu
+								print(obj.Label, "solved with possible value",rc) 
 							obj.setDriving(ci,True)
 							#hier abbrechen
 							# wert zurück schreiben
-							print "schreibe wert zurück nach bbase"
 							g.setDatum(cgi,valneu)
-							print "gemacht"
 							rc=g.solve()
-							print(obj.Label, "solve after rollback ",rc)
+							if debug: print(obj.Label, "solve after rollback ",rc)
 							obj.error=True
 
 
@@ -239,27 +241,30 @@ class FeedbackSketch(FeaturePython):
 				# solve the tasks
 				
 				rc=obj.solve()
-				print(obj.Label, "solve after get",rc) 
+				if debug: print(obj.Label, "solve after get",rc) 
 
 				for sets in getattr(obj,"set"+subs):
 					cgi=getNamedConstraint(obj,sets)
 					val_cgi=obj.Constraints[cgi].Value
-					print ("set ",sets,val_cgi)
+					if debug: print ("BB set ",sets,val_cgi)
 					# set the data back 
 					ci=getNamedConstraint(g,sets)
+					if debug: print ("ci BB",ci,sets,g.Label)
 
 					isdriving=g.getDriving(ci)
 					g.setDriving(ci,True)
 
+					if debug: print ("try to set ",ci ,val_cgi)
 					g.setDatum(ci,val_cgi)
-					
+
 					rc=g.solve()
-					print(obj.Label, "solve after set",rc) 
+
+					if debug: print(obj.Label, "solve after set",rc) 
 
 					if not isdriving:
 						g.setDriving(ci,False)
 						rc=g.solve()
-						print(obj.Label, "solve after set and switch back to blue",rc) 
+						if debug: print(obj.Label, "solve after set and switch back to blue",rc) 
 
 				for sof in getattr(obj,"seton"+subs):
 					ci=getNamedConstraint(g,sof)
@@ -267,22 +272,26 @@ class FeedbackSketch(FeaturePython):
 
 
 			rc=g.solve()
-			print(obj.Label, "final solve",rc) 
+			if debug: print(obj.Label, "AA final solve",rc) 
 
 		for subs in obj.bases:
-			print "Section ",subs
+			if debug: print "Section ",subs
 			g=getattr(obj,"base"+subs)
 			if g == None: continue
-			print g.Label
 
 			if getattr(obj,"active"+subs):
 
 				for sets in getattr(obj,"set"+subs):
 					cgi=getNamedConstraint(obj,sets)
 					val_cgi=obj.Constraints[cgi].Value
-					print ("set ",sets,val_cgi)
+					if debug: print ("AB set ",sets,val_cgi)
 					# set the data back 
-					ci=getNamedConstraint(g,sets)
+					try:
+						ci=getNamedConstraint(g,sets)
+					except:
+						print "getNamedConstraint ERROR"
+						ci=9999
+						raise Exception("getNamedConstraint")
 
 					isdriving=g.getDriving(ci)
 					g.setDriving(ci,True)
@@ -290,7 +299,7 @@ class FeedbackSketch(FeaturePython):
 					g.setDatum(ci,val_cgi)
 					
 					rc=g.solve()
-					print(obj.Label, "solve after set",rc) 
+					if debug: print(obj.Label, "solve after set",rc) 
 
 					if not isdriving:
 						g.setDriving(ci,False)
@@ -302,17 +311,50 @@ class FeedbackSketch(FeaturePython):
 					g.setDriving(ci,True)
 
 
-
-
-
 		return
+
+	def onChanged(self, obj, prop):
+#		print ("onChange", prop)
+		if prop=='bases':
+			for b in obj.bases: addgrp(obj,b)
+
+		if prop=="autoupdate": 
+			if obj.autoupdate:
+				self.runTimer(obj)
+			else: 
+				if hasattr(obj.Proxy,"myTimer"):
+					obj.Proxy.myTimer.stop()
+
+
+	def someOtherFunction(self):
+		try: self.Object.Label
+		except: 
+			print "someOtherFunction not ready"
+			if hasattr(self,"myTimer"):
+				self.myTimer.stop()
+			return
+
+		print ("run auto update")
+		FreeCAD.ActiveDocument.recompute()
+
+
+	def runTimer(self,obj):
+		self.Object=obj
+		self.myTimer = QtCore.QTimer() 
+		self.myTimer.setInterval(1000) 
+		self.myTimer.timeout.connect(self.someOtherFunction) 
+		self.myTimer.start()
+
+
 
 
 	def execute(self,obj):
 
-		if obj.error:
-				obj.error=False
-				raise Exception("Obj -- Error")
+#		if obj.error:
+#				obj.error=False
+#				raise Exception("Obj -- Error")
+
+
 
 
 		obj.recompute() 
@@ -320,17 +362,55 @@ class FeedbackSketch(FeaturePython):
 		except: self.Lock=False
 		if not self.Lock:
 			self.Lock=True
+			dats=[]
+			for subs in obj.bases:
+#				print "erstelle Sicherung ",subs
+				g=getattr(obj,"base"+subs)
+				if g <>None:
+					gs,cs,cons=storeSketch(g)
+				else: gs,cs,cons=[],[],[]
+				dats.append((gs,cs,cons))
+
 			try:
 				#print "run myexecute"
 				self.myExecute(obj)
+				FreeCAD.Console.PrintMessage("myexecute success\n")
 				#print "myexecute done"
 			except Exception as ex:
 				print(ex)
 				print('myExecute error')
 #				sayexc("myExecute Error")
+				print "RESTORE ..."
+				FreeCAD.Console.PrintWarning("RESTORE after sketch solve failure\n")
+				if hasattr(self,'dats'):
+#					print "vereende self sicherung daten "
+					dats=self.dats
+				for i,subs in enumerate(obj.bases):
+#					print ("hole Section ",i,subs)
+					g=getattr(obj,"base"+subs)
+					if g<>None:
+						gs,cs,cons=dats[i]
+						resetSketch(g)
+						fillSketch(g,gs,cs,cons)
+
 				self.Lock=False
-				raise Exception("myExecute Error AA")
+				#raise Exception("myExecute Error AA")
+				print "ReSTORED"
+				
 			self.Lock=False
+
+#			print "ERSTELLE SICHERUNG-------------# sichern"
+			dats=[]
+			for subs in obj.bases:
+#				print "Section ",subs
+				g=getattr(obj,"base"+subs)
+				if g <>None:
+					gs,cs,cons=storeSketch(g)
+				else: gs,cs,cons=[],[],[]
+				dats.append((gs,cs,cons))
+			self.dats=dats
+
+
 
 		# eigene Figur berechnen
 		import sketcher.demoshapes
@@ -365,6 +445,35 @@ def copySketch(source,target):
 		target.addGeometry(g)
 	for c in source.Constraints:
 		target.addConstraint(c)
+
+
+
+# Sketch kopieren
+def fillSketch(target,gs,cs,cons):
+	print ("Restore ",target.Label,len(gs),len(cs))
+	for i,g in enumerate(gs):
+		target.addGeometry(g)
+		target.setConstruction(i,cons[i])
+	for c in cs:
+		target.addConstraint(c)
+
+
+def resetSketch(target):
+	gc=target.GeometryCount
+	print ("Loesche Geometry",target.Label,gc)
+	for i in range(gc):
+		target.delGeometry(gc-i-1)
+	target.solve()
+
+
+def storeSketch(sketch):
+	gs=sketch.Geometry
+	cs=sketch.Constraints
+	cons=[g.Construction for g in gs]
+	return gs,cs,cons
+
+
+
 
 
 ## \cond
