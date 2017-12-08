@@ -147,7 +147,8 @@ def createShape(obj):
 			#try: sweep=obj.face.TypeId=='Part::Sweep'
 			#except: sweep=True
 
-			if obj.flipuv23: p2=bs.value(u,v)
+
+			if obj.mapobject.flipuv23: p2=bs.value(u,v)
 			else: p2=bs.value(u*sv,v*su)
 
 			pts2.append(p2)

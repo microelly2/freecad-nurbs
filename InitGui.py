@@ -403,6 +403,10 @@ if FreeCAD.GuiUp:
 	c2a(["Workspace"],ondocument,'Create Workspace',None,"Create workspace",'/../icons/plane.svg',"createws()","workspace")
 	c2a(["Workspace"],ondocument,'Create Link',None,"Create workspace link",'/../icons/plane.svg',"createlink()","workspace")
 
+	c2a(["Workspace"],ondocument,'ViewsQV','views',"Create QuadView",'/../icons/plane.svg',"createquadview()","workspace")
+	c2a(["Workspace"],ondocument,'Views2H','views',"Create 2 horizontal views",'/../icons/plane.svg',"createh2()","workspace")
+
+
 	c2a(["Needle"],ondocument,'Needle','needle','create a needle','/../icons/shoe.svg',"run()")
 	c2a(["Needle"],onneedle,'needle Change Model','needle_change_model','needle Change Model','/../icons/shoe.svg',"run()")
 	c2a(["Needle"],onselex1,'addULine','needle_cmds','add Meridian/Rib','/../icons/add_edge.svg',"cmdAdd()")

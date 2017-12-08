@@ -17,7 +17,7 @@ import Part,Mesh,Draft
 
 import numpy as np
 
-def Myarray2NurbsD3(arr,label="MyWall",degree=3):
+def Myarray2NurbsD3(arr,label="MyWall",degree=3,obj=None):
 
 	cylinder=True
 
@@ -88,23 +88,27 @@ def Myarray2NurbsD3(arr,label="MyWall",degree=3):
 		sp.Shape=sh
 		sp.ViewObject.ControlPoints=vcp
 		sp.ViewObject.hide()
-	try:
-		fa=bs.uIso(0)
-		sha1 = Part.Wire(fa.toShape())
-		sha = Part.Face(sha1)
 
-		fb=bs.uIso(1)
-		shb1 = Part.Wire(fb.toShape())
-		shb = Part.Face(shb1)
-
-		sol=Part.Solid(Part.Shell([sha.Face1,shb.Face1,sh.Face1]))
-	except:
+	if obj.makeSolid:
 		try:
-			sha=Part.makeFilledFace(Part.__sortEdges__([App.ActiveDocument.Poles.Shape.Edge3, ]))
-			shb=Part.makeFilledFace(Part.__sortEdges__([App.ActiveDocument.Poles.Shape.Edge1, ]))
+			fa=bs.uIso(0)
+			sha1 = Part.Wire(fa.toShape())
+			sha = Part.Face(sha1)
+
+			fb=bs.uIso(1)
+			shb1 = Part.Wire(fb.toShape())
+			shb = Part.Face(shb1)
+
 			sol=Part.Solid(Part.Shell([sha.Face1,shb.Face1,sh.Face1]))
 		except:
-			sol=sh
+			try:
+				sha=Part.makeFilledFace(Part.__sortEdges__([App.ActiveDocument.Poles.Shape.Edge3, ]))
+				shb=Part.makeFilledFace(Part.__sortEdges__([App.ActiveDocument.Poles.Shape.Edge1, ]))
+				sol=Part.Solid(Part.Shell([sha.Face1,shb.Face1,sh.Face1]))
+			except:
+				sol=sh
+	else:
+		sol=sh
 
 	return (sol,bs)
 
@@ -440,6 +444,11 @@ class Needle(PartFeature):
 		obj.addProperty("App::PropertyInteger","MeshUCount","Mesh").MeshUCount=5
 		obj.addProperty("App::PropertyInteger","MeshVCount","Mesh").MeshVCount=5
 
+		obj.addProperty("App::PropertyInteger","startSegment","Segment").startSegment=0
+		obj.addProperty("App::PropertyInteger","endSegment","Segment").endSegment=-1
+		
+		obj.addProperty("App::PropertyBool","makeSolid" ,"Base").makeSolid=True
+
 		# obj.ViewObject.LineColor=(1.0,0.0,1.0)
 		#obj.ViewObject.DisplayMode = "Shaded"
 		obj.ViewObject.Transparency = 30
@@ -558,7 +567,7 @@ class Needle(PartFeature):
 		poles= twist(poles,twister)
 		poles= extrude(poles,bb)
 
-		(nn,bs)=Myarray2NurbsD3(poles,"Nadelhuelle",degree=obj.Degree)
+		(nn,bs)=Myarray2NurbsD3(poles,"Nadelhuelle",degree=obj.Degree,obj=obj)
 		obj.Shape=nn
 
 		if obj.useBackbone: proxy.createBackbone(obj,bb)

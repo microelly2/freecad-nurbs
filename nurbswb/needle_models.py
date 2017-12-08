@@ -17,6 +17,7 @@ myNeedle.Proxy.getExampleModel(nurbswb.needle_models.modelSpoon)
 import numpy as np
 
 
+
 class model():
 
 	def __init__(self,bbl=5):
@@ -35,6 +36,11 @@ class model():
 		self.twister=[[0,0,0]]*bbl
 		self.bb=[[0,0,100*i] for i in range(bbl)]
 		self.info='a generic model'
+
+
+#---------------
+
+
 
 
 
@@ -638,7 +644,7 @@ class modelS(model): # cyclic demo
 
 
 
-class modelS(model): # Ski
+class modelSki(model): # Ski
 
 	def __init__(self,bbl=4):
 		model.__init__(self)
@@ -660,6 +666,8 @@ class modelS(model): # Ski
 		self.sc[0]=[0.4,0.8]
 
 		self.twister=[[0,0,0]]*len(self.bb)
+
+
 
 
 
@@ -802,6 +810,97 @@ class modelPicoBanana(modelBanana):
 
 #App.activeDocument().MyNeedle.Proxy.getExampleModel(modelMiniBanana)
 #App.activeDocument().MyNeedle.Shape.BoundBox.DiagonalLength
+
+
+
+class modelS(model):
+	'''self eating worm'''
+
+	def __init__(self,bbl=4):
+		model.__init__(self)
+		self.curve=[
+				[200,0,0],
+				[200,400,0],
+				[-200,400,0],
+				[-200,0,0],
+			]
+
+		self.sc=[[1,1],
+		[1,1],
+		[1,1],
+		[0.6,0.6],
+		[0.5,0.5],
+		[0.5,0.5],
+		[0.5,0.5],
+		[0.3,0.3],
+		[0.3,0.3],
+		[0.3,0.3],
+		
+		[0.3,0.3],
+#
+		[0.3,0.3],
+		[0.8,0.8],
+		
+		[1.,1.],
+		[1.,1.],
+		[1.,1.],
+		]
+
+		self.twister=[[0,0,0],
+		[0,0,0],
+		[0,30,0],
+		
+		[0,90,0],
+		[0,90,0],
+		[0,180,0],
+		[0,230,0],
+		
+		[0,200,0],
+		[0,180,0],
+		[0,180,0],
+		
+		[0,180,0],
+#
+		[0,180,0],
+		[0,180,0],
+
+		[0,180,0],
+		[0,180,0],
+
+
+		]
+
+
+		self.bb=[[0,100,0],
+			[0,100,500],
+			[0,100,800],
+			
+			[250,100,800],
+			[350,100,800],
+			[450,100,700],
+			[450,100,600],
+			
+			[250,250,450],
+			[150,250,300],
+			[0,250,200],
+			[0,250,-100],
+			
+#
+			[0,250,-200],
+			[0,100,-300],
+
+			[0,100,-100],
+			[0,100,-0],
+
+		]
+		
+		self.info="self eating worm"
+		self.intervall=[0,4]
+
+
+
+#----------------
+
 
 
 

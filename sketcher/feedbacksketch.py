@@ -157,6 +157,7 @@ class FeedbackSketch(FeaturePython):
 	def myExecute(proxy,obj):
 
 		debug=False
+		debug=True
 
 		if obj.clearReportview:
 			clearReportView(obj.Label)
@@ -254,8 +255,24 @@ class FeedbackSketch(FeaturePython):
 					isdriving=g.getDriving(ci)
 					g.setDriving(ci,True)
 
-					if debug: print ("try to set ",ci ,val_cgi)
-					g.setDatum(ci,val_cgi)
+					if debug: 
+						print ("try to set ",ci ,val_cgi)
+						print (g.Label)
+					
+					try:
+						g.setDatum(ci,val_cgi)
+					except:
+						print "debug --- "
+						for cii,c in enumerate(g.Constraints):
+							print (cii,c,  g.Constraints[cii].Value)
+
+						print ("try to set ",ci,g.Constraints[ci].Value)
+						
+						g.setDatum(ci,App.Units.Quantity(str(g.Constraints[ci].Value) +' mm'))
+						print "still okay?"
+						g.setDatum(ci,g.Constraints[ci].Value)
+						print "!!",g.Constraints[ci].Value
+						g.setDatum(ci,App.Units.Quantity(str(val_cgi) +' mm'))
 
 					rc=g.solve()
 
