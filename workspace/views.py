@@ -11,7 +11,8 @@ import FreeCAD,FreeCADGui
 App=FreeCAD
 Gui=FreeCADGui
 
-from PySide import QtCore
+
+from PySide import QtCore,QtGui
 from pivy import coin
 import numpy as np
 
@@ -30,6 +31,21 @@ def createquadview():
 	FreeCAD.viewLabel=title
 	updatencontent(v,obj)
 
+'''
+The Gui.createViewer-Object has the method fitAll, viewLeft ...
+I think its better to have these methods for each view and not only as global method
+So it is possible to display  in each window another view direction
+
+
+>> view=v.getViewer(2)
+>>> rm=view.getSoRenderManager()
+>>> c=rm.getCamera()
+
+c has pointAt, scaleHeight
+
+
+but I look for position, orientation setters an getters.
+'''
 
 def updatencontent(viewer,obj):
 

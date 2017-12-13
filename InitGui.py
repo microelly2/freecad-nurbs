@@ -355,6 +355,11 @@ if FreeCAD.GuiUp:
 
 	c2a(["Faces"],ondocument,'folda','folding','create a folding of a face','/../icons/nurbs.svg',"run()")
 
+	c2a(["Faces"],ondocument,'unrolla','unroll_curve','unroll curve Yaw from a face','/../icons/nurbs.svg',"unroll_yaw()")
+	c2a(["Faces"],ondocument,'unrollb','unroll_curve','unroll curve Pitch from a face','/../icons/nurbs.svg',"unroll_pitch()")
+
+	c2a(["Faces"],ondocument,'unrollc','unroll_curve','combine Yaw and Pitch curces','/../icons/nurbs.svg',"combineCT()")
+
 
 	c2a(["Faces"],ondocument,'Sole Change Model','sole_change_model','Shoe Sole Change Model','/../icons/sole.svg',"run()")
 	c2a(["Faces"],ondocument,'load Sole Height','load_sole_profile_height','Load Height Profile','/../icons/sole.svg',"run()")

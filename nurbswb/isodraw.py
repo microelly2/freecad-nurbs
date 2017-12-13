@@ -1346,14 +1346,18 @@ def map3Dto2D():
 		mapobj=base.mapobject
 		face=mapobj.faceObject
 	print face.Label
+	print "Run 3D to 2D"
 
 	for wire in s:
+		print "Wire ",wire
 		[uv2x,uv2y,xy2u,xy2v]=getmap(mapobj,face)
 
 		bs=face.Shape.Face1.Surface
 		pts2=[]
 		firstEdge=True
 		for e in wire.Shape.Edges:
+			print "Edge",e
+			
 			# auf 5 millimeter genau
 			if mapobj<>None:
 				dd=mapobj.pointsPerEdge
@@ -1368,6 +1372,10 @@ def map3Dto2D():
 			firstEdge=False
 
 			FreeCAD.ptsaa=pts
+
+			su=face.Shape.Face1.ParameterRange[1]
+			sv=face.Shape.Face1.ParameterRange[3]
+			print ("su sv",su,sv)
 
 			for p in pts:
 				(u,v)=bs.parameter(p)
@@ -1394,11 +1402,29 @@ def map3Dto2D():
 					v=v/sv
 					u=u/su
 
+
+				# hack yy
+
+
 				x=uv2x(u,v)
 				y=uv2y(u,v)
-				
 
-#				print(u,v,x,y)
+
+				#hack zylinder schnell xx
+				
+				
+				if bs.__class__.__name__=='Cylinder':
+					print "hack fuer zylinder schnell zeile 1413"
+					bs.Radius
+					#x *= 0.01 *0.2
+					x /= bs.Radius
+					#x *= 100
+					#y *= bs.Radius*0.5
+					y *= 100 *bs.Radius/100
+					x,y=y,x
+
+
+				print("Umrechung u,v,x,y", u,v,x,y)
 				if mapobj<>None and mapobj.flipxy:
 					p2=FreeCAD.Vector(y,x,0)
 				else:
@@ -1408,8 +1434,9 @@ def map3Dto2D():
 #				p2=FreeCAD.Vector(y,x,0)
 				# warum diese verschiebung?
 				#p2 += FreeCAD.Vector(80,80,0)
+				print "p2",p2
 				pts2.append(p2)
-
+		FreeCAD.ptsa=pts2
 		a=Draft.makeWire(pts2,closed=True)
 		a.Label="map2D_for_"+wire.Label
 		a.ViewObject.ShapeColor=wire.ViewObject.LineColor
@@ -1534,11 +1561,13 @@ def map3Dgridto2Dgrid():
 
 
 
+
 def getmap(mapobj,obj):
 	'''  berechnet vier interpolatoren zum umrechnen von xy(isomap) in uv(nurbs) und zurueck 
 	mapobj liefert die parameter
 	obj ist das Part mit der benutzten Face
 	'''
+
 
 
 	#default values 
@@ -1558,6 +1587,28 @@ def getmap(mapobj,obj):
 	sv=bs.VPeriod()
 
 	print "hack B-BB su sv aa bb"
+	print ("get map parametr Range ",face.ParameterRange)
+	
+	if bs.__class__.__name__=='Cylinder':
+		print "CYLINDER MODE!!"
+
+		def m_uv2x(u,v):
+			return bs.Radius*u
+			return 100*u
+
+		def m_uv2y(u,v):
+			return v*1
+
+		def m_xy2u(x,y):
+			return x/bs.Radius
+			return x*001
+
+		def m_xy2v(x,y):
+			return y
+
+
+		return [m_uv2x,m_uv2y,m_xy2u,m_xy2v]
+
 
 	su=face.ParameterRange[1]
 	sv=face.ParameterRange[3]
