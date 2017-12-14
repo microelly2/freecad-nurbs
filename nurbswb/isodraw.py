@@ -141,15 +141,28 @@ def createShape(obj):
 			u=xy2u(x,y)
 			v=xy2v(x,y)
 
-			su=face.ParameterRange[1]
-			sv=face.ParameterRange[3]
+##			su=face.ParameterRange[1]
+##			sv=face.ParameterRange[3]
+
+
+
+			sua=face.ParameterRange[0]
+			sva=face.ParameterRange[2]
+			sue=face.ParameterRange[1]
+			sve=face.ParameterRange[3]
+			sul=sue-sua
+			svl=sve-sva
+
+			#sua + svl*
+			#sva + svl*
+
 
 			#try: sweep=obj.face.TypeId=='Part::Sweep'
 			#except: sweep=True
 
 
 			if obj.mapobject.flipuv23: p2=bs.value(u,v)
-			else: p2=bs.value(u*sv,v*su)
+			else: p2=bs.value(sva+u*svl,aua+v*sul)
 
 			pts2.append(p2)
 
@@ -552,18 +565,30 @@ def createGrid(mapobj,upmode=False):
 #	try: sweep=obj.Faceobject.TypeId=='Part::Sweep'
 #	except: sweep=True
 
+
+	sua=face.ParameterRange[0]
+	sva=face.ParameterRange[2]
+	sue=face.ParameterRange[1]
+	sve=face.ParameterRange[3]
+	sul=sue-sua
+	svl=sve-sva
+
+	#sua + svl*
+	#sva + svl*
+
+
 	if not obj.flipuv23:
 
-		mpu2=mpu*sv
-		mpv2=mpv*su
+		mpu2=sva+mpu*svl
+		mpv2=aza+mpv*sul
 
 	else:
 		if upmode:
-			mpu2=mpu*su
-			mpv2=mpv*sv
+			mpu2=sua+mpu*sul
+			mpv2=sva+mpv*svl
 		else:
-			mpu2=mpu*sv
-			mpv2=mpv*su
+			mpu2=sva+mpu*svl
+			mpv2=sua+mpv*sul
 
 
 
@@ -590,7 +615,7 @@ def createGrid(mapobj,upmode=False):
 
 	for v in range(vc+1):
 		pts=[]
-		vm=1.0/vc*v*sv
+		vm=sva+1.0/vc*v*svl
 
 		ky=ba.length(vm,mpv)
 
@@ -601,7 +626,7 @@ def createGrid(mapobj,upmode=False):
 
 		ptsk=[]
 		for u in range(uc+1):
-			uv=1.0/uc*u*su
+			uv=sua+1.0/uc*u*sul
 
 			ba=bs.uIso(uv)
 
@@ -638,15 +663,15 @@ def createGrid(mapobj,upmode=False):
 		for u in range(uc+1):
 
 				if mapobj.flipuv:
-					uv=1.0/uc*u*su
-					vv=1.0/vc*v*sv
-					vv2=1.0/uc*u*sv
-					uv2=1.0/vc*v*su
+					uv=sua+1.0/uc*u*sul
+					vv=sva+1.0/vc*v*svl
+					vv2=sva+1.0/uc*u*svl
+					uv2=sua+1.0/vc*v*sul
 				else:
-					vv=1.0/uc*u*su
-					uv=1.0/vc*v*sv
-					uv2=1.0/uc*u*sv
-					vv2=1.0/vc*v*su
+					vv=sua+1.0/uc*u*sul
+					uv=sva+1.0/vc*v*svl
+					uv2=sva+1.0/uc*u*svl
+					vv2=sua+1.0/vc*v*sul
 
 
 #				try: sweep=face.TypeId=='Part::Sweep'
@@ -658,10 +683,10 @@ def createGrid(mapobj,upmode=False):
 #					print "---------------------------RRRRRRRRRRRRRRRRRRR"
 #					x=uv2x(vv,uv)
 #					y=uv2y(vv,uv)
-					uv=1.0/uc*(uc-u)*su
-					uv=1.0/uc*(u)*su
-					vv=1.0/vc*(vc-v)*sv
-					vv=1.0/vc*(v)*sv
+					uv=sua+1.0/uc*(uc-u)*sul
+					uv=sua+1.0/uc*(u)*sul
+					vv=sva+1.0/vc*(vc-v)*svl
+					vv=sva+1.0/vc*(v)*svl
 
 					x=uv2x(uv,vv)
 					y=uv2y(uv,vv)
@@ -775,7 +800,7 @@ def createGrid(mapobj,upmode=False):
 		
 
 		# markiere zentrum der karte
-		z=bs.value(0.5*su,0.5*sv)
+		z=bs.value(sua+0.5*sul,sva+0.5*svl)
 		circ=Part.Circle()
 		circ.Radius=10
 
@@ -785,7 +810,7 @@ def createGrid(mapobj,upmode=False):
 		circ.Location=t2.Base
 		
 		th=FreeCAD.Placement()
-		th.Base=bs.normal(0.5*su,0.5*sv)
+		th.Base=bs.normal(sua+0.5*sul,sva+0.5*svl)
 		t2=pmh.multiply(th)
 
 		circ.Axis=t2.Base
@@ -823,8 +848,8 @@ def createGrid(mapobj,upmode=False):
 		comps=[]
 
 		# markiere zentrum der karte
-		uv=0.5*su
-		vm=0.5*sv
+		uv=sua+0.5*sul
+		vm=sva+0.5*svl
 		
 		ky=ba.length(vm,mpv)
 		if vm<mpv: ky =-ky
@@ -1376,6 +1401,16 @@ def map3Dto2D():
 			su=face.Shape.Face1.ParameterRange[1]
 			sv=face.Shape.Face1.ParameterRange[3]
 			print ("su sv",su,sv)
+			
+			
+			sua=face.ParameterRange[0]
+			sva=face.ParameterRange[2]
+			sue=face.ParameterRange[1]
+			sve=face.ParameterRange[3]
+			sul=sue-sua
+			svl=sve-sva
+
+
 
 			for p in pts:
 				(u,v)=bs.parameter(p)
@@ -1399,8 +1434,8 @@ def map3Dto2D():
 #				except: sweep=True
 
 				if not mapobj.flipuv23:
-					v=v/sv
-					u=u/su
+					v=(v-sva)/svl
+					u=(u-sua)/sul
 
 
 				# hack yy
@@ -1535,8 +1570,17 @@ def map3Dgridto2Dgrid():
 				if su>1000: su=face.ParameterRange[1]
 				if sv>1000: sv=face.ParameterRange[3]
 
-				v=v/sv
-				u=u/su
+				sua=face.ParameterRange[0]
+				sva=face.ParameterRange[2]
+				sue=face.ParameterRange[1]
+				sve=face.ParameterRange[3]
+				sul=sue-sua
+				svl=sve-sva
+
+
+
+				v=(v-sva)/svl
+				u=(u-sua)/sul
 				
 				x=uv2x(u,v)
 				y=uv2y(u,v)
@@ -1583,8 +1627,9 @@ def getmap(mapobj,obj):
 	bs=obj.Shape.Face1.Surface
 	face=obj.Shape.Face1
 
-	su=bs.UPeriod()
-	sv=bs.VPeriod()
+#	su=bs.UPeriod()
+#	sv=bs.VPeriod()
+
 
 	print "hack B-BB su sv aa bb"
 	print ("get map parametr Range ",face.ParameterRange)
@@ -1615,6 +1660,16 @@ def getmap(mapobj,obj):
 
 	if su>1000: su=face.ParameterRange[1]
 	if sv>1000: sv=face.ParameterRange[3]
+
+
+
+	sua=face.ParameterRange[0]
+	sva=face.ParameterRange[2]
+	sue=face.ParameterRange[1]
+	sve=face.ParameterRange[3]
+	sul=sue-sua
+	svl=sve-sva
+
 
 	if mapobj<>None:
 		if hasattr(mapobj,'faceObject'):
@@ -1651,17 +1706,17 @@ def getmap(mapobj,obj):
 	refpos=bs.value(mpv,mpu)
 	ptsa=[] # abbildung des uv-iso-gitter auf die xy-Ebene
 
-	mpv *=sv
-	mpu *=su
+	mpv =svl *mpv + sva
+	mpu =sul *mpu + sua
 
 	for v in range(vc+1):
 		pts=[]
-		vaa=1.0/vc*v*sv
+		vaa=sva+1.0/vc*v*svl
 
 		bbc=bs.vIso(vaa)
 
 		for u in range(uc+1):
-			uaa=1.0/uc*u*su
+			uaa=sua+1.0/uc*u*sul
 			ba=bs.uIso(uaa)
 
 			ky=ba.length(vaa,mpv)
@@ -1677,11 +1732,11 @@ def getmap(mapobj,obj):
 
 	ptsa=np.array(ptsa).swapaxes(0,1)
 
-	vs=[1.0/vc*v for v in range(vc+1)]
-	us=[1.0/uc*u for u in range(uc+1)]
+#	vs=[1.0/vc*v for v in range(vc+1)]
+#	us=[1.0/uc*u for u in range(uc+1)]
 
-	vs=[1.0/vc*v*sv for v in range(vc+1)]
-	us=[1.0/uc*u*su for u in range(uc+1)]
+	vs=[sva+1.0/vc*v*svl for v in range(vc+1)]
+	us=[sua+1.0/uc*u*sul for u in range(uc+1)]
 
 
 	uv2x = scipy.interpolate.interp2d(us, vs, ptsa[:,:,0], kind=modeA)
@@ -1776,8 +1831,18 @@ def getmap3(mapobj,obj,calcZ=None):
 		su=face.ParameterRange[1]
 		sv=face.ParameterRange[3]
 
-		ur *= su
-		vr *= sv
+
+
+		sua=face.ParameterRange[0]
+		sva=face.ParameterRange[2]
+		sue=face.ParameterRange[1]
+		sve=face.ParameterRange[3]
+		sul=sue-sua
+		svl=sve-sva
+
+
+		ur = ur* sul +sua
+		vr = vr *svl +sva
 
 		tt=mapobj.modeCurvature
 		cc=bs.curvature(ur,vr,tt)
@@ -1826,6 +1891,16 @@ def getmap3(mapobj,obj,calcZ=None):
 	if su>1000: su=face.ParameterRange[1]
 	if sv>1000: sv=face.ParameterRange[3]
 
+
+
+	sua=face.ParameterRange[0]
+	sva=face.ParameterRange[2]
+	sue=face.ParameterRange[1]
+	sve=face.ParameterRange[3]
+	sul=sue-sua
+	svl=sve-sva
+
+
 	if mapobj<>None:
 		if hasattr(mapobj,'faceObject'):
 
@@ -1860,17 +1935,17 @@ def getmap3(mapobj,obj,calcZ=None):
 	refpos=bs.value(mpv,mpu)
 	ptsa=[] # abbildung des uv-iso-gitter auf die xy-Ebene
 
-	mpv *=sv
-	mpu *=su
+	mpv = svl*mpv + sva
+	mpu = sul*mpu + sua
 
 	for v in range(vc+1):
 		pts=[]
-		vaa=1.0/vc*v*sv
+		vaa=sva+1.0/vc*v*svl
 
 		bbc=bs.vIso(vaa)
 
 		for u in range(uc+1):
-			uaa=1.0/uc*u*su
+			uaa=sua+1.0/uc*u*sul
 			ba=bs.uIso(uaa)
 
 			ky=ba.length(vaa,mpv)
@@ -1890,8 +1965,8 @@ def getmap3(mapobj,obj,calcZ=None):
 	vs=[1.0/vc*v for v in range(vc+1)]
 	us=[1.0/uc*u for u in range(uc+1)]
 
-	vs=[1.0/vc*v*sv for v in range(vc+1)]
-	us=[1.0/uc*u*su for u in range(uc+1)]
+	vs=[sva+1.0/vc*v*svl for v in range(vc+1)]
+	us=[sua+1.0/uc*u*sul for u in range(uc+1)]
 
 
 	uv2x = scipy.interpolate.interp2d(us, vs, ptsa[:,:,0], kind=modeA)

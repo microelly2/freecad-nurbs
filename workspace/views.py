@@ -122,6 +122,7 @@ def updatencontenth2(viewer,obja,objb):
 	view.setSceneGraph(marker)
 
 	v.fitAll()
+	v.viewTop()
 
 
 def createh2_firstVersion():
@@ -212,4 +213,5 @@ def createh2():
 			Gui.Selection.clearSelection()
 			updatencontenth2(v,obja,objb)
 
+	v.viewLeft()
 
