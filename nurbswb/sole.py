@@ -203,6 +203,10 @@ def runA(model=None):
 
 	sh=5 # sohlenhoehe
 
+	bh=40
+	sh=10
+	bw=0.0
+
 
 	# prgramm parameter
 	# grad der flaechen
@@ -360,6 +364,14 @@ def runA(model=None):
 
 	bs=Part.BSplineSurface()
 
+
+	pts2[:,0,2]=100
+	pts2[:,-1,2]=100
+	pts2[0,:,2]=100
+	pts2[-1,:,2]=100
+	
+
+
 	bs.buildFromPolesMultsKnots(pts2,mv,mu,kvs,kus,
 				False,False,
 				dv,du,
@@ -387,8 +399,11 @@ def runA(model=None):
 	for pts in pts2:
 		coll += [Part.makePolygon([FreeCAD.Vector(p) for p in pts])]
 
-	#Part.show(Part.Compound(coll))
+	Part.show(Part.Compound(coll))
 	
+	
+	print "ABBRUCH HIER"
+	return
 
 
 
@@ -503,7 +518,7 @@ def createheel():
 ## create sole and infrastructure models
 def run():
 	runA()
-	createheel()
+#	createheel()
 
 
 

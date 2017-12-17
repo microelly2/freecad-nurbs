@@ -353,6 +353,7 @@ if FreeCAD.GuiUp:
 	c2a(["Faces","create"],ondocument,'simple Hood','simplehood','create a simple hood','/../icons/nurbs.svg',"run()")
 
 
+	c2a(["Faces"],ondocument,'patcha','patch','connect 2 curve segments to a face','/../icons/nurbs.svg',"run()")
 	c2a(["Faces"],ondocument,'folda','folding','create a folding of a face','/../icons/nurbs.svg',"run()")
 
 	c2a(["Faces"],ondocument,'unrolla','unroll_curve','unroll curve Yaw from a face','/../icons/nurbs.svg',"unroll_yaw()")
@@ -512,7 +513,13 @@ static char * nurbs_xpm[] = {
 		Gui.activateWorkbench("DraftWorkbench")
 		Gui.activateWorkbench("SketcherWorkbench")
 
-		cmds= ['Nurbs_ZebraTool','Nurbs_DraftBSpline Editor',
+		try: # some methods from curve wb
+			import ZebraTool
+			import ParametricComb
+			
+		except: pass
+
+		cmds= ['ZebraTool','ParametricComb','Nurbs_DraftBSpline Editor',
 		'Nurbs_Create Shoe','Nurbs_Create Sole','Nurbs_Sole Change Model',
 		'Nurbs_scanbackbonecut','Nurbs_createsketchspline','Nurbs_Curves to Face', 'Nurbs_facedraw',
 		'Nurbs_createcloverleaf',

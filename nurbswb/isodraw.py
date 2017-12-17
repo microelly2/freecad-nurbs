@@ -527,10 +527,13 @@ def createGrid(mapobj,upmode=False):
 	'''create a 2D grid  or 3D grid (if upmode) for the map obj'''
  
 	obj=mapobj
-	try: bs=obj.faceObject.Shape.Face1.Surface
+	
+	try: 
+		face=obj.faceObject.Shape.Faces[obj.faceNumber]
+		bs=face.Surface
 	except: return Part.Shape()
 
-	face=obj.faceObject.Shape.Face1
+#	face=obj.faceObject.Shape.Face1
 
 #	mpu=obj.uMapCenter/100
 #	mpv=obj.vMapCenter/100
@@ -683,9 +686,9 @@ def createGrid(mapobj,upmode=False):
 #					print "---------------------------RRRRRRRRRRRRRRRRRRR"
 #					x=uv2x(vv,uv)
 #					y=uv2y(vv,uv)
-					uv=sua+1.0/uc*(uc-u)*sul
+##					uv=sua+1.0/uc*(uc-u)*sul
 					uv=sua+1.0/uc*(u)*sul
-					vv=sva+1.0/vc*(vc-v)*svl
+##					vv=sva+1.0/vc*(vc-v)*svl
 					vv=sva+1.0/vc*(v)*svl
 
 					x=uv2x(uv,vv)
@@ -703,7 +706,11 @@ def createGrid(mapobj,upmode=False):
 					#z=uv2z(uv,vv)
 					# drekt nutzen statt interpolator
 					#z=bs.curvature(vv,uv,"Mean")
-					z2=bs.curvature(uv2,vv2,obj.modeCurvature)
+					try:
+						z2=bs.curvature(uv2,vv2,obj.modeCurvature)
+					except:
+						z2=0
+					
 					if z2<>0:r=round(1.0/z2)
 					else: r='planar'
 					if u>=mapobj.vMin-1 and u<=mapobj.vMax+1 and v>=mapobj.uMin-1 and v<=mapobj.uMax+1:
@@ -883,11 +890,8 @@ def createGrid(mapobj,upmode=False):
 					comps += [ Part.makePolygon([FreeCAD.Vector(fx*p[1],fy*p[0],fz*p[2]) for p in pts[obj.vMin:obj.vMax]]) ]
 
 				ptsa=np.array(ptsa).swapaxes(0,1)
-
 				for pts in ptsa[obj.vMin:obj.vMax]:
 					comps += [ Part.makePolygon([FreeCAD.Vector(fx*p[1],fy*p[0],fz*p[2]) for p in pts[obj.uMin:obj.uMax]]) ]
-
-
 
 		else :
 			if 1:
@@ -895,7 +899,6 @@ def createGrid(mapobj,upmode=False):
 					comps += [ Part.makePolygon([FreeCAD.Vector(fx*p[0],fy*p[1],fz*p[2]) for p in pts[obj.vMin:obj.vMax]]) ]
 
 				ptsa=np.array(ptsa).swapaxes(0,1)
-
 				for pts in ptsa[obj.vMin:obj.vMax]:
 					comps += [ Part.makePolygon([FreeCAD.Vector(fx*p[0],fy*p[1],fz*p[2]) for p in pts[obj.uMin:obj.uMax]]) ]
 
@@ -1086,12 +1089,12 @@ class ShapeLink(PartFeature):
 			cs=[]
 			count=obj.gridcount
 			f=obj.source.Shape.Face1.toNurbs()
-			f=f.Face1.Surface
+			fs=f.Face1.Surface
 			
 			for ui in range(count+1):
-					cs.append(f.uIso(1.0/count*ui).toShape())
+					cs.append(fs.uIso(1.0/count*ui).toShape())
 			for vi in range(count+1):
-					cs.append(f.vIso(1./count*vi).toShape())
+					cs.append(fs.vIso(1./count*vi).toShape())
 			target.Shape=Part.Compound(cs)
 			FreeCAD.cs=cs
 		else:
@@ -1377,7 +1380,8 @@ def map3Dto2D():
 		print "Wire ",wire
 		[uv2x,uv2y,xy2u,xy2v]=getmap(mapobj,face)
 
-		bs=face.Shape.Face1.Surface
+#		bs=face.Shape.Face1.Surface
+		bs=face.Shape.Faces[mapobj.faceNumber].Surface
 		pts2=[]
 		firstEdge=True
 		for e in wire.Shape.Edges:
@@ -1398,15 +1402,24 @@ def map3Dto2D():
 
 			FreeCAD.ptsaa=pts
 
-			su=face.Shape.Face1.ParameterRange[1]
-			sv=face.Shape.Face1.ParameterRange[3]
-			print ("su sv",su,sv)
-			
-			
-			sua=face.ParameterRange[0]
-			sva=face.ParameterRange[2]
-			sue=face.ParameterRange[1]
-			sve=face.ParameterRange[3]
+#			su=face.Shape.Face1.ParameterRange[1]
+#			sv=face.Shape.Face1.ParameterRange[3]
+#			print ("su sv",su,sv)
+#			
+#			
+			FreeCAD.ffg=face
+			print face
+			print face.Shape
+			print face.Shape.Faces
+			print face.Shape.Faces[0]
+			face1=face.Shape.Faces[0]
+			print face1
+			print "!!",face1.ParameterRange
+
+			sua=face1.ParameterRange[0]
+			sva=face1.ParameterRange[2]
+			sue=face1.ParameterRange[1]
+			sve=face1.ParameterRange[3]
 			sul=sue-sua
 			svl=sve-sva
 
@@ -1423,11 +1436,11 @@ def map3Dto2D():
 #				print "hack xx su sv aa bb"
 				#print base.faceobject
 				# print face
-				su=face.Shape.Face1.ParameterRange[1]
-				sv=face.Shape.Face1.ParameterRange[3]
+#				su=face.Shape.Face1.ParameterRange[1]
+#				sv=face.Shape.Face1.ParameterRange[3]
 
-				if su>10000: su=face.Shape.Face1.ParameterRange[1]
-				if sv>10000: sv=face.Shape.Face1.ParameterRange[3]
+#				if su>10000: su=face.Shape.Face1.ParameterRange[1]
+#				if sv>10000: sv=face.Shape.Face1.ParameterRange[3]
 
 #				
 #				try: sweep=face.TypeId=='Part::Sweep'
@@ -1467,8 +1480,6 @@ def map3Dto2D():
 				# hack richgtung beim Schuh
 				p2=FreeCAD.Vector(y,x,0)
 #				p2=FreeCAD.Vector(y,x,0)
-				# warum diese verschiebung?
-				#p2 += FreeCAD.Vector(80,80,0)
 				print "p2",p2
 				pts2.append(p2)
 		FreeCAD.ptsa=pts2
@@ -1534,7 +1545,8 @@ def map3Dgridto2Dgrid():
 		print wire.Label
 		[uv2x,uv2y,xy2u,xy2v]=getmap(mapobj,face)
 
-		bs=face.Shape.Face1.Surface
+		# bs=face.Shape.Face1.Surface
+		bs=face.Shape.Faces[base.faceNumber].Surface
 		pts2=[]
 		firstEdge=True
 		n=0
@@ -1560,15 +1572,15 @@ def map3Dgridto2Dgrid():
 			
 			ptsb=[]
 			for p in pts:
-				(u,v)=bs.parameter(p)
+#				(u,v)=bs.parameter(p)
 				(v,u)=bs.parameter(p)
 
-				print "hack A su sv aa bb"
-				su=face.Shape.Face1.ParameterRange[1]
-				sv=face.Shape.Face1.ParameterRange[3]
-
-				if su>1000: su=face.ParameterRange[1]
-				if sv>1000: sv=face.ParameterRange[3]
+#				print "hack A su sv aa bb"
+#				su=face.Shape.Face1.ParameterRange[1]
+#				sv=face.Shape.Face1.ParameterRange[3]
+#
+#				if su>1000: su=face.ParameterRange[1]
+#				if sv>1000: sv=face.ParameterRange[3]
 
 				sua=face.ParameterRange[0]
 				sva=face.ParameterRange[2]
@@ -1607,12 +1619,10 @@ def map3Dgridto2Dgrid():
 
 
 def getmap(mapobj,obj):
-	'''  berechnet vier interpolatoren zum umrechnen von xy(isomap) in uv(nurbs) und zurueck 
+	'''berechnet vier interpolatoren zum umrechnen von xy(isomap) in uv(nurbs) und zurueck 
 	mapobj liefert die parameter
 	obj ist das Part mit der benutzten Face
 	'''
-
-
 
 	#default values 
 	mpv=0.5
@@ -1655,13 +1665,11 @@ def getmap(mapobj,obj):
 		return [m_uv2x,m_uv2y,m_xy2u,m_xy2v]
 
 
-	su=face.ParameterRange[1]
-	sv=face.ParameterRange[3]
-
-	if su>1000: su=face.ParameterRange[1]
-	if sv>1000: sv=face.ParameterRange[3]
-
-
+#	su=face.ParameterRange[1]
+#	sv=face.ParameterRange[3]
+#
+#	if su>1000: su=face.ParameterRange[1]
+#	if sv>1000: sv=face.ParameterRange[3]
 
 	sua=face.ParameterRange[0]
 	sva=face.ParameterRange[2]
@@ -1669,7 +1677,6 @@ def getmap(mapobj,obj):
 	sve=face.ParameterRange[3]
 	sul=sue-sua
 	svl=sve-sva
-
 
 	if mapobj<>None:
 		if hasattr(mapobj,'faceObject'):
@@ -1701,7 +1708,7 @@ def getmap(mapobj,obj):
 			uc=mapobj.uc
 
 
-	print ("isomap YYparameter",su,sv,uc,vc)
+	# print ("isomap YYparameter",su,sv,uc,vc)
 
 	refpos=bs.value(mpv,mpu)
 	ptsa=[] # abbildung des uv-iso-gitter auf die xy-Ebene
@@ -1845,11 +1852,15 @@ def getmap3(mapobj,obj,calcZ=None):
 		vr = vr *svl +sva
 
 		tt=mapobj.modeCurvature
-		cc=bs.curvature(ur,vr,tt)
+		FreeCAD.bsa=bs
 		
+		try:
+			cc=bs.curvature(ur,vr,tt)
 		# kewgelhack
-		cc=bs.curvature(vr,ur,tt)
-		
+			cc=bs.curvature(vr,ur,tt)
+		except:
+			cc=0
+
 		if tt=="Gauss":
 			z=abs(cc)**0.5 * 1000
 			# if z>30: z=30
@@ -1863,6 +1874,13 @@ def getmap3(mapobj,obj,calcZ=None):
 
 		if tt=="Mean":
 			z=10000*cc
+
+		# bechcraenken der kurvature
+		if z>1000:
+			z=1000
+		if z<-1000:
+			z=-1000
+
 		return z
 
 	#default values 
