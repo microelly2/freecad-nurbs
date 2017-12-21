@@ -25,6 +25,14 @@ __title__="FreeCAD Nurbs Library"
 
 
 import FreeCAD, FreeCADGui
+import sys
+import nurbswb
+import nurbswb.configuration
+import os
+global __dir__
+__dir__ = os.path.dirname(nurbswb.__file__)
+
+
 ##-
 
 # from workfeature macro
@@ -109,8 +117,6 @@ def get_SelectedObjects(info=0, printError=True):
 #------------------------------
 
 
-import FreeCAD,FreeCADGui
-import sys
 
 #---------------------------------------------------------------------------
 # define the Commands of the Test Application module
@@ -139,9 +145,6 @@ FreeCADGui.addCommand('My_Test2'        ,MyTestCmd2())
 #------------------------------------------
 # fast command adder template
 
-import os, nurbswb
-global __dir__
-__dir__ = os.path.dirname(nurbswb.__file__)
 
 
 global _Command
@@ -187,12 +190,9 @@ class _Command():
 class _alwaysActive(_Command):
 
 	def IsActive(self):
-			return True
+		return True
 
-
-#-----------------------------------------------
-#
-# condtions when a command should be active
+# conditions when a command should be active ..
 
 def always():
 	''' always'''
@@ -266,7 +266,7 @@ def c2a(menu,isactive,title,name,*info):
 	FreeCAD.tcmds5.append([menu,title1,name,isactive,info])
 
 
-# special conditions fore actions
+# special conditions for actions
 def onneedle():
 	'''open the needle file'''
 	dokname=FreeCAD.ParamGet('User parameter:Plugins/nurbs').GetString("Document","Needle")
@@ -278,9 +278,6 @@ def onspread():
 	try: App.ActiveDocument.Spreadsheet;return True
 	except: return False
 
-
-import nurbswb
-import nurbswb.configuration
 
 
 if FreeCAD.GuiUp:
@@ -354,6 +351,7 @@ if FreeCAD.GuiUp:
 
 
 	c2a(["Faces"],ondocument,'patcha','patch','connect 2 curve segments to a face','/../icons/nurbs.svg',"run()")
+	c2a(["Faces"],ondocument,'patchb','patch','patch b','/../icons/nurbs.svg',"runb()")
 	c2a(["Faces"],ondocument,'folda','folding','create a folding of a face','/../icons/nurbs.svg',"run()")
 
 	c2a(["Faces"],ondocument,'unrolla','unroll_curve','unroll curve Yaw from a face','/../icons/nurbs.svg',"unroll_yaw()")
@@ -380,8 +378,8 @@ if FreeCAD.GuiUp:
 	c2a(["Faces"],always,'Segment','segment','Cut a segment of a Face','/../icons/nurbs.svg',"runsegment()")
 	c2a(["Faces"],always,'FineSegment','segment','Cut a fine segment of a Face','/../icons/nurbs.svg',"runfinesegment()")
 	c2a(["Faces"],always,'NurbsTrafo','segment','Transform a Face','/../icons/nurbs.svg',"runnurbstrafo()")
-	c2a(["Faces"],always,'Tangent','tangentsurface','create a tangent Face','/../icons/nurbs.svg',"runtangentsurface()")
-	c2a(["Faces"],always,'Seam','tangentsurface','create a Seam','/../icons/nurbs.svg',"runseam()")
+	c2a(["Faces"],always,'Tangent','tangentsurface','create a tangent Face','/../icons/tangentsurface.svg',"runtangentsurface()")
+	c2a(["Faces"],always,'Seam','tangentsurface','create a Seam','/../icons/seam.svg',"runseam()")
 	c2a(["Faces"],always,'Grid generator','uvgrid_generator','create a uv-grid for a Face','/../icons/nurbs.svg',"run()")
 
 
@@ -516,7 +514,6 @@ static char * nurbs_xpm[] = {
 		try: # some methods from curve wb
 			import ZebraTool
 			import ParametricComb
-			
 		except: pass
 
 		cmds= ['ZebraTool','ParametricComb','Nurbs_DraftBSpline Editor',

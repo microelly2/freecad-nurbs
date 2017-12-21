@@ -56,6 +56,48 @@ class ViewProvider:
 	def __setstate__(self, state):
 		return None
 
+
+	def setupContextMenu(self, obj, menu):
+		menu.clear()
+		action = menu.addAction("MyMethod #1")
+		action.triggered.connect(lambda:self.methodA(obj.Object))
+		action = menu.addAction("MyMethod #2")
+		action.triggered.connect(lambda:self.methodB(obj.Object))
+		action = menu.addAction("Edit Sketch")
+		action.triggered.connect(lambda:self.myedit(obj.Object))
+
+
+	def myedit(self,obj):
+		self.methodB(None)
+		Gui.activeDocument().setEdit(obj.Name)
+		self.methodA(None)
+
+	def methodA(self,obj):
+		print "my Method A Finisher"
+		Gui.activateWorkbench("DraftWorkbench")
+		FreeCAD.activeDocument().recompute()
+
+	def methodB(self,obj):
+		print "my method B Starter"
+		FreeCAD.activeDocument().recompute()
+
+	def methodC(self,obj):
+		print "my method C After Edit finished"
+		Gui.activateWorkbench("NurbsWorkbench")
+		FreeCAD.activeDocument().recompute()
+
+	def unsetEdit(self,vobj,mode=0):
+		self.methodC(None)
+
+
+	def doubleClicked(self,vobj):
+		print "double clicked"
+		self.myedit(vobj.Object)
+		print "Ende double clicked"
+
+
+
+
 #-------------------------------
 
 
@@ -240,7 +282,6 @@ class FeedbackSketch(FeaturePython):
 
 
 				# solve the tasks
-				
 				rc=obj.solve()
 				if debug: print(obj.Label, "solve after get",rc) 
 
@@ -493,16 +534,6 @@ def storeSketch(sketch):
 
 
 
-## \cond
-if __name__=='__main__':
-	fbs=createFeedbackSketch()
-	fbs.parent=App.ActiveDocument.Sketch
-	fbs.addProperty("App::PropertyLink", "grand", "Parent", )
-	fbs.grand=App.ActiveDocument.Sketch001
-	copySketch(App.ActiveDocument.Sketch002,fbs)
-	App.activeDocument().recompute()
-#\endcond
-
 
 
 #----------------------
@@ -642,3 +673,20 @@ def run_createFBS_with_three_Clients():
 	fbs.activeClientB=True
 	fbs.activeClientC=True
 
+
+
+
+
+if __name__ == '__main__':
+
+	fbs=createFeedbackSketch(name="SingleClientFeedback")
+	fbs.addProperty("App::PropertyBool",'active', 'Base', )
+	fbs.addProperty("App::PropertyStringList",'bases', 'Base', )
+	fbs.active=True
+	fbs.bases=['Client']
+	App.activeDocument().recompute()
+	for b in fbs.bases: 
+		addgrp(fbs,b)
+
+	fbs.activeClient=True
+	Gui.ActiveDocument.setEdit(fbs.Name)

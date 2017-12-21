@@ -22,6 +22,18 @@ import Part,Mesh,Draft,Points
 import numpy as np
 import random
 
+
+def machkurve(pss):
+		ps=[FreeCAD.Vector(p) for p in pss]
+		bc=Part.BSplineCurve()
+		bc.buildFromPoles(ps)
+		res=App.ActiveDocument.addObject("Part::Spline","kurve")
+		res.Shape=bc.toShape()
+		
+		return bc
+
+
+
 def normalizek(bc):
 
 	bx=Part.BSplineCurve()
@@ -68,7 +80,7 @@ def createSubcurve(k1,v1,v2):
 	return k1cn
 
 
-def machFlaeche(psta,ku,objName="XXd"):
+def machFlaeche(psta,ku=None,objName="XXd"):
 		NbVPoles,NbUPoles,_t1 =psta.shape
 
 		degree=3
@@ -76,6 +88,7 @@ def machFlaeche(psta,ku,objName="XXd"):
 		ps=[[FreeCAD.Vector(psta[v,u,0],psta[v,u,1],psta[v,u,2]) for u in range(NbUPoles)] for v in range(NbVPoles)]
 
 		kv=[1.0/(NbVPoles-3)*i for i in range(NbVPoles-2)]
+		if ku==None: ku=[1.0/(NbUPoles-3)*i for i in range(NbUPoles-2)]
 		mv=[4] +[1]*(NbVPoles-4) +[4]
 		mu=[4]+[1]*(NbUPoles-4)+[4]
 
@@ -113,13 +126,23 @@ def run():
 
 	s=FreeCADGui.Selection.getSelectionEx()
 
-	ed=s[0].SubObjects[0]
-	p1=s[1].SubObjects[0]
-	p2=s[2].SubObjects[0]
+	if len(s)==6:
+		ed=s[0].SubObjects[0]
+		p1=s[1].SubObjects[0]
+		p2=s[2].SubObjects[0]
 
-	eda=s[3].SubObjects[0]
-	p1a=s[4].SubObjects[0]
-	p2a=s[5].SubObjects[0]
+		eda=s[3].SubObjects[0]
+		p1a=s[4].SubObjects[0]
+		p2a=s[5].SubObjects[0]
+	else:
+		ed=s[0].SubObjects[0]
+		eda=s[1].SubObjects[0]
+		p1=ed.Vertex1
+		p2=ed.Vertex2
+		p1a=eda.Vertex1
+		p2a=eda.Vertex2
+
+
 
 
 	# erzeuge zwei normalisierte subkurven
@@ -140,6 +163,8 @@ def run():
 
 	pl2=c.getPoles()
 	pl3=ca.getPoles()
+
+	pl3.reverse()
 
 	# tangent constraint 
 	pl1x=[ p+FreeCAD.Vector(10,0,-10) for p in pl2]
@@ -163,4 +188,73 @@ def run():
 
 	psta=np.array([pl2,pl1x,pl1xa,pl1xb,pl3x,pl2x,pl3xc,pl3xb,pl3xa,pl3])
 	bs=machFlaeche(psta,kns,"mountains")
+
+
+
+
+
+def runB():
+	''' testcase for a expression baes mountain profile '''
+
+	import numpy as np
+	print "WARNING:this is a testcase only"
+	# hard coded test data
+	kl=App.ActiveDocument.subedge
+	kr=App.ActiveDocument.subedge001
+
+
+	kali=kl.Shape.Edge1.Curve.getPoles()
+	kare=kr.Shape.Edge1.Curve.getPoles()
+
+	lena=len(kali)
+
+	l0=(kali[0]-kare[0]).Length
+
+	scales=[(kali[i]-kare[i]).Length/l0 for  i in range(lena)]
+
+
+	rots=[0.0] + [
+			(kali[i]-kare[i]).normalize().cross((kali[0]-kare[0]).normalize()).dot(FreeCAD.Vector(0,0,1)) 
+			for i in range(1,lena)
+		]
+	rots=np.arcsin(rots)
+
+	apts=[]
+	for i in range(lena):
+		yy=(kare[0]-kali[0])*scales[i]
+
+		polyp=[
+			FreeCAD.Vector(),
+			FreeCAD.Vector(0,0,115),
+			FreeCAD.Vector(0,0,130),
+
+			((kare[0]-kali[0])*0.3+FreeCAD.Vector(0,0,200))*scales[i],
+			((kare[0]-kali[0])*0.3+FreeCAD.Vector(0,0,200))*scales[i]+FreeCAD.Vector(40,0,0),
+			((kare[0]-kali[0])*0.3+FreeCAD.Vector(0,0,200))*scales[i]+FreeCAD.Vector(80,0,0),
+
+			yy+FreeCAD.Vector(0,0,50),
+			yy+FreeCAD.Vector(0,0,25),
+			yy+FreeCAD.Vector(),
+		]
+
+		pol=Part.makePolygon(polyp)
+
+		if 1: # display the control points polygons
+			res=App.ActiveDocument.addObject("Part::Spline","aa"+str(i)+"__")
+			res.Shape=pol
+			res.Placement=FreeCAD.Placement(kali[i],FreeCAD.Rotation()).multiply(
+				FreeCAD.Placement(FreeCAD.Vector(),FreeCAD.Rotation(FreeCAD.Vector(0,0,1),-180.0*rots[i]/np.pi)))
+
+#		print kali[i]
+#		print rots[i]
+#		print scales[i]
+
+		pts=[v.Point for v in res.Shape.Vertexes]
+		apts +=[pts]
+
+	machFlaeche(np.array(apts))
+
+	# display the controlpoint curves
+	bpts=np.array(apts).swapaxes(0,1)
+	for l in bpts: machkurve(l)
 
