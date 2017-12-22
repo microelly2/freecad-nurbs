@@ -398,7 +398,7 @@ class Seam(PartFeature):
 #				v=poles[0][i]-poles[1][i]
 #				setattr(obj,"t"+str(i),FreeCAD.Vector(v)*5)
 
-#			sf=obj.source.Shape.Face1.Surface
+			sf=obj.source.Shape.Face1.Surface
 #			index=obj.index
 #			for i,p in enumerate(poles[index]):
 #				(u,v)=sf.parameter(FreeCAD.Vector(tuple(p)))
@@ -407,7 +407,11 @@ class Seam(PartFeature):
 #				setattr(obj,"t"+str(i),FreeCAD.Vector(t1))
 
 			print "seam execute ..."
-#			print sf.getUKnots()
+			print sf.getUKnots()
+			print sf.getVKnots()
+			poles=np.array(poles)
+			print poles.shape
+			
 #			uks=sf.getUKnots()
 #			sf.segment(uks[0],uks[1],0,1)
 #			

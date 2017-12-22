@@ -167,7 +167,11 @@ class _Command():
 
 
 	def GetResources(self): 
-		return {'Pixmap' : self.icon, 'MenuText': self.name, 'ToolTip': self.name } 
+		return {'Pixmap' : self.icon, 
+			'MenuText': self.name, 
+			'ToolTip': self.name, 
+			'CmdType': "ForEdit" # bleibt aktivm, wenn sketch editor  oder andere tasktab an ist
+		} 
 
 	def IsActive(self):
 		if FreeCADGui.ActiveDocument: return True
@@ -350,9 +354,9 @@ if FreeCAD.GuiUp:
 	c2a(["Faces","create"],ondocument,'simple Hood','simplehood','create a simple hood','/../icons/nurbs.svg',"run()")
 
 
-	c2a(["Faces"],ondocument,'patcha','patch','connect 2 curve segments to a face','/../icons/nurbs.svg',"run()")
-	c2a(["Faces"],ondocument,'patchb','patch','patch b','/../icons/nurbs.svg',"runb()")
-	c2a(["Faces"],ondocument,'folda','folding','create a folding of a face','/../icons/nurbs.svg',"run()")
+	c2a(["Faces"],ondocument,'patcha','patch','connect 2 curve segments to a face','/../icons/beta.svg',"run()")
+	c2a(["Faces"],ondocument,'patchb','patch','patch b','/../icons/alpha.svg',"runb()")
+	c2a(["Faces"],ondocument,'folda','folding','create a folding of a face','/../icons/testit.svg',"run()")
 
 	c2a(["Faces"],ondocument,'unrolla','unroll_curve','unroll curve Yaw from a face','/../icons/nurbs.svg',"unroll_yaw()")
 	c2a(["Faces"],ondocument,'unrollb','unroll_curve','unroll curve Pitch from a face','/../icons/nurbs.svg',"unroll_pitch()")
@@ -360,7 +364,7 @@ if FreeCAD.GuiUp:
 	c2a(["Faces"],ondocument,'unrollc','unroll_curve','combine Yaw and Pitch curces','/../icons/nurbs.svg',"combineCT()")
 
 
-	c2a(["Faces"],ondocument,'Sole Change Model','sole_change_model','Shoe Sole Change Model','/../icons/sole.svg',"run()")
+	c2a(["Shoe"],ondocument,'Sole Change Model','sole_change_model','Shoe Sole Change Model','/../icons/solechange.svg',"run()")
 	c2a(["Faces"],ondocument,'load Sole Height','load_sole_profile_height','Load Height Profile','/../icons/sole.svg',"run()")
 	c2a(["Faces"],ondocument,'load Sole Widht','load_sole_profile_width','Load Width Profile','/../icons/sole.svg',"run()")
 
@@ -431,9 +435,9 @@ if FreeCAD.GuiUp:
 
 	c2a(["Shoe"],always,'RecomputeAll','skdriver','recompute shoe','/../icons/toggleshoesketch.svg',"recomputeAll()")
 
-	c2a(["Shoe"],always,'LoadSketch','sketchmanager','load sketch from a sketchlib','/../icons/toggleshoesketch.svg',"runLoadSketch()")
-	c2a(["Shoe"],always,'SaveSketch','sketchmanager','save sketch into the sketchlib','/../icons/toggleshoesketch.svg',"runSaveSketch()")
-	c2a(["Shoe"],always,'DisplaySketchlib','sketchmanager','list all sketches of the sketchlib','/../icons/toggleshoesketch.svg',"runSketchLib()")
+	c2a(["Shoe"],always,'LoadSketch','sketchmanager','load sketch from a sketchlib','/../icons/sketchlibload.svg',"runLoadSketch()")
+	c2a(["Shoe"],always,'SaveSketch','sketchmanager','save sketch into the sketchlib','/../icons/sketchlibsave.svg',"runSaveSketch()")
+	c2a(["Shoe"],always,'DisplaySketchlib','sketchmanager','list all sketches of the sketchlib','/../icons/sketchlib.svg',"runSketchLib()")
 
 
 
@@ -447,15 +451,15 @@ if FreeCAD.GuiUp:
 	c2a(["Neo4j"],always,'Start_OF','openflights','import_Open Flights',"/../icons/openflights-import.png","load()","graphdb")
 	c2a(["Neo4j"],always,'Reset_OG','openflights','reset_Open Flights',"/../icons/openflights.png","reset()","graphdb")
 
-	c2a(["Sketchertools"],always,'Status1','feedbacksketch','fb sketch',"/../icons/neo4j_status.png","run_test_two_clients()","sketcher")
-	c2a(["Sketchertools"],always,'Status2','feedbacksketch','revers order of constraints A',"/../icons/neo4j_status.png","run_test_reverse_Constraints()","sketcher")
-	c2a(["Sketchertools"],always,'Status3','feedbacksketch','create Example B',"/../icons/neo4j_status.png","runB()","sketcher")
-	c2a(["Sketchertools"],always,'Status4','feedbacksketch','Copy 1.Sketch into 2nd Sketch',"/../icons/neo4j_status.png","run_copySketch()","sketcher")
-	c2a(["Sketchertools"],always,'Status51','feedbacksketch','Create FeedBack with 1 client',"/../icons/neo4j_status.png","run_createFBS_with_one_Client()","sketcher")
-	c2a(["Sketchertools"],always,'Status52','feedbacksketch','Create FeedBack with 2 clients',"/../icons/neo4j_status.png","run_createFBS_with_two_Clients()","sketcher")
-	c2a(["Sketchertools"],always,'Status53','feedbacksketch','Create FeedBack with 3 clients',"/../icons/neo4j_status.png","run_createFBS_with_three_Clients()","sketcher")
+	c2a(["Sketchertools"],always,'Status1','feedbacksketch','fb sketch',"/../icons/alpha.svg","run_test_two_clients()","sketcher")
+	c2a(["Sketchertools"],always,'Status2','feedbacksketch','revers order of constraints A',"/../icons/alpha.svg","run_test_reverse_Constraints()","sketcher")
+	c2a(["Sketchertools"],always,'Status3','feedbacksketch','create Example B',"/../icons/alpha.svg","runB()","sketcher")
+	c2a(["Sketchertools"],always,'Status4','feedbacksketch','Copy 1.Sketch into 2nd Sketch',"/../icons/sketchcopy.svg","run_copySketch()","sketcher")
+	c2a(["Sketchertools"],always,'Status51','feedbacksketch','Create FeedBack with 1 client',"/../icons/feedback-1.svg","run_createFBS_with_one_Client()","sketcher")
+	c2a(["Sketchertools"],always,'Status52','feedbacksketch','Create FeedBack with 2 clients',"/../icons/feedback-2.svg","run_createFBS_with_two_Clients()","sketcher")
+	c2a(["Sketchertools"],always,'Status53','feedbacksketch','Create FeedBack with 3 clients',"/../icons/feedback-3.svg","run_createFBS_with_three_Clients()","sketcher")
 
-	c2a(["Sketchertools"],always,'Status56','sketcher_grids','Create Sketcher Grid',"/../icons/neo4j_status.png","createGridSketch()","sketcher")
+	c2a(["Sketchertools"],always,'Status56','sketcher_grids','Create Sketcher Grid',"/../icons/sketchgrid.svg","createGridSketch()","sketcher")
 
 
 
@@ -521,7 +525,7 @@ static char * nurbs_xpm[] = {
 		'Nurbs_scanbackbonecut','Nurbs_createsketchspline','Nurbs_Curves to Face', 'Nurbs_facedraw',
 		'Nurbs_createcloverleaf',
 		'Part_Cone', 'Part_Cylinder','Draft_Move','Draft_Rotate','Draft_Point','Draft_ToggleGrid',
-		'My_Test2','Nurbs_toggleSketch','Sketcher_NewSketch','Nurbs_facedraws']
+		'My_Test2','Nurbs_toggleSketch','Sketcher_NewSketch','Nurbs_facedraws','Nurbs_patcha','Nurbs_patchb','Nurbs_folda']
 
 		if 1:
 			self.appendToolbar("Nurbs", cmds )
