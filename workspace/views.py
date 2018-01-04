@@ -17,6 +17,130 @@ from pivy import coin
 import numpy as np
 
 
+'''
+v=Gui.createViewer(2,title)
+
+view=v.getViewer(1)
+rm=view.getSoRenderManager()
+c=rm.getCamera()
+
+c.orientation
+c.orientation=FreeCAD.Rotation(FreeCAD.Vector(1,1,1),15).Q
+
+
+'''
+
+
+Gui=FreeCADGui
+import Part
+
+class PartFeature:
+	''' base class for part feature '''
+	def __init__(self, obj):
+		obj.Proxy = self
+
+# grundmethoden zum sichern
+
+	def attach(self,vobj):
+		self.Object = vobj.Object
+
+	def claimChildren(self):
+		return self.Object.Group
+
+	def __getstate__(self):
+		return None
+
+	def __setstate__(self,state):
+		return None
+
+class ViewProvider:
+	''' view provider class for Tripod'''
+	def __init__(self, obj):
+		obj.Proxy = self
+		self.Object=obj
+
+
+
+
+
+
+class QuadView(PartFeature):
+	def __init__(self, obj,label=None):
+		PartFeature.__init__(self, obj)
+
+		obj.addProperty("App::PropertyVector","A Axis","V00")
+		obj.addProperty("App::PropertyFloat","A Angle","V00")
+#		obj.addProperty("App::PropertyFloat","A Zoom","00")
+#		obj.A_Zoom=0
+		obj.A_Axis=FreeCAD.Vector(1,0,0)
+		obj.A_Angle=90
+
+		obj.addProperty("App::PropertyVector","B Axis","V01")
+		obj.addProperty("App::PropertyFloat","B Angle","V01")
+		obj.B_Axis=FreeCAD.Vector(1,1,1)
+		obj.B_Angle=120
+
+		obj.addProperty("App::PropertyVector","C Axis","V10")
+		obj.addProperty("App::PropertyFloat","C Angle","V10")
+
+		obj.addProperty("App::PropertyVector","D Axis","V11")
+		obj.addProperty("App::PropertyFloat","D Angle","V11")
+#		obj.D_Axis=FreeCAD.Vector(0,1,1)
+		obj.D_Axis=FreeCAD.Vector(1,0,1)
+		obj.D_Angle=45
+		# oder 60 , 30
+
+		obj.addProperty("App::PropertyBool","DisplayMode","Render")
+		obj.addProperty("App::PropertyBool","fitAll","Render")
+		if label <>None:
+			obj.Label=label
+		
+
+	def onChanged(self, fp, prop):
+
+		if prop=="Shape": return
+
+		# abbruch
+		try: self.v
+		except: return
+
+		c=self.v.getViewer(0).getSoRenderManager().getCamera()
+
+		if prop=="DisplayMode":
+			updatencontent(self.v,self.objs,fp)
+			
+
+		if prop.startswith("A_"):
+			c.orientation=FreeCAD.Rotation(fp.A_Axis,fp.A_Angle).Q
+#			if fp.A_Zoom<0:
+#				c.scaleHeight(0.9)
+#			if fp.A_Zoom>0:
+#				c.scaleHeight(1.0/0.9)
+			
+		if prop.startswith("B_"):
+			c=self.v.getViewer(1).getSoRenderManager().getCamera()
+			c.orientation=FreeCAD.Rotation(fp.B_Axis,fp.B_Angle).Q
+		if prop.startswith("C_"):
+			c=self.v.getViewer(2).getSoRenderManager().getCamera()
+			c.orientation=FreeCAD.Rotation(fp.C_Axis,fp.C_Angle).Q
+		if prop.startswith("D_"):
+			c=self.v.getViewer(3).getSoRenderManager().getCamera()
+			c.orientation=FreeCAD.Rotation(fp.D_Axis,fp.D_Angle).Q
+#			c.pointAt(coin.SbVec3f(fp.D_Axis))
+
+		if fp.fitAll:
+			self.v.fitAll()
+		print prop 
+
+
+
+
+
+
+
+#---------------------------
+
+
 
 def createquadview():
 
@@ -24,12 +148,33 @@ def createquadview():
 	except: pass
 
 	obj=Gui.Selection.getSelection()[0]
+	objs=Gui.Selection.getSelection()
+
 	title=obj.Label
-	print title
+
+	if len(objs)<>1:
+		labels=[obj.Label for obj in objs]
+		title=', '.join(labels)
+
 	v=Gui.createViewer(4,title)
-	FreeCAD.view=v
+#	FreeCAD.view=v
+	try: FreeCAD.views['title']=v
+	except:
+		FreeCAD.views={}
+		FreeCAD.views['title']=v
+
 	FreeCAD.viewLabel=title
-	updatencontent(v,obj)
+	
+	a=FreeCAD.ActiveDocument.addObject("Part::FeaturePython","MyQuadView")
+	QuadView(a,"QuadView for "+ title )
+	ViewProvider(a.ViewObject)
+	updatencontent(v,objs,a)
+	a.Proxy.v=v
+	a.Proxy.objs=objs
+#	for y in ['A_','B_','C_','D_']:
+#		a.Proxy.onChanged(a, y)
+
+#	v.fitAll()
 
 '''
 The Gui.createViewer-Object has the method fitAll, viewLeft ...
@@ -37,9 +182,9 @@ I think its better to have these methods for each view and not only as global me
 So it is possible to display  in each window another view direction
 
 
->> view=v.getViewer(2)
->>> rm=view.getSoRenderManager()
->>> c=rm.getCamera()
+view=v.getViewer(2)
+rm=view.getSoRenderManager()
+c=rm.getCamera()
 
 c has pointAt, scaleHeight
 
@@ -47,42 +192,192 @@ c has pointAt, scaleHeight
 but I look for position, orientation setters an getters.
 '''
 
-def updatencontent(viewer,obj):
+def updatencontent(viewer,objs,fp):
 
+
+	obj=objs[0]
 	v=viewer
 
 	view=v.getViewer(0)
+
+	'''
 	node= obj.ViewObject.RootNode
-	view.setSceneGraph(node)
+
+	if fp.DisplayMode:
+		nodeA=node.copy()
+		clds=nodeA.getChildren()
+		s2=clds[2]
+		s2.whichChild.setValue(0)
+	else:
+		nodeA=node
+
+	view.setSceneGraph(nodeA)
+	c=view.getSoRenderManager().getCamera()
+	c.orientation=FreeCAD.Rotation(fp.A_Axis,fp.A_Angle).Q
+	'''
+
+	#--------------------
+	marker = coin.SoSeparator()
+	for objx in objs:
+		print "run ",objx.Label
+		node= objx.ViewObject.RootNode
+
+		if fp.DisplayMode:
+			nodeA=node.copy()
+			clds=nodeA.getChildren()
+			s2=clds[2]
+			s2.whichChild.setValue(0)
+		else:
+			nodeA=node
+
+		marker.addChild(nodeA)
+
+	view.setSceneGraph(marker)
+
+	c=view.getSoRenderManager().getCamera()
+	c.orientation=FreeCAD.Rotation(fp.A_Axis,fp.A_Angle).Q
+	#------------------------------------
 
 	view=v.getViewer(1)
+
+	#--------------------
+	marker = coin.SoSeparator()
+	for objx in objs:
+		print "run ",objx.Label
+		node= objx.ViewObject.RootNode
+
+		if fp.DisplayMode:
+			nodeA=node.copy()
+			clds=nodeA.getChildren()
+			s2=clds[2]
+			s2.whichChild.setValue(1)
+		else:
+			nodeA=node
+
+		marker.addChild(nodeA)
+
+	view.setSceneGraph(marker)
+
+	c=view.getSoRenderManager().getCamera()
+	c.orientation=FreeCAD.Rotation(fp.B_Axis,fp.B_Angle).Q
+	#------------------------------------
+
+	'''
 	marker = coin.SoSeparator()
 	t = coin.SoTransform()
-	t.rotation.setValue(coin.SbVec3f((1,0,0)),-np.pi/2)
+#	t.rotation.setValue(coin.SbVec3f((1,0,0)),-np.pi/2)
 	marker.addChild(t)
-	marker.addChild(node)
+
+	if fp.DisplayMode:
+		nodeA=node.copy()
+		clds=nodeA.getChildren()
+		s2=clds[2]
+		s2.whichChild.setValue(1)
+	else:
+		nodeA=node
+
+	marker.addChild(nodeA)
 	view.setSceneGraph(marker)
+#	view.getSoRenderManager().setCamera(coin.SoOrthographicCamera())
+	c=view.getSoRenderManager().getCamera()
+	c.orientation=FreeCAD.Rotation(fp.B_Axis,fp.B_Angle).Q
+	'''
 
 	view=v.getViewer(2)
+	#--------------------
 	marker = coin.SoSeparator()
-	t = coin.SoTransform()
-	t.rotation.setValue(coin.SbVec3f((0,1,0)),-np.pi/2)
-	marker.addChild(t)
-	marker.addChild(node)
+	for objx in objs:
+		print "run ",objx.Label
+		node= objx.ViewObject.RootNode
+
+		if fp.DisplayMode:
+			nodeA=node.copy()
+			clds=nodeA.getChildren()
+			s2=clds[2]
+			s2.whichChild.setValue(2)
+		else:
+			nodeA=node
+
+		marker.addChild(nodeA)
+
 	view.setSceneGraph(marker)
 
-	view=v.getViewer(3)
+	c=view.getSoRenderManager().getCamera()
+	c.orientation=FreeCAD.Rotation(fp.C_Axis,fp.C_Angle).Q
+	#------------------------------------
+
+
+	'''
 	marker = coin.SoSeparator()
 	t = coin.SoTransform()
-	t.rotation.setValue(coin.SbVec3f((1,1,1)),-np.pi/3)
+#	t.rotation.setValue(coin.SbVec3f((0,1,0)),-np.pi/2)
 	marker.addChild(t)
-	marker.addChild(node)
+
+	if fp.DisplayMode:
+		nodeA=node.copy()
+		clds=nodeA.getChildren()
+		s2=clds[2]
+		s2.whichChild.setValue(3)
+	else:
+		nodeA=node
+
+	marker.addChild(nodeA)
 	view.setSceneGraph(marker)
+	c=view.getSoRenderManager().getCamera()
+	c.orientation=FreeCAD.Rotation(fp.C_Axis,fp.C_Angle).Q
+	'''
+	
+
+	view=v.getViewer(3)
+	#--------------------
+	marker = coin.SoSeparator()
+	for objx in objs:
+		print "run ",objx.Label
+		node= objx.ViewObject.RootNode
+
+		if fp.DisplayMode:
+			nodeA=node.copy()
+			clds=nodeA.getChildren()
+			s2=clds[2]
+			s2.whichChild.setValue(3)
+		else:
+			nodeA=node
+
+		marker.addChild(nodeA)
+
+	view.setSceneGraph(marker)
+
+	c=view.getSoRenderManager().getCamera()
+	c.orientation=FreeCAD.Rotation(fp.D_Axis,fp.D_Angle).Q
+	#------------------------------------
+
+
+	'''
+	marker = coin.SoSeparator()
+	t = coin.SoTransform()
+#	t.rotation.setValue(coin.SbVec3f((1,1,1)),-np.pi/3)
+	marker.addChild(t)
+
+	if fp.DisplayMode:
+		nodeA=node.copy()
+		clds=nodeA.getChildren()
+		s2=clds[2]
+		s2.whichChild.setValue(2)
+	else:
+		nodeA=node
+
+	marker.addChild(nodeA)
+	view.setSceneGraph(marker)
+	c=view.getSoRenderManager().getCamera()
+	c.orientation=FreeCAD.Rotation(fp.D_Axis,fp.D_Angle).Q
+	'''
+
 
 	v.fitAll()
 
-	rm=view.getSoRenderManager()
-	cam=rm.getCamera()
+
+#	rm=view.getSoRenderManager()
+#	cam=rm.getCamera()
 #	cam.pointAt(coin.SbVec3f(10,10,10))
 #	cam.scaleHeight(3)
 

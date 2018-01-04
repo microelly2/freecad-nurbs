@@ -62,6 +62,7 @@ class ViewProvider:
 		action = menu.addAction("MyMethod #1")
 		action.triggered.connect(lambda:self.methodA(obj.Object))
 		action = menu.addAction("MyMethod #2")
+		menu.addSeparator()
 		action.triggered.connect(lambda:self.methodB(obj.Object))
 		action = menu.addAction("Edit Sketch")
 		action.triggered.connect(lambda:self.myedit(obj.Object))

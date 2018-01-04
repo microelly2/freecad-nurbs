@@ -330,7 +330,7 @@ class TangentFace(PartFeature):
 #----------------
 
 
-def machFlaeche(psta,ku=None):
+def XmachFlaeche(psta,ku=None):
 		NbVPoles,NbUPoles,_t1 =psta.shape
 
 		degree=3
@@ -446,16 +446,33 @@ class Seam(PartFeature):
 
 				spols=spolsA.swapaxes(0,1)
 
-			bs=machFlaeche(spols,ku=None)
-			print bs.getUKnots()
-			if obj.displayShape=="OutSeam":
-				uks=bs.getUKnots()
-				bs.segment(uks[0],uks[1],0,1)
-			if obj.displayShape=="InSeam":
-				uks=bs.getUKnots()
-				bs.segment(uks[-2],uks[-1],0,1)
-			if obj.displayShape=="Curve":
-				bs=bs.uIso(0.5)
+			if obj.sourceSwap:
+				closed=sf.isUClosed()
+			else:
+				closed=sf.isVClosed()
+			bs=machFlaeche(spols,ku=None,closed=closed)
+
+			if closed:
+				if obj.displayShape=="OutSeam":
+					uks=bs.getUKnots()
+					vks=bs.getVKnots()
+					bs.segment(uks[0],uks[1],vks[0],vks[-1])
+				if obj.displayShape=="InSeam":
+					uks=bs.getUKnots()
+					vks=bs.getVKnots()
+					bs.segment(uks[-2],uks[-1],vks[0],vks[-1])
+				if obj.displayShape=="Curve":
+					bs=bs.uIso(0.5)
+
+			else:
+				if obj.displayShape=="OutSeam":
+					uks=bs.getUKnots()
+					bs.segment(uks[0],uks[1],0,1)
+				if obj.displayShape=="InSeam":
+					uks=bs.getUKnots()
+					bs.segment(uks[-2],uks[-1],0,1)
+				if obj.displayShape=="Curve":
+					bs=bs.uIso(0.5)
 
 			obj.Shape=bs.toShape()
 
@@ -729,7 +746,8 @@ def runtangentsurface():
 
 
 import FreeCAD,Part
-def machFlaeche(psta,ku=None):
+def machFlaeche(psta,ku=None,closed=False):
+		print "mqachflaeche koko"
 		NbVPoles,NbUPoles,_t1 =psta.shape
 
 		degree=3
@@ -741,8 +759,18 @@ def machFlaeche(psta,ku=None):
 		mv=[4] +[1]*(NbVPoles-4) +[4]
 		mu=[4]+[1]*(NbUPoles-4)+[4]
 
+
+		mv=[4] +[1]*(NbVPoles-4) +[4]
+		mu=[4]+[1]*(NbUPoles-4)+[4]
+
+		if closed:
+			ku=[1.0/(NbUPoles+1)*i for i in range(NbUPoles+1)]
+		if closed:
+		 mu=[1]*(NbUPoles+1)
+
 		bs=Part.BSplineSurface()
-		bs.buildFromPolesMultsKnots(ps, mv, mu, kv, ku, False, False ,degree,degree)
+		bs.buildFromPolesMultsKnots(ps, mv, mu, kv, ku,  False,closed ,degree,degree)
+
 
 		return bs
 
@@ -778,7 +806,10 @@ def createShapeV2(obj):
 
 			poles=np.concatenate([ptsw,ptse])
 			
-			bs=machFlaeche(poles)
+			closed=sfw.isUClosed()
+#			closed=True
+			print "-------------------------"
+			bs=machFlaeche(poles,closed=closed)
 			obj.Shape=bs.toShape()
 
 	else:
@@ -807,8 +838,10 @@ def createShapeV2(obj):
 
 
 		poles=np.concatenate([ptsw,ptse])
-		
-		bs=machFlaeche(poles)
+		#losed=sfw.isClosed()
+		closed=sfw.isUClosed()
+#		closed=True
+		bs=machFlaeche(poles,closed=closed)
 		obj.Shape=bs.toShape()
 	print "fertig"
 

@@ -203,8 +203,8 @@ def runA(model=None):
 
 	sh=5 # sohlenhoehe
 
-	bh=40
-	sh=10
+#	bh=400
+#	sh=10
 	bw=0.0
 
 
@@ -402,8 +402,8 @@ def runA(model=None):
 	Part.show(Part.Compound(coll))
 	
 	
-	print "ABBRUCH HIER"
-	return
+#	print "ABBRUCH HIER"
+#	return
 
 
 

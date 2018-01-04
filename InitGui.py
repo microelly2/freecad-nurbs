@@ -170,7 +170,7 @@ class _Command():
 		return {'Pixmap' : self.icon, 
 			'MenuText': self.name, 
 			'ToolTip': self.name, 
-			'CmdType': "ForEdit" # bleibt aktivm, wenn sketch editor  oder andere tasktab an ist
+			'CmdType': "ForEdit" # bleibt aktiv, wenn sketch editor oder andere tasktab an ist
 		} 
 
 	def IsActive(self):
@@ -527,16 +527,18 @@ static char * nurbs_xpm[] = {
 		'Part_Cone', 'Part_Cylinder','Draft_Move','Draft_Rotate','Draft_Point','Draft_ToggleGrid',
 		'My_Test2','Nurbs_toggleSketch','Sketcher_NewSketch','Nurbs_facedraws','Nurbs_patcha','Nurbs_patchb','Nurbs_folda']
 
+		cmds2=['Nurbs_facedraws','Nurbs_patcha','Nurbs_patchb','Nurbs_folda']
 		if 1:
 			self.appendToolbar("Nurbs", cmds )
 			self.appendMenu("Nurbs", cmds)
-
+			self.appendToolbar("TTT", cmds2 )
 		menues={}
 		ml=[]
 		for _t in FreeCAD.tcmds5:
 			c=_t[0]
 			a=_t[1]
 			try:menues[tuple(c)].append(a)
+
 			except: 
 				menues[tuple(c)]=[a]
 				ml.append(tuple(c))
