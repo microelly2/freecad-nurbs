@@ -408,11 +408,11 @@ if FreeCAD.GuiUp:
 	c2a(["Topology"],always,'Topo12','analyse_topology_v2','Test 4','/../icons/nurbs.svg',"Test4()")
 
 
-	c2a(["Workspace"],ondocument,'Create Workspace',None,"Create workspace",'/../icons/plane.svg',"createws()","workspace")
-	c2a(["Workspace"],ondocument,'Create Link',None,"Create workspace link",'/../icons/plane.svg',"createlink()","workspace")
+	c2a(["Workspace"],ondocument,'CreateWorkspace',None,"Create workspace",'/../icons/workspace.svg',"createws()","workspace")
+	c2a(["Workspace"],ondocument,'CreateWSLink',None,"Create workspace link",'/../icons/workspacelink.svg',"createlink()","workspace")
 
-	c2a(["Workspace"],ondocument,'ViewsQV','views',"Create QuadView",'/../icons/plane.svg',"createquadview()","workspace")
-	c2a(["Workspace"],ondocument,'Views2H','views',"Create 2 horizontal views",'/../icons/plane.svg',"createh2()","workspace")
+	c2a(["Workspace"],ondocument,'ViewsQV','views',"Create QuadView",'/../icons/workspacequad.svg',"createquadview()","workspace")
+	c2a(["Workspace"],ondocument,'Views2H','views',"Create 2 horizontal views",'/../icons/workspace2h.svg',"createh2()","workspace")
 
 
 	c2a(["Needle"],ondocument,'Needle','needle','create a needle','/../icons/shoe.svg',"run()")
@@ -528,10 +528,15 @@ static char * nurbs_xpm[] = {
 		'My_Test2','Nurbs_toggleSketch','Sketcher_NewSketch','Nurbs_facedraws','Nurbs_patcha','Nurbs_patchb','Nurbs_folda']
 
 		cmds2=['Nurbs_facedraws','Nurbs_patcha','Nurbs_patchb','Nurbs_folda']
+		
+		cmds3=['Nurbs_CreateWorkspace','Nurbs_CreateWSLink','Nurbs_ViewsQV','Nurbs_Views2H',]
+
+	
 		if 1:
 			self.appendToolbar("Nurbs", cmds )
 			self.appendMenu("Nurbs", cmds)
 			self.appendToolbar("TTT", cmds2 )
+			self.appendToolbar("Workspaces and Views", cmds3 )
 		menues={}
 		ml=[]
 		for _t in FreeCAD.tcmds5:
