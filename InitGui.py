@@ -418,6 +418,8 @@ if FreeCAD.GuiUp:
 	c2a(["Workspace"],ondocument,'ViewsQV','views',"Create QuadView",'/../icons/workspacequad.svg',"createquadview()","workspace")
 	c2a(["Workspace"],ondocument,'Views2H','views',"Create 2 horizontal views",'/../icons/workspace2h.svg',"createh2()","workspace")
 
+	c2a(["Workspace"],ondocument,'DarkRoom','views',"Create Dark Room",'/../icons/workspace2h.svg',"createdarkroom()","workspace")
+
 
 	c2a(["Needle"],ondocument,'Needle','needle','create a needle','/../icons/shoe.svg',"run()")
 	c2a(["Needle"],onneedle,'needle Change Model','needle_change_model','needle Change Model','/../icons/shoe.svg',"run()")
