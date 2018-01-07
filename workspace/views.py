@@ -79,6 +79,36 @@ class ViewProvider:
 				updatencontent(v,fp.objs,fp)
 				fp.Proxy.v=v
 
+class ViewProviderH2:
+	''' view provider class for Tripod'''
+	def __init__(self, obj):
+		obj.Proxy = self
+		self.Object=obj
+
+	def onDelete(self, obj, subelements):
+		print "on Delete Quadview"
+		print obj
+		print subelements
+		obj.Object.Proxy.v.close()
+		return True
+
+	def onChanged(self, obj, prop):
+			if obj==None: return
+			print "onchange H2",prop
+			if prop=="Visibility" and not obj.Visibility:
+				print "close it"
+				try: 
+					_=obj.Object.Proxy.v  
+					obj.Object.Proxy.v.close()
+				except: 
+					pass
+			if prop=="Visibility" and obj.Visibility:
+				fp=obj.Object
+				title=fp.Label
+				v=Gui.createViewer(4,title)
+				resizeWindows(v,fp)
+				# updatencontenth2(v,fp.obja,fp.objb,fp.objs,fp)
+				fp.Proxy.v=v
 
 
 
@@ -91,9 +121,7 @@ class QuadView(PartFeature):
 		obj.addProperty("App::PropertyFloat","A Angle","V00")
 		obj.addProperty("App::PropertyInteger","A DisplayMode","V00")
 		obj.addProperty("App::PropertyInteger","A OrientationMode","V00")
-		
-#		obj.addProperty("App::PropertyFloat","A Zoom","00")
-#		obj.A_Zoom=0
+
 		obj.A_Axis=FreeCAD.Vector(1,0,0)
 		obj.A_Angle=90
 
@@ -116,15 +144,12 @@ class QuadView(PartFeature):
 		obj.addProperty("App::PropertyInteger","D DisplayMode","V11")
 		obj.addProperty("App::PropertyInteger","D OrientationMode","V11")
 
-#		obj.D_Axis=FreeCAD.Vector(0,1,1)
 		obj.D_Axis=FreeCAD.Vector(1,0,1)
 		obj.D_Angle=45
 
-		# oder 60 , 30
 
 		obj.addProperty("App::PropertyBool","DisplayMode","Render")
 		obj.addProperty("App::PropertyBool","fitAll","Render")
-
 		obj.addProperty("App::PropertyLinkList","objs","Render")
 
 		if label <> None:
@@ -154,7 +179,6 @@ class QuadView(PartFeature):
 				(FreeCAD.Vector(-1,0,0),-90),
 				
 			]
-
 
 
 		if prop=="Shape": 
@@ -192,17 +216,12 @@ class QuadView(PartFeature):
 				if val <>0:
 					c.orientation=FreeCAD.Rotation(	AxisAngle[val-1][0],AxisAngle[val-1][1]).Q
 
+				#replace the objects
 				sg=view.getSceneGraph()
 				sg.removeChild(0)
 				sg.addChild(marker)
 
-
-
-
-
-
 			return
-
 
 
 		if prop.endswith("DisplayMode"):
@@ -235,10 +254,7 @@ class QuadView(PartFeature):
 		if prop.startswith("A_"):
 			c=self.v.getViewer(0).getSoRenderManager().getCamera()
 			c.orientation=FreeCAD.Rotation(fp.A_Axis,fp.A_Angle).Q
-#			if fp.A_Zoom<0:
-#				c.scaleHeight(0.9)
-#			if fp.A_Zoom>0:
-#				c.scaleHeight(1.0/0.9)
+
 			view=self.v.getViewer(0)
 			reg=view.getSoRenderManager().getViewportRegion()
 			marker=view.getSoRenderManager().getSceneGraph()
@@ -279,13 +295,11 @@ class QuadView(PartFeature):
 		print(["onDocumentRestored",str(fp.Label)+ ": "+str(fp.Proxy.__class__.__name__)])
 		fp.ViewObject.Visibility=False
 		return
-		title=fp.Label
-		v=Gui.createViewer(4,title)
-		updatencontent(v,fp.objs,fp)
-		fp.Proxy.v=v
-
-
-
+		#+# todo: the view restore does not woprk as expected
+		#title=fp.Label
+		#v=Gui.createViewer(4,title)
+		#updatencontent(v,fp.objs,fp)
+		#fp.Proxy.v=v
 
 
 
@@ -296,77 +310,45 @@ class QuadView(PartFeature):
 
 def createquadview():
 
-	try: FreeCAD.view.close()
-	except: pass
-
-	obj=Gui.Selection.getSelection()[0]
 	objs=Gui.Selection.getSelection()
 
-	title=obj.Label
-
-	if len(objs)<>1:
-		labels=[obj.Label for obj in objs]
-		title=', '.join(labels)
+	labels=[obj.Label for obj in objs]
+	title=', '.join(labels)
 
 	v=Gui.createViewer(4,title)
 
-	FreeCAD.viewLabel=title
-	
 	a=FreeCAD.ActiveDocument.addObject("Part::FeaturePython","MyQuadView")
 	QuadView(a,"QuadView for "+ title )
 	ViewProvider(a.ViewObject)
+
 	updatencontent(v,objs,a)
+
 	a.Proxy.v=v
-	a.Proxy.objs=objs
 	a.objs=objs
-#	for y in ['A_','B_','C_','D_']:
-#		a.Proxy.onChanged(a, y)
 
-#	v.fitAll()
-
-'''
-The Gui.createViewer-Object has the method fitAll, viewLeft ...
-I think its better to have these methods for each view and not only as global method
-So it is possible to display  in each window another view direction
-
-
-view=v.getViewer(2)
-rm=view.getSoRenderManager()
-c=rm.getCamera()
-
-c has pointAt, scaleHeight
-
-
-but I look for position, orientation setters an getters.
-'''
 
 def updatencontent(viewer,objs,fp,clearSel=True,fit=True):
 
 	print ("update content",fp,fp.Label)
 
-	v=viewer
-
 	try:
-		view=v.getViewer(0)
+		view=viewer.getViewer(0)
 	except:
 		title=fp.Label
-		v=Gui.createViewer(4,title)
-		fp.Proxy.v=v
-		view=v.getViewer(0)
+		viewer=Gui.createViewer(4,title)
+		fp.Proxy.v=viewer
 
+	v=viewer
+	view=v.getViewer(0)
+	rm=view.getSoRenderManager()
+	print "######################"
+	rm.setCamera( coin.SoOrthographicCamera())
 
 	marker = coin.SoSeparator()
+
 	for objx in objs:
 		print "run ",objx.Label
 		node= objx.ViewObject.RootNode
-
-		if fp.DisplayMode:
-			nodeA=node.copy()
-			clds=nodeA.getChildren()
-			s2=clds[2]
-			s2.whichChild.setValue(0)
-		else:
-			nodeA=node
 
 		if fp.A_DisplayMode==0:
 			nodeA=node
@@ -383,29 +365,16 @@ def updatencontent(viewer,objs,fp,clearSel=True,fit=True):
 	c=view.getSoRenderManager().getCamera()
 	c.orientation=FreeCAD.Rotation(fp.A_Axis,fp.A_Angle).Q
 
-#-
-
-	#view=self.v.getViewer(0)
 	reg=view.getSoRenderManager().getViewportRegion()
 	marker=view.getSoRenderManager().getSceneGraph()
 	c.viewAll(marker,reg)
-
 
 	#------------------------------------
 
 	view=v.getViewer(1)
 	marker = coin.SoSeparator()
 	for objx in objs:
-		print "run ",objx.Label
 		node= objx.ViewObject.RootNode
-
-		if fp.DisplayMode:
-			nodeA=node.copy()
-			clds=nodeA.getChildren()
-			s2=clds[2]
-			s2.whichChild.setValue(1)
-		else:
-			nodeA=node
 
 		if fp.B_DisplayMode==0:
 			nodeA=node
@@ -414,7 +383,6 @@ def updatencontent(viewer,objs,fp,clearSel=True,fit=True):
 			clds=nodeA.getChildren()
 			s2=clds[2]
 			s2.whichChild.setValue(fp.B_DisplayMode)
-
 
 		marker.addChild(nodeA)
 
@@ -428,16 +396,7 @@ def updatencontent(viewer,objs,fp,clearSel=True,fit=True):
 	view=v.getViewer(2)
 	marker = coin.SoSeparator()
 	for objx in objs:
-		print "run ",objx.Label
 		node= objx.ViewObject.RootNode
-
-		if fp.DisplayMode:
-			nodeA=node.copy()
-			clds=nodeA.getChildren()
-			s2=clds[2]
-			s2.whichChild.setValue(2)
-		else:
-			nodeA=node
 
 		if fp.C_DisplayMode==0:
 			nodeA=node
@@ -459,16 +418,7 @@ def updatencontent(viewer,objs,fp,clearSel=True,fit=True):
 	view=v.getViewer(3)
 	marker = coin.SoSeparator()
 	for objx in objs:
-		print "run ",objx.Label
 		node= objx.ViewObject.RootNode
-
-		if fp.DisplayMode:
-			nodeA=node.copy()
-			clds=nodeA.getChildren()
-			s2=clds[2]
-			s2.whichChild.setValue(3)
-		else:
-			nodeA=node
 
 		if fp.D_DisplayMode==0:
 			nodeA=node
@@ -498,7 +448,8 @@ def updatencontent(viewer,objs,fp,clearSel=True,fit=True):
 # two horizontal windows ...
 #
 
-def updatencontenth2(viewer,obja,objb):
+def XXupdatencontenth2(viewer,obja,objb):
+	#+# todo: update like quadview
 
 	v=viewer
 
@@ -535,29 +486,342 @@ def updatencontenth2(viewer,obja,objb):
 
 
 
-def createh2():
+def updatencontenth2(viewer,obja,objb,objs,fp,clearSel=True,fit=True):
 
-	obja=Gui.Selection.getSelection()[0]
-	objb=Gui.Selection.getSelection()[1]
+	print ("update content",fp,fp.Label)
 
-	title=obja.Label+" "+objb.Label
+	try:
+		view=viewer.getViewer(0)
+	except:
+		title=fp.Label
+		viewer=Gui.createViewer(4,title)
+		fp.Proxy.v=viewer
 
-	v=Gui.createViewer(4,title)
+	v=viewer
+	view=v.getViewer(0)
+	rm=view.getSoRenderManager()
+	print "######################"
+	rm.setCamera( coin.SoOrthographicCamera())
+
+	marker = coin.SoSeparator()
+
+	for objx in objs+[obja]:
+		print "run 0",objx.Label
+		node= objx.ViewObject.RootNode
+
+		if fp.A_DisplayMode==0:
+			nodeA=node
+		else:
+			nodeA=node.copy()
+			clds=nodeA.getChildren()
+			s2=clds[2]
+			s2.whichChild.setValue(fp.A_DisplayMode)
+
+		marker.addChild(nodeA)
+
+	view.setSceneGraph(marker)
+
+	c=view.getSoRenderManager().getCamera()
+	c.orientation=FreeCAD.Rotation(fp.A_Axis,fp.A_Angle).Q
+
+	reg=view.getSoRenderManager().getViewportRegion()
+	marker=view.getSoRenderManager().getSceneGraph()
+	c.viewAll(marker,reg)
+
+	#------------------------------------
+
+	view=v.getViewer(1)
+	marker = coin.SoSeparator()
+	for objx in objs +[objb]:
+		print "run 1",objx.Label
+		node= objx.ViewObject.RootNode
+
+		if fp.B_DisplayMode==0:
+			nodeA=node
+		else:
+			nodeA=node.copy()
+			clds=nodeA.getChildren()
+			s2=clds[2]
+			s2.whichChild.setValue(fp.B_DisplayMode)
+
+		marker.addChild(nodeA)
+
+	view.setSceneGraph(marker)
+
+	c=view.getSoRenderManager().getCamera()
+	c.orientation=FreeCAD.Rotation(fp.B_Axis,fp.B_Angle).Q
+
+	#------------------------------------
+
+	view=v.getViewer(2)
+	marker = coin.SoSeparator()
+	for objx in objs + [objb]:
+		print "run 2",objx.Label
+		node= objx.ViewObject.RootNode
+
+		if fp.C_DisplayMode==0:
+			nodeA=node
+		else:
+			nodeA=node.copy()
+			clds=nodeA.getChildren()
+			s2=clds[2]
+			s2.whichChild.setValue(fp.C_DisplayMode)
+
+		marker.addChild(nodeA)
+
+	view.setSceneGraph(marker)
+
+	c=view.getSoRenderManager().getCamera()
+	c.orientation=FreeCAD.Rotation(fp.C_Axis,fp.C_Angle).Q
+
+	#------------------------------------
+
+	view=v.getViewer(3)
+	marker = coin.SoSeparator()
+	for objx in objs +[obja]:
+		print "run 3",objx.Label
+		node= objx.ViewObject.RootNode
+
+		if fp.D_DisplayMode==0:
+			nodeA=node
+		else:
+			nodeA=node.copy()
+			clds=nodeA.getChildren()
+			s2=clds[2]
+			s2.whichChild.setValue(fp.D_DisplayMode)
+
+		marker.addChild(nodeA)
+
+	view.setSceneGraph(marker)
+
+	c=view.getSoRenderManager().getCamera()
+	c.orientation=FreeCAD.Rotation(fp.D_Axis,fp.D_Angle).Q
+
+	#------------------------------------
+
+	if fit:
+		v.fitAll()
+
+	if clearSel:
+		Gui.Selection.clearSelection()
+
+
+
+
+class ViewH2(PartFeature):
+	def __init__(self, obj,label=None):
+		PartFeature.__init__(self, obj)
+
+		obj.addProperty("App::PropertyVector","A Axis","V00")
+		obj.addProperty("App::PropertyFloat","A Angle","V00")
+		obj.addProperty("App::PropertyInteger","A DisplayMode","V00")
+		obj.addProperty("App::PropertyInteger","A OrientationMode","V00")
+
+		obj.A_Axis=FreeCAD.Vector(1,0,0)
+		obj.A_Angle=90
+
+		obj.addProperty("App::PropertyVector","B Axis","V01")
+		obj.addProperty("App::PropertyFloat","B Angle","V01")
+		obj.addProperty("App::PropertyInteger","B DisplayMode","V01")
+		obj.addProperty("App::PropertyInteger","B OrientationMode","V01")
+
+		obj.B_Axis=FreeCAD.Vector(1,1,1)
+		obj.B_Angle=120
+
+		obj.addProperty("App::PropertyVector","C Axis","V10")
+		obj.addProperty("App::PropertyFloat","C Angle","V10")
+		obj.addProperty("App::PropertyInteger","C DisplayMode","V10")
+		obj.addProperty("App::PropertyInteger","C OrientationMode","V10")
+
+
+		obj.addProperty("App::PropertyVector","D Axis","V11")
+		obj.addProperty("App::PropertyFloat","D Angle","V11")
+		obj.addProperty("App::PropertyInteger","D DisplayMode","V11")
+		obj.addProperty("App::PropertyInteger","D OrientationMode","V11")
+
+		obj.D_Axis=FreeCAD.Vector(1,0,1)
+		obj.D_Angle=45
+
+
+		obj.addProperty("App::PropertyBool","DisplayMode","Render")
+		obj.addProperty("App::PropertyBool","fitAll","Render")
+		obj.addProperty("App::PropertyLinkList","objs","Render")
+
+		obj.addProperty("App::PropertyLink","obja","Render")
+		obj.addProperty("App::PropertyLink","objb","Render")
+
+		if label <> None:
+			obj.Label = label
+
+
+	def onChanged(self, fp, prop):
+
+		print ("on changed .....",fp.Label,prop)
+#		print "deanctivated"
+#		return
+
+		if not fp.ViewObject.Visibility: return
+
+		try: self.v
+		except: return
+
+		AxisAngle=[
+				(FreeCAD.Vector(1,1,1),120),
+				(FreeCAD.Vector(1,1,1),-120),
+				
+				(FreeCAD.Vector(1,0,1),45),
+				(FreeCAD.Vector(1,0,1),60),
+				(FreeCAD.Vector(1,0,1),30),
+				
+				(FreeCAD.Vector(1,0,0),90),
+				(FreeCAD.Vector(1,0,0),-90),
+				
+				(FreeCAD.Vector(-1,0,0),90),
+				(FreeCAD.Vector(-1,0,0),-90),
+				
+			]
+
+
+		if prop=="Shape": 
+			# updatencontent(self.v,fp.objs,fp,False,False)
+			dpms=[fp.A_DisplayMode,fp.B_DisplayMode,fp.C_DisplayMode,fp.D_DisplayMode]
+			vals=[fp.A_OrientationMode,fp.B_OrientationMode,fp.C_OrientationMode,fp.D_OrientationMode]
+			for ix in range(4):
+				objs=fp.objs
+				view=self.v.getViewer(ix)
+				val=vals[ix]
+				marker = coin.SoSeparator()
+				for objx in objs:
+					print "run ",objx.Label
+					node= objx.ViewObject.RootNode
+
+					if fp.DisplayMode:
+						nodeA=node.copy()
+						clds=nodeA.getChildren()
+						s2=clds[2]
+						s2.whichChild.setValue(0)
+					else:
+						nodeA=node
+
+					if fp.A_DisplayMode==0:
+						nodeA=node
+					else:
+						nodeA=node.copy()
+						clds=nodeA.getChildren()
+						s2=clds[2]
+						s2.whichChild.setValue(dpms[ix])
+
+					marker.addChild(nodeA)
+
+				c=view.getSoRenderManager().getCamera()
+				if val <>0:
+					c.orientation=FreeCAD.Rotation(	AxisAngle[val-1][0],AxisAngle[val-1][1]).Q
+
+				#replace the objects
+				sg=view.getSceneGraph()
+				sg.removeChild(0)
+				sg.addChild(marker)
+
+			return
+
+
+		if prop.endswith("DisplayMode"):
+			w=getattr(fp,prop)
+			if w<0: setattr(fp,prop,0)
+			if w>3: setattr(fp,prop,3)
+			updatencontenth2(self.v,fp.obja,fp.objb,fp.objs,fp,False)
+			return
+
+		if prop.endswith("OrientationMode"):
+			val=getattr(fp,prop)
+			if val>=len(AxisAngle)or val<0: setattr(fp,prop,val%len(AxisAngle))
+			val=getattr(fp,prop)
+			if val<>0:
+				if prop=="A_OrientationMode":
+					fp.A_Axis=AxisAngle[val-1][0]
+					fp.A_Angle=AxisAngle[val-1][1]
+				if prop=="B_OrientationMode":
+					fp.B_Axis=AxisAngle[val-1][0]
+					fp.B_Angle=AxisAngle[val-1][1]
+				if prop=="C_OrientationMode":
+					fp.C_Axis=AxisAngle[val-1][0]
+					fp.C_Angle=AxisAngle[val-1][1]
+				if prop=="D_OrientationMode":
+					fp.D_Axis=AxisAngle[val-1][0]
+					fp.D_Angle=AxisAngle[val-1][1]
+			return
+
+
+		if prop.startswith("A_"):
+			c=self.v.getViewer(0).getSoRenderManager().getCamera()
+			c.orientation=FreeCAD.Rotation(fp.A_Axis,fp.A_Angle).Q
+
+			view=self.v.getViewer(0)
+			reg=view.getSoRenderManager().getViewportRegion()
+			marker=view.getSoRenderManager().getSceneGraph()
+			c.viewAll(marker,reg)
+
+		if prop.startswith("B_"):
+			c=self.v.getViewer(1).getSoRenderManager().getCamera()
+			c.orientation=FreeCAD.Rotation(fp.B_Axis,fp.B_Angle).Q
+
+			view=self.v.getViewer(1)
+			reg=view.getSoRenderManager().getViewportRegion()
+			marker=view.getSoRenderManager().getSceneGraph()
+			c.viewAll(marker,reg)
+
+		if prop.startswith("C_"):
+			c=self.v.getViewer(2).getSoRenderManager().getCamera()
+			c.orientation=FreeCAD.Rotation(fp.C_Axis,fp.C_Angle).Q
+
+			view=self.v.getViewer(2)
+			reg=view.getSoRenderManager().getViewportRegion()
+			marker=view.getSoRenderManager().getSceneGraph()
+			c.viewAll(marker,reg)
+
+		if prop.startswith("D_"):
+			c=self.v.getViewer(3).getSoRenderManager().getCamera()
+			c.orientation=FreeCAD.Rotation(fp.D_Axis,fp.D_Angle).Q
+
+			view=self.v.getViewer(3)
+			reg=view.getSoRenderManager().getViewportRegion()
+			marker=view.getSoRenderManager().getSceneGraph()
+			c.viewAll(marker,reg)
+
+		if fp.fitAll:
+			self.v.fitAll()
+
+
+	def onDocumentRestored(self, fp):
+		print(["onDocumentRestored",str(fp.Label)+ ": "+str(fp.Proxy.__class__.__name__)])
+		fp.ViewObject.Visibility=False
+		return
+		#+# todo: the view restore does not woprk as expected
+
+
+def resizeWindows(v,a):
+
+	title="Horizontal views for "+a.obja.Label+" and "+a.objb.Label
 
 	mw=FreeCADGui.getMainWindow()
 	mdiarea=mw.findChild(QtGui.QMdiArea)
 
 	sws=mdiarea.subWindowList()
 
+	print title
 	print "windows ..."
 	for i,w2 in enumerate(sws):
-		print str(w2.windowTitle())
+		print "XX--!"+str(w2.windowTitle())
+
+	for i,w2 in enumerate(sws):
+		print "!!"+str(w2.windowTitle())
 		if  w2.windowTitle()==title:
 
-			print w2.children()
+
+#			print w2.children()
 			va=w2.children()[3]
 
-			print va.children()
+#			print va.children()
 			sp=va.children()[2]
 
 			spa=sp.children()[0]
@@ -566,8 +830,32 @@ def createh2():
 			spa=sp.children()[1]
 			spa.setSizes([10,0])
 
-			Gui.Selection.clearSelection()
-			updatencontenth2(v,obja,objb)
+			print "update content h2 -- start "
+			updatencontenth2(v,a.obja,a.objb,a.objs,a,False)
+			print "update content h2 -- done"
+			#return
 
-	v.viewLeft()
+
+
+def createh2():
+
+	obja=Gui.Selection.getSelection()[0]
+	objb=Gui.Selection.getSelection()[1]
+	objs=Gui.Selection.getSelection()[2:]
+
+	title="Horizontal views for "+obja.Label+" and "+objb.Label
+
+#	v=Gui.createViewer(4,title)
+
+	a=FreeCAD.ActiveDocument.addObject("Part::FeaturePython","MyViewH2")
+	ViewH2(a,title )
+	ViewProviderH2(a.ViewObject)
+
+#	a.Proxy.v=v
+	a.obja=obja
+	a.objb=objb
+	a.objs=objs
+
+	a.ViewObject.Visibility=False
+
 
