@@ -312,6 +312,10 @@ if FreeCAD.GuiUp:
 	c2a(["Curves"],always,'isodraw25','isodraw','Brezel','/../icons/draw.svg',"createBrezel()")
 #	c2a(["Curves"],always,'importColorSVG','shoe_importSVG','import SVG for shoes','/../icons/draw.svg',"import_test()")
 
+
+	c2a(["Curves"],always,'holes','holes','Play with holes on a surface','/../icons/draw.svg',"run()")
+	c2a(["Curves"],always,'holeswires','holes','extract the wires of the selected part','/../icons/draw.svg',"extractWires()")
+
 	c2a(["Curves"],always,'linkSVG','shoe_importSVG','create link to SVG file','/../icons/draw.svg',"create_svglink()")
 
 	c2a(["Curves"],always,'impSVG','shoe_importSVG','import svg file','/../icons/draw.svg',"import_svg()")
