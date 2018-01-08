@@ -418,7 +418,8 @@ if FreeCAD.GuiUp:
 	c2a(["Workspace"],ondocument,'ViewsQV','views',"Create QuadView",'/../icons/workspacequad.svg',"createquadview()","workspace")
 	c2a(["Workspace"],ondocument,'Views2H','views',"Create 2 horizontal views",'/../icons/workspace2h.svg',"createh2()","workspace")
 
-	c2a(["Workspace"],ondocument,'DarkRoom','views',"Create Dark Room",'/../icons/workspace2h.svg',"createdarkroom()","workspace")
+	c2a(["Workspace"],ondocument,'DarkRoom','views',"Create Dark Room",'/../icons/darkroom.svg',"createdarkroom()","workspace")
+	c2a(["Workspace"],ondocument,'Light','views',"Create Light",'/../icons/light.svg',"createlight()","workspace")
 
 
 	c2a(["Needle"],ondocument,'Needle','needle','create a needle','/../icons/shoe.svg',"run()")
@@ -535,7 +536,7 @@ static char * nurbs_xpm[] = {
 
 		cmds2=['Nurbs_facedraws','Nurbs_patcha','Nurbs_patchb','Nurbs_folda']
 		
-		cmds3=['Nurbs_CreateWorkspace','Nurbs_CreateWSLink','Nurbs_ViewsQV','Nurbs_Views2H',]
+		cmds3=['Nurbs_CreateWorkspace','Nurbs_CreateWSLink','Nurbs_ViewsQV','Nurbs_Views2H','Nurbs_DarkRoom']
 
 	
 		if 1:

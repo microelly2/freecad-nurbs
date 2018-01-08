@@ -15,6 +15,7 @@ Gui=FreeCADGui
 from PySide import QtCore,QtGui
 from pivy import coin
 import numpy as np
+import random
 
 
 '''
@@ -874,8 +875,8 @@ class DarkRoom(PartFeature):
 		obj.addProperty("App::PropertyInteger","A DisplayMode","V00")
 		obj.addProperty("App::PropertyInteger","A OrientationMode","V00")
 
-		obj.A_Axis=FreeCAD.Vector(1,0,0)
-		obj.A_Angle=90
+		obj.A_Axis=FreeCAD.Vector(1,0,1)
+		obj.A_Angle=60
 
 		obj.addProperty("App::PropertyVector","B Axis","V01")
 		obj.addProperty("App::PropertyFloat","B Angle","V01")
@@ -914,8 +915,6 @@ class DarkRoom(PartFeature):
 	def onChanged(self, fp, prop):
 
 		print ("on changed .....",fp.Label,prop)
-#		print "deanctivated"
-#		return
 
 		if fp == None: return
 		if not fp.ViewObject.Visibility: return
@@ -923,8 +922,6 @@ class DarkRoom(PartFeature):
 		try: self.v
 		except: return
 
-		print "ruunXXXXXXXXXXXXXA"
-		
 		AxisAngle=[
 				(FreeCAD.Vector(1,1,1),120),
 				(FreeCAD.Vector(1,1,1),-120),
@@ -942,16 +939,15 @@ class DarkRoom(PartFeature):
 			]
 
 
-		if prop=="Shape": 
-			# updatencontent(self.v,fp.objs,fp,False,False)
+		if prop=="Shape" or prop=="Group": 
 			dpms=[fp.A_DisplayMode,fp.B_DisplayMode,fp.C_DisplayMode,fp.D_DisplayMode]
 			vals=[fp.A_OrientationMode,fp.B_OrientationMode,fp.C_OrientationMode,fp.D_OrientationMode]
-			for ix in (0,1):
+			for ix in [0]:
 				objs=fp.objs
 				view=self.v.getViewer(ix)
 				val=vals[ix]
 				marker = coin.SoSeparator()
-				for objx in objs+ [fp.obja]:
+				for objx in objs+[fp.obja]:
 					print "run ",objx.Label
 					node= objx.ViewObject.RootNode
 
@@ -974,36 +970,52 @@ class DarkRoom(PartFeature):
 					marker.addChild(nodeA)
 
 				c=view.getSoRenderManager().getCamera()
-				if val <>0:
+				if val <> 0:
 					c.orientation=FreeCAD.Rotation(	AxisAngle[val-1][0],AxisAngle[val-1][1]).Q
-
-				#replace the objects
+				else:
+					c.orientation=FreeCAD.Rotation(	fp.A_Axis,fp.A_Angle).Q
+					
 				sg=view.getSceneGraph()
+				sg.removeChild(1)
 				sg.removeChild(0)
+
+				# hier die lichter einfuegen
+				for ob in fp.Group:
+
+					print ("!!",ob,ob.Label,ob.on)
+
+					try: ob.mode
+					except: continue
+
+					print ("verarbeitung",ob.mode,ob.on)
+					if ob.on:
+
+						if ob.mode=="DirectionalLight":
+							l=coin.SoDirectionalLight()
+							marker.insertChild(l,0)
+
+						if ob.mode=="SpotLight":
+							l=coin.SoSpotLight()
+							l.cutOffAngle.setValue(0.1)
+							l.dropOffRate.setValue(0.)
+							l.location.setValue(coin.SbVec3f(ob.location.x,ob.location.y,ob.location.z,))
+
+						l.direction.setValue(coin.SbVec3f(ob.direction.x,ob.direction.y,ob.direction.z,))
+						l.color.setValue(coin.SbColor(ob.color[0],ob.color[1],ob.color[2]))
+						marker.insertChild(l,0)
+
 				sg.addChild(marker)
-
-				l=coin.SoSpotLight()
-				l.direction.setValue(coin.SbVec3f(-200,-200,-100))
-				l.color.setValue(coin.SbColor(1,1,0))
-				l.location.setValue(coin.SbVec3f(200,200,100))
-				l.cutOffAngle.setValue(8.3)
-				l.dropOffRate.setValue(0.)
-				marker.insertChild(l,0)
-
-
-
 
 			return
 
 
-		return
-		
 		if prop.endswith("DisplayMode"):
 			w=getattr(fp,prop)
 			if w<0: setattr(fp,prop,0)
 			if w>3: setattr(fp,prop,3)
-			updatencontenth2(self.v,fp.obja,fp.objb,fp.objs,fp,False)
+			#updatencontenth2(self.v,fp.obja,fp.objb,fp.objs,fp,False)
 			return
+
 
 		if prop.endswith("OrientationMode"):
 			val=getattr(fp,prop)
@@ -1068,24 +1080,15 @@ class DarkRoom(PartFeature):
 	def onDocumentRestored(self, fp):
 		print(["onDocumentRestored",str(fp.Label)+ ": "+str(fp.Proxy.__class__.__name__)])
 		fp.ViewObject.Visibility=False
-		return
-		#+# todo: the view restore does not woprk as expected
 
 
-
-
-
-
-
-
-
-
-
+	def execute(self, fp):
+		self.onChanged(fp,"Shape")
 
 
 
 class ViewProviderDR:
-	''' view provider class for Tripod'''
+	''' view provider class for dark room'''
 	def __init__(self, obj):
 		obj.Proxy = self
 		self.Object=obj
@@ -1129,6 +1132,8 @@ class ViewProviderDR:
 				fp=obj.Object
 				title=fp.Label
 				v=Gui.createViewer(2,title)
+				setsizeDR(title)
+				
 				fp.Proxy.v=v
 				fp.Proxy.onChanged(fp,"Shape")
 
@@ -1138,39 +1143,68 @@ class ViewProviderDR:
 				rGrp=FreeCAD.ParamGet('User parameter:BaseApp/Preferences/View')
 				atr="BackgroundColor"
 				rGrp.SetUnsigned(atr,0)
+				v.fitAll()
 				
 
 
 
+def setsizeDR(title):
 
+	mw=FreeCADGui.getMainWindow()
+	mdiarea=mw.findChild(QtGui.QMdiArea)
+	sws=mdiarea.subWindowList()
 
+	for i,w2 in enumerate(sws):
+		if  w2.windowTitle()==title:
+			va=w2.children()[3]
+			spa=va.children()[2]
+			spa.setSizes([10,0])
 
 
 
 
 def createdarkroom():
 
-#	obja=Gui.Selection.getSelection()[0]
-#	objb=Gui.Selection.getSelection()[1]
-#	objs=Gui.Selection.getSelection()[2:]
+	# the superstar
+	obja=Gui.Selection.getSelection()[0]
+	# and the set
+	objs=Gui.Selection.getSelection()[1:]
 
-	obja=App.ActiveDocument.Cylinder
 	title="Darkroom for "+obja.Label
 
 	v=Gui.createViewer(2,title)
+	setsizeDR(title)
 
-	a=FreeCAD.ActiveDocument.addObject("Part::FeaturePython","MyDarkRoom")
+
+	a=FreeCAD.ActiveDocument.addObject("App::DocumentObjectGroupPython","MyDarkRoom")
 	DarkRoom(a,title )
 	ViewProviderDR(a.ViewObject)
 
 	a.Proxy.v=v
-	
+
 	a.obja=obja
-#	a.objb=objb
-#	a.objs=objs
+	a.objs=objs
 
-#	a.ViewObject.Visibility=False
+	# add some lights to start the party ...
+	la=createlight()
+	la.location=FreeCAD.Vector(-100,-100,100)
+	la.direction=la.location*(-1) 
+	a.addObject(la)
 
+	la=createlight()
+	la.location=FreeCAD.Vector(100,-100,100)
+	la.direction=la.location*(-1) 
+	la.color=(0.3,0.,0.)
+	a.addObject(la)
+
+	la=createlight()
+	la.mode="SpotLight"
+	la.location=FreeCAD.Vector(10,-20,100)
+	la.direction=FreeCAD.Vector(0,0,-1) 
+	la.color=(0.3,0.,1.)
+	a.addObject(la)
+
+	# dark the environment
 	a.Proxy.onChanged(a,"Shape")
 	rGrp=FreeCAD.ParamGet('User parameter:BaseApp/Preferences/View')
 	atr="HeadlightIntensity"
@@ -1179,3 +1213,42 @@ def createdarkroom():
 	atr="BackgroundColor"
 	rGrp.SetUnsigned(atr,0)
 
+	v.fitAll()
+
+
+
+class ViewProviderL:
+	''' view provider class for the Light node'''
+	def __init__(self, obj):
+		obj.Proxy = self
+		self.Object=obj
+
+	def onDelete(self, obj, subelements):
+		print "on Delete "
+		print obj
+		return True
+
+	def onChanged(self, obj, prop):
+			print "onchange",prop
+
+
+
+class Light(PartFeature):
+	''' a parametric light node''' 
+	def __init__(self, obj,label=None):
+		PartFeature.__init__(self, obj)
+
+		obj.addProperty("App::PropertyVector","direction",).direction=FreeCAD.Vector(-1,-1,-1)
+		obj.addProperty("App::PropertyVector","location",).location=FreeCAD.Vector(100,100,100)
+		obj.addProperty("App::PropertyColor","color",).color=(0.2,0.2,0.)
+		obj.addProperty("App::PropertyEnumeration","mode",).mode=['DirectionalLight','SpotLight',]
+		obj.addProperty("App::PropertyBool","on",).on=True
+
+
+
+def createlight():
+
+	a=FreeCAD.ActiveDocument.addObject("Part::FeaturePython","Light")
+	Light(a)
+	ViewProviderL(a.ViewObject)	
+	return a
