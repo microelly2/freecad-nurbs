@@ -861,10 +861,91 @@ def createh2():
 
 
 #------------------------------------------------------
+def mkshadow(sgg,lis):
+
+	rGrp=FreeCAD.ParamGet('User parameter:BaseApp/Preferences/View')
+	atr="HeadlightIntensity"
+	v=rGrp.GetInt(atr)
+
+	#set headlight on
+	rGrp.SetInt(atr,100)
+
+	# or off
+	rGrp.SetInt(atr,0)
+
+	# myCustomNode=Gui.ActiveDocument.ActiveView.getSceneGraph()
+
+
+	sggs=sgg.getChildren()
+	cs=[c.copy() for c in sggs]
+	for i in range(len(cs)):
+		sgg.removeChild(0)
+
+
+	sotype=coin.SoType.fromName("ShadowGroup")
+	sg=sotype.createInstance()
+	sg.getTypeId().getName()
+	sg.quality=1
+
+	sgg.insertChild(sg,0)
+	ss=sg
+
+
+	ff=0.5
+
+	if 0:
+		l=coin.SoSpotLight()
+		l.direction.setValue(coin.SbVec3f(-20,10,-300))
+		l.color.setValue(coin.SbColor(ff*random.random(),ff*random.random(),ff*random.random()))
+		l.location.setValue(coin.SbVec3f(0,0,300))
+		l.cutOffAngle.setValue(0.4)
+		l.dropOffRate.setValue(0.)
+		ss.insertChild(l,0)
+
+		l=coin.SoSpotLight()
+		l.direction.setValue(coin.SbVec3f(0,0,-300))
+		l.color.setValue(coin.SbColor(ff*random.random(),ff*random.random(),ff*random.random()))
+		l.location.setValue(coin.SbVec3f(0,0,300))
+		l.cutOffAngle.setValue(0.4)
+		l.dropOffRate.setValue(0.)
+		ss.insertChild(l,0)
+
+
+		l=coin.SoSpotLight()
+		l.direction.setValue(coin.SbVec3f(10,20,-300))
+		l.color.setValue(coin.SbColor(1,0,0))
+		l.color.setValue(coin.SbColor(ff*random.random(),ff*random.random(),ff*random.random()))
+		l.location.setValue(coin.SbVec3f(50,10,300))
+		l.cutOffAngle.setValue(.35)
+		l.dropOffRate.setValue(0.)
+		ss.insertChild(l,0)
+
+	else:
+		for lig in lis:
+			ss.insertChild(lig,0)
+
+	ll=len(cs)
+	for i in range(len(cs)):
+		sotype=coin.SoType.fromName("SoShadowStyle")
+		inst=sotype.createInstance()
+		print inst.getTypeId().getName() # => ShadowStyle
+		inst.style=3
+		ss.insertChild(inst,0)
+		ss.addChild(cs[ll-1-i])
+
+
+	Gui.SendMsgToActiveView("ViewFit")
+
+
+	print "children von sg"
+	ssc=sg.getChildren()
+	for c in ssc:
+		print c
 
 
 
 
+#-------------------------------------
 
 class DarkRoom(PartFeature):
 	def __init__(self, obj,label=None):
@@ -980,7 +1061,9 @@ class DarkRoom(PartFeature):
 				sg.removeChild(0)
 
 				# hier die lichter einfuegen
+				lis=[]
 				for ob in fp.Group:
+					#break
 
 					print ("!!",ob,ob.Label,ob.on)
 
@@ -988,23 +1071,29 @@ class DarkRoom(PartFeature):
 					except: continue
 
 					print ("verarbeitung",ob.mode,ob.on)
-					if ob.on:
+					if ob.on and ob.ViewObject.Visibility:
 
 						if ob.mode=="DirectionalLight":
 							l=coin.SoDirectionalLight()
-							marker.insertChild(l,0)
+							#marker.insertChild(l,0)
+							lis += [l]
 
 						if ob.mode=="SpotLight":
 							l=coin.SoSpotLight()
-							l.cutOffAngle.setValue(0.1)
+							l.cutOffAngle.setValue(0.4)
 							l.dropOffRate.setValue(0.)
 							l.location.setValue(coin.SbVec3f(ob.location.x,ob.location.y,ob.location.z,))
 
 						l.direction.setValue(coin.SbVec3f(ob.direction.x,ob.direction.y,ob.direction.z,))
 						l.color.setValue(coin.SbColor(ob.color[0],ob.color[1],ob.color[2]))
-						marker.insertChild(l,0)
+						#marker.insertChild(l,0)
+						lis += [l]
 
 				sg.addChild(marker)
+				print "makeshadow ..........!"
+				mkshadow(marker,lis)
+				print "------------------done-----------------"
+
 
 			return
 
@@ -1075,6 +1164,10 @@ class DarkRoom(PartFeature):
 
 		if fp.fitAll:
 			self.v.fitAll()
+
+
+
+
 
 
 	def onDocumentRestored(self, fp):
@@ -1186,23 +1279,62 @@ def createdarkroom():
 	a.objs=objs
 
 	# add some lights to start the party ...
-	la=createlight()
-	la.location=FreeCAD.Vector(-100,-100,100)
-	la.direction=la.location*(-1) 
-	a.addObject(la)
+	
+	# with shadows dir-lights do not work ?!
+	if 0:
+		la=createlight()
+		la.location=FreeCAD.Vector(-100,-100,100)
+		la.direction=la.location*(-1) 
+		a.addObject(la)
 
-	la=createlight()
-	la.location=FreeCAD.Vector(100,-100,100)
-	la.direction=la.location*(-1) 
-	la.color=(0.3,0.,0.)
-	a.addObject(la)
+		la=createlight()
+		la.location=FreeCAD.Vector(-100,-100,0)
+		la.direction=la.location*(-1) 
+		la.color=(0.3,0.,0.)
+		a.addObject(la)
 
-	la=createlight()
-	la.mode="SpotLight"
-	la.location=FreeCAD.Vector(10,-20,100)
-	la.direction=FreeCAD.Vector(0,0,-1) 
-	la.color=(0.3,0.,1.)
-	a.addObject(la)
+	if 1:
+		la=createlight()
+		la.mode="SpotLight"
+		la.location=FreeCAD.Vector(10,-20,400)
+		la.direction=FreeCAD.Vector(0,0,-1) 
+		la.color=(0.3,0.,1.)
+		a.addObject(la)
+
+
+	# the shadow light test env
+
+	if 1:
+
+		ff=0.1
+		la=createlight()
+		la.mode="SpotLight"
+		la.location=FreeCAD.Vector(0,0,300)
+		la.direction=FreeCAD.Vector(-20,10,-300) 
+		la.color=(0.3,0.,1.)
+		la.color=(0.9+ff*random.random(),ff*random.random(),ff*random.random())
+		a.addObject(la)
+
+		la=createlight()
+		la.mode="SpotLight"
+		la.location=FreeCAD.Vector(0,0,300)
+		la.direction=FreeCAD.Vector(0,0,-300) 
+		la.color=(0.3,0.,1.)
+		la.color=(ff*random.random(),0.9+ff*random.random(),ff*random.random())
+		a.addObject(la)
+
+		la=createlight()
+		la.mode="SpotLight"
+		la.location=FreeCAD.Vector(50,10,300)
+		la.direction=FreeCAD.Vector(10,20,-300) 
+		la.color=(0.3,0.,1.)
+		la.color=(ff*random.random(),ff*random.random(),0.9+ff*random.random())
+		a.addObject(la)
+
+
+
+
+
 
 	# dark the environment
 	a.Proxy.onChanged(a,"Shape")
@@ -1230,6 +1362,8 @@ class ViewProviderL:
 
 	def onChanged(self, obj, prop):
 			print "onchange",prop
+			obj.Object.touch()
+			App.ActiveDocument.recompute()
 
 
 
@@ -1244,6 +1378,8 @@ class Light(PartFeature):
 		obj.addProperty("App::PropertyEnumeration","mode",).mode=['DirectionalLight','SpotLight',]
 		obj.addProperty("App::PropertyBool","on",).on=True
 
+	def execute(self,fp):
+		print "execute done"
 
 
 def createlight():
