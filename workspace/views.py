@@ -1302,7 +1302,7 @@ def createdarkroom():
 
 	# add some lights to start the party ...
 	
-	# with shadows dir-lights do not work ?!
+	# with shadows dir-lights do not work inside the shadow group
 	if 1:
 		la=createlight()
 		la.location=FreeCAD.Vector(-100,-100,0)
@@ -1410,3 +1410,21 @@ def createlight():
 	Light(a)
 	ViewProviderL(a.ViewObject)	
 	return a
+
+
+
+def lightOn():
+	rGrp=FreeCAD.ParamGet('User parameter:BaseApp/Preferences/View')
+	atr="HeadlightIntensity"
+	rGrp.SetInt(atr,100)
+	rGrp=FreeCAD.ParamGet('User parameter:BaseApp/Preferences/View')
+	atr="BackgroundColor"
+	rGrp.SetUnsigned(atr,1437270015)
+
+def lightOff():
+	rGrp=FreeCAD.ParamGet('User parameter:BaseApp/Preferences/View')
+	atr="HeadlightIntensity"
+	rGrp.SetInt(atr,0)
+	rGrp=FreeCAD.ParamGet('User parameter:BaseApp/Preferences/View')
+	atr="BackgroundColor"
+	rGrp.SetUnsigned(atr,0)

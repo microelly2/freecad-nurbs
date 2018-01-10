@@ -420,6 +420,8 @@ if FreeCAD.GuiUp:
 
 	c2a(["Workspace"],ondocument,'DarkRoom','views',"Create Dark Room",'/../icons/darkroom.svg',"createdarkroom()","workspace")
 	c2a(["Workspace"],ondocument,'Light','views',"Create Light",'/../icons/light.svg',"createlight()","workspace")
+	c2a(["Workspace"],ondocument,'LightOn','views',"Light on",'/../icons/lighton.svg',"lightOn()","workspace")
+	c2a(["Workspace"],ondocument,'LightOff','views',"Light off",'/../icons/lighton.svg',"lightOff()","workspace")
 
 
 	c2a(["Needle"],ondocument,'Needle','needle','create a needle','/../icons/shoe.svg',"run()")
