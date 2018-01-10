@@ -1074,9 +1074,11 @@ class DarkRoom(PartFeature):
 					if ob.on and ob.ViewObject.Visibility:
 
 						if ob.mode=="DirectionalLight":
+							continue
+							# ignore dirlights
 							l=coin.SoDirectionalLight()
 							#marker.insertChild(l,0)
-							lis += [l]
+							#lis += [l]
 
 						if ob.mode=="SpotLight":
 							l=coin.SoSpotLight()
@@ -1093,6 +1095,26 @@ class DarkRoom(PartFeature):
 				print "makeshadow ..........!"
 				mkshadow(marker,lis)
 				print "------------------done-----------------"
+
+
+				for ob in fp.Group:
+
+					try: ob.mode
+					except: continue
+
+					print ("verarbeitung",ob.mode,ob.on)
+					if ob.on and ob.ViewObject.Visibility:
+
+						if ob.mode=="DirectionalLight":
+
+							l=coin.SoDirectionalLight()
+							l.direction.setValue(coin.SbVec3f(-1,1,0))
+							l.color.setValue(coin.SbColor(1,0,0))
+							l.direction.setValue(coin.SbVec3f(ob.direction.x,ob.direction.y,ob.direction.z,))
+							l.color.setValue(coin.SbColor(ob.color[0],ob.color[1],ob.color[2]))
+
+							marker.insertChild(l,0)
+
 
 
 			return
@@ -1281,14 +1303,14 @@ def createdarkroom():
 	# add some lights to start the party ...
 	
 	# with shadows dir-lights do not work ?!
-	if 0:
+	if 1:
 		la=createlight()
-		la.location=FreeCAD.Vector(-100,-100,100)
+		la.location=FreeCAD.Vector(-100,-100,0)
 		la.direction=la.location*(-1) 
 		a.addObject(la)
 
 		la=createlight()
-		la.location=FreeCAD.Vector(-100,-100,0)
+		la.location=FreeCAD.Vector(200,-100,0)
 		la.direction=la.location*(-1) 
 		la.color=(0.3,0.,0.)
 		a.addObject(la)
