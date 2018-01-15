@@ -453,6 +453,13 @@ if FreeCAD.GuiUp:
 	c2a(["Nurbs"],always,'Grid','blender_grid','Create Grid',"/../icons/Draft_Grid.svg","run()")
 
 
+	c2a(["Points"],always,'pta','points','points to volums',"/../icons/points.png","runA()",)
+	c2a(["Points"],always,'ptb','points','test B',"/../icons/points.png","runB()",)
+	c2a(["Points"],always,'ptc','points','C',"/../icons/points.png","runC()",)
+	c2a(["Points"],always,'ptd','points','D',"/../icons/points.png","runD()",)
+	c2a(["Points"],always,'pte','points','E',"/../icons/points.png","runE()",)
+
+
 	c2a(["Neo4j"],always,'Start','neodb','start db',"/../icons/neo4j.png","start()","graphdb")
 	c2a(["Neo4j"],always,'Stop','neodb','stop db',"/../icons/neo4j_stop.png","stop()","graphdb")
 	c2a(["Neo4j"],always,'Status','neodb','status db',"/../icons/neo4j_status.png","status()","graphdb")
@@ -539,6 +546,8 @@ static char * nurbs_xpm[] = {
 		cmds2=['Nurbs_facedraws','Nurbs_patcha','Nurbs_patchb','Nurbs_folda']
 		
 		cmds3=['Nurbs_CreateWorkspace','Nurbs_CreateWSLink','Nurbs_ViewsQV','Nurbs_Views2H','Nurbs_DarkRoom']
+		cmds4=['Nurbs_pta','Nurbs_ptb','Nurbs_ptc','Nurbs_ptd','Nurbs_pte']
+		
 
 	
 		if 1:
@@ -546,6 +555,7 @@ static char * nurbs_xpm[] = {
 			self.appendMenu("Nurbs", cmds)
 			self.appendToolbar("TTT", cmds2 )
 			self.appendToolbar("Workspaces and Views", cmds3 )
+			self.appendToolbar("Points Workspaces and Views", cmds4 )
 		menues={}
 		ml=[]
 		for _t in FreeCAD.tcmds5:

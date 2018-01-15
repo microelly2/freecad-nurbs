@@ -951,6 +951,8 @@ class DarkRoom(PartFeature):
 	def __init__(self, obj,label=None):
 		PartFeature.__init__(self, obj)
 
+		obj.addProperty("App::PropertyBool","On","Render")
+
 		obj.addProperty("App::PropertyVector","A Axis","V00")
 		obj.addProperty("App::PropertyFloat","A Angle","V00")
 		obj.addProperty("App::PropertyInteger","A DisplayMode","V00")
@@ -988,12 +990,15 @@ class DarkRoom(PartFeature):
 
 		obj.addProperty("App::PropertyLink","obja","Render")
 		obj.addProperty("App::PropertyLink","objb","Render")
+		
+		
 
 		if label <> None:
 			obj.Label = label
 
 
 	def onChanged(self, fp, prop):
+		if not fp.On: return
 
 		print ("on changed .....",fp.Label,prop)
 
@@ -1086,10 +1091,14 @@ class DarkRoom(PartFeature):
 							l.dropOffRate.setValue(0.)
 							l.location.setValue(coin.SbVec3f(ob.location.x,ob.location.y,ob.location.z,))
 
-						l.direction.setValue(coin.SbVec3f(ob.direction.x,ob.direction.y,ob.direction.z,))
-						l.color.setValue(coin.SbColor(ob.color[0],ob.color[1],ob.color[2]))
+							l.direction.setValue(coin.SbVec3f(ob.direction.x,ob.direction.y,ob.direction.z,))
+							l.color.setValue(coin.SbColor(ob.color[0],ob.color[1],ob.color[2]))
 						#marker.insertChild(l,0)
-						lis += [l]
+
+							lis += [l]
+
+
+
 
 				sg.addChild(marker)
 				print "makeshadow ..........!"
@@ -1115,7 +1124,11 @@ class DarkRoom(PartFeature):
 
 							marker.insertChild(l,0)
 
-
+						if ob.mode=="PointLight":
+							l=coin.SoPointLight()
+							l.location.setValue(coin.SbVec3f(ob.location.x,ob.location.y,ob.location.z,))
+							l.color.setValue(coin.SbColor(ob.color[0],ob.color[1],ob.color[2]))
+							marker.insertChild(l,0)
 
 			return
 
@@ -1304,20 +1317,29 @@ def createdarkroom():
 	
 	# with shadows dir-lights do not work inside the shadow group
 	if 1:
-		la=createlight()
+		la=createlight('DirectionalLight')
 		la.location=FreeCAD.Vector(-100,-100,0)
 		la.direction=la.location*(-1) 
 		a.addObject(la)
 
-		la=createlight()
+	if 1:
+		la=createlight('DirectionalLight')
 		la.location=FreeCAD.Vector(200,-100,0)
 		la.direction=la.location*(-1) 
 		la.color=(0.3,0.,0.)
 		a.addObject(la)
 
 	if 1:
-		la=createlight()
+		la=createlight("SpotLight")
 		la.mode="SpotLight"
+		la.location=FreeCAD.Vector(10,-20,400)
+		la.direction=FreeCAD.Vector(0,0,-1) 
+		la.color=(0.3,0.,1.)
+		a.addObject(la)
+
+	if 1:
+		la=createlight("PointLight")
+		la.mode="PointLight"
 		la.location=FreeCAD.Vector(10,-20,400)
 		la.direction=FreeCAD.Vector(0,0,-1) 
 		la.color=(0.3,0.,1.)
@@ -1329,7 +1351,7 @@ def createdarkroom():
 	if 1:
 
 		ff=0.1
-		la=createlight()
+		la=createlight("SpotLight")
 		la.mode="SpotLight"
 		la.location=FreeCAD.Vector(0,0,300)
 		la.direction=FreeCAD.Vector(-20,10,-300) 
@@ -1337,7 +1359,7 @@ def createdarkroom():
 		la.color=(0.9+ff*random.random(),ff*random.random(),ff*random.random())
 		a.addObject(la)
 
-		la=createlight()
+		la=createlight("SpotLight")
 		la.mode="SpotLight"
 		la.location=FreeCAD.Vector(0,0,300)
 		la.direction=FreeCAD.Vector(0,0,-300) 
@@ -1345,7 +1367,7 @@ def createdarkroom():
 		la.color=(ff*random.random(),0.9+ff*random.random(),ff*random.random())
 		a.addObject(la)
 
-		la=createlight()
+		la=createlight("SpotLight")
 		la.mode="SpotLight"
 		la.location=FreeCAD.Vector(50,10,300)
 		la.direction=FreeCAD.Vector(10,20,-300) 
@@ -1359,6 +1381,7 @@ def createdarkroom():
 
 
 	# dark the environment
+	a.On=True
 	a.Proxy.onChanged(a,"Shape")
 	rGrp=FreeCAD.ParamGet('User parameter:BaseApp/Preferences/View')
 	atr="HeadlightIntensity"
@@ -1397,17 +1420,18 @@ class Light(PartFeature):
 		obj.addProperty("App::PropertyVector","direction",).direction=FreeCAD.Vector(-1,-1,-1)
 		obj.addProperty("App::PropertyVector","location",).location=FreeCAD.Vector(100,100,100)
 		obj.addProperty("App::PropertyColor","color",).color=(0.2,0.2,0.)
-		obj.addProperty("App::PropertyEnumeration","mode",).mode=['DirectionalLight','SpotLight',]
+		obj.addProperty("App::PropertyEnumeration","mode",).mode=['DirectionalLight','SpotLight','PointLight']
 		obj.addProperty("App::PropertyBool","on",).on=True
 
 	def execute(self,fp):
 		print "execute done"
 
 
-def createlight():
+def createlight(name="SpotLight"):
 
-	a=FreeCAD.ActiveDocument.addObject("Part::FeaturePython","Light")
+	a=FreeCAD.ActiveDocument.addObject("Part::FeaturePython",name)
 	Light(a)
+	a.mode=name
 	ViewProviderL(a.ViewObject)	
 	return a
 

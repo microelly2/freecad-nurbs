@@ -54,9 +54,12 @@ class Geodesic(FeaturePython):
 		obj.addProperty("App::PropertyFloat","u","Source", "size of cell in u direction").u=50
 		obj.addProperty("App::PropertyFloat","v","Source", "size of cell in u direction").v=50
 
-		obj.addProperty("App::PropertyFloat","ut","Target", "size of cell in u direction").ut=10
-		obj.addProperty("App::PropertyFloat","vt","Target", "size of cell in u direction").vt=50
-		obj.addProperty("App::PropertyInteger","lang","Generator", "size of cell in u direction").lang=200
+		obj.addProperty("App::PropertyFloat","ue","Base", "size of cell in u direction")
+		obj.addProperty("App::PropertyFloat","ve","Base", "size of cell in u direction")
+
+		obj.addProperty("App::PropertyFloat","ut","Target", "size of cell in u direction").ut=60
+		obj.addProperty("App::PropertyFloat","vt","Target", "size of cell in u direction").vt=60
+		obj.addProperty("App::PropertyInteger","lang","Generator", "size of cell in u direction").lang=40
 
 		obj.addProperty("App::PropertyFloat","direction","Generator", "size of cell in u direction").direction=0
 		obj.addProperty("App::PropertyLink","obj","XYZ","")
@@ -65,6 +68,7 @@ class Geodesic(FeaturePython):
 		obj.addProperty("App::PropertyBool","redirect","XYZ", "flip the cirvature direction")
 		obj.addProperty("App::PropertyBool","star","XYZ", "all 4 directions")
 		obj.addProperty("App::PropertyEnumeration","mode","Base").mode=["geodesic","curvature"]
+		obj.addProperty("App::PropertyFloat","dist","Base")
 
 
 	def attach(self,vobj):
@@ -91,8 +95,8 @@ def createGeodesic(obj=None):
 
 	Geodesic(a)
 	a.obj=obj
-	a.u=60
-	a.v=40
+#	a.u=60
+#	a.v=40
 	ViewProvider(a.ViewObject)
 	a.Label="Geodesic for "+obj.Label
 	a.mode="geodesic"
@@ -132,7 +136,7 @@ def updateStarG(fp):
 
 		f=obj.Shape.Faces[fp.facenumber]
 		sf=f.Surface
-		print (f,sf,fp.facenumber,obj.Shape.Faces)
+		#print (f,sf,fp.facenumber,obj.Shape.Faces)
 		umin,umax,vmin,vmax=f.ParameterRange
 
 		u=umin + (umax-umin)*u
@@ -144,6 +148,10 @@ def updateStarG(fp):
 		for i in range(fp.lang):
 			
 			pts += [sf.value(u,v)]
+			
+			pts += [sf.value(u,v)+ sf.normal(u,v)*10,sf.value(u,v)]
+			pts += [sf.value(u,v)+ sf.normal(u,v).cross(t)*5,sf.value(u,v)]
+			pts += [sf.value(u,v)+ sf.normal(u,v).cross(t)*-5,sf.value(u,v)]
 
 			last=sf.value(u,v)
 			p2=last+t*1
@@ -163,13 +171,37 @@ def updateStarG(fp):
 
 		ut=fp.ut*0.01
 		vt=fp.vt*0.01
+#		pt=Part.Point(sf.value(ut,vt))
+#		print "Abstand"
+#		print pt
+#		print shape.distToShape(pt.toShape())
+#		print (pt,shape.distToShape(pt.toShape())[0])
+
+
+		pend=sf.value(ut,vt)
 		pt=Part.Point(sf.value(ut,vt))
 #		print "Abstand"
 #		print pt
 #		print shape.distToShape(pt.toShape())
-		print (pt,shape.distToShape(pt.toShape())[0])
+		fp.dist= shape.distToShape(pt.toShape())[0]
 
-		return shape
+#		print ("Abstand",pts[-1],pend,shape.distToShape(pt.toShape())[0],(pts[-1]-pend).Length)
+		print (u,v)
+		fp.ue=u*100
+		fp.ve=v*100
+
+
+
+		shape2=Part.Compound([shape,Part.makePolygon([
+				pend,pend+FreeCAD.Vector(0,10,0),
+				pend,pend+FreeCAD.Vector(0,-10,0),
+				pend,pend+FreeCAD.Vector(10,0,0),
+				pend,pend+FreeCAD.Vector(-10,0,0),
+				pend,pend+FreeCAD.Vector(0,0,10),
+				pend,pend+FreeCAD.Vector(0,0,-10),
+				
+				])])
+		return shape2
 	#Draft.makeWire(pts)
 
 
@@ -243,11 +275,13 @@ def updatepath(fp,redirect,flip):
 
 		ut=fp.ut*0.01
 		vt=fp.vt*0.01
+		pend=sf.value(ut,vt)
 		pt=Part.Point(sf.value(ut,vt))
 #		print "Abstand"
 #		print pt
 #		print shape.distToShape(pt.toShape())
-		print (pt,shape.distToShape(pt.toShape())[0])
+		fp.dist= shape.distToShape(pt.toShape())
+		print ("Abstand",pt,pend,shape.distToShape(pt.toShape())[0],(pt-pend).Length)
 
 		return shape
 	#Draft.makeWire(pts)

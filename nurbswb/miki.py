@@ -42,7 +42,7 @@ def ComboViewShowWidget(widget,tabMode=False):
 		tab.removeTab(i)
 
 	# start the requested tab
-	tab.addTab(widget,"Nurbs Editor")
+	tab.addTab(widget,"Nurbs WB")
 	tab.setCurrentIndex(2)
 
 	print "ComboViewShowWidget done"
@@ -106,7 +106,7 @@ def  fv(name="vertical",title=''):
 
 	# w=QtGui.QWidget()
 	t=QtGui.QLabel("my widget")
-	w=MyDockWidget(t,"Reconstruction WB")
+	w=MyDockWidget(t,"Nurbs WB")
 	
 ###	w.setStyleSheet("QWidget { font: bold 18px;color:brown;border-style: outset;border-width: 3px;border-radius: 10px;border-color: blue;}")
 
@@ -238,6 +238,10 @@ def  ftab2(name="horizontal"):
 
 VerticalLayout=fh2
 VerticalLayoutTab=fv2
+
+#VerticalLayout=fv
+MainWindow=fv
+
 HorizontalLayout=fh
 
 #***************
