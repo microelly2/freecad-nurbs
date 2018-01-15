@@ -323,6 +323,7 @@ if FreeCAD.GuiUp:
 
 	c2a(["Curves"],always,'geodesic3','geodesic_lines','create curvature star','/../icons/draw.svg',"runC()")
 	c2a(["Curves"],always,'geodesic1','geodesic_lines','create geodesic','/../icons/draw.svg',"run()")
+	c2a(["Curves"],always,'geodesic4','geodesic_lines','append geodesic','/../icons/draw.svg',"runD()")
 	c2a(["Curves"],always,'geodesic2','geodesic_lines','create geodesic bunch','/../icons/draw.svg',"runall()")
 	
 	c2a(["Curves"],always,'cnotrol','controlpanel','create a controlpanel','/../icons/draw.svg',"run()")

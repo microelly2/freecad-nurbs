@@ -61,7 +61,15 @@ class Geodesic(FeaturePython):
 		obj.addProperty("App::PropertyFloat","vt","Target", "size of cell in u direction").vt=60
 		obj.addProperty("App::PropertyInteger","lang","Generator", "size of cell in u direction").lang=40
 
-		obj.addProperty("App::PropertyFloat","direction","Generator", "size of cell in u direction").direction=0
+		obj.addProperty("App::PropertyFloat","direction","Generator", "size of cell in u direction")
+		obj.direction=0
+		obj.addProperty("App::PropertyFloat","directione","Generator", "size of cell in u direction")
+		obj.directione=0
+
+		obj.addProperty("App::PropertyFloat","directionrib","Generator", "direction of ribs")
+		obj.directionrib=90
+
+		
 		obj.addProperty("App::PropertyLink","obj","XYZ","")
 		obj.addProperty("App::PropertyInteger","facenumber","XYZ", "number of the face")
 		obj.addProperty("App::PropertyBool","flip","XYZ", "flip the cirvature direction")
@@ -69,6 +77,7 @@ class Geodesic(FeaturePython):
 		obj.addProperty("App::PropertyBool","star","XYZ", "all 4 directions")
 		obj.addProperty("App::PropertyEnumeration","mode","Base").mode=["geodesic","curvature"]
 		obj.addProperty("App::PropertyFloat","dist","Base")
+		obj.addProperty("App::PropertyLink","pre","XYZ","")
 
 
 	def attach(self,vobj):
@@ -81,11 +90,13 @@ class Geodesic(FeaturePython):
 			try:  self.execute(fp)
 			except: pass
 
+
 	def execute(self, fp):
 		if fp.mode=="geodesic":
 			fp.Shape=updateStarG(fp)
 		if fp.mode=="curvature":
 			fp.Shape=updateStarC(fp)
+
 
 
 def createGeodesic(obj=None):
@@ -98,7 +109,8 @@ def createGeodesic(obj=None):
 #	a.u=60
 #	a.v=40
 	ViewProvider(a.ViewObject)
-	a.Label="Geodesic for "+obj.Label
+	if obj<>None:
+		a.Label="Geodesic for "+obj.Label
 	a.mode="geodesic"
 	return a
 
@@ -124,11 +136,28 @@ def createCurvature(obj=None):
 import numpy as np
 
 def updateStarG(fp):
-		
+#		print "run updateStarG"
+
 		d=fp.direction
+		d2=fp.directionrib
 		u=fp.u
 		v=fp.v
 		obj=fp.obj
+
+		if fp.pre<>None:
+			obj=fp.pre.obj
+			d=fp.pre.directionrib
+			d=fp.pre.directione+fp.pre.directionrib
+			
+			u=fp.pre.ue
+			v=fp.pre.ve
+			if fp.obj<>obj: fp.obj=obj
+			if fp.u<>u: fp.u=u
+			if fp.v<>v: fp.v=v
+			if fp.direction<>d:	
+				fp.direction=d
+
+
 		u *= 0.01
 		v *= 0.01
 
@@ -139,6 +168,8 @@ def updateStarG(fp):
 		#print (f,sf,fp.facenumber,obj.Shape.Faces)
 		umin,umax,vmin,vmax=f.ParameterRange
 
+		# print (umin,umax)
+		
 		u=umin + (umax-umin)*u
 		v=vmin + (vmax-vmin)*v
 
@@ -146,12 +177,23 @@ def updateStarG(fp):
 		t=FreeCAD.Vector(np.cos(np.pi*d/180)*t1+np.sin(np.pi*d/180)*t2)
 
 		for i in range(fp.lang):
+			pot=sf.value(u,v)
+#			print ("punt ", u*100,v*100,pot)
+			u2=(u-umin)/(umax-umin)
+			v2=(v-vmin)/(vmax-vmin)
+#			print ("--2",u2,v2)
+			pts += [pot]
 			
-			pts += [sf.value(u,v)]
-			
-			pts += [sf.value(u,v)+ sf.normal(u,v)*10,sf.value(u,v)]
-			pts += [sf.value(u,v)+ sf.normal(u,v).cross(t)*5,sf.value(u,v)]
-			pts += [sf.value(u,v)+ sf.normal(u,v).cross(t)*-5,sf.value(u,v)]
+			if 10:
+				pts += [sf.value(u,v)+ sf.normal(u,v)*5,sf.value(u,v)]
+				pts += [sf.value(u,v)+ sf.normal(u,v).cross(t)*3,sf.value(u,v)]
+				pts += [sf.value(u,v)+ sf.normal(u,v).cross(t)*-3,sf.value(u,v)]
+
+			# ribs
+			rib=FreeCAD.Vector(np.cos(np.pi*d2/180)*t+np.sin(np.pi*d2/180)*sf.normal(u,v).cross(t))
+			pts += [sf.value(u,v)+ rib*-5,sf.value(u,v)]
+
+
 
 			last=sf.value(u,v)
 			p2=last+t*1
@@ -166,6 +208,7 @@ def updateStarG(fp):
 			(t1,t2)=sf.tangent(u,v)
 			t=p-last
 			t.normalize()
+
 
 		shape=Part.makePolygon(pts)
 
@@ -186,11 +229,13 @@ def updateStarG(fp):
 		fp.dist= shape.distToShape(pt.toShape())[0]
 
 #		print ("Abstand",pts[-1],pend,shape.distToShape(pt.toShape())[0],(pts[-1]-pend).Length)
-		print (u,v)
-		fp.ue=u*100
-		fp.ve=v*100
+#		print (u,v)
+		fp.ue=u2*100
+		fp.ve=v2*100
 
-
+		a=t.dot(t1)
+		b=t.dot(t2)
+		fp.directione=180./np.pi*np.arctan2(b,a)
 
 		shape2=Part.Compound([shape,Part.makePolygon([
 				pend,pend+FreeCAD.Vector(0,10,0),
@@ -199,8 +244,11 @@ def updateStarG(fp):
 				pend,pend+FreeCAD.Vector(-10,0,0),
 				pend,pend+FreeCAD.Vector(0,0,10),
 				pend,pend+FreeCAD.Vector(0,0,-10),
-				
 				])])
+
+
+
+		shape2=shape
 		return shape2
 	#Draft.makeWire(pts)
 
@@ -311,6 +359,12 @@ if 0:
 
 def run():
 	a=createGeodesic(obj=Gui.Selection.getSelection()[0])
+
+def runD():
+	a=createGeodesic()
+	a.pre=Gui.Selection.getSelection()[0]
+
+
 
 def runC():
 	a=createCurvature(obj=Gui.Selection.getSelection()[0])
