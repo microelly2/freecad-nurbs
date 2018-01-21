@@ -22,6 +22,11 @@ import time
 # utm 56.373500, 34.32500 
 # lat lon 50.865968,12.772980
 
+# bayern bruck
+# 48.0211686,11.905581
+# https://www.ldbv.bayern.de
+
+
 def toUVMesh(bs, uf=5, vf=5):
 		print "los"
 		uc=uf*bs.NbUPoles
@@ -253,8 +258,9 @@ def createAll(mode="all",obj=None,dimU=500,dimV=500,
 		p=np.array(obj.Points.Points)- obj.Points.BoundBox.Center
 
 	assert dimU*dimV==len(p)
-	if mode<>"all":
-		return
+
+#	if mode<>"all":
+#		return
 
 
 	zmin *=scale
@@ -337,40 +343,46 @@ def createAll(mode="all",obj=None,dimU=500,dimV=500,
 
 	#ss=PointarrayToMesh(pa4)
 
-	if 0:
+	if mode=='mesh':
 		ta=time.time()
-		ss=PointarrayToMesh(pa4,h=zmax)
-		ss=PointarrayToMesh(pa4,h=zmin)
+		if 0:
+			ss=PointarrayToMesh(pa4,h=zmax)
+			ss=PointarrayToMesh(pa4,h=zmin)
 
 		tb=time.time()
 		print "create meshes all", tb-ta
-#	return
 
-	ta=time.time()
-	#ss=PointarrayToMesh(pa4)
-	if 1:
-		print ("!",zmax,zmin,socketheight)
-		# ss=PointarrayToMesh(pa4[ua:ua+sizeU,va:va+2*sizeV],h=zmax+socketheight)
-		ss=PointarrayToMesh(pa4[ua:ua+sizeU,va:va+2*sizeV],h=zmin-socketheight)
+		ta=time.time()
+		#ss=PointarrayToMesh(pa4)
+		if 1:
+			print ("!",zmax,zmin,socketheight)
+			# ss=PointarrayToMesh(pa4[ua:ua+sizeU,va:va+2*sizeV],h=zmax+socketheight)
+			ss=PointarrayToMesh(pa4[ua:ua+sizeU,va:va+2*sizeV],h=zmin-socketheight)
 
-	tb=time.time()
-	print "create meshes sub ", tb-ta
-
-	if not createsurface: return
-
-	#create nurbs face
-	tb=time.time()
-	bs=machFlaeche(pa4[ua:ua+sizeU,va:va+2*sizeV])
-	tc=time.time()
-	print "create surf 200 x 200 ", tc-tb
-
-	if 0:
 		tb=time.time()
-		bs=machFlaeche(pa4,degree=3)
-		tc=time.time()
-		print "create surf all ", tc-tb
+		print "create meshes sub ", tb-ta
+		#return
 
-	if not createpart: return
+
+#	if not createsurface: return
+
+
+	if mode=='part' or mode=='nurbs':
+		#create nurbs face
+		tb=time.time()
+		bs=machFlaeche(pa4[ua:ua+sizeU,va:va+2*sizeV])
+		tc=time.time()
+		print "create surf 200 x 200 ", tc-tb
+
+		if 0:
+			tb=time.time()
+			bs=machFlaeche(pa4,degree=3)
+			tc=time.time()
+			print "create surf all ", tc-tb
+
+
+#	if not createpart: return
+	if not mode=='part': return
 
 
 	#create side faces
@@ -551,16 +563,17 @@ MainWindow:
 				id: 'vs'
 
 		HorizontalLayout:
-#			QtGui.QPushButton:
-#				setText: "Run Mesh Socket"
-#				clicked.connect: app.run
-#			QtGui.QPushButton:
-#				setText: "Run Nurbs at Socket"
-#				clicked.connect: app.run
+			QtGui.QPushButton:
+				setText: "Run Mesh Socket"
+				clicked.connect: app.createMesh
 
-#			QtGui.QPushButton:
-#				setText: "Run planar Part at Socket"
-#				clicked.connect: app.run
+			QtGui.QPushButton:
+				setText: "Run Nurbs at Socket"
+				clicked.connect: app.createNurbs
+
+			QtGui.QPushButton:
+				setText: "Run planar Part at Socket"
+				clicked.connect: app.createPart
 
 			QtGui.QPushButton:
 				setText: "Run "
@@ -586,15 +599,13 @@ class MyApp(object):
 		#self.root.ids['ud'].setMaximum(self.obj.Object.nNodes_u-2)
 		#self.root.ids['vd'].setMaximum(self.obj.Object.nNodes_v-2)
 
-	def run(self):
-		print self.obj.Label
-		print self.root.ids['ua'].text()
-		print self.root.ids['us'].text()
-		print self.root.ids['saxony'].isChecked()
-		print self.root.ids['row'].currentText()
+	def run(self,mode='all'):
+
+		print ("run",mode,self.obj.Label)
+#		return
 
 		createAll(
-			'all',
+			mode,
 			self.obj,
 			int(self.root.ids['ud'].text()),
 			int(self.root.ids['vd'].text()),
@@ -613,6 +624,14 @@ class MyApp(object):
 		)
 
 
+	def createPart(self):
+		self.run('part')
+
+	def createMesh(self):
+		self.run('mesh')
+
+	def createNurbs(self):
+		self.run('nurbs')
 
 
 

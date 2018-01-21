@@ -323,6 +323,9 @@ if FreeCAD.GuiUp:
 
 	c2a(["Curves"],always,'geodesic3','geodesic_lines','create curvature star','/../icons/draw.svg',"runC()")
 	c2a(["Curves"],always,'geodesic1','geodesic_lines','create geodesic','/../icons/draw.svg',"run()")
+	c2a(["Curves"],always,'geodesic1a','geodesic_lines','geodesic map patch to face','/../icons/draw.svg',"runP()")
+	c2a(["Curves"],always,'geodesic1b','geodesic_lines','TEST 2 geodesic map patch to face','/../icons/draw.svg',"runTest2()")
+
 	c2a(["Curves"],always,'geodesic4','geodesic_lines','append geodesic','/../icons/draw.svg',"runD()")
 	c2a(["Curves"],always,'geodesic2','geodesic_lines','create geodesic bunch','/../icons/draw.svg',"runall()")
 	
@@ -548,15 +551,17 @@ static char * nurbs_xpm[] = {
 		
 		cmds3=['Nurbs_CreateWorkspace','Nurbs_CreateWSLink','Nurbs_ViewsQV','Nurbs_Views2H','Nurbs_DarkRoom']
 		cmds4=['Nurbs_pta','Nurbs_ptb','Nurbs_ptc','Nurbs_ptd','Nurbs_pte']
-		
+		cmds5=['Nurbs_geodesic1a','Nurbs_geodesic1b','Nurbs_geodesic1']
 
-	
+
+
 		if 1:
 			self.appendToolbar("Nurbs", cmds )
 			self.appendMenu("Nurbs", cmds)
 			self.appendToolbar("TTT", cmds2 )
 			self.appendToolbar("Workspaces and Views", cmds3 )
 			self.appendToolbar("Points Workspaces and Views", cmds4 )
+			self.appendToolbar("Geodesic Patch Tests", cmds5 )
 		menues={}
 		ml=[]
 		for _t in FreeCAD.tcmds5:
