@@ -51,6 +51,12 @@ def hideAllProps(obj,pns=None):
 	for pn in pns:
 		obj.setEditorMode(pn,2)
 
+def readonlyProps(obj,pns=None):
+	if pns==None: pns=obj.PropertiesList
+	for pn in pns:
+		try: obj.setEditorMode(pn,1)
+		except: pass
+
 def setWritableAllProps(obj,pns=None):
 	if pns==None: pns=obj.PropertiesList
 	for pn in pns:
@@ -60,54 +66,70 @@ class Geodesic(FeaturePython):
 	def __init__(self, obj,patch=False,uc=5,vc=5):
 		FeaturePython.__init__(self, obj)
 
-		obj.addProperty("App::PropertyFloat","u","Source", "u coord start point of geodesic").u=50
-		obj.addProperty("App::PropertyFloat","v","Source", "v coord start point of geodesic").v=50
-
-		obj.addProperty("App::PropertyFloat","ue","_calculated", "calculated u coord endpoint of geodesic")
-		obj.addProperty("App::PropertyFloat","ve","_calculated", "calculated coord endpoint of geodesic")
-
-		obj.addProperty("App::PropertyFloat","ut","Target", "u coord target point of geodesic").ut=60
-		obj.addProperty("App::PropertyFloat","vt","Target", "u coord target point of geodesic").vt=60
-		obj.addProperty("App::PropertyInteger","lang","Generator", "size of cell in u direction").lang=24
-		obj.addProperty("App::PropertyInteger","lang2","Generator", "size of cell in v direction").lang2=3
-		obj.addProperty("App::PropertyInteger","lang3","Generator", "size of cell in -u direction").lang3=6
-		obj.addProperty("App::PropertyInteger","lang4","Generator", "size of cell in -v direction").lang4=10
-
-		obj.addProperty("App::PropertyFloat","direction","Generator", "direction of backbone geodesic")
-		obj.direction=0
-		obj.addProperty("App::PropertyFloat","directione","_calculated", "calculated direction of backbone geodesic")
-		obj.directione=0
-
-		obj.addProperty("App::PropertyFloat","directionrib","Generator", "direction of rib geodesics")
-		obj.directionrib=90
-
-		
+		obj.addProperty("App::PropertyEnumeration","mode","Base").mode=["geodesic","curvature","patch"]
 		obj.addProperty("App::PropertyLink","obj","","surface object")
 		obj.addProperty("App::PropertyInteger","facenumber","", "number of the face")
-		obj.addProperty("App::PropertyBool","flip","Star", "flip the curvature direction")
-		obj.addProperty("App::PropertyBool","redirect","Star", "flip the curvature direction")
-		obj.addProperty("App::PropertyBool","star","Star", "calculate all 4 directions")
-		obj.addProperty("App::PropertyEnumeration","mode","Base").mode=["geodesic","curvature","patch"]
-		obj.addProperty("App::PropertyFloat","dist","_calculated","calculated distance of endpoint (ue,ve) to target (ut,vt)")
-		obj.addProperty("App::PropertyLink","pre","XYZ","")
+		
 
-		obj.addProperty("App::PropertyFloatList","uvdarray","_storage","storage data uvd for geodesic field")
-		obj.addProperty("App::PropertyInteger","uvdUdim","_storage","u dimension of uvdarray")
-		obj.addProperty("App::PropertyInteger","uvdVdim","_storage","v dimension of uvdarray")
+		if not patch:
+			obj.addProperty("App::PropertyInteger","gridsize","", "size of a grid cell").gridsize=20
 
-		if patch:
-			obj.addProperty("App::PropertyBool","patch","patch", ).patch=True
-			obj.addProperty("App::PropertyLink","track","patch","")
-			obj.addProperty("App::PropertyLink","face","patch","")
-			obj.addProperty("App::PropertyLink","wire","patch","")
+			obj.addProperty("App::PropertyFloat","u","Source", "u coord start point of geodesic").u=50
+			obj.addProperty("App::PropertyFloat","v","Source", "v coord start point of geodesic").v=50
+
+			obj.addProperty("App::PropertyFloat","ue","_calculated", "calculated u coord endpoint of geodesic")
+			obj.addProperty("App::PropertyFloat","ve","_calculated", "calculated coord endpoint of geodesic")
+
+			obj.addProperty("App::PropertyFloat","ut","Target", "u coord target point of geodesic").ut=60
+			obj.addProperty("App::PropertyFloat","vt","Target", "u coord target point of geodesic").vt=60
+			obj.addProperty("App::PropertyInteger","lang","Generator", "size of cell in u direction").lang=24
+			obj.addProperty("App::PropertyInteger","lang2","Generator", "size of cell in v direction").lang2=3
+			obj.addProperty("App::PropertyInteger","lang3","Generator", "size of cell in -u direction").lang3=6
+#			obj.addProperty("App::PropertyInteger","lang4","Generator", "size of cell in -v direction").lang4=10
+
+			obj.addProperty("App::PropertyFloat","direction","Generator", "direction of backbone geodesic")
+			obj.direction=0
+			obj.addProperty("App::PropertyFloat","directione","_calculated", "calculated direction of backbone geodesic")
+			obj.directione=0
+
+			obj.addProperty("App::PropertyFloat","directionrib","Generator", "direction of rib geodesics")
+			obj.directionrib=90
+
 			
+
+			obj.addProperty("App::PropertyBool","flip","Star", "flip the curvature direction")
+			obj.addProperty("App::PropertyBool","redirect","Star", "flip the curvature direction")
+			obj.addProperty("App::PropertyBool","star","Star", "calculate all 4 directions")
+
+			obj.addProperty("App::PropertyFloat","dist","_calculated","calculated distance of endpoint (ue,ve) to target (ut,vt)")
+			obj.addProperty("App::PropertyLink","pre","XYZ","")
+
+			obj.addProperty("App::PropertyFloatList","uvdarray","_storage","storage data uvd for geodesic field")
+			obj.addProperty("App::PropertyInteger","uvdUdim","_storage","u dimension of uvdarray")
+			obj.addProperty("App::PropertyInteger","uvdVdim","_storage","v dimension of uvdarray")
+
 			obj.addProperty("App::PropertyLink","geogrid","geodesic","")
 			obj.addProperty("App::PropertyLink","geoborder","geodesic","")
 			obj.addProperty("App::PropertyLink","geobone","geodesic","")
-			obj.addProperty("App::PropertyEnumeration","form","patch","layout fo the 3D curve").form=["polygon","bspline1","bspline3"]
+
+		if patch:
+			obj.addProperty("App::PropertyBool","patch","patch", ).patch=True
+#			obj.addProperty("App::PropertyLink","track","patch","")
+#			obj.addProperty("App::PropertyLink","face","patch","")
+			obj.addProperty("App::PropertyLink","wire","patch","")
+
+			obj.addProperty("App::PropertyEnumeration","form","patch","layout fo the 3D curve").form=["polygon","bspline1","bspline3",'facecurve','face']
 			obj.form='polygon'
 			obj.addProperty("App::PropertyFloat","tolerance","patch").tolerance=2.0
 			obj.addProperty("App::PropertyBool","closed","patch")
+			obj.addProperty("App::PropertyBool","reverse","patch")
+#			obj.addProperty("App::PropertyInteger","ind1Face","patch","v dimension of uvdarray").ind1Face=0
+#			obj.addProperty("App::PropertyInteger","ind2Face","patch","v dimension of uvdarray").ind2Face=0
+
+
+		readonlyProps(obj,['mode','pre','directionrib','lang4','directione','dist','ue','ve'])
+		if obj.mode=='patch':
+			obj.Shape=updatePatch(obj)
 
 
 
@@ -124,12 +146,19 @@ class Geodesic(FeaturePython):
 
 
 	def execute(self, fp):
+		try: fp.mode
+		except:pass
 		if fp.mode=="geodesic":
 			fp.Shape=updateStarG(fp)
 		if fp.mode=="patch":
 			fp.Shape=updatePatch(fp)
+			if fp.form=='face':
+				fp.Placement=fp.obj.obj.Placement
+			else:
+				fp.Placement=FreeCAD.Placement()	
 		if fp.mode=="curvature":
 			fp.Shape=updateStarC(fp)
+
 
 
 
@@ -148,8 +177,8 @@ def createGeodesic(obj=None):
 
 
 	a.lang=40
-	a.lang2=0
-	a.lang3=0
+	a.lang2=20
+	a.lang3=40
 	a.direction=30
 
 #	hideAllProps(a,['patch'])
@@ -158,6 +187,10 @@ def createGeodesic(obj=None):
 
 def createPatch(obj=None,wire=None):
 	'''create a testcase sketch'''
+
+	try: _=obj.uvdUdim
+	except: obj,wire=wire,obj
+
 
 	a=FreeCAD.ActiveDocument.addObject("Part::FeaturePython","Patch")
 
@@ -169,8 +202,9 @@ def createPatch(obj=None,wire=None):
 	if obj<>None:
 		a.Label="Patch for "+obj.Label
 	a.mode="patch"
+	
 #	hideAllProps(a)
-
+	return a
 #	a.u=10
 #	a.v=55
 	a.lang=20
@@ -284,16 +318,23 @@ def genrib(fp,u,v,d,lang,ribflag,color='0 1 1'):
 
 
 			if ribflag:
-				pts += [pot+ sf.normal(u,v)*0.5,pot]
-				pts += [pot+ sf.normal(u,v).cross(t)*3,pot]
-				pts += [pot+ sf.normal(u,v).cross(t)*-3,pot]
+				pts += [pot+ sf.normal(u,v)*0.5*fp.gridsize*0.1,pot]
+				pts += [pot+ sf.normal(u,v).cross(t)*2.5*fp.gridsize*0.1,pot]
+				pts += [pot+ sf.normal(u,v).cross(t)*-2.5*fp.gridsize*0.1,pot]
 
 
 			last=sf.value(u,v)
-			p2=last+t*1
+			p2=last+t*fp.gridsize*0.1
+			print "p2xx ",p2
 			(u1,v1)=sf.parameter(p2)
 			(u,v)=(u1,v1)
+			if u<umin:u=umin
+			if v<vmin:v=vmin
+			if u>umax:u=umax
+			if v>vmax:v=vmax
 			uvs += [(u,v)]
+
+
 			if u<umin or v<vmin or u>umax or v>vmax:
 				print "qaBBruch!"
 				break
@@ -386,7 +427,7 @@ def drawColorLines(fp,name,ivs):
 
 
 def updateStarG(fp):
-#		print "run updateStarG"
+		print "run updateStarG"
 
 		gridon=True
 
@@ -441,23 +482,26 @@ def updateStarG(fp):
 
 		uvsarr=[]
 
-		lang2=30
-		lang2=fp.lang2
 
+		lang3=int(round(10.0*fp.lang3/fp.gridsize))
+		lang=int(round(10*fp.lang/fp.gridsize))
+		lang2=int(round(10*fp.lang2/fp.gridsize))
 
 		#rueckwaerts
+		ribb=''
+		riba=''
 
-		for i in range(fp.lang3+1):
+		for i in range(lang3+1):
 			taa=time.time()
 			if 1 or i % 2 == 0 or i==fp.lang:
-				ribflag= i%6 == 0 and gridon
-				if i==fp.lang3: ribflag=True
+				ribflag= i%5 == 0 and gridon
+				if i==lang3: ribflag=True
 				
 #				print ("erzeuge ribbe",i)
 				a=t.dot(t1)
 				b=t.dot(t2)
 				de=-180./np.pi*np.arctan2(b,a)
-				if i==fp.lang3 : color='0 1 0'
+				if i==lang3 : color='0 1 0'
 				#else: color='0 1 1'
 				else: color='1 1 0'
 				r1,(u1,v1),uvs1 = genrib(fp,u,v,de+90+2*d,lang2,ribflag,color)
@@ -471,8 +515,8 @@ def updateStarG(fp):
 					if i<>0:
 						shapas += r1 + r2
 				if i==0:
-					riba=r1+r2
-				if i==fp.lang3:
+					ribm=r1+r2
+				if i==lang3:
 					ribb=r1+r2
 
 
@@ -486,14 +530,21 @@ def updateStarG(fp):
 			# ribs
 			if 1:
 				rib=FreeCAD.Vector(np.cos(np.pi*d2/180)*t+np.sin(np.pi*d2/180)*sf.normal(u,v).cross(t))
-				pts += [sf.value(u,v)+ rib*-3,sf.value(u,v)]
-				pts += [sf.value(u,v)+ rib*3,sf.value(u,v)]
+				pts += [sf.value(u,v)+ rib*-2,sf.value(u,v)]
+				pts += [sf.value(u,v)+ rib*2,sf.value(u,v)]
 
 
 			last=sf.value(u,v)
-			p2=last+t*1
+			p2=last+t*0.1*fp.gridsize
 			(u1,v1)=sf.parameter(p2)
 			(u,v)=(u1,v1)
+			
+			if u<umin:u=umin
+			if v<vmin:v=vmin
+			if u>umax:u=umax
+			if v>vmax:v=vmax
+
+
 			if u<umin or v<vmin or u>umax or v>vmax:
 				print "qaBBruch!"
 			
@@ -533,17 +584,17 @@ def updateStarG(fp):
 			aa += [a]
 		uvsarr=aa
 
-		for i in range(fp.lang+1):
+		for i in range(lang+1):
 			taa=time.time()
-			if 1 or i % 2 == 0 or i==fp.lang:
-				ribflag= i%6 == 0 and gridon
-				if i==fp.lang: ribflag=True
+			if 1 or i % 2 == 0 or i==lang:
+				ribflag= i%5 == 0 and gridon
+				if i==lang: ribflag=True
 				
 #				print ("erzeuge ribbe",i)
 				a=t.dot(t1)
 				b=t.dot(t2)
 				de=180./np.pi*np.arctan2(b,a)
-				if i==fp.lang: color='1 0 0'
+				if i==lang: color='1 0 0'
 				else: color='1 1 0'
 				r1,(u1,v1),uvs1 = genrib(fp,u,v,de+90,lang2,ribflag,color)
 				r2,(u2,v2),uvs2 = genrib(fp,u,v,de-90,lang2,ribflag,color)
@@ -556,7 +607,7 @@ def updateStarG(fp):
 					shapas += r1 + r2
 #				if i==0:
 #					riba=r1+r2
-				if i==fp.lang:
+				if i==lang:
 					riba=r1+r2
 
 
@@ -570,18 +621,24 @@ def updateStarG(fp):
 			# ribs
 			if 1:
 				rib=FreeCAD.Vector(np.cos(np.pi*d2/180)*t+np.sin(np.pi*d2/180)*sf.normal(u,v).cross(t))
-				pts += [sf.value(u,v)+ rib*-3,sf.value(u,v)]
-				pts += [sf.value(u,v)+ rib*3,sf.value(u,v)]
+				pts += [sf.value(u,v)+ rib*-2,sf.value(u,v)]
+				pts += [sf.value(u,v)+ rib*2,sf.value(u,v)]
 
 
 			last=sf.value(u,v)
-			p2=last+t*1
+			p2=last+t*fp.gridsize*0.1
 			(u1,v1)=sf.parameter(p2)
 			(u,v)=(u1,v1)
+
+			if u<umin:u=umin
+			if v<vmin:v=vmin
+			if u>umax:u=umax
+			if v>vmax:v=vmax
+
 			if u<umin or v<vmin or u>umax or v>vmax:
 				print "qaBBruch!"
-			
 				break
+
 			p=sf.value(u,v)
 
 			pts += [ p]
@@ -659,13 +716,14 @@ def updateStarG(fp):
 				])]+[pshape] )
 
 		shape2=Part.Compound([shape,pshape,nshape])
+		shape2=shape
 
 		if gridon:
 			name="Grid"
 			drawColorLines(fp,name,shapas)
 
 			name="UBound"
-			drawColorLines(fp,name,riba+ribb)
+			drawColorLines(fp,name,riba+ribm+ribb)
 
 
 		#shape2=shape
@@ -727,7 +785,7 @@ def updatePatch_old(fp):
 		for i in range(fp.lang+1):
 
 			if i % 2 == 0 or i==fp.lang:
-				ribflag= i%6 == 0 and gridon
+				ribflag= i%5 == 0 and gridon
 				if i==fp.lang: ribflag=True
  
 #				print ("erzeuge ribbe",i)
@@ -764,6 +822,12 @@ def updatePatch_old(fp):
 			p2=last+t*1
 			(u1,v1)=sf.parameter(p2)
 			(u,v)=(u1,v1)
+
+			if u<umin:u=umin
+			if v<vmin:v=vmin
+			if u>umax:u=umax
+			if v>vmax:v=vmax
+
 			if u<umin or v<vmin or u>umax or v>vmax:
 				print "qaBBruch!"
 				break
@@ -891,6 +955,12 @@ def updatepath(fp,redirect,flip):
 			p2=last+t*1
 			(u1,v1)=sf.parameter(p2)
 			(u,v)=(u1,v1)
+			
+			if u<umin:u=umin
+			if v<vmin:v=vmin
+			if u>umax:u=umax
+			if v>vmax:v=vmax
+
 			if u<umin or v<vmin or u>umax or v>vmax:
 				print "qaBBruch!"
 				break
@@ -986,15 +1056,33 @@ def runall():
 
 # http://cyberware.com/wb-vrml/index.html
 
+def  wireToPolygon(w):
+	pts=[]
+	yy=0.2
+	for e in w.Edges:
+		print (e, e.Length)
+		if e.Length>1:
+			zz=e.discretize(int(round(e.Length)+1))
+			zz[0],zz[0]+yy*(zz[1]-zz[0])
+			pts += [zz[0],zz[0]+yy*(zz[1]-zz[0])]+zz[1:-1]+ [zz[-1]+yy*(zz[-2]-zz[-1]),zz[-1]]
+	#pol=Part.makePolygon(pts)
+	return pts
+
+
 
 
 
 def updatePatch(fp):
 
+
 	gd=fp.obj
 
-	udim=gd.uvdUdim
-	vdim=gd.uvdVdim
+	try:
+		udim=gd.uvdUdim
+		vdim=gd.uvdVdim
+	except:
+		return Part.Shape()
+
 	usvarr=np.array(gd.uvdarray).reshape(udim,vdim,2)
 	sf=gd.obj.Shape.Face1.Surface
 
@@ -1028,19 +1116,28 @@ def updatePatch(fp):
 	for w in ws2:
 		print ("loop",w,ress)
 		pts=w.discretize(1000)
+
+		# anderer weg der zerlegnung
+		pts=wireToPolygon(w)
+
 		uvs=[]
 		ul,vl=(-10000,-10000)
+		
 
 
 		for p in pts:
-			(u,v) = int(round(p.x)),int(round(p.y))
+			(u,v) = int(round(p.x*10.0/gd.gridsize)),int(round(p.y*10.0/gd.gridsize))
 			print (u,v)
 
-			u += gd.lang3
-			v += gd.lang2
+#			u += gd.lang3
+#			v += gd.lang2
 
-#			if u>=udim: u=udim-1
-#			if v>=vdim: v=vdim-1
+			u += int(round(gd.lang3*10.0/gd.gridsize))
+			v += int(round(gd.lang2*10.0/gd.gridsize))
+
+
+			if u>=udim: u=udim-1
+			if v>=vdim: v=vdim-1
 
 
 			if (u,v) <>(ul,vl):
@@ -1056,11 +1153,55 @@ def updatePatch(fp):
 		print "A"
 		
 		for up,vp in uvs:
+			print (up,vp)
 			(u,v)=usvarr[up,vp]
 			print (up,vp,u,v,sf.value(u,v))
 			pts += [sf.value(u,v)]
 
 #		pts=pts[:-1]
+		if fp.closed:
+			pts=pts[5:]+pts[1:6]
+
+
+		#---------------------
+		if fp.form=='facecurve':
+			t=sf
+			pts2da=[sf.parameter(p) for p in pts[1:]]
+			pts2d=[FreeCAD.Base.Vector2d(p[0],p[1]) for p in pts2da]
+
+			bs2d = Part.Geom2d.BSplineCurve2d()
+			bs2d.setPeriodic()
+
+			bs2d.interpolate(pts2d)
+			bs2d.setPeriodic()
+
+			e1 = bs2d.toShape(t)
+			print "huhu"
+			return e1
+		#----------------------
+
+		if fp.form=='face':
+			t=sf
+			pts2da=[sf.parameter(p) for p in pts[1:]]
+			pts2d=[FreeCAD.Base.Vector2d(p[0],p[1]) for p in pts2da]
+
+			bs2d = Part.Geom2d.BSplineCurve2d()
+			bs2d.setPeriodic()
+
+			bs2d.interpolate(pts2d)
+			bs2d.setPeriodic()
+
+			e1 = bs2d.toShape(t)
+			if fp.reverse:
+				e1.reverse()
+
+			face=gd.obj.Shape.Face1
+			splita=[(e1,face)]
+			r=Part.makeSplitShape(face, splita)
+			rc=r[0][0]
+#			rc.Placement=gd.obj.Placement
+			return rc
+
 
 		if fp.form=='polygon':
 			shape=Part.makePolygon(pts)
@@ -1071,7 +1212,7 @@ def updatePatch(fp):
 		if fp.form=='bspline1':
 			bc=Part.BSplineCurve()
 			bc.approximate(pts,DegMin=1,DegMax=1,Tolerance=fp.tolerance)
-			if fp.closed: bc.setPeriodic()
+			#if fp.closed: bc.setPeriodic()
 			if ws <> None: ress += [bc.toShape()]
 			else:
 				return bc.toShape()
@@ -1079,7 +1220,7 @@ def updatePatch(fp):
 		if fp.form=='bspline3':
 			bc=Part.BSplineCurve()
 			bc.approximate(pts,DegMax=3,Tolerance=fp.tolerance)
-			if fp.closed: bc.setPeriodic()
+			#if fp.closed: bc.setPeriodic()
 			if ws <> None: ress += [bc.toShape()]
 			else:
 				return bc.toShape()
@@ -1095,3 +1236,5 @@ def updatePatch(fp):
 	comp=Part.Compound(ress)
 	return comp
 
+
+	
