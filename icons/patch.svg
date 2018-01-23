@@ -15,7 +15,7 @@
    id="svg2"
    version="1.1"
    inkscape:version="0.48.4 r9939"
-   sodipodi:docname="geodesic.svg">
+   sodipodi:docname="patch.svg">
   <defs
      id="defs4">
     <linearGradient
@@ -53,7 +53,7 @@
         <dc:format>image/svg+xml</dc:format>
         <dc:type
            rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
-        <dc:title></dc:title>
+        <dc:title />
       </cc:Work>
     </rdf:RDF>
   </metadata>
@@ -62,6 +62,12 @@
      inkscape:groupmode="layer"
      id="layer1"
      transform="translate(0,-252.36218)">
+    <path
+       style="fill:#eed9d9;fill-opacity:1;stroke:#000000;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
+       d="M 618.53532,276.26948 C 541.47676,603.08734 35.792627,14.417219 -12.893248,767.69804 16.239244,752.16071 1.8744074,1006.5798 72.821041,1013.4124 637.37916,1067.7827 820.45025,1093.4548 807.10675,547.69805 803.95877,418.9437 618.53532,276.26948 618.53532,276.26948 z"
+       id="path3777"
+       inkscape:connector-curvature="0"
+       sodipodi:nodetypes="ccssc" />
     <path
        style="fill:none;stroke:#d81c1c;stroke-width:20.50000000000000000;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;stroke-miterlimit:4;stroke-dasharray:none"
        d="M 97.142857,691.42857 C 180.08276,605.46582 357.18122,546.40551 488.57143,474.28571 691.43327,397.43414 658.09064,248.69425 700,122.85714"

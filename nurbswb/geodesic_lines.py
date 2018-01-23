@@ -1,7 +1,20 @@
+# -*- coding: utf-8 -*-
+#-------------------------------------------------
+#-- geodesics and patches
+#--
+#-- microelly 2018 v 0.2
+#--
+#-- GNU Lesser General Public License (LGPL)
+#-------------------------------------------------
+
 
 # from say import *
 # import nurbswb.pyob
 #------------------------------
+
+# https://dl.acm.org/citation.cfm?id=1654774
+# chinese whispers
+
 import FreeCAD,FreeCADGui,Sketcher,Part
 
 App = FreeCAD
@@ -21,7 +34,17 @@ class FeaturePython:
 	def attach(self, vobj):
 		self.Object = vobj.Object
 
-	def claimChildren(self):
+	def XclaimChildren(self):
+		fp=self.Object
+		print "claim children for "  + self.Object.Name
+		#try;
+		grp=[
+				App.ActiveDocument.getObject(fp.Name+"_"+"VBound"),
+				App.ActiveDocument.getObject(fp.Name+"_"+"UBound"),
+				App.ActiveDocument.getObject(fp.Name+"_"+"Grid"),
+			]
+		return grp
+#		except:
 		return self.Object.Group
 
 	def __getstate__(self):
@@ -66,10 +89,14 @@ class Geodesic(FeaturePython):
 	def __init__(self, obj,patch=False,uc=5,vc=5):
 		FeaturePython.__init__(self, obj)
 
+		obj.addProperty("App::PropertyBool","onchange","", "calculate all 4 directions")
+
 		obj.addProperty("App::PropertyEnumeration","mode","Base").mode=["geodesic","curvature","patch"]
 		obj.addProperty("App::PropertyLink","obj","","surface object")
 		obj.addProperty("App::PropertyInteger","facenumber","", "number of the face")
-		
+		obj.addProperty("App::PropertyFloat","sega","Source", "u coord start point of geodesic").sega=0
+		obj.addProperty("App::PropertyFloat","segb","Source", "u coord start point of geodesic").segb=100
+		obj.addProperty("App::PropertyFloat","tolerance2","Source", "tolerance for curve on face").tolerance2=10
 
 		if not patch:
 			obj.addProperty("App::PropertyInteger","gridsize","", "size of a grid cell").gridsize=20
@@ -82,6 +109,8 @@ class Geodesic(FeaturePython):
 
 			obj.addProperty("App::PropertyFloat","ut","Target", "u coord target point of geodesic").ut=60
 			obj.addProperty("App::PropertyFloat","vt","Target", "u coord target point of geodesic").vt=60
+			obj.addProperty("App::PropertyBool","target","Target", "u coord target point of geodesic").target=True
+
 			obj.addProperty("App::PropertyInteger","lang","Generator", "size of cell in u direction").lang=24
 			obj.addProperty("App::PropertyInteger","lang2","Generator", "size of cell in v direction").lang2=3
 			obj.addProperty("App::PropertyInteger","lang3","Generator", "size of cell in -u direction").lang3=6
@@ -95,7 +124,7 @@ class Geodesic(FeaturePython):
 			obj.addProperty("App::PropertyFloat","directionrib","Generator", "direction of rib geodesics")
 			obj.directionrib=90
 
-			
+
 
 			obj.addProperty("App::PropertyBool","flip","Star", "flip the curvature direction")
 			obj.addProperty("App::PropertyBool","redirect","Star", "flip the curvature direction")
@@ -139,8 +168,8 @@ class Geodesic(FeaturePython):
 		self.obj2 = vobj.Object
 
 	def onChanged(self, fp, prop):
-		return
-		if prop=="direction":
+		if not hasattr(fp,'onchange') or not fp.onchange : return
+		if prop=="direction" or prop=="lang":
 			try:  self.execute(fp)
 			except: pass
 
@@ -164,7 +193,7 @@ class Geodesic(FeaturePython):
 
 
 def createGeodesic(obj=None):
-	'''create a testcase sketch'''
+	'''create a geodesic from the default psoition 50 50 and direction for testing'''
 
 	a=FreeCAD.ActiveDocument.addObject("Part::FeaturePython","Geodesic")
 
@@ -173,24 +202,24 @@ def createGeodesic(obj=None):
 	ViewProvider(a.ViewObject)
 	if obj<>None:
 		a.Label="Geodesic for "+obj.Label
+
 	a.mode="geodesic"
 
-
-	a.lang=40
-	a.lang2=20
-	a.lang3=40
-	a.direction=30
+	a.lang=50
+	a.lang2=00
+	a.lang3=00
+	a.direction=45
 
 #	hideAllProps(a,['patch'])
 	return a
 
 
 def createPatch(obj=None,wire=None):
-	'''create a testcase sketch'''
+	'''create a patch on obj with borderdata from wire'''
 
+	# reorder if the selection order is false
 	try: _=obj.uvdUdim
 	except: obj,wire=wire,obj
-
 
 	a=FreeCAD.ActiveDocument.addObject("Part::FeaturePython","Patch")
 
@@ -203,24 +232,10 @@ def createPatch(obj=None,wire=None):
 		a.Label="Patch for "+obj.Label
 	a.mode="patch"
 	
-#	hideAllProps(a)
-	return a
-#	a.u=10
-#	a.v=55
-	a.lang=20
-	a.direction=-60
-
-	# ovben drauf
-#	a.u=1
-#	a.v=50
-	a.lang=204
-	a.lang=120+24
-	a.lang=36
-#	a.u=40
+	a.reverse=True
+#	a.form="face"
 	
-	a.direction=0
-
-
+#	hideAllProps(a)
 	return a
 
 
@@ -229,7 +244,7 @@ def createPatch(obj=None,wire=None):
 
 
 def createCurvature(obj=None):
-	'''create a testcase sketch'''
+	'''create a curvature object'''
 
 	a=FreeCAD.ActiveDocument.addObject("Part::FeaturePython","Curvature")
 
@@ -250,6 +265,7 @@ def createCurvature(obj=None):
 
 
 def colorPath(pts,color='0 1 0',name=None):
+	'''create a colored LineSet for points pts wit colorstring color '''
 
 	def ivPts(pts):
 		'''  points to iv format '''
@@ -270,41 +286,27 @@ def colorPath(pts,color='0 1 0',name=None):
 		 }
 	  }
 	'''
-	if name <>None:
+
+	if name <> None:
 		iv=App.ActiveDocument.getObject(name)
 		if iv==None:iv=App.ActiveDocument.addObject("App::InventorObject",name)
-
-		iv.Buffer=buf % ('0 0 0','0 1 0',ivPts(pts2)) +bufa + buf % ('10 2 10','1 0 1',ivPts(pts2))
 		iv.Buffer=buf % ('0 0 0',color,ivPts(pts))
 	else: 
 		return buf % ('0 0 0',color,ivPts(pts))
 
-def uvtopt(uvs,sf,uvsarr):
-
-	pts=[[5,7],[12,15],[20,15],[20,2],[7,7]]
-	pts2=[]
-	for [uk,vk] in pts:
-			(u,v)=arr[uk,vk]
-			pt=sf.value(u,v)
-			print pt
-			pts2 += [pt]
-	return pts2
-
-
 
 
 def genrib(fp,u,v,d,lang,ribflag,color='0 1 1'):
-		''' erzeugt eine rippe) '''
+		''' erzeugt eine rippe fuer color grid '''
+
+		pts=[]
+		uvs=[(u,v)]
 
 		obj=fp.obj
-		pts=[]
-
 		f=obj.Shape.Faces[fp.facenumber]
 		sf=f.Surface
 		umin,umax,vmin,vmax=f.ParameterRange
 
-
-		uvs=[(u,v)]
 		(t1,t2)=sf.tangent(u,v)
 		t=FreeCAD.Vector(np.cos(np.pi*d/180)*t1+np.sin(np.pi*d/180)*t2)
 
@@ -316,48 +318,55 @@ def genrib(fp,u,v,d,lang,ribflag,color='0 1 1'):
 			v2=(v-vmin)/(vmax-vmin)
 			pts += [pot]
 
-
+			# local axis cross creation
 			if ribflag:
 				pts += [pot+ sf.normal(u,v)*0.5*fp.gridsize*0.1,pot]
 				pts += [pot+ sf.normal(u,v).cross(t)*2.5*fp.gridsize*0.1,pot]
 				pts += [pot+ sf.normal(u,v).cross(t)*-2.5*fp.gridsize*0.1,pot]
 
-
 			last=sf.value(u,v)
 			p2=last+t*fp.gridsize*0.1
-			print "p2xx ",p2
 			(u1,v1)=sf.parameter(p2)
 			(u,v)=(u1,v1)
+
+			#restrict to area inside the Face
 			if u<umin:u=umin
 			if v<vmin:v=vmin
 			if u>umax:u=umax
 			if v>vmax:v=vmax
+
 			uvs += [(u,v)]
 
-
 			if u<umin or v<vmin or u>umax or v>vmax:
-				print "qaBBruch!"
+				print "Abbruch!"
 				break
-			p=sf.value(u,v)
 
-			pts += [ p]
+			p=sf.value(u,v)
+			pts += [p]
+
+			#compute the further direction of the geodesic
 			(t1,t2)=sf.tangent(u,v)
 			t=p-last
 			t.normalize()
 
-		cps=None
+
 		if ribflag:
-			try: 
-				#shape=Part.makePolygon(pts)
-				cps=colorPath(pts,color=color,name=None)
-			except: shape=None
-		else: shape=None
+			try: cps=colorPath(pts,color=color,name=None)
+			except: 
+				cps=None
+				shape=None
+		else: 
+			cps=None
+			shape=None
 
 		return (cps,(u,v),uvs)
 
 
 
+
 def getface(count=10):
+	'''outdated: for update patch old '''
+
 	faceobj=App.ActiveDocument.BSpline
 	bs=faceobj.Shape.Face1
 	track=App.ActiveDocument.Line.Shape
@@ -417,13 +426,14 @@ def getface(count=10):
 	return track.Length, pls,nls
 
 
+
 def drawColorLines(fp,name,ivs):
+	'''create a inventor presentation of a inventor scene ivs'''
+
 	iv=App.ActiveDocument.getObject(fp.Name+"_"+name)
 	if iv==None:iv=App.ActiveDocument.addObject("App::InventorObject",fp.Name+"_"+name)
 	iv.Label=name + " for " +fp.Label
 	iv.Buffer=ivs
-
-
 
 
 def updateStarG(fp):
@@ -437,6 +447,8 @@ def updateStarG(fp):
 		u=fp.u
 		v=fp.v
 		obj=fp.obj
+
+
 
 		if fp.pre<>None:
 			obj=fp.pre.obj
@@ -468,6 +480,8 @@ def updateStarG(fp):
 		
 		u=umin + (umax-umin)*u
 		v=vmin + (vmax-vmin)*v
+
+		pstart=sf.value(u,v)
 
 		(t1,t2)=sf.tangent(u,v)
 		t=FreeCAD.Vector(np.cos(np.pi*-d/180)*t1*-1+np.sin(-np.pi*-d/180)*t2*-1)
@@ -649,10 +663,11 @@ def updateStarG(fp):
 			# print ("time aa bb,loop",tbb-taa,i,(tbb-taa)/fp.lang*1000000/lang2)
 
 
-		FreeCAD.uvsarr=np.array(uvsarr)
-		FreeCAD.sf=sf
-		print "size uvs arr",FreeCAD.uvsarr.shape
-		print (fp.lang,lang2)
+#		FreeCAD.uvsarr=np.array(uvsarr)
+#		FreeCAD.sf=sf
+#		print "size uvs arr",FreeCAD.uvsarr.shape
+#		print (fp.lang,lang2)
+
 		ar=np.array(uvsarr)
 		(a,b,c)=ar.shape
 		fp.uvdarray=list(ar.reshape(a*b*c))
@@ -662,23 +677,20 @@ def updateStarG(fp):
 		puvs+=[(u,v)]
 		nuvs+=[(u,v)]
 
-
 		shape=Part.makePolygon(pts)
 		cp1=colorPath(pts,color='1 1 0',name=None)
 		
 		ppts=[sf.value(u,v) for (u,v) in puvs]
 		pshape=Part.makePolygon(ppts)
 		cp2=colorPath(ppts[:-1],color='0 0 1',name=None)
-		
+
 		npts=[sf.value(u,v) for (u,v) in nuvs]
 		nshape=Part.makePolygon(npts)
 		cp3=colorPath(npts[:-1],color='0 0 1',name=None)
 
 
-
 		name="VBound"
 		drawColorLines(fp,name,cp1+cp2+cp3)
-		#drawColorLines(fp,name,cp1)
 
 		tb=time.time()
 		print ("time a - b:",tb-ta)
@@ -706,17 +718,30 @@ def updateStarG(fp):
 		b=t.dot(t2)
 		fp.directione=180./np.pi*np.arctan2(b,a)
 
-		shape2=Part.Compound([shape,Part.makePolygon([
-				pend,pend+FreeCAD.Vector(0,10,0),
-				pend,pend+FreeCAD.Vector(0,-10,0),
-				pend,pend+FreeCAD.Vector(10,0,0),
-				pend,pend+FreeCAD.Vector(-10,0,0),
-				pend,pend+FreeCAD.Vector(0,0,10),
-				pend,pend+FreeCAD.Vector(0,0,-10),
-				])]+[pshape] )
+		if fp.target:
+			shape2=Part.Compound([
+						shape,
+						Part.makePolygon([
+							pend,pend+FreeCAD.Vector(0,10,0),
+							pend,pend+FreeCAD.Vector(0,-10,0),
+							pend,pend+FreeCAD.Vector(10,0,0),
+							pend,pend+FreeCAD.Vector(-10,0,0),
+							pend,pend+FreeCAD.Vector(0,0,10),
+							pend,pend+FreeCAD.Vector(0,0,-10),
+						]),
+						Part.makePolygon([
+							pstart,pstart+FreeCAD.Vector(0,10,0),
+							pstart,pstart+FreeCAD.Vector(0,-10,0),
+							pstart,pstart+FreeCAD.Vector(10,0,0),
+							pstart,pstart+FreeCAD.Vector(-10,0,0),
+							pstart,pstart+FreeCAD.Vector(0,0,10),
+							pstart,pstart+FreeCAD.Vector(0,0,-10),
+						])
 
-		shape2=Part.Compound([shape,pshape,nshape])
-		shape2=shape
+					])
+
+		else:
+			shape2=shape
 
 		if gridon:
 			name="Grid"
@@ -725,10 +750,7 @@ def updateStarG(fp):
 			name="UBound"
 			drawColorLines(fp,name,riba+ribm+ribb)
 
-
-		#shape2=shape
 		return shape2
-	#Draft.makeWire(pts)
 
 
 def updatePatch_old(fp):
@@ -1167,16 +1189,25 @@ def updatePatch(fp):
 		if fp.form=='facecurve':
 			t=sf
 			pts2da=[sf.parameter(p) for p in pts[1:]]
+			pts2da=[sf.parameter(p) for p in pts]
 			pts2d=[FreeCAD.Base.Vector2d(p[0],p[1]) for p in pts2da]
 
 			bs2d = Part.Geom2d.BSplineCurve2d()
 			bs2d.setPeriodic()
 
-			bs2d.interpolate(pts2d)
+#			bs2d.interpolate(pts2d)
+
 			bs2d.setPeriodic()
+			bs2d.approximate(pts2d,DegMax=3,Tolerance=fp.tolerance2*0.001)
+
+#			bs2d.approximate(pts2d[30:-2]+pts2d[:30],DegMax=3,Tolerance=fp.tolerance)
+#			bs2d.setPeriodic()
+			bs2d.segment(0.01*fp.sega,0.01*fp.segb)
+
 
 			e1 = bs2d.toShape(t)
-			print "huhu"
+			print len(pts2d)
+			print "huhwu"
 			return e1
 		#----------------------
 
@@ -1187,11 +1218,20 @@ def updatePatch(fp):
 
 			bs2d = Part.Geom2d.BSplineCurve2d()
 			bs2d.setPeriodic()
+			bs2d.approximate(pts2d,DegMax=3,Tolerance=fp.tolerance2*0.001)
 
-			bs2d.interpolate(pts2d)
+			ptsa2d=bs2d.discretize(len(pts2da)+1)
+
+			bs2d = Part.Geom2d.BSplineCurve2d()
 			bs2d.setPeriodic()
 
+			bs2d.interpolate(ptsa2d)
+			bs2d.setPeriodic()
+
+
 			e1 = bs2d.toShape(t)
+			FreeCAD.e1=e1
+
 			if fp.reverse:
 				e1.reverse()
 
@@ -1225,16 +1265,82 @@ def updatePatch(fp):
 			else:
 				return bc.toShape()
 
-			# schnelle unexakte flaeche
-#			ss=bc.toShape()
-#			return Part.makeFilledFace(ss.Edges)
-#			return bc.toShape()
-
-
-	print "liefere compound"
-	print ress
 	comp=Part.Compound(ress)
 	return comp
 
 
+
+
+def step():
+	''' geodesic an ziel ausrichten'''
+
+	print "huhuXXX"
+	a=App.ActiveDocument.Geodesic
+
+
+	ds=a.dist
+	a.direction += 1
+	App.activeDocument().recompute()
+	dsa=a.dist
+
+	better=True
+	print (ds,dsa)
+	if ds<dsa:
+		print "wird nicht besser A"
+		a.direction -= 1
+		App.activeDocument().recompute()
+		ds=a.dist
+		a.direction -= 1
+		App.activeDocument().recompute()
+		dsa=a.dist
+
+		print (ds,dsa)
+		if ds<dsa:
+			print "wird nicht besser B"
+			a.direction += 1
+			App.activeDocument().recompute()
+			better=False
+
+	if better: return better
 	
+	better=True
+
+	ds=a.dist
+	a.lang -= 1
+	App.activeDocument().recompute()
+	dsa=a.dist
+
+	print (ds,dsa)
+	if ds<=dsa:
+		print "wird nicht besser C"
+		a.lang += 1
+		App.activeDocument().recompute()
+
+		ds=a.dist
+		a.lang += 1
+		App.activeDocument().recompute()
+		dsa=a.dist
+
+		print (ds,dsa)
+		if ds<=dsa:
+			print "wird nicht besser D"
+			a.lang -= 1
+			App.activeDocument().recompute()
+			better=False
+	print "a lang ",a.lang
+	print "hah ", better
+	return better
+
+def sustep(n=10):
+	for i in range(n): 
+		print "------------step ",i
+		rc=step()
+		print "----------result ",rc
+		if not rc: break
+#
+
+def approx_geodesic():
+	sustep()
+
+def runTest2():
+	approx_geodesic()

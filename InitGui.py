@@ -324,7 +324,7 @@ if FreeCAD.GuiUp:
 	c2a(["Curves"],always,'geodesic3','geodesic_lines','create curvature star','/../icons/draw.svg',"runC()")
 	c2a(["Curves"],always,'geodesic1','geodesic_lines','create geodesic','/../icons/geodesic.svg',"run()")
 	c2a(["Curves"],always,'geodesic1a','geodesic_lines','geodesic map patch to face','/../icons/patch.svg',"runP()")
-	c2a(["Curves"],always,'geodesic1b','geodesic_lines','TEST 2 geodesic map patch to face','/../icons/draw.svg',"runTest2()")
+	c2a(["Curves"],always,'geodesic1b','geodesic_lines','find geodesic to Target','/../icons/draw.svg',"runTest2()")
 
 	c2a(["Curves"],always,'geodesic4','geodesic_lines','append geodesic','/../icons/draw.svg',"runD()")
 	c2a(["Curves"],always,'geodesic2','geodesic_lines','create geodesic bunch','/../icons/draw.svg',"runall()")

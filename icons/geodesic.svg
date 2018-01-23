@@ -53,7 +53,7 @@
         <dc:format>image/svg+xml</dc:format>
         <dc:type
            rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
-        <dc:title></dc:title>
+        <dc:title />
       </cc:Work>
     </rdf:RDF>
   </metadata>
@@ -63,12 +63,24 @@
      id="layer1"
      transform="translate(0,-252.36218)">
     <path
+       style="fill:#eed9d9;fill-opacity:1;stroke:#000000;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
+       d="M 637.14286,206.64789 C 560.0843,533.46575 308.68588,461.93849 -2.8571471,763.79074 26.275344,748.25341 41.234335,1031.4264 111.42857,1043.7908 c 366.61707,64.578 693.55573,-131.19964 705.71429,-500.00005 4.24371,-128.72289 -180,-337.14286 -180,-337.14286 z"
+       id="path3777"
+       inkscape:connector-curvature="0"
+       sodipodi:nodetypes="ccssc" />
+    <path
+       style="fill:none;stroke:#f2dada;stroke-width:83.94599999999998374;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none"
+       d="M 74.830308,957.53181 C 161.94423,867.41403 347.95537,805.49902 485.95789,729.89328 699.02893,649.32705 664.0083,493.39775 708.02679,361.47824"
+       id="path3038-3"
+       inkscape:connector-curvature="0"
+       sodipodi:nodetypes="ccc" />
+    <path
        style="fill:none;stroke:#d81c1c;stroke-width:20.50000000000000000;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;stroke-miterlimit:4;stroke-dasharray:none"
        d="M 97.142857,691.42857 C 180.08276,605.46582 357.18122,546.40551 488.57143,474.28571 691.43327,397.43414 658.09064,248.69425 700,122.85714"
        id="path3038"
        inkscape:connector-curvature="0"
-       transform="translate(0,252.36218)"
-       sodipodi:nodetypes="ccc" />
+       sodipodi:nodetypes="ccc"
+       transform="translate(0,252.36218)" />
     <path
        style="fill:none;stroke:#d81c1c;stroke-width:20.50000000000000000;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;stroke-miterlimit:4;stroke-dasharray:none"
        d="m 85.714286,511.42857 c 2.857143,5.71429 5.714285,11.42857 8.571428,17.14286"
