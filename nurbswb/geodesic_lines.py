@@ -91,7 +91,7 @@ class Geodesic(FeaturePython):
 
 		obj.addProperty("App::PropertyBool","onchange","", "calculate all 4 directions")
 
-		obj.addProperty("App::PropertyEnumeration","mode","Base").mode=["geodesic","curvature","patch"]
+		obj.addProperty("App::PropertyEnumeration","mode","Base").mode=["geodesic","curvature","patch","distance"]
 		obj.addProperty("App::PropertyLink","obj","","surface object")
 		obj.addProperty("App::PropertyInteger","facenumber","", "number of the face")
 		obj.addProperty("App::PropertyFloat","sega","Source", "u coord start point of geodesic").sega=0
@@ -187,6 +187,10 @@ class Geodesic(FeaturePython):
 				fp.Placement=FreeCAD.Placement()	
 		if fp.mode=="curvature":
 			fp.Shape=updateStarC(fp)
+		if fp.mode=="distance":
+			fp.Shape=updateDistance(fp)
+			
+		
 
 
 
@@ -1342,5 +1346,200 @@ def sustep(n=10):
 def approx_geodesic():
 	sustep()
 
-def runTest2():
-	approx_geodesic()
+
+
+
+
+import numpy as np
+import Draft
+
+def genribA(f,u=50,v=50,d=0,lang=30):
+		''' erzeugt eine rippe fuer color grid '''
+
+
+		pts=[]
+		norms=[]
+		tans=[]
+		uvs=[(u,v)]
+
+		sf=f.Surface
+		umin,umax,vmin,vmax=f.ParameterRange
+
+
+		u=umin-(umin-umax)*u/100
+		v=vmin-(vmin-vmax)*v/100
+
+		(t1,t2)=sf.tangent(u,v)
+		print t1
+		nn=f.normalAt(u,v)
+		#t2=t1.dot(nn)
+#		print nn
+#		return
+#		print t2
+		a=np.cos(np.pi*d/180)*t1+np.sin(np.pi*d/180)*t2
+#		print a
+		t=FreeCAD.Vector(tuple(np.cos(np.pi*d/180)*t1+np.sin(np.pi*d/180)*t2))
+
+		lang=int(round(lang))
+		#print "loops genrib",lang
+		for i in range(lang+1):
+			pot=sf.value(u,v)
+			nn=f.normalAt(u,v)
+			u2=(u-umin)/(umax-umin)
+			v2=(v-vmin)/(vmax-vmin)
+			pts += [pot]
+			norms += [nn]
+			tans += [t]
+
+
+			last=sf.value(u,v)
+			gridsize=10
+			p2=last+t*gridsize*0.1
+			(u1,v1)=sf.parameter(p2)
+			(u,v)=(u1,v1)
+
+			#restrict to area inside the Face
+			if u<umin:u=umin
+			if v<vmin:v=vmin
+			if u>umax:u=umax
+			if v>vmax:v=vmax
+
+			uvs += [(u,v)]
+
+			if u<umin or v<vmin or u>umax or v>vmax:
+				print "Abbruch!"
+				break
+
+			p=sf.value(u,v)
+#			pts += [p]
+
+			#compute the further direction of the geodesic
+			(t1,t2)=sf.tangent(u,v)
+			ta=p-last
+			try: 
+				ta.normalize()
+				t=ta
+			except:
+				pass
+
+		pts=np.array(pts)
+		norms=np.array(norms)
+		return pts,norms,tans
+
+def updateDistance(fp):
+
+	print "update distance"
+	try:
+		obj=App.ActiveDocument.Poles
+		obj=fp.obj
+		lang=fp.lang
+		u=fp.u
+		v=fp.v
+	except:
+		print "still not ready"
+		return Part.Shape()
+
+	f=obj.Shape.Faces[0]
+	sf=f.Surface
+
+	star=[]
+	startans=[]
+	starnorms=[]
+	dr=24
+#	lang=100
+
+	comp=[]
+
+	for d in range(dr):
+		pts,norms,tans=genribA(f,u=u,v=v,d=360/dr*d,lang=lang)
+		comp += [Part.makePolygon([FreeCAD.Vector(p) for p in pts])]
+
+		star += [pts]
+		startans += [tans]
+		starnorms += [norms]
+
+ 
+	dists=[]
+	for d in range (dr):
+		distd=[]
+		#for i in range(lang):
+		for i in range(lang+1):
+#			print (d,i,FreeCAD.Vector(star[d][i]-star[d-1][i]).Length -(1.*i*np.pi*30/180))
+#			distd += [FreeCAD.Vector(star[d][i]-star[d-1][i]).Length -(1.*i*np.pi*360/dr/180)]
+			d2=d+1
+			if d2>=dr: d2=0
+			distd += [FreeCAD.Vector(star[d][i]-star[d-1][i]).Length -(1.*i*np.pi*360/dr/180) + FreeCAD.Vector(star[d][i]-star[d2][i]).Length -(1.*i*np.pi*360/dr/180)]
+
+		dists += [distd]
+
+	factor=fp.gridsize*0.1
+	dists=np.array(dists)*factor
+	rstar=np.array(star).swapaxes(0,1)
+	rstarnorms=np.array(starnorms).swapaxes(0,1)
+	
+	
+	cp =''
+	for i in range(1,lang+1):
+		if i %5 ==0:
+			pts=[FreeCAD.Vector(tuple(p))  for p in rstar[i]]
+			norms=[FreeCAD.Vector(tuple(p))  for p in rstarnorms[i]]
+			pps=[]
+			for j in range(len(pts))+[0]:
+				#pps += [ rstar[i,j],rstar[i,j]-dists[j,i]*1*rstarnorms[i,j],rstar[i,j]]
+				pps += [ rstar[i,j] ]
+				if dists[j,i]>0:
+					cp += colorPath([
+						FreeCAD.Vector(rstar[i,j]),
+						FreeCAD.Vector(rstar[i,j]+dists[j,i]*1*rstarnorms[i,j])],
+						color='1 1 0',name=None)
+				else:
+					cp += colorPath([
+						FreeCAD.Vector(rstar[i,j]),
+						FreeCAD.Vector(rstar[i,j]-dists[j,i]*1*rstarnorms[i,j])],
+						color='1 0 0',name=None)
+
+					
+			comp += [Part.makePolygon([FreeCAD.Vector(p) for p in pps])]
+	#		Draft.makeWire(pts,closed=True)
+
+	
+	
+	
+	#cp3=colorPath(npts[:-1],color='0 0 1',name=None)
+
+
+	name="Pull_and_Press"
+	drawColorLines(fp,name,cp)
+
+	return Part.Compound(comp)
+
+def runE():
+#	approx_geodesic()
+
+
+#def createPatch(obj=None,wire=None):
+	'''create a patch on obj with borderdata from wire'''
+
+	# reorder if the selection order is false
+#	try: _=obj.uvdUdim
+#	except: obj,wire=wire,obj
+	obj=Gui.Selection.getSelection()[0]
+#	obj=App.ActiveDocument.Poles
+
+	a=FreeCAD.ActiveDocument.addObject("Part::FeaturePython","distance")
+
+	Geodesic(a,False)
+	a.obj=obj
+#	a.wire=wire
+
+	ViewProvider(a.ViewObject)
+	if obj<>None:
+		a.Label="Distance for "+obj.Label
+	a.mode="distance"
+	
+#	a.reverse=True
+#	a.form="face"
+	
+#	hideAllProps(a)
+	return a
+
