@@ -90,6 +90,7 @@ class Geodesic(FeaturePython):
 		FeaturePython.__init__(self, obj)
 
 		obj.addProperty("App::PropertyBool","onchange","", "calculate all 4 directions")
+		obj.addProperty("App::PropertyBool","flipNormals","", "calculate all 4 directions")
 
 		obj.addProperty("App::PropertyEnumeration","mode","Base").mode=["geodesic","curvature","patch","distance"]
 		obj.addProperty("App::PropertyLink","obj","","surface object")
@@ -1430,7 +1431,7 @@ def updateDistance(fp):
 
 	print "update distance"
 	try:
-		obj=App.ActiveDocument.Poles
+		# obj=App.ActiveDocument.Poles
 		obj=fp.obj
 		lang=fp.lang
 		u=fp.u
@@ -1478,7 +1479,10 @@ def updateDistance(fp):
 	rstarnorms=np.array(starnorms).swapaxes(0,1)
 	
 	
+	
 	cp =''
+	if fp.flipNormals: nf=-1
+	else: nf=1  
 	for i in range(1,lang+1):
 		if i %5 ==0:
 			pts=[FreeCAD.Vector(tuple(p))  for p in rstar[i]]
@@ -1490,22 +1494,16 @@ def updateDistance(fp):
 				if dists[j,i]>0:
 					cp += colorPath([
 						FreeCAD.Vector(rstar[i,j]),
-						FreeCAD.Vector(rstar[i,j]+dists[j,i]*1*rstarnorms[i,j])],
+						FreeCAD.Vector(rstar[i,j]+dists[j,i]*nf*rstarnorms[i,j])],
 						color='1 1 0',name=None)
 				else:
 					cp += colorPath([
 						FreeCAD.Vector(rstar[i,j]),
-						FreeCAD.Vector(rstar[i,j]-dists[j,i]*1*rstarnorms[i,j])],
+						FreeCAD.Vector(rstar[i,j]-dists[j,i]*nf*rstarnorms[i,j])],
 						color='1 0 0',name=None)
 
 					
 			comp += [Part.makePolygon([FreeCAD.Vector(p) for p in pps])]
-	#		Draft.makeWire(pts,closed=True)
-
-	
-	
-	
-	#cp3=colorPath(npts[:-1],color='0 0 1',name=None)
 
 
 	name="Pull_and_Press"
@@ -1514,32 +1512,24 @@ def updateDistance(fp):
 	return Part.Compound(comp)
 
 def runE():
-#	approx_geodesic()
 
-
-#def createPatch(obj=None,wire=None):
-	'''create a patch on obj with borderdata from wire'''
-
-	# reorder if the selection order is false
-#	try: _=obj.uvdUdim
-#	except: obj,wire=wire,obj
 	obj=Gui.Selection.getSelection()[0]
-#	obj=App.ActiveDocument.Poles
 
 	a=FreeCAD.ActiveDocument.addObject("Part::FeaturePython","distance")
 
 	Geodesic(a,False)
 	a.obj=obj
-#	a.wire=wire
+
+	# werte fuer random cylinder
+	a.u=48
+	a.v=45
+	a.gridsize=200
+	a.flipNormals=True
 
 	ViewProvider(a.ViewObject)
 	if obj<>None:
 		a.Label="Distance for "+obj.Label
 	a.mode="distance"
 	
-#	a.reverse=True
-#	a.form="face"
-	
-#	hideAllProps(a)
 	return a
 
