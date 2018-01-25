@@ -99,6 +99,9 @@ class Geodesic(FeaturePython):
 		obj.addProperty("App::PropertyFloat","segb","Source", "u coord start point of geodesic").segb=100
 		obj.addProperty("App::PropertyFloat","tolerance2","Source", "tolerance for curve on face").tolerance2=10
 
+		obj.addProperty("App::PropertyFloat","thresholdForce")
+		obj.addProperty("App::PropertyBool","relativeForce")
+
 		if not patch:
 			obj.addProperty("App::PropertyInteger","gridsize","", "size of a grid cell").gridsize=20
 
@@ -1357,7 +1360,6 @@ import Draft
 def genribA(f,u=50,v=50,d=0,lang=30):
 		''' erzeugt eine rippe fuer color grid '''
 
-
 		pts=[]
 		norms=[]
 		tans=[]
@@ -1371,7 +1373,8 @@ def genribA(f,u=50,v=50,d=0,lang=30):
 		v=vmin-(vmin-vmax)*v/100
 
 		(t1,t2)=sf.tangent(u,v)
-		print t1
+		(t2,t1)=sf.tangent(u,v)
+#		print t1
 		nn=f.normalAt(u,v)
 		#t2=t1.dot(nn)
 #		print nn
@@ -1416,6 +1419,7 @@ def genribA(f,u=50,v=50,d=0,lang=30):
 
 			#compute the further direction of the geodesic
 			(t1,t2)=sf.tangent(u,v)
+			(t2,t1)=sf.tangent(u,v)
 			ta=p-last
 			try: 
 				ta.normalize()
@@ -1447,6 +1451,7 @@ def updateDistance(fp):
 	startans=[]
 	starnorms=[]
 	dr=24
+#	dr=12
 #	lang=100
 
 	comp=[]
@@ -1465,32 +1470,42 @@ def updateDistance(fp):
 		distd=[]
 		#for i in range(lang):
 		for i in range(lang+1):
-#			print (d,i,FreeCAD.Vector(star[d][i]-star[d-1][i]).Length -(1.*i*np.pi*30/180))
-#			distd += [FreeCAD.Vector(star[d][i]-star[d-1][i]).Length -(1.*i*np.pi*360/dr/180)]
 			d2=d+1
 			if d2>=dr: d2=0
-			distd += [FreeCAD.Vector(star[d][i]-star[d-1][i]).Length -(1.*i*np.pi*360/dr/180) + FreeCAD.Vector(star[d][i]-star[d2][i]).Length -(1.*i*np.pi*360/dr/180)]
+			dd=FreeCAD.Vector(star[d][i]-star[d-1][i]).Length + FreeCAD.Vector(star[d][i]-star[d2][i]).Length -2*i*np.sin(np.pi/180*360/dr)
+
+			dd=FreeCAD.Vector(star[d][i]-star[d-1][i]).Length + FreeCAD.Vector(star[d][i]-star[d2][i]).Length -4*i*np.sin(0.5*np.pi/180*360/dr)
+
+			if fp.relativeForce:
+				dd=dd/(2*i*np.sin(np.pi/180*360/dr))
+			
+			if fp.thresholdForce>0:
+				if abs(dd)<fp.thresholdForce:
+					dd=0
+
+			distd += [dd]
 
 		dists += [distd]
+		h=i*np.sin(np.pi/180*360/dr)
 
 	factor=fp.gridsize*0.1
+
 	dists=np.array(dists)*factor
 	rstar=np.array(star).swapaxes(0,1)
 	rstarnorms=np.array(starnorms).swapaxes(0,1)
-	
-	
-	
+
 	cp =''
 	if fp.flipNormals: nf=-1
 	else: nf=1  
 	for i in range(1,lang+1):
-		if i %5 ==0:
+		if i %5 == 0:
 			pts=[FreeCAD.Vector(tuple(p))  for p in rstar[i]]
 			norms=[FreeCAD.Vector(tuple(p))  for p in rstarnorms[i]]
 			pps=[]
 			for j in range(len(pts))+[0]:
 				#pps += [ rstar[i,j],rstar[i,j]-dists[j,i]*1*rstarnorms[i,j],rstar[i,j]]
 				pps += [ rstar[i,j] ]
+				
 				if dists[j,i]>0:
 					cp += colorPath([
 						FreeCAD.Vector(rstar[i,j]),
@@ -1502,7 +1517,8 @@ def updateDistance(fp):
 						FreeCAD.Vector(rstar[i,j]-dists[j,i]*nf*rstarnorms[i,j])],
 						color='1 0 0',name=None)
 
-					
+				if i==lang:
+					print ("dists,",j,dists[j,i],round(dists[j,i]- 2*i*np.sin(0.5*np.pi/180*360/dr),2))
 			comp += [Part.makePolygon([FreeCAD.Vector(p) for p in pps])]
 
 
@@ -1524,6 +1540,13 @@ def runE():
 	a.u=48
 	a.v=45
 	a.gridsize=200
+
+	a.u=50
+	a.v=50
+	a.lang=100
+	a.gridsize=100
+
+	
 	a.flipNormals=True
 
 	ViewProvider(a.ViewObject)
