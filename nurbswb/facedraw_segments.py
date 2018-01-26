@@ -66,6 +66,7 @@ class EventFilter(QtCore.QObject):
 		z=str(e.type())
 
 		event=e
+		#ef=FreeCAD.eventfilter
 
 		if event.type() == QtCore.QEvent.ContextMenu : return True
 

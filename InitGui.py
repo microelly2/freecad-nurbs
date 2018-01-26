@@ -297,8 +297,8 @@ if FreeCAD.GuiUp:
 	#c2a(["Curves"],onselection1,'DraftBSpline Editor',"DraftBSplineEditor","Edit Draft Bspline",'/../icons/32px-draftbspline_edit.png',"run()")
 	c2a(["Curves"],always,'DraftBSpline Editor',"DraftBSplineEditor","Edit Draft Bspline",'/../icons/32px-draftbspline_edit.png',"run()")
 
-	c2a(["Curves"],always,'facedraw','isodraw','draw on a face','/../icons/draw.svg',"run()")
-	c2a(["Curves"],always,'facedraws','facedraw_segments','draw over segments','/../icons/draw.svg',"run()")
+	c2a(["Curves"],always,'facedraw','facedraw','draw on a face','/../icons/draw.svg',"run()")
+#	c2a(["Curves"],always,'facedraws','facedraw_segments','draw over segments','/../icons/draw.svg',"run()")
 	c2a(["Curves"],always,'facedrawa','facedraw','create Map of a face','/../icons/draw.svg',"createMap()")
 	c2a(["Curves"],always,'facedrawa2','facedraw','create Curvature Map of a face','/../icons/draw.svg',"createMap(mode='curvature')")
 	c2a(["Curves"],always,'curvaturea','curvatureplot','draw the curvature net','/../icons/draw.svg',"run()")
@@ -549,7 +549,7 @@ static char * nurbs_xpm[] = {
 		'Part_Cone', 'Part_Cylinder','Draft_Move','Draft_Rotate','Draft_Point','Draft_ToggleGrid',
 		'My_Test2','Nurbs_toggleSketch','Sketcher_NewSketch','Nurbs_facedraws','Nurbs_patcha','Nurbs_patchb','Nurbs_folda']
 
-		cmds2=['Nurbs_facedraws','Nurbs_patcha','Nurbs_patchb','Nurbs_folda']
+		cmds2=['Nurbs_facedraw','Nurbs_patcha','Nurbs_patchb','Nurbs_folda']
 		
 		cmds3=['Nurbs_CreateWorkspace','Nurbs_CreateWSLink','Nurbs_ViewsQV','Nurbs_Views2H','Nurbs_DarkRoom']
 		cmds4=['Nurbs_pta','Nurbs_ptb','Nurbs_ptc','Nurbs_ptd','Nurbs_pte']
