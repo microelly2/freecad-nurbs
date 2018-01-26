@@ -297,7 +297,7 @@ if FreeCAD.GuiUp:
 	#c2a(["Curves"],onselection1,'DraftBSpline Editor',"DraftBSplineEditor","Edit Draft Bspline",'/../icons/32px-draftbspline_edit.png',"run()")
 	c2a(["Curves"],always,'DraftBSpline Editor',"DraftBSplineEditor","Edit Draft Bspline",'/../icons/32px-draftbspline_edit.png',"run()")
 
-	c2a(["Curves"],always,'facedraw','facedraw','draw on a face','/../icons/draw.svg',"run()")
+	c2a(["Curves"],always,'facedraw','isodraw','draw on a face','/../icons/draw.svg',"run()")
 	c2a(["Curves"],always,'facedraws','facedraw_segments','draw over segments','/../icons/draw.svg',"run()")
 	c2a(["Curves"],always,'facedrawa','facedraw','create Map of a face','/../icons/draw.svg',"createMap()")
 	c2a(["Curves"],always,'facedrawa2','facedraw','create Curvature Map of a face','/../icons/draw.svg',"createMap(mode='curvature')")
@@ -326,7 +326,7 @@ if FreeCAD.GuiUp:
 	c2a(["Curves"],always,'geodesic1a','geodesic_lines','geodesic map patch to face','/../icons/patch.svg',"runP()")
 	c2a(["Curves"],always,'geodesic1b','geodesic_lines','geodesic distance ','/../icons/geodesiccircle.svg',"runE()")
 	c2a(["Curves"],always,'geodesic1c','geodesic_lines','find geodesic to Target','/../icons/draw.svg',"runTest2()")
-	
+	c2a(["Curves"],always,'geodesic1d','geodesic_lines','reference point','/../icons/xxeodesiccircle.svg',"runL()")
 
 	c2a(["Curves"],always,'geodesic4','geodesic_lines','append geodesic','/../icons/draw.svg',"runD()")
 	c2a(["Curves"],always,'geodesic2','geodesic_lines','create geodesic bunch','/../icons/draw.svg',"runall()")

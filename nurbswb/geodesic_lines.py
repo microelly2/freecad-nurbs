@@ -104,6 +104,7 @@ class Geodesic(FeaturePython):
 
 		if not patch:
 			obj.addProperty("App::PropertyInteger","gridsize","", "size of a grid cell").gridsize=20
+			obj.addProperty("App::PropertyInteger","forcesize","", "size of a grid cell").forcesize=100
 
 			obj.addProperty("App::PropertyFloat","u","Source", "u coord start point of geodesic").u=50
 			obj.addProperty("App::PropertyFloat","v","Source", "v coord start point of geodesic").v=50
@@ -214,9 +215,9 @@ def createGeodesic(obj=None):
 	a.mode="geodesic"
 
 	a.lang=50
-	a.lang2=00
-	a.lang3=00
-	a.direction=45
+	a.lang2=50
+	a.lang3=50
+	a.direction=30
 
 #	hideAllProps(a,['patch'])
 	return a
@@ -492,6 +493,9 @@ def updateStarG(fp):
 		pstart=sf.value(u,v)
 
 		(t1,t2)=sf.tangent(u,v)
+		nn=f.normalAt(u,v)
+		t2=t1.cross(nn)
+		t2.normalize()
 		t=FreeCAD.Vector(np.cos(np.pi*-d/180)*t1*-1+np.sin(-np.pi*-d/180)*t2*-1)
 
 		shapas=''
@@ -500,10 +504,7 @@ def updateStarG(fp):
 
 		puvs=[]
 		nuvs=[]
-
-
 		uvsarr=[]
-
 
 		lang3=int(round(10.0*fp.lang3/fp.gridsize))
 		lang=int(round(10*fp.lang/fp.gridsize))
@@ -522,12 +523,17 @@ def updateStarG(fp):
 #				print ("erzeuge ribbe",i)
 				a=t.dot(t1)
 				b=t.dot(t2)
+				#a,b=b,a
 				de=-180./np.pi*np.arctan2(b,a)
 				if i==lang3 : color='0 1 0'
 				#else: color='0 1 1'
 				else: color='1 1 0'
-				r1,(u1,v1),uvs1 = genrib(fp,u,v,de+90+2*d,lang2,ribflag,color)
-				r2,(u2,v2),uvs2 = genrib(fp,u,v,de-90+2*d,lang2,ribflag,color)
+				r1,(u1,v1),uvs1 = genrib(fp,u,v,de-90,lang2,ribflag,color)
+				r2,(u2,v2),uvs2 = genrib(fp,u,v,de+90,lang2,ribflag,color)
+
+#				r1,(u1,v1),uvs1 = genrib(fp,u,v,de+90+2*d,lang2,ribflag,color)
+#				r2,(u2,v2),uvs2 = genrib(fp,u,v,de+90-2*d,lang2,ribflag,color)
+
 				nuvs += [(u1,v1)]
 				puvs += [(u2,v2)]
 				uvs2.reverse()
@@ -575,14 +581,13 @@ def updateStarG(fp):
 
 			pts += [ p]
 			(t1,t2)=sf.tangent(u,v)
+			nn=f.normalAt(u,v)
+			t2=t1.cross(nn)
+
 			t=p-last
 			t.normalize()
 			tbb=time.time()
 			# print ("time aa bb,loop",tbb-taa,i,(tbb-taa)/fp.lang*1000000/lang2)
-
-
-
-
 
 		#-------------------------------------
 
@@ -590,12 +595,11 @@ def updateStarG(fp):
 		v=vmin + (vmax-vmin)*v0
 
 		(t1,t2)=sf.tangent(u,v)
+		nn=f.normalAt(u,v)
+		t2=t1.cross(nn)
+		t2.normalize()
+
 		t=FreeCAD.Vector(np.cos(np.pi*d/180)*t1+np.sin(np.pi*d/180)*t2)
-
-#		shapas=''
-
-#		puvs += [(u,v)]
-#		nuvs += [(u,v)]
 
 		puvs.reverse()
 		nuvs.reverse()
@@ -615,11 +619,19 @@ def updateStarG(fp):
 #				print ("erzeuge ribbe",i)
 				a=t.dot(t1)
 				b=t.dot(t2)
+				a,b=b,a
 				de=180./np.pi*np.arctan2(b,a)
+				
 				if i==lang: color='1 0 0'
 				else: color='1 1 0'
-				r1,(u1,v1),uvs1 = genrib(fp,u,v,de+90,lang2,ribflag,color)
-				r2,(u2,v2),uvs2 = genrib(fp,u,v,de-90,lang2,ribflag,color)
+#				r1,(u1,v1),uvs1 = genrib(fp,u,v,de+90-2*d,lang2,ribflag,color)
+#				r2,(u2,v2),uvs2 = genrib(fp,u,v,de-90-2*d,lang2,ribflag,color)
+
+				r1,(u1,v1),uvs1 = genrib(fp,u,v,de+180,lang2,ribflag,color)
+				r2,(u2,v2),uvs2 = genrib(fp,u,v,de+0,lang2,ribflag,color)
+
+
+
 				if 1:
 					puvs += [(u1,v1)]
 					nuvs += [(u2,v2)]
@@ -665,6 +677,9 @@ def updateStarG(fp):
 
 			pts += [ p]
 			(t1,t2)=sf.tangent(u,v)
+			nn=f.normalAt(u,v)
+			t2=t1.cross(nn)
+
 			t=p-last
 			t.normalize()
 			tbb=time.time()
@@ -1357,7 +1372,7 @@ def approx_geodesic():
 import numpy as np
 import Draft
 
-def genribA(f,u=50,v=50,d=0,lang=30):
+def genribA(f,u=50,v=50,d=0,lang=30,gridsize=10):
 		''' erzeugt eine rippe fuer color grid '''
 
 		pts=[]
@@ -1373,7 +1388,7 @@ def genribA(f,u=50,v=50,d=0,lang=30):
 		v=vmin-(vmin-vmax)*v/100
 
 		(t1,t2)=sf.tangent(u,v)
-		(t2,t1)=sf.tangent(u,v)
+#		(t2,t1)=sf.tangent(u,v)
 #		print t1
 		nn=f.normalAt(u,v)
 		#t2=t1.dot(nn)
@@ -1397,9 +1412,25 @@ def genribA(f,u=50,v=50,d=0,lang=30):
 
 
 			last=sf.value(u,v)
-			gridsize=10
+			
+#			gridsize=10
 			p2=last+t*gridsize*0.1
 			(u1,v1)=sf.parameter(p2)
+
+			if 0:
+				
+				(t1a,t2a)=sf.tangent(u1,v1)
+
+				p2m=last+t*gridsize*0.1*0.5
+				(u1m,v1m)=sf.parameter(p2m)
+				
+				ta=sf.value(u1,v1)-sf.value(u1m,v1m)
+				ta.normalize()
+
+				p2c=last+ta*gridsize*0.1
+				(u1,v1)=sf.parameter(p2c)
+
+
 			(u,v)=(u1,v1)
 
 			#restrict to area inside the Face
@@ -1419,7 +1450,7 @@ def genribA(f,u=50,v=50,d=0,lang=30):
 
 			#compute the further direction of the geodesic
 			(t1,t2)=sf.tangent(u,v)
-			(t2,t1)=sf.tangent(u,v)
+#			(t2,t1)=sf.tangent(u,v)
 			ta=p-last
 			try: 
 				ta.normalize()
@@ -1452,12 +1483,14 @@ def updateDistance(fp):
 	starnorms=[]
 	dr=24
 #	dr=12
+	dr=24
 #	lang=100
+	lang=int(round(lang/(0.1*fp.gridsize)))
 
 	comp=[]
 
 	for d in range(dr):
-		pts,norms,tans=genribA(f,u=u,v=v,d=360/dr*d,lang=lang)
+		pts,norms,tans=genribA(f,u=u,v=v,d=360/dr*d,lang=lang,gridsize=fp.gridsize)
 		comp += [Part.makePolygon([FreeCAD.Vector(p) for p in pts])]
 
 		star += [pts]
@@ -1466,29 +1499,33 @@ def updateDistance(fp):
 
  
 	dists=[]
+	
 	for d in range (dr):
 		distd=[]
 		#for i in range(lang):
 		for i in range(lang+1):
-			d2=d+1
-			if d2>=dr: d2=0
-			dd=FreeCAD.Vector(star[d][i]-star[d-1][i]).Length + FreeCAD.Vector(star[d][i]-star[d2][i]).Length -2*i*np.sin(np.pi/180*360/dr)
+			d2 = d+1 if d+1<dr else 0
 
 			dd=FreeCAD.Vector(star[d][i]-star[d-1][i]).Length + FreeCAD.Vector(star[d][i]-star[d2][i]).Length -4*i*np.sin(0.5*np.pi/180*360/dr)
+
+			dd=FreeCAD.Vector(star[d][i]-star[d-1][i]).Length + FreeCAD.Vector(star[d][i]-star[d2][i]).Length -4*i*np.sin(0.5*np.pi/180*360/dr)*0.1*fp.gridsize
+
 
 			if fp.relativeForce:
 				dd=dd/(2*i*np.sin(np.pi/180*360/dr))
 			
 			if fp.thresholdForce>0:
-				if abs(dd)<fp.thresholdForce:
+				if abs(dd)<fp.thresholdForce*0.01:
 					dd=0
+			# generelle schwelle
+			if abs(dd)<0.1: dd=0
 
 			distd += [dd]
 
 		dists += [distd]
 		h=i*np.sin(np.pi/180*360/dr)
 
-	factor=fp.gridsize*0.1
+	factor=fp.forcesize
 
 	dists=np.array(dists)*factor
 	rstar=np.array(star).swapaxes(0,1)
@@ -1511,14 +1548,47 @@ def updateDistance(fp):
 						FreeCAD.Vector(rstar[i,j]),
 						FreeCAD.Vector(rstar[i,j]+dists[j,i]*nf*rstarnorms[i,j])],
 						color='1 1 0',name=None)
+
+
 				else:
 					cp += colorPath([
 						FreeCAD.Vector(rstar[i,j]),
 						FreeCAD.Vector(rstar[i,j]-dists[j,i]*nf*rstarnorms[i,j])],
 						color='1 0 0',name=None)
 
-				if i==lang:
-					print ("dists,",j,dists[j,i],round(dists[j,i]- 2*i*np.sin(0.5*np.pi/180*360/dr),2))
+				if j==dr-1: j2=0
+				else: j2=j+1
+				if j<dr and i>0:
+					dxd=FreeCAD.Vector(0.02,0.02,0.02)
+
+					if dists[j,i]>0: color='1 1 0'
+					else: color='1 0 0'
+
+					cp += colorPath([
+							FreeCAD.Vector(star[j][i])+FreeCAD.Vector(star[j][i]-star[j2][i]).normalize()*(-1)*i*np.sin(0.5*np.pi/180*360/dr)*0.1*fp.gridsize,
+							FreeCAD.Vector(star[j2][i])+FreeCAD.Vector(star[j2][i]-star[j][i]).normalize()*(-1)*i*np.sin(0.5*np.pi/180*360/dr)*0.1*fp.gridsize
+							],
+							color=color,name=None)
+
+					if 1:
+						cp += colorPath([
+								FreeCAD.Vector(star[j][i])+dxd,
+								FreeCAD.Vector(star[j][i])+dxd+FreeCAD.Vector(star[j][i]-star[j-1][i]).normalize()*(-1)*i*np.sin(0.5*np.pi/180*360/dr)*0.1*fp.gridsize
+								],
+								color='0 0.3 0',name=None)
+						cp += colorPath([
+								FreeCAD.Vector(star[j][i])+FreeCAD.Vector(star[j][i]-star[j2][i]).normalize()*(-1)*i*np.sin(0.5*np.pi/180*360/dr)*0.1*fp.gridsize,
+								FreeCAD.Vector(star[j][i]),
+								],
+								color='0 0.4 0.',name=None)
+
+
+
+				if 0 and i==lang:
+					print ("dists absolut a promille,",j,
+						round(dists[j,i]/factor,2),
+						round(1000.*dists[j,i]/(i*np.pi/dr)/factor,2),i)
+
 			comp += [Part.makePolygon([FreeCAD.Vector(p) for p in pps])]
 
 
@@ -1541,10 +1611,12 @@ def runE():
 	a.v=45
 	a.gridsize=200
 
+
 	a.u=50
 	a.v=50
 	a.lang=100
-	a.gridsize=100
+	a.gridsize=10
+	a.forcesize=10
 
 	
 	a.flipNormals=True
@@ -1555,4 +1627,40 @@ def runE():
 	a.mode="distance"
 	
 	return a
+
+
+
+
+def runL():
+	''' create Label'''
+	import Draft
+	l = Draft.makeLabel(
+		targetpoint=FreeCAD.Vector (0.0, -18.226360321044922, 53.260826110839844),
+#		target=(FreeCAD.ActiveDocument.Box,(["Vertex2"])),
+#		target=(App.ActiveDocument.Poles),
+		direction='Horizontal',
+		labeltype='Position',
+#		placement=FreeCAD.Placement(FreeCAD.Vector (0.0, 63.980281829833984, 78.24977111816406),
+#		FreeCAD.Rotation(0.5, 0.5, 0.5, 0.5))
+	)
+
+	l.LabelType = u"Custom"
+	l.Label="MessPunkt AA"
+	l.ViewObject.DisplayMode = u"2D text"
+	l.ViewObject.TextSize = '15 mm'
+	l.CustomText = ["J3"]
+	App.activeDocument().recompute()
+
+	obj=l
+
+	obj.addProperty("App::PropertyLink","obj","","surface object").obj=App.ActiveDocument.Poles
+	obj.addProperty("App::PropertyInteger","facenumber","", "number of the face")
+	obj.addProperty("App::PropertyFloat","u","Source", "u coord start point of geodesic").u=50
+	obj.addProperty("App::PropertyFloat","v","Source", "v coord start point of geodesic").v=50
+	App.activeDocument().recompute()
+	obj.TargetPoint=obj.obj.Shape.Faces[0].Surface.value(obj.u*0.01,obj.v*0.01)
+
+
+# runL()
+
 
