@@ -16,6 +16,8 @@
 # chinese whispers
 
 import FreeCAD,FreeCADGui,Sketcher,Part
+import Draft
+
 
 App = FreeCAD
 Gui = FreeCADGui
@@ -33,19 +35,6 @@ class FeaturePython:
 
 	def attach(self, vobj):
 		self.Object = vobj.Object
-
-	def XclaimChildren(self):
-		fp=self.Object
-		print "claim children for "  + self.Object.Name
-		#try;
-		grp=[
-				App.ActiveDocument.getObject(fp.Name+"_"+"VBound"),
-				App.ActiveDocument.getObject(fp.Name+"_"+"UBound"),
-				App.ActiveDocument.getObject(fp.Name+"_"+"Grid"),
-			]
-		return grp
-#		except:
-		return self.Object.Group
 
 	def __getstate__(self):
 		return None
@@ -180,8 +169,7 @@ class Geodesic(FeaturePython):
 
 
 	def execute(self, fp):
-		try: fp.mode
-		except:pass
+
 		if fp.mode=="geodesic":
 			fp.Shape=updateStarG(fp)
 		if fp.mode=="patch":
@@ -194,8 +182,6 @@ class Geodesic(FeaturePython):
 			fp.Shape=updateStarC(fp)
 		if fp.mode=="distance":
 			fp.Shape=updateDistance(fp)
-			
-		
 
 
 
@@ -950,16 +936,14 @@ def updatePatch_old(fp):
 		shape2=Part.Compound([shape,pshape,nshape])
 
 		if gridon:
+
 			name="geodesicGrid"
 			drawColorLines(name,shapas)
 
 			name="borders"
 			drawColorLines(name,riba+ribb)
 
-
-		#shape2=shape
 		return shape2
-	#Draft.makeWire(pts)
 
 
 
@@ -1042,14 +1026,15 @@ def updatepath(fp,redirect,flip):
 		vt=fp.vt*0.01
 		pend=sf.value(ut,vt)
 		pt=Part.Point(sf.value(ut,vt))
-#		print "Abstand"
-#		print pt
-#		print shape.distToShape(pt.toShape())
-		fp.dist= shape.distToShape(pt.toShape())
-		print ("Abstand",pt,pend,shape.distToShape(pt.toShape())[0],(pt-pend).Length)
+		print "Abstand"
+		print pt
+		print shape.distToShape(pt.toShape())
+		t= shape.distToShape(pt.toShape())
+		print t
+		print t[0]
+		fp.dist=t[0]
 
 		return shape
-	#Draft.makeWire(pts)
 
 
 def updateStarC(fp):
@@ -1068,6 +1053,7 @@ def updateStarC(fp):
 
 
 def runtest1():
+	'''testfall fuer grundflaechen'''
 	a=createGeodesic(obj=App.ActiveDocument.Poles)
 	b=createGeodesic(obj=App.ActiveDocument.Cylinder)
 	d=createGeodesic(obj=App.ActiveDocument.Cone)
@@ -1075,17 +1061,19 @@ def runtest1():
 
 
 def run():
+	'''geodesic auf koerper erzeugen'''
 	a=createGeodesic(obj=Gui.Selection.getSelection()[0])
 
 def runP():
+	'''pfad(e) $2 auf geodesic $1 auflegen'''
 	a=createPatch(obj=Gui.Selection.getSelection()[0],
 	wire=Gui.Selection.getSelection()[1])
 
 
 def runD():
+	'''geodesic erzeugen, die an eine geodesic andockt'''
 	a=createGeodesic()
 	a.pre=Gui.Selection.getSelection()[0]
-
 
 
 def runC():
@@ -1297,7 +1285,6 @@ def updatePatch(fp):
 def step():
 	''' geodesic an ziel ausrichten'''
 
-	print "huhuXXX"
 	a=App.ActiveDocument.Geodesic
 
 
@@ -1354,26 +1341,21 @@ def step():
 	print "hah ", better
 	return better
 
-def sustep(n=10):
+
+def approx_geodesic(n=10):
 	for i in range(n): 
 		print "------------step ",i
 		rc=step()
 		print "----------result ",rc
 		if not rc: break
-#
-
-def approx_geodesic():
-	sustep()
 
 
 
 
 
-import numpy as np
-import Draft
 
 def genribA(f,u=50,v=50,d=0,lang=30,gridsize=10):
-		''' erzeugt eine rippe fuer color grid '''
+		''' erzeugt eine rippe fuer color grid fuer kreis geodesics'''
 
 		pts=[]
 		norms=[]
@@ -1388,49 +1370,28 @@ def genribA(f,u=50,v=50,d=0,lang=30,gridsize=10):
 		v=vmin-(vmin-vmax)*v/100
 
 		(t1,t2)=sf.tangent(u,v)
-#		(t2,t1)=sf.tangent(u,v)
-#		print t1
 		nn=f.normalAt(u,v)
-		#t2=t1.dot(nn)
-#		print nn
-#		return
-#		print t2
+
 		a=np.cos(np.pi*d/180)*t1+np.sin(np.pi*d/180)*t2
 #		print a
 		t=FreeCAD.Vector(tuple(np.cos(np.pi*d/180)*t1+np.sin(np.pi*d/180)*t2))
 
 		lang=int(round(lang))
-		#print "loops genrib",lang
+
 		for i in range(lang+1):
 			pot=sf.value(u,v)
 			nn=f.normalAt(u,v)
+
 			u2=(u-umin)/(umax-umin)
 			v2=(v-vmin)/(vmax-vmin)
+
 			pts += [pot]
 			norms += [nn]
 			tans += [t]
 
-
 			last=sf.value(u,v)
-			
-#			gridsize=10
 			p2=last+t*gridsize*0.1
 			(u1,v1)=sf.parameter(p2)
-
-			if 0:
-				
-				(t1a,t2a)=sf.tangent(u1,v1)
-
-				p2m=last+t*gridsize*0.1*0.5
-				(u1m,v1m)=sf.parameter(p2m)
-				
-				ta=sf.value(u1,v1)-sf.value(u1m,v1m)
-				ta.normalize()
-
-				p2c=last+ta*gridsize*0.1
-				(u1,v1)=sf.parameter(p2c)
-
-
 			(u,v)=(u1,v1)
 
 			#restrict to area inside the Face
@@ -1441,16 +1402,10 @@ def genribA(f,u=50,v=50,d=0,lang=30,gridsize=10):
 
 			uvs += [(u,v)]
 
-			if u<umin or v<vmin or u>umax or v>vmax:
-				print "Abbruch!"
-				break
-
 			p=sf.value(u,v)
-#			pts += [p]
 
-			#compute the further direction of the geodesic
 			(t1,t2)=sf.tangent(u,v)
-#			(t2,t1)=sf.tangent(u,v)
+
 			ta=p-last
 			try: 
 				ta.normalize()
@@ -1460,7 +1415,10 @@ def genribA(f,u=50,v=50,d=0,lang=30,gridsize=10):
 
 		pts=np.array(pts)
 		norms=np.array(norms)
+
 		return pts,norms,tans
+
+
 
 def updateDistance(fp):
 
@@ -1618,7 +1576,6 @@ def runE():
 	a.gridsize=10
 	a.forcesize=10
 
-	
 	a.flipNormals=True
 
 	ViewProvider(a.ViewObject)
@@ -1630,10 +1587,10 @@ def runE():
 
 
 
+# fuer messpunkte zum andocken
 
 def runL():
 	''' create Label'''
-	import Draft
 	l = Draft.makeLabel(
 		targetpoint=FreeCAD.Vector (0.0, -18.226360321044922, 53.260826110839844),
 #		target=(FreeCAD.ActiveDocument.Box,(["Vertex2"])),

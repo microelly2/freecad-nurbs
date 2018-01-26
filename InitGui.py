@@ -286,6 +286,21 @@ def onspread():
 
 if FreeCAD.GuiUp:
 
+	# geodesics
+#	c2a(["Curves","Geodesic"],always,'geodesic3','geodesic_lines','create curvature star','/../icons/draw.svg',"runC()")
+	c2a(["Curves","Geodesic"],onselection1,'geodesic1','geodesic_lines','create geodesic','/../icons/geodesic.svg',"run()")
+
+	c2a(["Curves","Geodesic"],onselection1,'geodesic2','geodesic_lines','geodesic distance ','/../icons/geodesiccircle.svg',"runE()")
+	c2a(["Curves","Geodesic"],onselection2,'geodesic3','geodesic_lines','geodesic map patch to face','/../icons/patch.svg',"runP()")
+
+	c2a(["Curves","Geodesic"],ondocument,'geodesic4','geodesic_lines','reference point','/../icons/geodesic_ref.svg',"runL()")
+	c2a(["Curves","Geodesic"],onselection2,'geodesic5','geodesic_lines','find geodesic to Target','/../icons/geodesic_target.svg',"runTest2()")
+
+	c2a(["Curves","Geodesic"],onselection1,'geodesic6','geodesic_lines','append/concatenate geodesic','/../icons/geodesic_append.svg',"runD()")
+	c2a(["Curves","Geodesic"],onselection1,'geodesic7','geodesic_lines','create geodesic bunch','/../icons/geodesic_bunch.svg',"runall()")
+	
+
+
 	c1a(["Curves"],always,"scancut","cut Scanned Mesh ",'/../icons/mesh_cut.svg')
 	c1a(["Curves"],ondocument,"weighteditor","Weight Editor")
 
@@ -321,16 +336,6 @@ if FreeCAD.GuiUp:
 	c2a(["Curves"],always,'impSVG','shoe_importSVG','import svg file','/../icons/draw.svg',"import_svg()")
 	c2a(["Curves"],always,'expSVG','shoe_importSVG','export svg file','/../icons/draw.svg',"export_svg()")
 
-	c2a(["Curves"],always,'geodesic3','geodesic_lines','create curvature star','/../icons/draw.svg',"runC()")
-	c2a(["Curves"],always,'geodesic1','geodesic_lines','create geodesic','/../icons/geodesic.svg',"run()")
-	c2a(["Curves"],always,'geodesic1a','geodesic_lines','geodesic map patch to face','/../icons/patch.svg',"runP()")
-	c2a(["Curves"],always,'geodesic1b','geodesic_lines','geodesic distance ','/../icons/geodesiccircle.svg',"runE()")
-	c2a(["Curves"],always,'geodesic1c','geodesic_lines','find geodesic to Target','/../icons/draw.svg',"runTest2()")
-	c2a(["Curves"],always,'geodesic1d','geodesic_lines','reference point','/../icons/xxeodesiccircle.svg',"runL()")
-
-	c2a(["Curves"],always,'geodesic4','geodesic_lines','append geodesic','/../icons/draw.svg',"runD()")
-	c2a(["Curves"],always,'geodesic2','geodesic_lines','create geodesic bunch','/../icons/draw.svg',"runall()")
-	
 	c2a(["Curves"],always,'cnotrol','controlpanel','create a controlpanel','/../icons/draw.svg',"run()")
 	
 	c2a(["Curves"],always,'beziera','bezier','selected face to sketch','/../icons/draw.svg',"faceToSketch()")
@@ -426,8 +431,8 @@ if FreeCAD.GuiUp:
 
 	c2a(["Workspace"],ondocument,'DarkRoom','views',"Create Dark Room",'/../icons/darkroom.svg',"createdarkroom()","workspace")
 	c2a(["Workspace"],ondocument,'Light','views',"Create Light",'/../icons/light.svg',"createlight()","workspace")
-	c2a(["Workspace"],ondocument,'LightOn','views',"Light on",'/../icons/lighton.svg',"lightOn()","workspace")
-	c2a(["Workspace"],ondocument,'LightOff','views',"Light off",'/../icons/lighton.svg',"lightOff()","workspace")
+	c2a(["Workspace"],ondocument,'LightOn','views',"Light on",'/../icons/light_on.svg',"lightOn()","workspace")
+	c2a(["Workspace"],ondocument,'LightOff','views',"Light off",'/../icons/light_off.svg',"lightOff()","workspace")
 
 
 	c2a(["Needle"],ondocument,'Needle','needle','create a needle','/../icons/shoe.svg',"run()")
@@ -551,9 +556,9 @@ static char * nurbs_xpm[] = {
 
 		cmds2=['Nurbs_facedraw','Nurbs_patcha','Nurbs_patchb','Nurbs_folda']
 		
-		cmds3=['Nurbs_CreateWorkspace','Nurbs_CreateWSLink','Nurbs_ViewsQV','Nurbs_Views2H','Nurbs_DarkRoom']
+		cmds3=['Nurbs_CreateWorkspace','Nurbs_CreateWSLink','Nurbs_ViewsQV','Nurbs_Views2H','Nurbs_DarkRoom','Nurbs_LightOn','Nurbs_LightOff']
 		cmds4=['Nurbs_pta','Nurbs_ptb','Nurbs_ptc','Nurbs_ptd','Nurbs_pte']
-		cmds5=['Nurbs_geodesic1','Nurbs_geodesic1a','Nurbs_geodesic1b']
+		cmds5=['Nurbs_geodesic'+str(a+1) for a in range(6)]
 
 
 
