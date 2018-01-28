@@ -2,7 +2,7 @@
 #-------------------------------------------------
 #-- geodesics and patches
 #--
-#-- microelly 2018 v 0.2
+#-- microelly 2018 v 0.3
 #--
 #-- GNU Lesser General Public License (LGPL)
 #-------------------------------------------------
@@ -442,6 +442,7 @@ def updateStarG(fp):
 		u=fp.u
 		v=fp.v
 		obj=fp.obj
+		d0=d
 
 
 
@@ -472,9 +473,11 @@ def updateStarG(fp):
 		# print (umin,umax)
 
 		u0,v0=u,v
-		
+
 		u=umin + (umax-umin)*u
 		v=vmin + (vmax-vmin)*v
+
+		#u0,v0=u,v
 
 		pstart=sf.value(u,v)
 
@@ -483,6 +486,7 @@ def updateStarG(fp):
 		t2=t1.cross(nn)
 		t2.normalize()
 		t=FreeCAD.Vector(np.cos(np.pi*-d/180)*t1*-1+np.sin(-np.pi*-d/180)*t2*-1)
+
 
 		shapas=''
 		puvs=[(u,v)]
@@ -533,7 +537,6 @@ def updateStarG(fp):
 				if i==lang3:
 					ribb=r1+r2
 
-
 			pot=sf.value(u,v)
 			u2=(u-umin)/(umax-umin)
 			v2=(v-vmin)/(vmax-vmin)
@@ -551,6 +554,8 @@ def updateStarG(fp):
 			last=sf.value(u,v)
 			p2=last+t*0.1*fp.gridsize
 			(u1,v1)=sf.parameter(p2)
+			
+#			print ("pot",i,u,v,t,fp.gridsize,last,p2)
 			(u,v)=(u1,v1)
 			
 			if u<umin:u=umin
@@ -577,10 +582,12 @@ def updateStarG(fp):
 
 		#-------------------------------------
 
+		d=d0
 		u=umin + (umax-umin)*u0
 		v=vmin + (vmax-vmin)*v0
 
 		(t1,t2)=sf.tangent(u,v)
+
 		nn=f.normalAt(u,v)
 		t2=t1.cross(nn)
 		t2.normalize()
@@ -630,7 +637,6 @@ def updateStarG(fp):
 				if i==lang:
 					riba=r1+r2
 
-
 			pot=sf.value(u,v)
 			u2=(u-umin)/(umax-umin)
 			v2=(v-vmin)/(vmax-vmin)
@@ -648,6 +654,8 @@ def updateStarG(fp):
 			last=sf.value(u,v)
 			p2=last+t*fp.gridsize*0.1
 			(u1,v1)=sf.parameter(p2)
+#			print ("bpot",i,u,v,t,fp.gridsize,last,p2)
+#			print ("bpot",i,u,v,last)
 			(u,v)=(u1,v1)
 
 			if u<umin:u=umin
@@ -658,6 +666,11 @@ def updateStarG(fp):
 			if u<umin or v<vmin or u>umax or v>vmax:
 				print "qaBBruch!"
 				break
+
+
+			ua=umin + (umax-umin)*u
+			va=vmin + (vmax-vmin)*v
+
 
 			p=sf.value(u,v)
 
@@ -711,6 +724,12 @@ def updateStarG(fp):
 #		print pt
 #		print shape.distToShape(pt.toShape())
 #		print (pt,shape.distToShape(pt.toShape())[0])
+
+		ut=umin + (umax-umin)*ut
+		vt=vmin + (vmax-vmin)*vt
+
+
+
 
 
 		pend=sf.value(ut,vt)
@@ -1354,7 +1373,91 @@ def approx_geodesic(n=10):
 
 
 
-def genribA(f,u=50,v=50,d=0,lang=30,gridsize=10):
+def genribA(f,u=50,v=50,d=0,lang=30,gridsize=20):
+		''' erzeugt eine rippe fuer color grid fuer kreis geodesics'''
+
+		pts=[]
+		norms=[]
+		tans=[]
+		uvs=[(u,v)]
+
+		sf=f.Surface
+		umin,umax,vmin,vmax=f.ParameterRange
+
+#		pts = [sf.value(v*0.01,u*0.01)]
+		u=umin-(umin-umax)*u/100
+		v=vmin-(vmin-vmax)*v/100
+
+
+#		print ("uv neu xx",u,v)
+
+		(t1,t2)=sf.tangent(u,v)
+		nn=f.normalAt(u,v)
+
+		t2=t1.cross(nn)
+		t2.normalize()
+
+
+		a=np.cos(np.pi*d/180)*t1+np.sin(np.pi*d/180)*t2
+#		print a
+		t=FreeCAD.Vector(tuple(np.cos(np.pi*d/180)*t1+np.sin(np.pi*d/180)*t2))
+
+		lang=int(round(lang))
+
+		for i in range(lang+1):
+			pot=sf.value(u,v)
+			nn=f.normalAt(u,v)
+
+			u2=(u-umin)/(umax-umin)
+			v2=(v-vmin)/(vmax-vmin)
+
+			
+			pts += [pot]
+			norms += [nn]
+			tans += [t]
+
+			last=sf.value(u,v)
+			p2=last+t*gridsize*0.1
+			#print ("apot",i,u,v,last)
+			(u1,v1)=sf.parameter(p2)
+			(u,v)=(u1,v1)
+
+
+
+#			last=sf.value(u,v)
+#			p2=last+t*fp.gridsize*0.1
+#			(u1,v1)=sf.parameter(p2)
+#			(u,v)=(u1,v1)
+
+
+
+
+			#restrict to area inside the Face
+			if u<umin:u=umin
+			if v<vmin:v=vmin
+			if u>umax:u=umax
+			if v>vmax:v=vmax
+
+			uvs += [(u,v)]
+
+			p=sf.value(u,v)
+
+			(t1,t2)=sf.tangent(u,v)
+
+			ta=p-last
+			try: 
+				ta.normalize()
+				t=ta
+			except:
+				pass
+
+		pts=np.array(pts)
+		norms=np.array(norms)
+
+		return pts,norms,tans
+
+
+def genribB(f,u=50,v=50,d=0,lang=30,gridsize=20):
 		''' erzeugt eine rippe fuer color grid fuer kreis geodesics'''
 
 		pts=[]
@@ -1366,8 +1469,9 @@ def genribA(f,u=50,v=50,d=0,lang=30,gridsize=10):
 		umin,umax,vmin,vmax=f.ParameterRange
 
 
-		u=umin-(umin-umax)*u/100
-		v=vmin-(vmin-vmax)*v/100
+		u=u*0.01
+		v=v*0.01
+#		print ("uv neu",u,v)
 
 		(t1,t2)=sf.tangent(u,v)
 		nn=f.normalAt(u,v)
@@ -1573,7 +1677,7 @@ def runE():
 	a.u=50
 	a.v=50
 	a.lang=100
-	a.gridsize=10
+	a.gridsize=20
 	a.forcesize=10
 
 	a.flipNormals=True
@@ -1585,13 +1689,370 @@ def runE():
 	
 	return a
 
+#-------------------------------
+# aus Draft.py
 
+if FreeCAD.GuiUp:
+	import FreeCADGui, WorkingPlane
+	from PySide import QtCore
+	from PySide.QtCore import QT_TRANSLATE_NOOP
+	gui = True
+
+class MyDraftLabel:
+	
+	"The Draft Label object"
+	
+	def __init__(self,obj):
+		obj.Proxy = self
+		obj.addProperty("App::PropertyPlacement","Placement","Base",QT_TRANSLATE_NOOP("App::Property","The placement of this object"))
+		obj.addProperty("App::PropertyDistance","StraightDistance","Base",QT_TRANSLATE_NOOP("App::Property","The length of the straight segment"))
+		obj.addProperty("App::PropertyVector","TargetPoint","Base",QT_TRANSLATE_NOOP("App::Property","The point indicated by this label"))
+		obj.addProperty("App::PropertyVectorList","Points","Base",QT_TRANSLATE_NOOP("App::Property","The points defining the label polyline"))
+		obj.addProperty("App::PropertyEnumeration","StraightDirection","Base",QT_TRANSLATE_NOOP("App::Property","The direction of the straight segment")).StraightDirection = ["Horizontal","Vertical","Custom"]
+		obj.addProperty("App::PropertyEnumeration","LabelType","Base",QT_TRANSLATE_NOOP("App::Property","The type of information shown by this label"))
+		obj.LabelType = ["Custom","Name","Label","Position","Length","Area","Volume","Tag","Material"]
+		obj.addProperty("App::PropertyLinkSub","Target","Base",QT_TRANSLATE_NOOP("App::Property","The target object of this label"))
+		obj.addProperty("App::PropertyStringList","CustomText","Base",QT_TRANSLATE_NOOP("App::Property","The text to display when type is set to custom"))
+		obj.addProperty("App::PropertyStringList","Text","Base",QT_TRANSLATE_NOOP("App::Property","The text displayed by this label"))
+
+		obj.addProperty("App::PropertyLink","obj","Source","surface object")
+		obj.addProperty("App::PropertyInteger","facenumber","Source", "number of the face")
+		obj.addProperty("App::PropertyFloat","u","Source", "u coord start point of geodesic").u=50
+		obj.addProperty("App::PropertyFloat","v","Source", "v coord start point of geodesic").v=50
+
+		
+		
+		obj.setEditorMode("Text",1)
+		obj.StraightDistance = 15
+		obj.TargetPoint = FreeCAD.Vector(2,-1,0)
+		obj.CustomText = "Label"
+		self.Type = "Label"
+
+
+	def execute(self,obj):
+		if obj.StraightDirection != "Custom":
+			p1 = obj.Placement.Base
+			if obj.StraightDirection == "Horizontal":
+				p2 = FreeCAD.Vector(obj.StraightDistance.Value,0,0)
+			else:
+				p2 = FreeCAD.Vector(0,obj.StraightDistance.Value,0)
+			p2 = obj.Placement.multVec(p2)
+			# p3 = obj.Placement.multVec(obj.TargetPoint)
+			p3 = obj.TargetPoint
+			obj.Points = [p1,p2,p3]
+		if obj.LabelType == "Custom":
+			if obj.CustomText:
+				obj.Text = obj.CustomText
+		elif obj.Target:
+			if obj.LabelType == "Name":
+				obj.Text = [obj.Target[0].Name]
+			elif obj.LabelType == "Label":
+				obj.Text = [obj.Target[0].Label]
+			elif obj.LabelType == "Tag":
+				if hasattr(obj.Target[0],"Tag"):
+					obj.Text = [obj.Target[0].Tag]
+			elif obj.LabelType == "Material":
+				if hasattr(obj.Target[0],"Material"):
+					if hasattr(obj.Target[0].Material,"Label"):
+						obj.Text = [obj.Target[0].Material.Label]
+			elif obj.LabelType == "Position":
+				p = obj.Target[0].Placement.Base
+				if obj.Target[1]:
+					if "Vertex" in obj.Target[1][0]:
+						p = obj.Target[0].Shape.Vertexes[int(obj.Target[1][0][6:])-1].Point
+				obj.Text = [FreeCAD.Units.Quantity(x,FreeCAD.Units.Length).UserString for x in tuple(p)]
+			elif obj.LabelType == "Length":
+				if obj.Target[0].isDerivedFrom("Part::Feature"):
+					if hasattr(obj.Target[0].Shape,"Length"):
+						obj.Text = [FreeCAD.Units.Quantity(obj.Target[0].Shape.Length,FreeCAD.Units.Length).UserString]
+					if "Edge" in obj.Target[1][0]:
+						obj.Text = [FreeCAD.Units.Quantity(obj.Target[0].Shape.Edges[int(obj.Target[1][0][4:])-1].Length,FreeCAD.Units.Length).UserString]
+			elif obj.LabelType == "Area":
+				if obj.Target[0].isDerivedFrom("Part::Feature"):
+					if hasattr(obj.Target[0].Shape,"Area"):
+						obj.Text = [FreeCAD.Units.Quantity(obj.Target[0].Shape.Area,FreeCAD.Units.Area).UserString]
+					if "Face" in obj.Target[1][0]:
+						obj.Text = [FreeCAD.Units.Quantity(obj.Target[0].Shape.Faces[int(obj.Target[1][0][4:])-1].Area,FreeCAD.Units.Area).UserString]
+			elif obj.LabelType == "Volume":
+				if obj.Target[0].isDerivedFrom("Part::Feature"):
+					if hasattr(obj.Target[0].Shape,"Volume"):
+						obj.Text = [FreeCAD.Units.Quantity(obj.Target[0].Shape.Volume,FreeCAD.Units.Volume).UserString]
+
+		try: _=obj.obj.Sahpe
+		except: return
+		
+		f=obj.obj.Shape.Faces[obj.facenumber]
+		sf=f.Surface
+		umin,umax,vmin,vmax=f.ParameterRange
+
+		u=umin-(umin-umax)*obj.u/100
+		v=vmin-(vmin-vmax)*obj.v/100
+		print ("uv neu  aa",u,v)
+
+	
+
+		obj.TargetPoint=obj.obj.Shape.Faces[obj.facenumber].Surface.value(u,v)
+		obj.CustomText=[obj.Label,str((round(obj.TargetPoint.x,1),round(obj.TargetPoint.y,1),round(obj.TargetPoint.z,1))),str((obj.u,obj.v))]
+
+
+	def onChanged(self,obj,prop):
+		if prop in ['u','v','Label']:
+			self.execute(obj)
+		pass
+
+	def __getstate__(self):
+		return self.Type
+
+	def __setstate__(self,state):
+		if state:
+			self.Type = state
+
+
+class MyViewProviderDraftLabel:
+
+	"A View Provider for the Draft Label"
+
+	def __init__(self,vobj):
+		vobj.addProperty("App::PropertyLength","TextSize","Base",QT_TRANSLATE_NOOP("App::Property","The size of the text"))
+		vobj.addProperty("App::PropertyFont","TextFont","Base",QT_TRANSLATE_NOOP("App::Property","The font of the text"))
+		vobj.addProperty("App::PropertyLength","ArrowSize","Base",QT_TRANSLATE_NOOP("App::Property","The size of the arrow"))
+		vobj.addProperty("App::PropertyEnumeration","TextAlignment","Base",QT_TRANSLATE_NOOP("App::Property","The vertical alignment of the text"))
+		vobj.addProperty("App::PropertyEnumeration","ArrowType","Base",QT_TRANSLATE_NOOP("App::Property","The type of arrow of this label"))
+		vobj.addProperty("App::PropertyEnumeration","Frame","Base",QT_TRANSLATE_NOOP("App::Property","The type of frame around the text of this object"))
+		vobj.addProperty("App::PropertyFloat","LineWidth","Base",QT_TRANSLATE_NOOP("App::Property","Line width"))
+		vobj.addProperty("App::PropertyColor","LineColor","Base",QT_TRANSLATE_NOOP("App::Property","Line color"))
+		vobj.addProperty("App::PropertyColor","TextColor","Base",QT_TRANSLATE_NOOP("App::Property","Text color"))
+		vobj.addProperty("App::PropertyInteger","MaxChars","Base",QT_TRANSLATE_NOOP("App::Property","The maximum number of characters on each line of the text box"))
+		vobj.Proxy = self
+		self.Object = vobj.Object
+		vobj.TextAlignment = ["Top","Middle","Bottom"]
+		vobj.TextAlignment = "Middle"
+		vobj.LineWidth = 1#getParam("linewidth",1)
+		#vobj.TextFont = getParam("textfont")
+		vobj.TextSize = 10 #getParam("textheight",1)
+		vobj.ArrowSize = 1 # getParam("arrowsize",1)
+		# vobj.ArrowType = arrowtypes
+		# vobj.ArrowType = arrowtypes[getParam("dimsymbol")]
+		vobj.Frame = ["None","Rectangle"]
+
+	def getIcon(self):
+		import Draft_rc
+		return ":/icons/Draft_Label.svg"
+
+	def claimChildren(self):
+		return []
+
+	def attach(self,vobj):
+		from pivy import coin
+		self.arrow = coin.SoSeparator()
+		self.arrowpos = coin.SoTransform()
+		self.arrow.addChild(self.arrowpos)
+		self.matline = coin.SoMaterial()
+		self.drawstyle = coin.SoDrawStyle()
+		self.drawstyle.style = coin.SoDrawStyle.LINES
+		self.lcoords = coin.SoCoordinate3()
+		self.line = coin.SoType.fromName("SoBrepEdgeSet").createInstance()
+		self.mattext = coin.SoMaterial()
+		textdrawstyle = coin.SoDrawStyle()
+		textdrawstyle.style = coin.SoDrawStyle.FILLED
+		self.textpos = coin.SoTransform()
+		self.font = coin.SoFont()
+		self.text2d = coin.SoText2()
+		self.text3d = coin.SoAsciiText()
+		self.text2d.string = self.text3d.string = "Label" # need to init with something, otherwise, crash!
+		self.text2d.justification = coin.SoText2.RIGHT
+		self.text3d.justification = coin.SoAsciiText.RIGHT
+		self.fcoords = coin.SoCoordinate3()
+		self.frame = coin.SoType.fromName("SoBrepEdgeSet").createInstance()
+		self.node2d = coin.SoGroup()
+		self.node2d.addChild(self.matline)
+		self.node2d.addChild(self.arrow)
+		self.node2d.addChild(self.drawstyle)
+		self.node2d.addChild(self.lcoords)
+		self.node2d.addChild(self.line)
+		self.node2d.addChild(self.arrow)
+		self.node2d.addChild(self.mattext)
+		self.node2d.addChild(textdrawstyle)
+		self.node2d.addChild(self.textpos)
+		self.node2d.addChild(self.font)
+		self.node2d.addChild(self.text2d)
+		self.node2d.addChild(self.fcoords)
+		self.node2d.addChild(self.frame)
+		self.node3d = coin.SoGroup()
+		self.node3d.addChild(self.matline)
+		self.node3d.addChild(self.arrow)
+		self.node3d.addChild(self.drawstyle)
+		self.node3d.addChild(self.lcoords)
+		self.node3d.addChild(self.line)
+		self.node3d.addChild(self.arrow)
+		self.node3d.addChild(self.mattext)
+		self.node3d.addChild(textdrawstyle)
+		self.node3d.addChild(self.textpos)
+		self.node3d.addChild(self.font)
+		self.node3d.addChild(self.text3d)
+		self.node3d.addChild(self.fcoords)
+		self.node3d.addChild(self.frame)
+		vobj.addDisplayMode(self.node2d,"2D text")
+		vobj.addDisplayMode(self.node3d,"3D text")
+		self.onChanged(vobj,"LineColor")
+		self.onChanged(vobj,"TextColor")
+		self.onChanged(vobj,"ArrowSize")
+
+	def getDisplayModes(self,vobj):
+		return ["2D text","3D text"]
+
+	def getDefaultDisplayMode(self):
+		return "2D text"
+
+	def setDisplayMode(self,mode):
+		return mode
+
+	def updateData(self,obj,prop):
+		if prop == "Points":
+			from pivy import coin
+			if len(obj.Points) >= 2:
+				self.line.coordIndex.deleteValues(0)
+				self.lcoords.point.setValues(obj.Points)
+				self.line.coordIndex.setValues(0,len(obj.Points),range(len(obj.Points)))
+				self.onChanged(obj.ViewObject,"TextSize")
+				self.onChanged(obj.ViewObject,"ArrowType")
+			if obj.StraightDistance > 0:
+				self.text2d.justification = coin.SoText2.RIGHT
+				self.text3d.justification = coin.SoAsciiText.RIGHT
+			else:
+				self.text2d.justification = coin.SoText2.LEFT
+				self.text3d.justification = coin.SoAsciiText.LEFT
+		elif prop == "Text":
+			if obj.Text:
+				self.text2d.string.setValues([l.encode("utf8") for l in obj.Text if l])
+				self.text3d.string.setValues([l.encode("utf8") for l in obj.Text if l])
+				self.onChanged(obj.ViewObject,"TextAlignment")
+				
+	def getTextSize(self,vobj):
+		from pivy import coin
+		if vobj.DisplayMode == "3D text":
+			text = self.text3d
+		else:
+			text = self.text2d
+		v = FreeCADGui.ActiveDocument.ActiveView.getViewer().getSoRenderManager().getViewportRegion()
+		b = coin.SoGetBoundingBoxAction(v)
+		text.getBoundingBox(b)
+		return b.getBoundingBox().getSize().getValue()
+
+	def onChanged(self,vobj,prop):
+		if prop == "LineColor":
+			if hasattr(vobj,"LineColor"):
+				l = vobj.LineColor
+				self.matline.diffuseColor.setValue([l[0],l[1],l[2]])
+		elif prop == "TextColor":
+			if hasattr(vobj,"TextColor"):
+				l = vobj.TextColor
+				self.mattext.diffuseColor.setValue([l[0],l[1],l[2]])
+		elif prop == "LineWidth":
+			if hasattr(vobj,"LineWidth"):
+				self.drawstyle.lineWidth = vobj.LineWidth
+		elif (prop == "TextFont"):
+			if hasattr(vobj,"TextFont"):
+				self.font.name = vobj.TextFont.encode("utf8")
+		elif prop in ["TextSize","TextAlignment"]:
+			if hasattr(vobj,"TextSize") and hasattr(vobj,"TextAlignment"):
+				self.font.size = vobj.TextSize.Value
+				v = FreeCAD.Vector(1,0,0)
+				if vobj.Object.StraightDistance > 0:
+					v = v.negative()
+				v.multiply(vobj.TextSize/10)
+				tsize = self.getTextSize(vobj)
+				if len(vobj.Object.Text) > 1:
+					v = v.add(FreeCAD.Vector(0,(tsize[1]-1)*2,0))
+				if vobj.TextAlignment == "Top":
+					v = v.add(FreeCAD.Vector(0,-tsize[1]*2,0))
+				elif vobj.TextAlignment == "Middle":
+					v = v.add(FreeCAD.Vector(0,-tsize[1],0))
+				v = vobj.Object.Placement.Rotation.multVec(v)
+				pos = vobj.Object.Placement.Base.add(v)
+				self.textpos.translation.setValue(pos)
+				self.textpos.rotation.setValue(vobj.Object.Placement.Rotation.Q)
+		elif prop == "ArrowType":
+			if hasattr(vobj,"ArrowType"):
+				if len(vobj.Object.Points) > 1:
+					if hasattr(self,"symbol"):
+						if self.arrow.findChild(self.symbol) != -1:
+								self.arrow.removeChild(self.symbol)
+					s = arrowtypes.index(vobj.ArrowType)
+					self.symbol = dimSymbol(s)
+					self.arrow.addChild(self.symbol)
+					self.arrowpos.translation.setValue(vobj.Object.Points[-1])
+					v1 = vobj.Object.Points[-2].sub(vobj.Object.Points[-1])
+					if not DraftVecUtils.isNull(v1):
+						v1.normalize()
+						import DraftGeomUtils
+						v2 = FreeCAD.Vector(0,0,1)
+						if round(v2.getAngle(v1),4) in [0,round(math.pi,4)]:
+							v2 = FreeCAD.Vector(0,1,0)
+						v3 = v1.cross(v2).negative()
+						q = FreeCAD.Placement(DraftVecUtils.getPlaneRotation(v1,v3,v2)).Rotation.Q
+						self.arrowpos.rotation.setValue((q[0],q[1],q[2],q[3]))
+		elif prop == "ArrowSize":
+			if hasattr(vobj,"ArrowSize"):
+				s = vobj.ArrowSize.Value
+				if s:
+					self.arrowpos.scaleFactor.setValue((s,s,s))
+		elif prop == "Frame":
+			if hasattr(vobj,"Frame"):
+				self.frame.coordIndex.deleteValues(0)
+				if vobj.Frame == "Rectangle":
+					tsize = self.getTextSize(vobj)
+					pts = []
+					base = vobj.Object.Placement.Base.sub(FreeCAD.Vector(self.textpos.translation.getValue().getValue()))
+					pts.append(base.add(FreeCAD.Vector(0,tsize[1]*3,0)))
+					pts.append(pts[-1].add(FreeCAD.Vector(-tsize[0]*6,0,0)))
+					pts.append(pts[-1].add(FreeCAD.Vector(0,-tsize[1]*6,0)))
+					pts.append(pts[-1].add(FreeCAD.Vector(tsize[0]*6,0,0)))
+					pts.append(pts[0])
+					self.fcoords.point.setValues(pts)
+					self.frame.coordIndex.setValues(0,len(pts),range(len(pts)))
+
+	def __getstate__(self):
+		return None
+
+	def __setstate__(self,state):
+		return None
+
+
+
+
+def makeLabel(targetpoint=None,target=None,direction=None,distance=None,labeltype=None,placement=None):
+	obj = FreeCAD.ActiveDocument.addObject("App::FeaturePython","MyLabel")
+	MyDraftLabel(obj)
+	if FreeCAD.GuiUp:
+		MyViewProviderDraftLabel(obj.ViewObject)
+	if targetpoint:
+		obj.TargetPoint = targetpoint
+	if target:
+		obj.Target = target
+	if direction:
+		obj.StraightDirection = direction
+	if distance:
+		obj.StraightDistance = distance
+	if labeltype:
+		obj.LabelType = labeltype
+	if placement:
+		obj.Placement = placement
+	FreeCAD.ActiveDocument.recompute()
+	return obj
+
+
+
+
+
+#-
+#----------------------------------
 
 # fuer messpunkte zum andocken
 
 def runL():
 	''' create Label'''
-	l = Draft.makeLabel(
+	l = makeLabel(
 		targetpoint=FreeCAD.Vector (0.0, -18.226360321044922, 53.260826110839844),
 #		target=(FreeCAD.ActiveDocument.Box,(["Vertex2"])),
 #		target=(App.ActiveDocument.Poles),
@@ -1601,23 +2062,146 @@ def runL():
 #		FreeCAD.Rotation(0.5, 0.5, 0.5, 0.5))
 	)
 
+	l.obj=Gui.Selection.getSelection()[0]
 	l.LabelType = u"Custom"
-	l.Label="MessPunkt AA"
+	l.Label="J2"
 	l.ViewObject.DisplayMode = u"2D text"
 	l.ViewObject.TextSize = '15 mm'
-	l.CustomText = ["J3"]
 	App.activeDocument().recompute()
 
 	obj=l
 
-	obj.addProperty("App::PropertyLink","obj","","surface object").obj=App.ActiveDocument.Poles
-	obj.addProperty("App::PropertyInteger","facenumber","", "number of the face")
-	obj.addProperty("App::PropertyFloat","u","Source", "u coord start point of geodesic").u=50
-	obj.addProperty("App::PropertyFloat","v","Source", "v coord start point of geodesic").v=50
+	
 	App.activeDocument().recompute()
 	obj.TargetPoint=obj.obj.Shape.Faces[0].Surface.value(obj.u*0.01,obj.v*0.01)
+	hideAllProps(obj,pns=['Text','CustomText','LabelType'])
 
 
 # runL()
+
+
+
+def runTest2():
+	print 
+	print "step"
+#	f=App.ActiveDocument.Poles.Shape.Face1
+
+	start=Gui.Selection.getSelection()[0]
+	target=Gui.Selection.getSelection()[1]
+	assert start.obj == target.obj
+	assert start.facenumber == target.facenumber
+
+	f=start.obj.Shape.Faces[start.facenumber]
+
+	pt=target.TargetPoint
+	u=start.u
+	v=start.v
+
+	sf=f.Surface
+#	umin,umax,vmin,vmax=f.ParameterRange
+#	u=(umin-u/100)/(umin-umax)*100
+#	v=(umin-v/100)/(umin-umax)*100
+
+
+	print "Start:",start.TargetPoint
+	print "Ziel:",target.TargetPoint
+	print ("----------",u,v)
+	 
+#	pt=FreeCAD.Vector(130.09, -2.41, 83.00)
+	d=10
+#	u=55
+#	v=50
+	lang=30
+	minl=10**10
+	def runfak(lang,d,fak,anz,minl):
+		for i in range(anz):
+			if i==0: minp=[lang,d]
+			print ("------------",i,minp, minl)
+			print 
+			ta=time.time()
+			found=False
+			faktor=fak
+			for dd in [-1,0,1]:
+				for dl in [-1,0,1]:
+						if lang+faktor*dl <=0: continue
+						pts,norms,tans=genribA(f,u=u,v=v,d=d+faktor*dd,lang=lang+faktor*dl,gridsize=10)
+						ptsa=[FreeCAD.Vector(tuple(p)) for p in pts]
+						la=(pt-ptsa[-1]).Length
+#						print ptsa[0]
+	#					if la == minl:
+	#						print "gefunden", la
+	#						
+						if la<minl:
+	#						print "wechsle .."
+							minl=la
+							minp=[lang+faktor*dl,d+faktor*dd]
+							print ("wechsel ",minp)
+							found=True
+	#						print "min =", minl
+	#					print (la,"-la",dd,dl)
+						cp=colorPath(ptsa,color='0 1 0',name=None)
+						name="A_"+str(lang+faktor*dl)+"_"+str(d+faktor*dd)
+						name="A_"
+						drawColorLines(start.obj,name,cp)
+			[lang,d]=minp
+			[lange,de]=minp
+			Gui.updateGui()
+			dti=time.time()-ta
+			print ("Loop time ",dti,len(pts),dti/len(pts))
+			if not found: 
+				print "nichts mehr gefunden"
+#				print "Ziel ",pt
+#				print "erreicht" ,ptsa[-1]
+#				print "dzstz" ,ptsa[0]
+				break
+
+		print (lange,de)
+		pts,norms,tans=genribA(f,u=u,v=v,d=de,lang=lange,gridsize=10)
+		
+		ptsa=[FreeCAD.Vector(tuple(p)) for p in pts]
+		cp2=colorPath(ptsa,color='1 0 0',name=None)
+		name="A_"+str(lang+faktor*dl)+"_"+str(d+faktor*dd)
+		name="A_"
+		drawColorLines(start.obj,name,cp2)
+
+		return [lange,de,minl]
+
+	if 10:
+		anz=20
+		fak=10
+		[lang,d,minl]=runfak(lang,d,fak,anz,minl)
+		print (lang,d,"distance",minl)
+
+	if 10:
+		anz=14
+		fak=1
+		[lang,d,minl]=runfak(lang,d,fak,anz,minl)
+		print
+		print ("lang,direction:",lang,d,"distance:",minl)
+
+
+
+
+
+
+	a=FreeCAD.ActiveDocument.addObject("Part::FeaturePython","Geodesic")
+
+	Geodesic(a)
+	a.obj=start.obj
+	ViewProvider(a.ViewObject)
+
+	a.Label="Geodesic on " + a.obj.Label + " from "+start.Label +  " to " + target.Label
+	a.mode="geodesic"
+
+	a.lang=lang
+	a.lang2=0
+	a.lang3=0
+	a.direction=d
+	a.ut=target.u
+	a.vt=target.v
+	a.u=start.u
+	a.v=start.v
+	
+
 
 
