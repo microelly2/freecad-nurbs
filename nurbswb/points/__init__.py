@@ -673,3 +673,181 @@ def runA():
 	mydialog(obj)
 
 
+
+
+#-------------------------glaetten 
+
+
+
+
+import random
+import Points,Draft
+import numpy as np
+
+def init(d):
+	anzp=400
+	anze=80
+	la=[random.random() for l in range(anzp)]
+	a=10
+	
+	if 1:
+		pts=[FreeCAD.Vector(100*x+a*(random.random()-0.5),50*x+a*(random.random()-0.5),0) for x in la]
+		pts += [FreeCAD.Vector(100*random.random(),150*random.random()-50,0) for x in range(anze)]
+
+	if 1:
+		pts=[FreeCAD.Vector(100*x+a*(random.random()-0.5),200+a*(random.random()-0.5)+50*np.sin(5.0*np.pi*x),0) for x in la]
+		pts += [FreeCAD.Vector(100*random.random(),100*random.random()+150,0) for x in range(anze)]
+
+	if 1:
+		a=1
+		pts=[FreeCAD.Vector(100*x+a*(random.random()-0.5),200+a*(random.random()-0.5)+50*np.sin(5.0*np.pi*x),0) for x in la]
+		for ii in range(anze):
+			x=random.random()
+			pts += [FreeCAD.Vector(100*x,80*random.random()+160+50*np.sin(5.0*np.pi*x),0)]
+
+
+	# polare Transformation
+	
+	ptsp=[FreeCAD.Vector(p.y*np.cos(p.x*np.pi*0.02),p.y*np.sin(p.x*np.pi*0.02),0) for p in pts]
+	Points.show(Points.Points(ptsp))
+	App.ActiveDocument.ActiveObject.ViewObject.ShapeColor=(.0,0.,1.)
+	App.ActiveDocument.ActiveObject.ViewObject.PointSize=4
+
+
+
+	Points.show(Points.Points(pts))
+	App.ActiveDocument.ActiveObject.ViewObject.ShapeColor=(1.0,0.,0.)
+	App.ActiveDocument.ActiveObject.ViewObject.PointSize=4
+
+	# d=5
+
+	pts=sorted(pts,key=lambda x: x[0])
+	return pts
+
+def run(pts,loop,d,dd,outliner=True):
+
+
+	pts2=np.array(pts)
+
+	start=0
+	pts3=[]
+	anzp =pts2.shape[0]
+
+	for xp in range(120): # gesamtpunktzahl
+		yv=0
+		wv=0
+		for i in range(anzp):
+			x,y,z=pts2[i]
+			if x<xp-d:
+				start=i
+				continue
+			if x>xp+d:
+				end=i
+				break
+			fak=1-abs(xp-x)/d
+			wv +=  fak
+			yv +=  fak*y
+		if wv<>0:
+			yn=yv/wv
+		else: continue
+
+		if outliner:
+			yv=0
+			wv=0
+			for i in range(start,end+1):
+				x,y,z=pts2[i]
+				
+				if abs(y-yn)>dd:
+					print ("outliner",loop,xp,i,y-yn)
+				else:
+					fak=1-abs(xp-x)/d
+					wv +=  fak
+					yv +=  fak*y
+		if wv<>0:
+			yn=yv/wv
+			pts3 += [FreeCAD.Vector(xp,yn,0)]
+
+
+
+	Points.show(Points.Points(pts3))
+	App.ActiveDocument.ActiveObject.ViewObject.ShapeColor=(0.5+0.5*random.random(),0.5+0.5*random.random(),0.5+0.5*random.random())
+
+	pts4= filter(lambda x: x[0] <=100, pts3)
+	ptsp=[FreeCAD.Vector(p.y*np.cos(p.x*np.pi*0.02),p.y*np.sin(p.x*np.pi*0.02),0) for p in pts4]
+	Points.show(Points.Points(ptsp))
+	App.ActiveDocument.ActiveObject.ViewObject.ShapeColor=(0.5+0.5*random.random(),0.5+0.5*random.random(),0.5+0.5*random.random())
+
+
+
+	return pts3,ptsp
+
+def  results(ptsa,ptsb):
+	ptsa= filter(lambda x: x[0] <=100, ptsa)
+
+	bc=Part.BSplineCurve()
+	bc.approximate(ptsa,DegMin=1,DegMax=3,Tolerance=0.3)
+	Draft.makeWire(ptsa)
+	App.ActiveDocument.ActiveObject.ViewObject.LineColor=(0.,1.,1.)
+
+	cww=App.ActiveDocument.getObject("FF2")
+	if cww==None:
+		cww=App.ActiveDocument.addObject('Part::Spline','FF2')
+
+	cww.Shape=bc.toShape()
+
+	bc=Part.BSplineCurve()
+	bc.approximate(ptsb,DegMin=1,DegMax=3,Tolerance=5.)
+	Draft.makeWire(ptsb)
+	App.ActiveDocument.ActiveObject.ViewObject.LineColor=(1.,0.,1.)
+
+	cwk=App.ActiveDocument.getObject("FF3")
+	if cwk==None:
+		cwk=App.ActiveDocument.addObject('Part::Spline','FF3')
+
+	cwk.Shape=bc.toShape()
+
+
+	_=App.activeDocument().recompute()
+	cww.ViewObject.LineColor=(1.,1.,0.)
+	cww.ViewObject.LineWidth=7
+
+	cwk.ViewObject.LineColor=(1.,1.,0.)
+	cwk.ViewObject.LineWidth=7
+
+
+	print "Poles:",bc.NbPoles
+
+def runC():
+	import time
+	d=5
+	pts=init(d)
+	FreeCAD.pts=pts
+
+
+def runD():
+	import time
+	d=5
+	pts=FreeCAD.pts
+	ptsa=pts
+
+	for i in range(5):
+		timea=time.time()
+		ptsa,ptsb=run(ptsa,i,d,1*d)
+		print ("loop",i,(time.time()-timea)/len(ptsa)*1000)
+
+	results(ptsa,ptsb)
+
+
+def runE():
+	import time
+	d=5
+	pts=FreeCAD.pts
+	ptsa=pts
+
+	for i in range(5):
+		timea=time.time()
+		ptsa,ptsb=run(ptsa,i,d,2*d,False)
+		print ("loop",i,(time.time()-timea)/len(ptsa)*1000)
+
+	results(ptsa,ptsb)
+

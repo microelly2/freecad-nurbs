@@ -348,18 +348,21 @@ def updatencontent(viewer,objs,fp,clearSel=True,fit=True):
 	marker = coin.SoSeparator()
 
 	for objx in objs:
-		print "run ",objx.Label
-		node= objx.ViewObject.RootNode
+		try: objgx=objx.Group
+		except: objgx=[objx]
+		for objx in objgx:
+			print "run ",objx.Label
+			node= objx.ViewObject.RootNode
 
-		if fp.A_DisplayMode==0:
-			nodeA=node
-		else:
-			nodeA=node.copy()
-			clds=nodeA.getChildren()
-			s2=clds[2]
-			s2.whichChild.setValue(fp.A_DisplayMode)
+			if fp.A_DisplayMode==0:
+				nodeA=node
+			else:
+				nodeA=node.copy()
+				clds=nodeA.getChildren()
+				s2=clds[2]
+				s2.whichChild.setValue(fp.A_DisplayMode)
 
-		marker.addChild(nodeA)
+			marker.addChild(nodeA)
 
 	view.setSceneGraph(marker)
 
@@ -375,17 +378,20 @@ def updatencontent(viewer,objs,fp,clearSel=True,fit=True):
 	view=v.getViewer(1)
 	marker = coin.SoSeparator()
 	for objx in objs:
-		node= objx.ViewObject.RootNode
+		try: objgx=objx.Group
+		except: objgx=[objx]
+		for objx in objgx:
+			node= objx.ViewObject.RootNode
 
-		if fp.B_DisplayMode==0:
-			nodeA=node
-		else:
-			nodeA=node.copy()
-			clds=nodeA.getChildren()
-			s2=clds[2]
-			s2.whichChild.setValue(fp.B_DisplayMode)
+			if fp.B_DisplayMode==0:
+				nodeA=node
+			else:
+				nodeA=node.copy()
+				clds=nodeA.getChildren()
+				s2=clds[2]
+				s2.whichChild.setValue(fp.B_DisplayMode)
 
-		marker.addChild(nodeA)
+			marker.addChild(nodeA)
 
 	view.setSceneGraph(marker)
 
@@ -397,17 +403,20 @@ def updatencontent(viewer,objs,fp,clearSel=True,fit=True):
 	view=v.getViewer(2)
 	marker = coin.SoSeparator()
 	for objx in objs:
-		node= objx.ViewObject.RootNode
+		try: objgx=objx.Group
+		except: objgx=[objx]
+		for objx in objgx:
+			node= objx.ViewObject.RootNode
 
-		if fp.C_DisplayMode==0:
-			nodeA=node
-		else:
-			nodeA=node.copy()
-			clds=nodeA.getChildren()
-			s2=clds[2]
-			s2.whichChild.setValue(fp.C_DisplayMode)
+			if fp.C_DisplayMode==0:
+				nodeA=node
+			else:
+				nodeA=node.copy()
+				clds=nodeA.getChildren()
+				s2=clds[2]
+				s2.whichChild.setValue(fp.C_DisplayMode)
 
-		marker.addChild(nodeA)
+			marker.addChild(nodeA)
 
 	view.setSceneGraph(marker)
 
@@ -419,17 +428,21 @@ def updatencontent(viewer,objs,fp,clearSel=True,fit=True):
 	view=v.getViewer(3)
 	marker = coin.SoSeparator()
 	for objx in objs:
-		node= objx.ViewObject.RootNode
+		try: objgx=objx.Group
+		except: objgx=[objx]
+		for objx in objgx:
 
-		if fp.D_DisplayMode==0:
-			nodeA=node
-		else:
-			nodeA=node.copy()
-			clds=nodeA.getChildren()
-			s2=clds[2]
-			s2.whichChild.setValue(fp.D_DisplayMode)
+			node= objx.ViewObject.RootNode
 
-		marker.addChild(nodeA)
+			if fp.D_DisplayMode==0:
+				nodeA=node
+			else:
+				nodeA=node.copy()
+				clds=nodeA.getChildren()
+				s2=clds[2]
+				s2.whichChild.setValue(fp.D_DisplayMode)
+
+			marker.addChild(nodeA)
 
 	view.setSceneGraph(marker)
 

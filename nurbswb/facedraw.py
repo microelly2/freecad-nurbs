@@ -164,6 +164,13 @@ class EventFilter(QtCore.QObject):
 						say("------------F3-----------------")
 						stop()
 
+#+hack
+					elif e.key() ==  QtCore.Qt.Key_4:
+						say("-------------4----------")
+						
+						stop()
+#-hack
+
 
 # some key bindings not used at teh moment
 #					elif  e.key()== QtCore.Qt.Key_Return:

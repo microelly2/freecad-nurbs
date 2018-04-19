@@ -511,8 +511,13 @@ def createMap(mode=''):
 	'''create a Map object'''
 	b=FreeCAD.activeDocument().addObject("Part::FeaturePython","MAP")
 	Map(b,mode=mode)
+	
 	# hack
+	b.display2d=False
 	b.displayCircles=True
+	b.uMin=0
+	b.vMin=0
+
 	if 0:
 		b.modeCurvature="Gauss"
 		b.uMin=20

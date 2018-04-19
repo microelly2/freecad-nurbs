@@ -24,6 +24,8 @@ Gui = FreeCADGui
 
 import numpy as np
 import time
+from pivy import coin
+
 
 
 class FeaturePython:
@@ -80,13 +82,17 @@ class Geodesic(FeaturePython):
 
 		obj.addProperty("App::PropertyBool","onchange","", "calculate all 4 directions")
 		obj.addProperty("App::PropertyBool","flipNormals","", "calculate all 4 directions")
-
+		obj.addProperty("App::PropertyBool","createSweep")
+		
+		obj.addProperty("App::PropertyBool","geodesicTorsion")
 		obj.addProperty("App::PropertyEnumeration","mode","Base").mode=["geodesic","curvature","patch","distance"]
 		obj.addProperty("App::PropertyLink","obj","","surface object")
 		obj.addProperty("App::PropertyInteger","facenumber","", "number of the face")
 		obj.addProperty("App::PropertyFloat","sega","Source", "u coord start point of geodesic").sega=0
 		obj.addProperty("App::PropertyFloat","segb","Source", "u coord start point of geodesic").segb=100
 		obj.addProperty("App::PropertyFloat","tolerance2","Source", "tolerance for curve on face").tolerance2=10
+		obj.addProperty("App::PropertyFloat","tolerance","Source", "tolerance for geodesic apporx").tolerance=0.5
+		obj.addProperty("App::PropertyFloat","volume","Source", "u coord start point of geodesic").volume=10
 
 		obj.addProperty("App::PropertyFloat","thresholdForce")
 		obj.addProperty("App::PropertyBool","relativeForce")
@@ -95,8 +101,8 @@ class Geodesic(FeaturePython):
 			obj.addProperty("App::PropertyInteger","gridsize","", "size of a grid cell").gridsize=20
 			obj.addProperty("App::PropertyInteger","forcesize","", "size of a grid cell").forcesize=100
 
-			obj.addProperty("App::PropertyFloat","u","Source", "u coord start point of geodesic").u=50
-			obj.addProperty("App::PropertyFloat","v","Source", "v coord start point of geodesic").v=50
+			obj.addProperty("App::PropertyFloat","u","A", "u coord start point of geodesic").u=50
+			obj.addProperty("App::PropertyFloat","v","A", "v coord start point of geodesic").v=50
 
 			obj.addProperty("App::PropertyFloat","ue","_calculated", "calculated u coord endpoint of geodesic")
 			obj.addProperty("App::PropertyFloat","ve","_calculated", "calculated coord endpoint of geodesic")
@@ -105,12 +111,12 @@ class Geodesic(FeaturePython):
 			obj.addProperty("App::PropertyFloat","vt","Target", "u coord target point of geodesic").vt=60
 			obj.addProperty("App::PropertyBool","target","Target", "u coord target point of geodesic").target=True
 
-			obj.addProperty("App::PropertyInteger","lang","Generator", "size of cell in u direction").lang=24
+			obj.addProperty("App::PropertyInteger","lang","A", "size of cell in u direction").lang=24
 			obj.addProperty("App::PropertyInteger","lang2","Generator", "size of cell in v direction").lang2=3
 			obj.addProperty("App::PropertyInteger","lang3","Generator", "size of cell in -u direction").lang3=6
-#			obj.addProperty("App::PropertyInteger","lang4","Generator", "size of cell in -v direction").lang4=10
+			obj.addProperty("App::PropertyInteger","lang4","Generator", "size of cell in -v direction").lang4=10
 
-			obj.addProperty("App::PropertyFloat","direction","Generator", "direction of backbone geodesic")
+			obj.addProperty("App::PropertyFloat","direction","A", "direction of backbone geodesic")
 			obj.direction=0
 			obj.addProperty("App::PropertyFloat","directione","_calculated", "calculated direction of backbone geodesic")
 			obj.directione=0
@@ -150,7 +156,7 @@ class Geodesic(FeaturePython):
 #			obj.addProperty("App::PropertyInteger","ind2Face","patch","v dimension of uvdarray").ind2Face=0
 
 
-		readonlyProps(obj,['mode','pre','directionrib','lang4','directione','dist','ue','ve'])
+		readonlyProps(obj,['mode','pre','directionrib','directione','dist','ue','ve'])
 		if obj.mode=='patch':
 			obj.Shape=updatePatch(obj)
 
@@ -170,16 +176,17 @@ class Geodesic(FeaturePython):
 
 	def execute(self, fp):
 
-		if fp.mode=="geodesic":
-			fp.Shape=updateStarG(fp)
 		if fp.mode=="patch":
 			fp.Shape=updatePatch(fp)
 			if fp.form=='face':
 				fp.Placement=fp.obj.obj.Placement
 			else:
-				fp.Placement=FreeCAD.Placement()	
+				fp.Placement=FreeCAD.Placement()
+
+		if fp.mode=="geodesic":
+			fp.Shape=updateGeodesic(fp)
 		if fp.mode=="curvature":
-			fp.Shape=updateStarC(fp)
+			fp.Shape=updateCurvature(fp)
 		if fp.mode=="distance":
 			fp.Shape=updateDistance(fp)
 
@@ -187,7 +194,7 @@ class Geodesic(FeaturePython):
 
 
 
-def createGeodesic(obj=None):
+def createGeodesicA(obj=None):
 	'''create a geodesic from the default psoition 50 50 and direction for testing'''
 
 	a=FreeCAD.ActiveDocument.addObject("Part::FeaturePython","Geodesic")
@@ -204,6 +211,15 @@ def createGeodesic(obj=None):
 	a.lang2=50
 	a.lang3=50
 	a.direction=30
+	
+	a.lang2=1
+	a.lang4=1
+	a.lang3=0
+
+
+	a.lang3=50
+	a.lang2=20
+	a.lang4=-1
 
 #	hideAllProps(a,['patch'])
 	return a
@@ -227,7 +243,11 @@ def createPatch(obj=None,wire=None):
 		a.Label="Patch for "+obj.Label
 	a.mode="patch"
 	
-	a.reverse=True
+	#a.reverse=True
+	a.closed=True
+	a.form="facecurve"
+	a.tolerance=1.
+	a.form="bspline3"
 #	a.form="face"
 	
 #	hideAllProps(a)
@@ -291,7 +311,7 @@ def colorPath(pts,color='0 1 0',name=None):
 
 
 
-def genrib(fp,u,v,d,lang,ribflag,color='0 1 1'):
+def genRibForGeodesic(fp,u,v,d,lang,ribflag,color='0 1 1'):
 		''' erzeugt eine rippe fuer color grid '''
 
 		pts=[]
@@ -359,7 +379,7 @@ def genrib(fp,u,v,d,lang,ribflag,color='0 1 1'):
 
 
 
-def getface(count=10):
+def getface_old(count=10):
 	'''outdated: for update patch old '''
 
 	faceobj=App.ActiveDocument.BSpline
@@ -431,7 +451,7 @@ def drawColorLines(fp,name,ivs):
 	iv.Buffer=ivs
 
 
-def updateStarG(fp):
+def updateGeodesic(fp):
 		print "run updateStarG"
 
 		gridon=True
@@ -445,6 +465,7 @@ def updateStarG(fp):
 		d0=d
 
 
+		ak=1
 
 		if fp.pre<>None:
 			obj=fp.pre.obj
@@ -464,6 +485,7 @@ def updateStarG(fp):
 		v *= 0.01
 
 		pts=[]
+		ptsbb=[]
 
 		f=obj.Shape.Faces[fp.facenumber]
 		sf=f.Surface
@@ -473,6 +495,7 @@ def updateStarG(fp):
 		# print (umin,umax)
 
 		u0,v0=u,v
+		d0=d
 
 		u=umin + (umax-umin)*u
 		v=vmin + (vmax-vmin)*v
@@ -485,7 +508,13 @@ def updateStarG(fp):
 		nn=f.normalAt(u,v)
 		t2=t1.cross(nn)
 		t2.normalize()
-		t=FreeCAD.Vector(np.cos(np.pi*-d/180)*t1*-1+np.sin(-np.pi*-d/180)*t2*-1)
+		#if ak:
+		#	t2 *= -1
+		#d=60-d
+
+		#t=FreeCAD.Vector(np.cos(np.pi*d/180)*t1*-1+np.sin(-np.pi*-d/180)*t2*-1)
+		t=FreeCAD.Vector(np.cos(np.pi*d/180)*t1+np.sin(np.pi*d/180)*t2)
+		t *= -1
 
 
 		shapas=''
@@ -499,6 +528,8 @@ def updateStarG(fp):
 		lang3=int(round(10.0*fp.lang3/fp.gridsize))
 		lang=int(round(10*fp.lang/fp.gridsize))
 		lang2=int(round(10*fp.lang2/fp.gridsize))
+		if fp.lang4==-1: lang4=lang2
+		else: lang4=int(round(10*fp.lang4/fp.gridsize))
 
 		#rueckwaerts
 		ribb=''
@@ -513,22 +544,34 @@ def updateStarG(fp):
 #				print ("erzeuge ribbe",i)
 				a=t.dot(t1)
 				b=t.dot(t2)
-				#a,b=b,a
-				de=-180./np.pi*np.arctan2(b,a)
+				a,b=b,a
+				de=180./np.pi*np.arctan2(b,a)
+				
 				if i==lang3 : color='0 1 0'
 				#else: color='0 1 1'
 				else: color='1 1 0'
-				r1,(u1,v1),uvs1 = genrib(fp,u,v,de-90,lang2,ribflag,color)
-				r2,(u2,v2),uvs2 = genrib(fp,u,v,de+90,lang2,ribflag,color)
 
-#				r1,(u1,v1),uvs1 = genrib(fp,u,v,de+90+2*d,lang2,ribflag,color)
-#				r2,(u2,v2),uvs2 = genrib(fp,u,v,de+90-2*d,lang2,ribflag,color)
+				r1,(u1,v1),uvs1 = genRibForGeodesic(fp,u,v,de-90,lang2,ribflag,color)
+				r2,(u2,v2),uvs2 = genRibForGeodesic(fp,u,v,de+90,lang4,ribflag,color)
+
+				if ak:
+					r1,(u1,v1),uvs1 = genRibForGeodesic(fp,u,v,de,lang2,ribflag,color)
+					r2,(u2,v2),uvs2 = genRibForGeodesic(fp,u,v,de+180,lang4,ribflag,color)
+
+
+
+#				r1,(u1,v1),uvs1 = genRibForGeodesic(fp,u,v,de+90+2*d,lang2,ribflag,color)
+#				r2,(u2,v2),uvs2 = genRibForGeodesic(fp,u,v,de+90-2*d,lang2,ribflag,color)
 
 				nuvs += [(u1,v1)]
 				puvs += [(u2,v2)]
 				uvs2.reverse()
 				if i<>0:
-					uvsarr += [uvs2[:-1]+uvs1]
+					#uvsarr += [uvs2[:-1]+uvs1]
+					ttu=uvs2[:-1]+uvs1
+					ttu.reverse()
+					uvsarr += [ttu]
+					
 				if ribflag:
 					if i<>0:
 						shapas += r1 + r2
@@ -574,6 +617,8 @@ def updateStarG(fp):
 			(t1,t2)=sf.tangent(u,v)
 			nn=f.normalAt(u,v)
 			t2=t1.cross(nn)
+			
+			#t2 *= -1
 
 			t=p-last
 			t.normalize()
@@ -581,6 +626,10 @@ def updateStarG(fp):
 			# print ("time aa bb,loop",tbb-taa,i,(tbb-taa)/fp.lang*1000000/lang2)
 
 		#-------------------------------------
+
+		# vorwaerts rictung
+
+		geto=[]
 
 		d=d0
 		u=umin + (umax-umin)*u0
@@ -617,11 +666,11 @@ def updateStarG(fp):
 				
 				if i==lang: color='1 0 0'
 				else: color='1 1 0'
-#				r1,(u1,v1),uvs1 = genrib(fp,u,v,de+90-2*d,lang2,ribflag,color)
-#				r2,(u2,v2),uvs2 = genrib(fp,u,v,de-90-2*d,lang2,ribflag,color)
+#				r1,(u1,v1),uvs1 = genRibForGeodesic(fp,u,v,de+90-2*d,lang2,ribflag,color)
+#				r2,(u2,v2),uvs2 = genRibForGeodesic(fp,u,v,de-90-2*d,lang2,ribflag,color)
 
-				r1,(u1,v1),uvs1 = genrib(fp,u,v,de+180,lang2,ribflag,color)
-				r2,(u2,v2),uvs2 = genrib(fp,u,v,de+0,lang2,ribflag,color)
+				r1,(u1,v1),uvs1 = genRibForGeodesic(fp,u,v,de+180,lang2,ribflag,color)
+				r2,(u2,v2),uvs2 = genRibForGeodesic(fp,u,v,de+0,lang4,ribflag,color)
 
 
 
@@ -641,6 +690,20 @@ def updateStarG(fp):
 			u2=(u-umin)/(umax-umin)
 			v2=(v-vmin)/(vmax-vmin)
 			pts += [pot]
+			ptsbb += [pot]
+			
+			(ct1,ct2)=sf.curvatureDirections(u,v)
+			kmax=sf.curvature(u,v,"Max")
+			kmin=sf.curvature(u,v,"Min")
+			aa1=ct1.dot(t)
+			aa2=ct2.dot(t)
+			
+			if fp.flipNormals:nfa=-1 
+			else: nfa=1
+
+			geto +=[pot,pot +  nfa*sf.normal(u,v)*abs(aa1*aa2*(kmax-kmin))*10*fp.forcesize,
+					pot]
+
 
 			pts += [sf.value(u,v)+ sf.normal(u,v)*2,sf.value(u,v)]
 
@@ -649,6 +712,31 @@ def updateStarG(fp):
 				rib=FreeCAD.Vector(np.cos(np.pi*d2/180)*t+np.sin(np.pi*d2/180)*sf.normal(u,v).cross(t))
 				pts += [sf.value(u,v)+ rib*-2,sf.value(u,v)]
 				pts += [sf.value(u,v)+ rib*2,sf.value(u,v)]
+				if i==0:
+					poly=Part.makePolygon([sf.value(u,v)+ rib*(-1)*(lang2+1),
+						sf.value(u,v),sf.value(u,v)+ rib*(1.0)*(lang4+1)])
+					
+					if fp.volume:
+						poly=Part.makePolygon([
+							sf.value(u,v)+ rib*(-1)*(lang2+1),
+							sf.value(u,v),
+							sf.value(u,v)+ rib*(1.0)*(lang4+1),
+
+							sf.value(u,v)+ rib*(1.0)*(lang4+1) + fp.volume*sf.normal(u,v),
+							sf.value(u,v)+ fp.volume*sf.normal(u,v),
+							sf.value(u,v)+ rib*(-1)*(lang2+1)+ fp.volume*sf.normal(u,v),
+							sf.value(u,v)+ rib*(-1)*(lang2+1),
+						])
+
+
+					if fp.createSweep:
+						cyy=App.ActiveDocument.getObject(fp.Name+'_MyBSC')
+						if cyy== None:
+							cyy=App.ActiveDocument.addObject('Part::Feature',fp.Name+'_MyBSC')
+						cyy.Shape=poly
+
+
+
 
 
 			last=sf.value(u,v)
@@ -778,6 +866,41 @@ def updateStarG(fp):
 			name="UBound"
 			drawColorLines(fp,name,riba+ribm+ribb)
 
+		bc=Part.BSplineCurve()
+		FreeCAD.ptsbb=ptsbb
+		if fp.tolerance==0:
+			bc.interpolate(ptsbb)
+		else:
+			bc.approximate(ptsbb,DegMax=3,Tolerance=fp.tolerance)
+#		return bc.toShape()
+
+		if fp.createSweep:
+			yaas=App.ActiveDocument.getObject(fp.Name+'_geodes')
+			if yaas == None:
+				yaas=App.ActiveDocument.addObject('Part::Feature',fp.Name+'_geodes')
+
+			yaas.Shape=bc.toShape()
+
+			ys=App.ActiveDocument.getObject(fp.Name+'_Sweep')
+			if ys == None:
+				ys=App.ActiveDocument.addObject('Part::Sweep',fp.Name+'_Sweep')
+			ys.Sections=[cyy, ]
+			ys.Spine=(yaas,["Edge1"])
+			if fp.volume: ys.Solid=True
+
+
+		if fp.geodesicTorsion:
+				polygt=Part.makePolygon(geto)
+
+				cygt=App.ActiveDocument.getObject(fp.Name+'_geodesicTorsion')
+				if cygt== None:
+					cygt=App.ActiveDocument.addObject('Part::Feature',fp.Name+'_geodesicTorsion')
+					cygt.ViewObject.LineColor=(1.0,0.,0.)
+				cygt.Shape=polygt
+
+
+
+
 		return shape2
 
 
@@ -825,7 +948,7 @@ def updatePatch_old(fp):
 		puvs=[(u,v)]
 		nuvs=[(u,v)]
 
-		lang,ptsa,ntsa=getface(2+fp.lang+1)
+		lang,ptsa,ntsa=getface_old(2+fp.lang+1)
 
 		pds=[4+p for p in ptsa]
 		nds=[4+p for p in ntsa]
@@ -842,8 +965,8 @@ def updatePatch_old(fp):
 				a=t.dot(t1)
 				b=t.dot(t2)
 				de=180./np.pi*np.arctan2(b,a)
-				r1,(u1,v1),uvs1 = genrib(fp,u,v,de+90,ptsa[i],ribflag)
-				r2,(u2,v2),uvs2 = genrib(fp,u,v,de-90,ntsa[i],ribflag)
+				r1,(u1,v1),uvs1 = genRibForGeodesic(fp,u,v,de+90,ptsa[i],ribflag)
+				r2,(u2,v2),uvs2 = genRibForGeodesic(fp,u,v,de-90,ntsa[i],ribflag)
 				puvs += [(u1,v1)]
 				nuvs += [(u2,v2)]
 				uvsp += [uvs1]
@@ -967,7 +1090,7 @@ def updatePatch_old(fp):
 
 
 
-def updatepath(fp,redirect,flip):
+def updateCurvaturePath(fp,redirect,flip):
 
 		d=fp.direction
 		u=fp.u
@@ -1056,16 +1179,16 @@ def updatepath(fp,redirect,flip):
 		return shape
 
 
-def updateStarC(fp):
+def updateCurvature(fp):
 	if fp.star:
 		rc=Part.Compound([
-			updatepath(fp,False,False),
-			updatepath(fp,False,True),
-			updatepath(fp,True,False),
-			updatepath(fp,True,True)
+			updateCurvaturePath(fp,False,False),
+			updateCurvaturePath(fp,False,True),
+			updateCurvaturePath(fp,True,False),
+			updateCurvaturePath(fp,True,True)
 		])
 	else:
-		rc=updatepath(fp,fp.redirect,fp.flip)
+		rc=updateCurvaturePath(fp,fp.redirect,fp.flip)
 	return rc
 
 
@@ -1079,29 +1202,32 @@ def runtest1():
 	d=createGeodesic(obj=App.ActiveDocument.Sphere)
 
 
-def run():
+def createGeodesic():
 	'''geodesic auf koerper erzeugen'''
-	a=createGeodesic(obj=Gui.Selection.getSelection()[0])
+	a=createGeodesicA(obj=Gui.Selection.getSelection()[0])
 
-def runP():
+
+def geodesicMapPatchToFace():
 	'''pfad(e) $2 auf geodesic $1 auflegen'''
 	a=createPatch(obj=Gui.Selection.getSelection()[0],
 	wire=Gui.Selection.getSelection()[1])
+	App.activeDocument().recompute()
+	App.activeDocument().recompute()
 
 
-def runD():
+def appendGeodesic():
 	'''geodesic erzeugen, die an eine geodesic andockt'''
-	a=createGeodesic()
+	a=createGeodesicA()
 	a.pre=Gui.Selection.getSelection()[0]
 
 
-def runC():
+def createCurvatureStar():
 	a=createCurvature(obj=Gui.Selection.getSelection()[0])
 
 
-def runall():
+def	creategeodesicbunch():
 	for j in range(36):
-		a=createGeodesic(obj=Gui.Selection.getSelection()[0])
+		a=createGeodesicA(obj=Gui.Selection.getSelection()[0])
 		a.direction=j*10
 
 
@@ -1144,13 +1270,17 @@ def updatePatch(fp):
 	l3=-bb.XMin
 	if l3<0: l3=0
 	l=bb.XMax
-	l2=max(bb.YMax,abs(bb.YMin))
+	l2=max(abs(bb.YMax),abs(bb.YMin))
 	print (l,l2,l3)
 	
 	needupd=False
 	if gd.lang<l: gd.lang=int(round(l))+1;needupd=True
-	if gd.lang2<l2:	gd.lang2=int(round(l2))+1;needupd=True
+	if gd.lang2<l2:	
+		gd.lang2=int(round(l2))+1;needupd=True
+		gd.lang4=int(round(l2))+1;needupd=True
+	
 	if gd.lang3<l3:	gd.lang3=int(round(l3))+1;needupd=True
+	
 	if needupd:
 		gd.Proxy.execute(gd.obj)
 
@@ -1300,12 +1430,11 @@ def updatePatch(fp):
 
 
 
-
-def step():
-	''' geodesic an ziel ausrichten'''
+'''
+def approx_step():
+	
 
 	a=App.ActiveDocument.Geodesic
-
 
 	ds=a.dist
 	a.direction += 1
@@ -1364,16 +1493,16 @@ def step():
 def approx_geodesic(n=10):
 	for i in range(n): 
 		print "------------step ",i
-		rc=step()
+		rc=approx_step()
 		print "----------result ",rc
 		if not rc: break
+'''
 
 
 
 
 
-
-def genribA(f,u=50,v=50,d=0,lang=30,gridsize=20):
+def genRibForUpdateDistance(f,u=50,v=50,d=0,lang=30,gridsize=20):
 		''' erzeugt eine rippe fuer color grid fuer kreis geodesics'''
 
 		pts=[]
@@ -1411,7 +1540,7 @@ def genribA(f,u=50,v=50,d=0,lang=30,gridsize=20):
 			u2=(u-umin)/(umax-umin)
 			v2=(v-vmin)/(vmax-vmin)
 
-			
+
 			pts += [pot]
 			norms += [nn]
 			tans += [t]
@@ -1457,7 +1586,7 @@ def genribA(f,u=50,v=50,d=0,lang=30,gridsize=20):
 		return pts,norms,tans
 
 
-def genribB(f,u=50,v=50,d=0,lang=30,gridsize=20):
+def genrib_outdated(f,u=50,v=50,d=0,lang=30,gridsize=20):
 		''' erzeugt eine rippe fuer color grid fuer kreis geodesics'''
 
 		pts=[]
@@ -1528,7 +1657,6 @@ def updateDistance(fp):
 
 	print "update distance"
 	try:
-		# obj=App.ActiveDocument.Poles
 		obj=fp.obj
 		lang=fp.lang
 		u=fp.u
@@ -1543,25 +1671,23 @@ def updateDistance(fp):
 	star=[]
 	startans=[]
 	starnorms=[]
+
 	dr=24
-#	dr=12
-	dr=24
-#	lang=100
 	lang=int(round(lang/(0.1*fp.gridsize)))
 
 	comp=[]
 
 	for d in range(dr):
-		pts,norms,tans=genribA(f,u=u,v=v,d=360/dr*d,lang=lang,gridsize=fp.gridsize)
+		pts,norms,tans=genRibForUpdateDistance(f,u=u,v=v,d=360/dr*d,lang=lang,gridsize=fp.gridsize)
 		comp += [Part.makePolygon([FreeCAD.Vector(p) for p in pts])]
 
 		star += [pts]
 		startans += [tans]
 		starnorms += [norms]
 
- 
+
 	dists=[]
-	
+
 	for d in range (dr):
 		distd=[]
 		#for i in range(lang):
@@ -1575,7 +1701,7 @@ def updateDistance(fp):
 
 			if fp.relativeForce:
 				dd=dd/(2*i*np.sin(np.pi/180*360/dr))
-			
+
 			if fp.thresholdForce>0:
 				if abs(dd)<fp.thresholdForce*0.01:
 					dd=0
@@ -1659,7 +1785,7 @@ def updateDistance(fp):
 
 	return Part.Compound(comp)
 
-def runE():
+def geodesicDistance():
 
 	obj=Gui.Selection.getSelection()[0]
 
@@ -1693,7 +1819,6 @@ def runE():
 # aus Draft.py
 
 if FreeCAD.GuiUp:
-	import FreeCADGui, WorkingPlane
 	from PySide import QtCore
 	from PySide.QtCore import QT_TRANSLATE_NOOP
 	gui = True
@@ -1720,8 +1845,8 @@ class MyDraftLabel:
 		obj.addProperty("App::PropertyFloat","u","Source", "u coord start point of geodesic").u=50
 		obj.addProperty("App::PropertyFloat","v","Source", "v coord start point of geodesic").v=50
 
-		
-		
+
+
 		obj.setEditorMode("Text",1)
 		obj.StraightDistance = 15
 		obj.TargetPoint = FreeCAD.Vector(2,-1,0)
@@ -1778,22 +1903,32 @@ class MyDraftLabel:
 					if hasattr(obj.Target[0].Shape,"Volume"):
 						obj.Text = [FreeCAD.Units.Quantity(obj.Target[0].Shape.Volume,FreeCAD.Units.Volume).UserString]
 
-		try: _=obj.obj.Sahpe
+		try: _=obj.obj.Shape
 		except: return
 		
-		f=obj.obj.Shape.Faces[obj.facenumber]
-		sf=f.Surface
-		umin,umax,vmin,vmax=f.ParameterRange
+		try:
+			f=obj.obj.Shape.Faces[obj.facenumber]
+			sf=f.Surface
+			umin,umax,vmin,vmax=f.ParameterRange
 
-		u=umin-(umin-umax)*obj.u/100
-		v=vmin-(vmin-vmax)*obj.v/100
-		print ("uv neu  aa",u,v)
+			u=umin-(umin-umax)*obj.u/100
+			v=vmin-(vmin-vmax)*obj.v/100
+	#		print ("uv neu  aa",u,v)
+			obj.TargetPoint=obj.obj.Shape.Faces[obj.facenumber].Surface.value(u,v)
 
-	
+		except:
+			f=obj.obj.Shape.Edges[obj.facenumber]
+			sf=f.Curve
+			umin,umax=f.ParameterRange
 
-		obj.TargetPoint=obj.obj.Shape.Faces[obj.facenumber].Surface.value(u,v)
+			u=umin-(umin-umax)*obj.u/100
+#			v=vmin-(vmin-vmax)*obj.v/100
+			print ("u neu  aa",u)
+			obj.TargetPoint=obj.obj.Shape.Edges[obj.facenumber].Curve.value(u)
+
+
 		obj.CustomText=[obj.Label,str((round(obj.TargetPoint.x,1),round(obj.TargetPoint.y,1),round(obj.TargetPoint.z,1))),str((obj.u,obj.v))]
-
+		obj.CustomText=[obj.Label]
 
 	def onChanged(self,obj,prop):
 		if prop in ['u','v','Label']:
@@ -1837,13 +1972,17 @@ class MyViewProviderDraftLabel:
 
 	def getIcon(self):
 		import Draft_rc
+#		try: 
+#			if self.upd: return ":/icons/DraftWorkbench.svg"
+#1		except: pass
 		return ":/icons/Draft_Label.svg"
+
+
 
 	def claimChildren(self):
 		return []
 
 	def attach(self,vobj):
-		from pivy import coin
 		self.arrow = coin.SoSeparator()
 		self.arrowpos = coin.SoTransform()
 		self.arrow.addChild(self.arrowpos)
@@ -1908,8 +2047,12 @@ class MyViewProviderDraftLabel:
 		return mode
 
 	def updateData(self,obj,prop):
+
+		try: self.upd
+		except: self.upd=True
+		self.upd=not self.upd
+
 		if prop == "Points":
-			from pivy import coin
 			if len(obj.Points) >= 2:
 				self.line.coordIndex.deleteValues(0)
 				self.lcoords.point.setValues(obj.Points)
@@ -1927,9 +2070,8 @@ class MyViewProviderDraftLabel:
 				self.text2d.string.setValues([l.encode("utf8") for l in obj.Text if l])
 				self.text3d.string.setValues([l.encode("utf8") for l in obj.Text if l])
 				self.onChanged(obj.ViewObject,"TextAlignment")
-				
+
 	def getTextSize(self,vobj):
-		from pivy import coin
 		if vobj.DisplayMode == "3D text":
 			text = self.text3d
 		else:
@@ -2045,49 +2187,44 @@ def makeLabel(targetpoint=None,target=None,direction=None,distance=None,labeltyp
 
 
 
-#-
-#----------------------------------
 
 # fuer messpunkte zum andocken
+def createMarker(u=20,v=50):
+	'''create Label'''
 
-def runL():
-	''' create Label'''
-	l = makeLabel(
-		targetpoint=FreeCAD.Vector (0.0, -18.226360321044922, 53.260826110839844),
-#		target=(FreeCAD.ActiveDocument.Box,(["Vertex2"])),
-#		target=(App.ActiveDocument.Poles),
-		direction='Horizontal',
-		labeltype='Position',
-#		placement=FreeCAD.Placement(FreeCAD.Vector (0.0, 63.980281829833984, 78.24977111816406),
-#		FreeCAD.Rotation(0.5, 0.5, 0.5, 0.5))
-	)
-
+	l = makeLabel(direction='Horizontal',labeltype='Position')
 	l.obj=Gui.Selection.getSelection()[0]
 	l.LabelType = u"Custom"
-	l.Label="J2"
+	l.Label="MyMarker"
 	l.ViewObject.DisplayMode = u"2D text"
 	l.ViewObject.TextSize = '15 mm'
 	App.activeDocument().recompute()
-
-	obj=l
-
-	
-	App.activeDocument().recompute()
-	obj.TargetPoint=obj.obj.Shape.Faces[0].Surface.value(obj.u*0.01,obj.v*0.01)
-	hideAllProps(obj,pns=['Text','CustomText','LabelType'])
-
-
-# runL()
+	l.u=u
+	l.v=v
+	try:
+		l.TargetPoint=l.obj.Shape.Faces[0].Surface.value(l.u*0.01,l.v*0.01)
+	except:
+		l.TargetPoint=l.obj.Shape.Edges[0].Curve.value(l.u*0.01)
+	hideAllProps(l,pns=['Text','CustomText','LabelType'])
+	return l
 
 
 
-def runTest2():
+
+
+
+
+
+def findGeodesicToTarget(start=None,target=None,d=10):
+
 	print 
 	print "step"
-#	f=App.ActiveDocument.Poles.Shape.Face1
 
-	start=Gui.Selection.getSelection()[0]
-	target=Gui.Selection.getSelection()[1]
+	if start==None:
+		start=Gui.Selection.getSelection()[0]
+	if target==None:
+		target=Gui.Selection.getSelection()[1]
+
 	assert start.obj == target.obj
 	assert start.facenumber == target.facenumber
 
@@ -2098,21 +2235,14 @@ def runTest2():
 	v=start.v
 
 	sf=f.Surface
-#	umin,umax,vmin,vmax=f.ParameterRange
-#	u=(umin-u/100)/(umin-umax)*100
-#	v=(umin-v/100)/(umin-umax)*100
-
 
 	print "Start:",start.TargetPoint
 	print "Ziel:",target.TargetPoint
 	print ("----------",u,v)
-	 
-#	pt=FreeCAD.Vector(130.09, -2.41, 83.00)
-	d=10
-#	u=55
-#	v=50
+ 
 	lang=30
 	minl=10**10
+
 	def runfak(lang,d,fak,anz,minl):
 		for i in range(anz):
 			if i==0: minp=[lang,d]
@@ -2124,25 +2254,20 @@ def runTest2():
 			for dd in [-1,0,1]:
 				for dl in [-1,0,1]:
 						if lang+faktor*dl <=0: continue
-						pts,norms,tans=genribA(f,u=u,v=v,d=d+faktor*dd,lang=lang+faktor*dl,gridsize=10)
+						pts,norms,tans=genRibForUpdateDistance(f,u=u,v=v,d=d+faktor*dd,lang=lang+faktor*dl,gridsize=10)
 						ptsa=[FreeCAD.Vector(tuple(p)) for p in pts]
 						la=(pt-ptsa[-1]).Length
-#						print ptsa[0]
-	#					if la == minl:
-	#						print "gefunden", la
-	#						
 						if la<minl:
-	#						print "wechsle .."
 							minl=la
 							minp=[lang+faktor*dl,d+faktor*dd]
 							print ("wechsel ",minp)
 							found=True
-	#						print "min =", minl
-	#					print (la,"-la",dd,dl)
+
 						cp=colorPath(ptsa,color='0 1 0',name=None)
 						name="A_"+str(lang+faktor*dl)+"_"+str(d+faktor*dd)
 						name="A_"
 						drawColorLines(start.obj,name,cp)
+
 			[lang,d]=minp
 			[lange,de]=minp
 			Gui.updateGui()
@@ -2150,17 +2275,15 @@ def runTest2():
 			print ("Loop time ",dti,len(pts),dti/len(pts))
 			if not found: 
 				print "nichts mehr gefunden"
-#				print "Ziel ",pt
-#				print "erreicht" ,ptsa[-1]
-#				print "dzstz" ,ptsa[0]
 				break
 
 		print (lange,de)
-		pts,norms,tans=genribA(f,u=u,v=v,d=de,lang=lange,gridsize=10)
-		
+
+		pts,norms,tans=genRibForUpdateDistance(f,u=u,v=v,d=de,lang=lange,gridsize=10)
+
+		#display the current path
 		ptsa=[FreeCAD.Vector(tuple(p)) for p in pts]
 		cp2=colorPath(ptsa,color='1 0 0',name=None)
-		name="A_"+str(lang+faktor*dl)+"_"+str(d+faktor*dd)
 		name="A_"
 		drawColorLines(start.obj,name,cp2)
 
@@ -2205,3 +2328,92 @@ def runTest2():
 
 
 
+
+
+def createShoeMarkers():
+
+	markers=[
+
+	'A2',4,76,
+	'A',4,50.5,
+	'A1',4,26,
+	
+	'J',20,50.4,
+	'J1',22,26,
+	'J2',20,76,
+
+	'I1',30.9,26,
+	'I2',30.9,76,
+
+	'E',51.54,50.6,
+	'G',30.9,50.6,
+
+	# Ferse
+	'HF1',98.,29.,
+	'HF2',98.,70.,
+
+	'H1',98.,40.,
+	'H2',98.,60.,
+
+
+	# Knoechel
+	'K2', 70.,60.,
+	'K1', 70.,40.,
+
+
+	'KF2', 70.,70.,
+	'KF1', 70.,30.,
+
+	
+	
+	]
+	da=3
+	db=len(markers)/da
+	markers=np.array(markers).reshape(db,da)# [:3]
+
+
+	for m in markers:
+		print "!",m
+
+		l = makeLabel(
+			targetpoint=FreeCAD.Vector (0.0, -18.226360321044922, 53.260826110839844),
+			direction='Horizontal',
+			labeltype='Position',
+		)
+		l.obj=App.ActiveDocument.Poles
+		l.LabelType = u"Custom"
+		l.Label=m[0]
+		l.ViewObject.DisplayMode = u"2D text"
+		l.ViewObject.TextSize = '15 mm'
+		l.u,l.v=float(m[1]),float(m[2])
+		App.activeDocument().recompute()
+		App.activeDocument().recompute()
+		l.Placement.Base=FreeCAD.Vector(l.TargetPoint.x,l.TargetPoint.y*3,l.TargetPoint.z+30)
+		l.ViewObject.LineColor=(1.0,.6,0.)
+		l.ViewObject.LineWidth=4.
+		App.activeDocument().recompute()
+
+
+
+def connectMarkers():
+
+	connList=[
+				('A2','A'),	('J2','J'),	('I2','G'),
+				('A','J'), ('J','G'),
+				('J2','A2'),('I2','J2'),
+				('G','E'),('E','K2'),('KF2','K2'),('KF2','I2'),
+				('HF2','KF2'),
+				('H2','HF2'),
+				('K2','H2'),
+			]
+
+	for a,b in connList:
+
+		al=App.ActiveDocument.getObjectsByLabel(a)
+		aob=al[0]
+		bl=App.ActiveDocument.getObjectsByLabel(b)
+		bob=bl[0]
+		if a=='HF2' and b=='KF2':connectMarkers(aob,bob,d=190)
+		elif a=='H2' and b=='HF2':connectMarkers(aob,bob,d=190)
+		else:connectMarkers(aob,bob)
+		App.activeDocument().recompute()

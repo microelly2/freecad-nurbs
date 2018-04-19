@@ -1,6 +1,6 @@
 #***************************************************************************
 #*																		*
-#*   Copyright (c) 2016													* 
+#*   Copyright (c) 2016, 2018											* 
 #*   <microelly2@freecadbuch.de>										* 
 #*																		*
 #*  This program is free software; you can redistribute it and/or modify*
@@ -270,6 +270,23 @@ def c2a(menu,isactive,title,name,*info):
 	FreeCAD.tcmds5.append([menu,title1,name,isactive,info])
 
 
+
+def c2b(menu,isactive,title,name,text,icon,cmd=None,*info):
+
+	global _Command
+	if cmd==None:
+		cmd=re.sub(r' ', '', text)+'()'
+	if name==0:
+		name=re.sub(r' ', '', text)
+	t=_Command(name,text,icon,cmd,*info)
+	if title ==0:
+		title="TT"+re.sub(r' ', '', text)
+	name1="Nurbs_"+title
+	t.IsActive=isactive
+	FreeCADGui.addCommand(name1,t)
+	FreeCAD.tcmds5.append([menu,name1])
+
+
 # special conditions for actions
 def onneedle():
 	'''open the needle file'''
@@ -286,19 +303,26 @@ def onspread():
 
 if FreeCAD.GuiUp:
 
+
+	c2b(["SMOOTH"],onselection1,0,'smooth','smooth Wire','/../icons/draw.svg')
+	c2b(["SMOOTH"],onselection1,0,'smooth','smooth Mesh','/../icons/draw.svg')
+
+	c2b(["SMOOTH"],onselection1,0,'smooth','split Mesh','/../icons/draw.svg')
+	c2b(["SMOOTH"],onselection2,0,'smooth','distance Curves','/../icons/draw.svg')
+
 	# geodesics
-#	c2a(["Curves","Geodesic"],always,'geodesic3','geodesic_lines','create curvature star','/../icons/draw.svg',"runC()")
-	c2a(["Curves","Geodesic"],onselection1,'geodesic1','geodesic_lines','create geodesic','/../icons/geodesic.svg',"run()")
+	c2b(["Curves","Geodesic"],onselection1,0,'geodesic_lines','create Curvature Star','/../icons/draw.svg')
+	c2b(["Curves","Geodesic"],onselection1,0,'geodesic_lines','create Geodesic','/../icons/geodesic.svg')
+	c2b(["Curves","Geodesic"],onselection1,0,'geodesic_lines','geodesic Distance','/../icons/geodesiccircle.svg')
+	c2b(["Curves","Geodesic"],onselection2,0,'geodesic_lines','geodesic Map Patch To Face','/../icons/patch.svg')
+	c2b(["Curves","Geodesic"],ondocument,0,'geodesic_lines','create Marker','/../icons/geodesic_ref.svg')
+	c2b(["Curves","Geodesic"],onselection2,0,'geodesic_lines','find Geodesic To Target','/../icons/geodesic_target.svg')
+	c2b(["Curves","Geodesic"],onselection1,0,'geodesic_lines','append Geodesic','/../icons/geodesic_append.svg')
+	c2b(["Curves","Geodesic"],onselection1,0,'geodesic_lines','create geodesic bunch','/../icons/geodesic_bunch.svg' )
 
-	c2a(["Curves","Geodesic"],onselection1,'geodesic2','geodesic_lines','geodesic distance ','/../icons/geodesiccircle.svg',"runE()")
-	c2a(["Curves","Geodesic"],onselection2,'geodesic3','geodesic_lines','geodesic map patch to face','/../icons/patch.svg',"runP()")
-
-	c2a(["Curves","Geodesic"],ondocument,'geodesic4','geodesic_lines','reference point','/../icons/geodesic_ref.svg',"runL()")
-	c2a(["Curves","Geodesic"],onselection2,'geodesic5','geodesic_lines','find geodesic to Target','/../icons/geodesic_target.svg',"runTest2()")
-
-	c2a(["Curves","Geodesic"],onselection1,'geodesic6','geodesic_lines','append/concatenate geodesic','/../icons/geodesic_append.svg',"runD()")
-	c2a(["Curves","Geodesic"],onselection1,'geodesic7','geodesic_lines','create geodesic bunch','/../icons/geodesic_bunch.svg',"runall()")
-	
+	# shoe
+	c2b(["Shoe","Markers"],always,0,'geodesic_lines','create Shoe Markers','/../icons/geodesic_ref.svg')
+	c2b(["Shoe","Markers"],always,0,'geodesic_lines','connect Markers','/../icons/geodesic_target.svg')
 
 
 	c1a(["Curves"],always,"scancut","cut Scanned Mesh ",'/../icons/mesh_cut.svg')
@@ -312,6 +336,7 @@ if FreeCAD.GuiUp:
 	#c2a(["Curves"],onselection1,'DraftBSpline Editor',"DraftBSplineEditor","Edit Draft Bspline",'/../icons/32px-draftbspline_edit.png',"run()")
 	c2a(["Curves"],always,'DraftBSpline Editor',"DraftBSplineEditor","Edit Draft Bspline",'/../icons/32px-draftbspline_edit.png',"run()")
 
+
 	c2a(["Curves"],always,'facedraw','facedraw','draw on a face','/../icons/draw.svg',"run()")
 #	c2a(["Curves"],always,'facedraws','facedraw_segments','draw over segments','/../icons/draw.svg',"run()")
 	c2a(["Curves"],always,'facedrawa','facedraw','create Map of a face','/../icons/draw.svg',"createMap()")
@@ -324,7 +349,7 @@ if FreeCAD.GuiUp:
 	c2a(["Curves"],always,'isodraw23','isodraw','2D to 3D','/../icons/draw.svg',"map2Dto3D()")
 	c2a(["Curves"],always,'isodraw24','isodraw','3D Grid to 2D Grid','/../icons/draw.svg',"map3Dgridto2Dgrid()")
 	
-	c2a(["Curves"],always,'isodraw25','isodraw','Brezel','/../icons/draw.svg',"createBrezel()")
+	c2b(["Curves"],always,0,'isodraw','create Brezel','/../icons/draw.svg')
 #	c2a(["Curves"],always,'importColorSVG','shoe_importSVG','import SVG for shoes','/../icons/draw.svg',"import_test()")
 
 
@@ -367,7 +392,11 @@ if FreeCAD.GuiUp:
 	c2a(["Faces","create"],always,'Random Cylinder',"nurbs","Create cylinder with randomness",'/../icons/cylinder.svg',"testRandomCylinder()")
 	c2a(["Faces","create"],always,'Random Sphere',"nurbs","Create sphere with randomness",'/../icons/sphere.svg',"testRandomSphere()")
 	c2a(["Faces","create"],ondocument,'simple Hood','simplehood','create a simple hood','/../icons/nurbs.svg',"run()")
+	c2a(["Faces","create"],ondocument,'grid test data','mesh_generator','create a grid testset','/../icons/nurbs.svg',"gentest()")
 
+	c2a(["Faces","create"],onselection2,'corridor','corridor','create a corridor for a path on s face testset','/../icons/nurbs.svg',"run()")
+
+	c2a(["Faces"],ondocument,'sculpt','sculpter','sculpt a face (MyGrid)','/../icons/beta.svg',"run()")
 
 	c2a(["Faces"],ondocument,'patcha','patch','connect 2 curve segments to a face','/../icons/beta.svg',"run()")
 	c2a(["Faces"],ondocument,'patchb','patch','patch b','/../icons/alpha.svg',"runb()")
@@ -466,9 +495,9 @@ if FreeCAD.GuiUp:
 
 	c2a(["Points"],always,'pta','points','points to volums',"/../icons/points.png","runA()",)
 	c2a(["Points"],always,'ptb','points','test B',"/../icons/points.png","runB()",)
-	c2a(["Points"],always,'ptc','points','C',"/../icons/points.png","runC()",)
-	c2a(["Points"],always,'ptd','points','D',"/../icons/points.png","runD()",)
-	c2a(["Points"],always,'pte','points','E',"/../icons/points.png","runE()",)
+	c2a(["Points"],always,'ptc','points','create point cloud y = 0.5*x with noise',"/../icons/points.png","runC()",)
+	c2a(["Points"],always,'ptd','points','approx points with outliner detection',"/../icons/points.png","runD()",)
+	c2a(["Points"],always,'pte','points','approx point simple',"/../icons/points.png","runE()",)
 
 
 	c2a(["Neo4j"],always,'Start','neodb','start db',"/../icons/neo4j.png","start()","graphdb")
