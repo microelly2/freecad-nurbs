@@ -309,6 +309,7 @@ if FreeCAD.GuiUp:
 
 	c2b(["SMOOTH"],onselection1,0,'smooth','split Mesh','/../icons/draw.svg')
 	c2b(["SMOOTH"],onselection2,0,'smooth','distance Curves','/../icons/draw.svg')
+	c2b(["SMOOTH"],onselection2,0,'smooth','draw Path','/../icons/draw.svg')
 
 	# geodesics
 	c2b(["Curves","Geodesic"],onselection1,0,'geodesic_lines','create Curvature Star','/../icons/draw.svg')

@@ -80,6 +80,7 @@ def runtaubin(obj):
 		try: pts=obj.Wire.Shape.discretize(obj.discretizeCount)
 		except: pts=obj.Wire.Shape.Wire1.discretize(obj.discretizeCount)
 	
+	
 	qts=np.array(pts)
 
 	for j in range(obj.count):
@@ -97,10 +98,11 @@ def runtaubin(obj):
 		for i in range(obj.start,mend):
 			qts[i] += f*(pts[i-1]+pts[i+1]-2*pts[i])
 
-		pts=np.array(qts)
+		#pts=np.array(qts)
 		pp=[FreeCAD.Vector(p) for p in qts]
 
 
+	drawtracks(pts,pp,"Diff_for_"+str(obj.Name))
 
 	if obj.createBSpline:
 		obj.Shape=Part.BSplineCurve(pp).toShape()
@@ -405,3 +407,118 @@ def distanceCurves():
 		ls += (p-q).Length
 	
 	print ("Distance ",a.Label,b.Label,ls/anz)
+
+
+
+#---------------------
+
+
+
+
+## create the inventor string for the colored wire
+
+def genbuffer(pts,colors=None):
+	'''create the inventor string for the colored wire
+	pts - list of points
+	colors - list of color indexes
+	'''
+
+	colix=""
+	pix=""
+	cordix=""
+	for i,p in enumerate(pts):
+		if i>0:
+			#if colors==None:colix += " "+str(random.randint(0,7))
+			#else:
+			#	colix += " "+str(colors[i])
+			colix += " 6"
+		pix += str(p.x)+" "+str(p.y) +" " +str(p.z)+"\n"
+		if i>0:cordix +=  str(i-1)+" "+str(i)+" -1\n" 
+
+	buff ='''#Inventor V2.1 ascii
+	Separator {
+		Transform {
+			translation 0 0 0
+			rotation 0 0 1  0
+			scaleFactor 1 1 1
+			center 0 0 0
+		}
+		Separator {
+			VRMLGroup {
+				children 
+				VRMLShape {
+					geometry 
+						VRMLIndexedLineSet {
+							coord 
+								VRMLCoordinate {
+									point 
+	'''
+
+	buff += " [" + pix + "]}\n"
+
+	buff +='''
+						color 
+							VRMLColor {
+								color [ 0 0 0, 1 0 0, 0 1 0,
+										0 0 1, 1 1 0, 0 1 1, 1 0 1 , 1 1 1,
+									]
+							  }
+						colorPerVertex FALSE
+	'''
+
+	buff += "colorIndex [" + colix + "]\n"
+	buff += "coordIndex [" + cordix + "]\n"
+	buff += "}}}}}"
+
+	return buff
+
+
+## create a vrml indexed color path as an inventor object
+
+def drawPath(name='ColorPath'):
+	'''create a vrml indexed color path as an inventor object
+	pts is the list of points
+	colors is the list of color indexes
+	'''
+
+	colors=None
+	iv=App.ActiveDocument.getObject(name)
+	if iv==None:iv=App.ActiveDocument.addObject("App::InventorObject",name)
+
+
+	[a,b]=Gui.Selection.getSelection()
+	#a.Shape.Wires
+	#b.Shape.Wires
+
+	anz=200
+	ptsa=a.Shape.Wires[0].discretize(anz)
+	ptsb=b.Shape.Wires[0].discretize(anz)
+
+	ls=[]
+	for p,q in zip(ptsa,ptsb):
+		ls += [p,q,p]
+
+	iv.Buffer=genbuffer(ls,colors)
+
+def drawtracks(ptsa,ptsb,name='ColorPath'):
+	'''create a vrml indexed color path as an inventor object
+	pts is the list of points
+	colors is the list of color indexes
+	'''
+	print ptsa
+	print ptsb
+
+	colors=None
+	iv=App.ActiveDocument.getObject(name)
+	if iv==None:iv=App.ActiveDocument.addObject("App::InventorObject",name)
+
+
+	ls=[]
+	n=FreeCAD.Vector()
+	for p,q in zip(ptsa,ptsb):
+		print q-p
+		ls += [p,p+(q-p)*20,p]
+
+	iv.Buffer=genbuffer(ls,colors)
+
+
