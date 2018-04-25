@@ -310,6 +310,13 @@ if FreeCAD.GuiUp:
 	c2b(["SMOOTH"],onselection1,0,'smooth','split Mesh','/../icons/draw.svg')
 	c2b(["SMOOTH"],onselection2,0,'smooth','distance Curves','/../icons/draw.svg')
 	c2b(["SMOOTH"],onselection2,0,'smooth','draw Path','/../icons/draw.svg')
+	c2b(["Sketchertools"],ondocument,0,'sketch_to_bezier','create Bezier Sketch','/../icons/draw.svg')
+	c2b(["Sketchertools"],ondocument,0,'sketch_to_bezier','create Arc Sketch','/../icons/draw.svg')
+
+	c2b(["Sketchertools"],onselection1,0,'sketch_to_bezier','create Labels','/../icons/draw.svg')
+
+	c2b(["Sketchertools"],onselection,0,'sketch_to_bezier','update Labels','/../icons/draw.svg')
+
 
 	# geodesics
 	c2b(["Curves","Geodesic"],onselection1,0,'geodesic_lines','create Curvature Star','/../icons/draw.svg')

@@ -235,6 +235,13 @@ def splitMesh():
 	pixl=[0,10,20,30,31,50,60]
 
 	rstep=10
+	rstep=10
+	ribrange=range(ribc)
+	ribrange=range(1,25)
+	
+	#ribrange=[13,14,15,16,17]
+
+	#ribrange=[10]
 
 	import Mesh
 	#Gui.activateWorkbench("MeshWorkbench")
@@ -253,8 +260,9 @@ def splitMesh():
 	#s=App.ActiveDocument.K147908
 	s=Gui.Selection.getSelection()[0]
 
+	ribs=[]
 	#ribc
-	for i  in range(ribc):
+	for i  in ribrange:
 
 		start=round(s.Mesh.BoundBox.YMin)+5
 		pos=int(start+i*rstep)
@@ -302,6 +310,8 @@ def splitMesh():
 
 		rc=App.ActiveDocument.ActiveObject
 		rc.Label="Section y="+ str(pos)
+		rc.ViewObject.LineColor=(0.3,0.3,1.0)
+		rc.ViewObject.LineWidth=6
 		Gui.updateGui()
 		pts=rc.Shape.Wires[0].discretize(merc)
 		ptsa += [pts]
@@ -311,11 +321,30 @@ def splitMesh():
 			sk.addGeometry(Part.Circle(App.Vector(0.,0.,0),App.Vector(0,0,1),50),False)
 			sk.Placement=pm
 
-	App.ActiveDocument.removeObject(plane.Name)
+#		import sketch_to_bezier
+#		reload (sketch_to_bezier)
+#		sk=sketch_to_bezier.createBezierSketch(name="Arc",source=rc)
+#		sk.Placement=pm
+#		ribs +=[sk]
 
-	if 0: # speater
+
+
+
+
+	if 0:
+		if len(ribrange)>1:
+			loft=App.ActiveDocument.addObject('Part::Loft','Loft')
+			loft.Sections=ribs
+			loft.ViewObject.Transparency=70
+			loft.ViewObject.DisplayMode = u"Shaded"
+			for r in ribs:
+				r.ViewObject.hide()
+
+
+	if 1: # speater
 
 		import numpy as np
+		ribs2=[]
 
 		ptsa=np.array(ptsa)
 
@@ -346,6 +375,7 @@ def splitMesh():
 		'''
 
 		ptsb=[]
+		ribs=[]
 
 		p0=FreeCAD.Vector()
 		p1=p0
@@ -372,21 +402,49 @@ def splitMesh():
 			p1=pps2[1]
 			ptsb += [pps2]
 			print ij
-			#Draft.makeWire([FreeCAD.Vector()]+pps2)
+			rcc=Draft.makeWire(pps2)
+
+			pos=pts[0][1]
+			pm=FreeCAD.Placement(FreeCAD.Vector(0,pos,0.000),
+				FreeCAD.Rotation(FreeCAD.Vector(1.000,0.000,0.000),90.000))
+			plane.Placement=pm
+
+
+			import sketch_to_bezier
+			reload (sketch_to_bezier)
+			sk=sketch_to_bezier.createBezierSketch(name="Arc",source=rcc)
+			sk.Placement=pm
+			ribs +=[sk]
 
 
 
 
 
-		ptsb=np.array(ptsb).swapaxes(0,1)
 
-		for pix in pixl:
-			print pix
-			pts=ptsb[pix*10]
-			ij=0
-			mj=10**10
-			pps=[FreeCAD.Vector(p) for p in pts]
-			_=Draft.makeWire(pps)
+		if 0:
+
+			ptsb=np.array(ptsb).swapaxes(0,1)
+
+			for pix in pixl:
+				print pix
+				pts=ptsb[pix*10]
+				ij=0
+				mj=10**10
+				pps=[FreeCAD.Vector(p) for p in pts]
+				_=Draft.makeWire(pps)
+				ribs2 += [_]
+
+
+	if 0:
+		if len(ribrange)>1:
+			loft=App.ActiveDocument.addObject('Part::Loft','LoftYY')
+			loft.Sections=ribs
+			loft.ViewObject.Transparency=70
+			loft.ViewObject.DisplayMode = u"Shaded"
+			for r in ribs:
+				r.ViewObject.hide()
+
+	App.ActiveDocument.removeObject(plane.Name)
 
 
 
@@ -417,7 +475,7 @@ def distanceCurves():
 
 ## create the inventor string for the colored wire
 
-def genbuffer(pts,colors=None):
+def genbuffer(pts,color=0):
 	'''create the inventor string for the colored wire
 	pts - list of points
 	colors - list of color indexes
@@ -431,7 +489,7 @@ def genbuffer(pts,colors=None):
 			#if colors==None:colix += " "+str(random.randint(0,7))
 			#else:
 			#	colix += " "+str(colors[i])
-			colix += " 6"
+			colix += " "+str(color)
 		pix += str(p.x)+" "+str(p.y) +" " +str(p.z)+"\n"
 		if i>0:cordix +=  str(i-1)+" "+str(i)+" -1\n" 
 
@@ -473,45 +531,11 @@ def genbuffer(pts,colors=None):
 	return buff
 
 
-## create a vrml indexed color path as an inventor object
-
-def drawPath(name='ColorPath'):
-	'''create a vrml indexed color path as an inventor object
-	pts is the list of points
-	colors is the list of color indexes
-	'''
-
-	colors=None
-	iv=App.ActiveDocument.getObject(name)
-	if iv==None:iv=App.ActiveDocument.addObject("App::InventorObject",name)
-
-
-	[a,b]=Gui.Selection.getSelection()
-	#a.Shape.Wires
-	#b.Shape.Wires
-
-	anz=200
-	ptsa=a.Shape.Wires[0].discretize(anz)
-	ptsb=b.Shape.Wires[0].discretize(anz)
-
-	ls=[]
-	for p,q in zip(ptsa,ptsb):
-		ls += [p,q,p]
-
-	iv.Buffer=genbuffer(ls,colors)
-
 def drawtracks(ptsa,ptsb,name='ColorPath'):
-	'''create a vrml indexed color path as an inventor object
-	pts is the list of points
-	colors is the list of color indexes
-	'''
-	print ptsa
-	print ptsb
+	'''create a vrml indexed color path as an inventor object'''
 
-	colors=None
 	iv=App.ActiveDocument.getObject(name)
 	if iv==None:iv=App.ActiveDocument.addObject("App::InventorObject",name)
-
 
 	ls=[]
 	n=FreeCAD.Vector()
@@ -519,6 +543,6 @@ def drawtracks(ptsa,ptsb,name='ColorPath'):
 		print q-p
 		ls += [p,p+(q-p)*20,p]
 
-	iv.Buffer=genbuffer(ls,colors)
+	iv.Buffer=genbuffer(ls,8)
 
 
