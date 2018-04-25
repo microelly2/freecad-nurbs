@@ -379,6 +379,7 @@ class ArcSketch(FeaturePython):
 		self.aa = None
 		obj.addProperty("App::PropertyBool",'init')
 		obj.addProperty("App::PropertyLink",'source')
+		obj.addProperty("App::PropertyInteger",'countArcs').countArcs=2
 		
 		ViewProvider(obj.ViewObject)
 		self.timestamp=time.time()
@@ -394,9 +395,14 @@ class ArcSketch(FeaturePython):
 		obj.deleteAllGeometry()
 
 		def run(ag,bg):
-			p2=sk.getPoint(ag,1)
-			p0=sk.getPoint(bg,2)
-			ps=sk.getPoint(ag,2)
+			
+			try:
+				p2=sk.getPoint(ag,1)
+				p0=sk.getPoint(bg,2)
+				ps=sk.getPoint(ag,2)
+			except:
+				print "points not found"
+				return
 
 			alpha=np.arccos((p2-ps).normalize().dot((p0-ps).normalize()))
 			radius=(p2-ps).Length*np.tan(alpha*0.5)
@@ -424,9 +430,13 @@ class ArcSketch(FeaturePython):
 			App.Vector(0,0,1),radius),w1,w2),False)
 			obj.solve()
 
-
 		run(2,3)
-		run(5,6)
+
+		if obj.countArcs>1:
+			run(5,6)
+		if obj.countArcs>2:
+			run(8,9)
+
 		obj.recompute()
 
 

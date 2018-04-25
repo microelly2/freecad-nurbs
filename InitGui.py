@@ -29,6 +29,7 @@ import sys
 import nurbswb
 import nurbswb.configuration
 import os
+import re
 global __dir__
 __dir__ = os.path.dirname(nurbswb.__file__)
 
