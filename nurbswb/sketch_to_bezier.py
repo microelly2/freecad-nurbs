@@ -393,6 +393,9 @@ class ArcSketch(FeaturePython):
 	def execute(proxy,obj):
 		sk=obj.source
 		obj.deleteAllGeometry()
+		for i in range(obj.countArcs+1):
+			obj.addGeometry(sk.Geometry[1+3*i])
+
 
 		def run(ag,bg):
 			
@@ -434,6 +437,7 @@ class ArcSketch(FeaturePython):
 
 		if obj.countArcs>1:
 			run(5,6)
+			
 		if obj.countArcs>2:
 			run(8,9)
 
@@ -468,19 +472,45 @@ def createLabel(obj,ref,ctext):
 
 	l = Draft.makeLabel(
 	target=(obj,ref),
-	direction='Horizontal',distance=100.0,
+	direction='Horizontal',distance=.0,
 	labeltype='Custom',
 	)
 
 	l.CustomText = ctext
 	l.Label=l.CustomText[0]
 	print l.Target[1][0]
-	if l.Target[1][0].startswith("Edge"):
+
+	##-----------------------
+	com=l.Target[0].Shape.CenterOfMass
+	xmin=l.Target[0].Shape.BoundBox.XMin
+	
+	l.CustomText = ctext
+	l.Label=l.CustomText[0]
+	print l.Target[1][0]
+
+	if l.Target[1][0].startswith("Edge") or l.Target[1][0].startswith("Fac") :
+		print "a"
+		pp=getattr(l.Target[0].Shape,l.Target[1][0]).CenterOfMass
 		l.TargetPoint=getattr(l.Target[0].Shape,l.Target[1][0]).CenterOfMass
 	else:
+		print "b"
+		pp=getattr(l.Target[0].Shape,l.Target[1][0]).Point
 		l.TargetPoint=getattr(l.Target[0].Shape,l.Target[1][0]).Point
 
-		l.ViewObject.TextSize = '16 mm'
+	l.Placement.Base = pp
+#	l.Placement.Base.x=l.Target[0].Shape.BoundBox.XMax +20
+#	l.Placement.Base.y=l.Target[0].Shape.BoundBox.YMax +20
+#	l.Placement.Base.z=l.Target[0].Shape.BoundBox.ZMax +20
+	l.Placement.Base += (pp-com)*1.5
+	diff=(pp-com)
+	if diff.x < 0:
+		l.StraightDistance = 1
+	else:
+		l.StraightDistance = -1
+
+#----------------------------------------
+
+	l.ViewObject.TextSize = '16 mm'
 	l.ViewObject.DisplayMode =  "2D text"
 	l.ViewObject.TextAlignment = "Top"
 
@@ -512,6 +542,26 @@ def createLabels():
 
 	for d  in dat:
 		createLabel(obj,d[0],d[1])
+
+def createLabels():
+
+#	obj=FreeCAD.ActiveDocument.Sketch
+	for obj in Gui.Selection.getSelection():
+		dat=[]
+		for i,e in enumerate(obj.Shape.Vertexes):
+			dat += [[ "Vertex"+str(i+1), ["V "+str(i+1) + " @ " + obj.Label]]]
+		for i,e in enumerate(obj.Shape.Edges):
+			dat += [[ "Edge"+str(i+1), ["E "+str(i+1) + " @ " + obj.Label]]]
+		for i,e in enumerate(obj.Shape.Faces):
+			dat += [[ "Face"+str(i+1), ["F "+str(i+1) + " @ " + obj.Label]]]
+
+
+		for d  in dat:
+			createLabel(obj,d[0],d[1])
+
+
+
+
 
 def updateLabels():
 
