@@ -254,3 +254,7 @@ def gentest():
 		FreeCAD.Vector(581.064575195,518.307495117,0.0),FreeCAD.Vector(383.755706787,529.401123047,0.0),
 		FreeCAD.Vector(285.497436523,488.196105957,0.0),FreeCAD.Vector(76.302444458,466.801116943,0.0)]
 	spline = Draft.makeBSpline(points,closed=False,face=True,support=None)
+
+
+
+# gentest()

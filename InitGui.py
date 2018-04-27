@@ -381,6 +381,8 @@ if FreeCAD.GuiUp:
 	c2a(["Curves"],ondocument,'createshoerib','createshoerib','create a shoe last rib','/../icons/cloverleaf.svg',"run()")
 
 	c2a(["Curves"],ondocument,'project_edge2face','project_edge2face','parallel projection of edge to face','/../icons/nurbs.svg',"run()")
+	c2a(["Curves"],ondocument,'project_edge2face','project_edge2face','parallel projection of selection to face','/../icons/nurbs.svg',"runAll()")
+
 	c2a(["Curves"],ondocument,'loft_selection','loft_selection','loft between two selections','/../icons/Loft.svg',"run()")
 	c2a(["Curves"],ondocument,'loft_selectionEdges','loft_selection','loft between two selected edges','/../icons/Loft.svg',"runOnEdges()")
 
@@ -402,6 +404,8 @@ if FreeCAD.GuiUp:
 	c2a(["Faces","create"],always,'Random Sphere',"nurbs","Create sphere with randomness",'/../icons/sphere.svg',"testRandomSphere()")
 	c2a(["Faces","create"],ondocument,'simple Hood','simplehood','create a simple hood','/../icons/nurbs.svg',"run()")
 	c2a(["Faces","create"],ondocument,'grid test data','mesh_generator','create a grid testset','/../icons/nurbs.svg',"gentest()")
+
+	c2a(["AAA"],onselection1,'corridor2a','corridor','wire to bspline','/../icons/nurbs.svg',"WireToBSpline()")
 
 	c2a(["Faces","create"],onselection2,'corridor','corridor','create a corridor for a path on s face testset','/../icons/nurbs.svg',"run()")
 

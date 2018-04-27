@@ -481,7 +481,9 @@ def createLabel(obj,ref,ctext):
 	print l.Target[1][0]
 
 	##-----------------------
-	com=l.Target[0].Shape.CenterOfMass
+	#com=l.Target[0].Shape.CenterOfMass
+	com=l.Target[0].Shape.BoundBox.Center
+	
 	xmin=l.Target[0].Shape.BoundBox.XMin
 	
 	l.CustomText = ctext
