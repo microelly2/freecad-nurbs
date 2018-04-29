@@ -378,6 +378,8 @@ class ArcSketch(FeaturePython):
 		self.obj2 = obj
 		self.aa = None
 		obj.addProperty("App::PropertyBool",'init')
+		obj.addProperty("App::PropertyBool",'displayFirst')
+		obj.addProperty("App::PropertyBool",'displayLast')
 		obj.addProperty("App::PropertyLink",'source')
 		obj.addProperty("App::PropertyInteger",'countArcs').countArcs=2
 		
@@ -393,8 +395,14 @@ class ArcSketch(FeaturePython):
 	def execute(proxy,obj):
 		sk=obj.source
 		obj.deleteAllGeometry()
+		if obj.displayFirst:
+			obj.addGeometry(sk.Geometry[0])
 		for i in range(obj.countArcs+1):
 			obj.addGeometry(sk.Geometry[1+3*i])
+
+		if obj.displayLast:
+			obj.addGeometry(sk.Geometry[3*obj.countArcs+2])
+
 
 
 		def run(ag,bg):

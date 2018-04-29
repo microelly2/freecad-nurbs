@@ -27,7 +27,8 @@ def run():
 	Part.show(p)
 
 
-def runAll():
+
+def OLDrunAll():
 
 		wires=[]
 		alls=Gui.Selection.getSelection()
@@ -39,10 +40,210 @@ def runAll():
 
 				p=f.makeParallelProjection(s, App.Vector(0,0,1))
 				wires += p.Wires[0].Edges
-				print p.Vertexes[0].Point
-				print p.Vertexes[1].Point
+#				print p.Vertexes[0].Point
+#				print p.Vertexes[1].Point
 #				Part.show(p)
 
-		#FreeCAD.w=wires
-		ww=Part.__sortEdges__(w)
-		Part.show(Part.Compound(ww))
+		Part.show(Part.Compound(wires))
+		FreeCAD.w=wires
+
+		#---------------------------------
+
+
+		wsort=[wires[0]]
+		for i,w  in enumerate(wires):
+			if i==0: continue
+			w2=wsort[-1]
+			print min(
+				(w.Vertexes[0].Point-w2.Vertexes[0].Point).Length,
+				(w.Vertexes[1].Point-w2.Vertexes[0].Point).Length,
+				(w.Vertexes[0].Point-w2.Vertexes[1].Point).Length,
+				(w.Vertexes[1].Point-w2.Vertexes[1].Point).Length,
+				)
+			if (w.Vertexes[0].Point-w2.Vertexes[1].Point).Length< 0.1:
+				wsort += [w]
+			elif (w.Vertexes[0].Point-w2.Vertexes[0].Point).Length< 0.1:
+				wsort += [w]
+			elif (w.Vertexes[1].Point-w2.Vertexes[1].Point).Length< 0.1:
+				print "gedreht"
+				w.reverse()
+				wsort += [w]
+			elif (w.Vertexes[1].Point-w2.Vertexes[0].Point).Length< 0.1:
+				print "gedreht"
+				w.reverse()
+				wsort += [w]
+
+			else:
+				print "Fehler"
+				raise Exception("Gehrte")
+
+
+		w=Part.Wire(wsort)
+		Part.show(w)
+
+		
+		#----------------------------------
+		
+#		ww=Part.__sortEdges__(wires)
+#		FreeCAD.ww=ww
+#		FreeCAD.wires=wires
+#		assert len(ww) == len(wires)
+		
+#		w=Part.Wire(ww)
+#		Part.show(w)
+		pts=w.discretize(200)
+		Draft.makeBSpline(pts)
+
+def runAll():
+
+		pointgrps=[]
+		wires=[]
+		alls=Gui.Selection.getSelection()
+		target=alls[-1]
+		for source in alls[:-1]:
+			
+			pgs=[]
+			for s in source.Shape.Edges:
+
+				f=target.Shape.Face1
+
+				p=f.makeParallelProjection(s, App.Vector(0,0,1))
+				wires += p.Wires[0].Edges
+#				print p.Vertexes[0].Point
+#				print p.Vertexes[1].Point
+##				Part.show(p)
+				print "Diskret"
+				pgs += p.Wires[0].discretize(200)
+#				Draft.makeWire(p.Wires[0].discretize(200))
+
+			pointgrps += [pgs]
+
+#		Part.show(Part.Compound(wires))
+		FreeCAD.w=wires
+		FreeCAD.pointgrps=pointgrps
+		concatenateWires(pointgrps)
+		return
+
+
+		#---------------------------------
+
+		pointgrps=[]
+
+		wsort=[wires[0]]
+		for i,w  in enumerate(wires):
+			if i==0: continue
+			w2=wsort[-1]
+			print min(
+				(w.Vertexes[0].Point-w2.Vertexes[0].Point).Length,
+				(w.Vertexes[1].Point-w2.Vertexes[0].Point).Length,
+				(w.Vertexes[0].Point-w2.Vertexes[1].Point).Length,
+				(w.Vertexes[1].Point-w2.Vertexes[1].Point).Length,
+				)
+			if (w.Vertexes[0].Point-w2.Vertexes[1].Point).Length< 0.1:
+				wsort += [w]
+			elif (w.Vertexes[0].Point-w2.Vertexes[0].Point).Length< 0.1:
+				wsort += [w]
+			elif (w.Vertexes[1].Point-w2.Vertexes[1].Point).Length< 0.1:
+				print "gedreht"
+				w.reverse()
+				wsort += [w]
+			elif (w.Vertexes[1].Point-w2.Vertexes[0].Point).Length< 0.1:
+				print "gedreht"
+				w.reverse()
+				wsort += [w]
+
+			else:
+				print "Fehler"
+				raise Exception("Gehrte")
+
+			w=Part.Wire(wsort)
+#			Part.show(w)
+
+
+			#----------------------------------
+			
+	#		ww=Part.__sortEdges__(wires)
+	#		FreeCAD.ww=ww
+	#		FreeCAD.wires=wires
+	#		assert len(ww) == len(wires)
+			
+	#		w=Part.Wire(ww)
+	#		Part.show(w)
+
+			pts=w.discretize(200)
+			pointgrps +=[pts]
+
+			Draft.makeBSpline(pts)
+
+#		concatenateWires(pointgrps)
+
+
+
+def concatenateBSplines():
+	''' Draft BSsplines  zusammenfuegen'''
+
+	import Draft
+	
+	wires=[]
+	for s in Gui.Selection.getSelection():
+		wires += [s.Points]
+		print wires
+		print s.Label
+
+	concatenateWires(wires)
+
+
+def concatenateWires(wires):
+
+	pts=wires[0]
+
+#	print pts
+#	print  wires[0][0]
+#	print  wires[1][1]
+
+	dista= min(
+				(wires[0][0]-wires[1][0]).Length,
+				(wires[0][0]-wires[1][-1]).Length,
+				(wires[0][-1]-wires[1][0]).Length,
+				(wires[0][-1]-wires[1][-1]).Length
+			)
+
+
+	if dista == (wires[0][0]-wires[1][0]).Length or  dista == (wires[0][0]-wires[1][-1]).Length:
+		print "Drehe Start"
+		pts.reverse()
+
+	wa=pts
+
+	for w in wires[1:]:
+		dista= min(
+					(wa[-1]-w[0]).Length,
+					(wa[-1]-w[-1]).Length,
+				)
+		wb=w
+		if dista == (wa[-1]-w[-1]).Length:
+			print "Drehe"
+			wb.reverse()
+
+		pts += wb
+		wa = wb
+
+	print len(pts)
+
+	pts2=[]
+	for i,p in enumerate(pts):
+		if  (p-pts[i-1]).Length<0.001:
+			print "Doppel",i
+			print (p-pts[i-1]).Length
+		else:
+			pts2 += [p]
+
+
+	import Draft
+	Draft.makeWire(pts2)
+	Draft.makeBSpline(pts2)
+
+
+
+
+

@@ -380,8 +380,10 @@ if FreeCAD.GuiUp:
 	c2a(["Curves"],ondocument,'createcloverleaf','createcloverleaf','create a cloverleaf','/../icons/cloverleaf.svg',"run()")
 	c2a(["Curves"],ondocument,'createshoerib','createshoerib','create a shoe last rib','/../icons/cloverleaf.svg',"run()")
 
-	c2a(["Curves"],ondocument,'project_edge2face','project_edge2face','parallel projection of edge to face','/../icons/nurbs.svg',"run()")
-	c2a(["Curves"],ondocument,'project_edge2face','project_edge2face','parallel projection of selection to face','/../icons/nurbs.svg',"runAll()")
+	c2a(["Curves"],ondocument,'project_edge2face1','project_edge2face','parallel projection of edge to face','/../icons/nurbs.svg',"run()")
+	c2a(["Curves"],ondocument,'project_edge2face2','project_edge2face','parallel projection of selection to face','/../icons/nurbs.svg',"runAll()")
+	c2a(["Curves"],ondocument,'project_edge2face3','project_edge2face','concatenate Draft.BSplines','/../icons/nurbs.svg',"concatenateBSplines()")
+
 
 	c2a(["Curves"],ondocument,'loft_selection','loft_selection','loft between two selections','/../icons/Loft.svg',"run()")
 	c2a(["Curves"],ondocument,'loft_selectionEdges','loft_selection','loft between two selected edges','/../icons/Loft.svg',"runOnEdges()")
