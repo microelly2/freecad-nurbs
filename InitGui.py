@@ -384,6 +384,10 @@ if FreeCAD.GuiUp:
 	c2a(["Curves"],ondocument,'project_edge2face2','project_edge2face','parallel projection of selection to face','/../icons/nurbs.svg',"runAll()")
 	c2a(["Curves"],ondocument,'project_edge2face3','project_edge2face','concatenate Draft.BSplines','/../icons/nurbs.svg',"concatenateBSplines()")
 
+	c2a(["Curves"],onselection1,'project_edge2face4','project_edge2face','split curve in xy, sz','/../icons/nurbs.svg',"splitCurve()")
+	c2a(["Curves"],onselection2,'project_edge2face5','project_edge2face','combine sz,xy, to 3dCurve','/../icons/nurbs.svg',"combineCurve()")
+
+
 
 	c2a(["Curves"],ondocument,'loft_selection','loft_selection','loft between two selections','/../icons/Loft.svg',"run()")
 	c2a(["Curves"],ondocument,'loft_selectionEdges','loft_selection','loft between two selected edges','/../icons/Loft.svg',"runOnEdges()")

@@ -247,3 +247,53 @@ def concatenateWires(wires):
 
 
 
+
+import numpy as np
+
+def splitCurve():
+	# split an recombine curve
+	sw=Gui.Selection.getSelection()[0]
+	
+	w=sw.Shape.Edges[0]
+	#App.ActiveDocument.BSpline001.Shape
+
+	step=10
+	anz=int(round(w.Curve.length()/step+1))
+	pts=w.discretize(anz)
+
+	pxy=[FreeCAD.Vector(p.x,p.y,0) for p in pts]
+
+	for i in range(anz):
+		print (pts[i]-pts[i-1]).Length
+
+	len=round(w.Curve.length()+1)/anz
+
+	psz=[FreeCAD.Vector(len*i,0,p.z) for i,p in enumerate(pts)]
+	psz=[FreeCAD.Vector(0,len*i,p.z) for i,p in enumerate(pts)]
+
+	# split
+	wsz=Draft.makeWire(psz)
+	wxy=Draft.makeWire(pxy)
+
+
+def combineCurve():
+	# recombine
+	[wsz,wxy]=Gui.Selection.getSelection()
+	pts=[FreeCAD.Vector(b.x,b.y,a.z) for a,b in zip(wsz.Points,wxy.Points)]
+	Draft.makeWire(pts)
+	
+	for i,p in enumerate(pts):
+		if i == 0:  ptsa = []
+		else:
+			t=p-pts[i-1]
+			t.normalize()
+			t*=10
+			n=FreeCAD.Vector(0,0,1)
+			h=t.cross(n).normalize() *10
+			
+			ptsa += [p,p+h,pts[i-1]+h,pts[i-1]-h,p-h,p] 
+
+	Draft.makeWire(ptsa)
+	
+
+
