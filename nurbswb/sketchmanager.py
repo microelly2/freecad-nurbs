@@ -114,8 +114,9 @@ def loadSketch(fn,sourcename='Sketch',targetname='Sketch'):
 
 def getfiles():
 	'''list sketcher files library''' 
-#	print glob.glob(FreeCAD.ConfigGet("UserAppData") +'sketchlib/'+'*_sk.fcstd')
-	return glob.glob(FreeCAD.ConfigGet("UserAppData") +'sketchlib/'+'*_sk.fcstd')
+	files=glob.glob(FreeCAD.ConfigGet("UserAppData") +'sketchlib/'+'*_sk.fcstd')
+	files.sort()
+	return files
 
 
 
