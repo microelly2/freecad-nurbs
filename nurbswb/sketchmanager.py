@@ -52,25 +52,28 @@ def replaceSketch(sketch,name):
 	cs=sb.Constraints
 
 	sk=App.activeDocument().getObject(name)
-	if sk == None:
+	if sk == None or name=='ufo':
 		sk=App.activeDocument().addObject('Sketcher::SketchObjectPython',name)
 		_ViewProvider(sk.ViewObject)
 	rr=range(len(sk.Geometry))
 	rr.reverse()
 
-	for i in rr:
-		sk.delGeometry(i)
+	sk.deleteAllGeometry()
 
 	for g in gs:
+#		print g
 		rc=sk.addGeometry(g)
 		sk.setConstruction(rc,g.Construction)
 
+#	print "Constraints ..."
 	for c in cs:
+#		print c
 		rc=sk.addConstraint(c)
 
 	sk.solve()
 	sk.recompute()
 	App.activeDocument().recompute()
+	return sk
 
 
 
@@ -79,14 +82,30 @@ def loadSketch(fn,sourcename='Sketch',targetname='Sketch'):
 	'''load sketch from file into sketcher object with name'''
 
 	ad=App.ActiveDocument
+	if ad==None:
+		ad=App.newDocument("Unnamed")
 
 	rc=FreeCAD.open(fn)
-	sb=rc.getObject(sourcename)
+	print "read ",fn
+	print "active document",ad,ad.Label
+
+	for obj in rc.Objects:
+		print (obj.Name,obj.Label,obj.ViewObject.Visibility)
+		if obj.ViewObject.Visibility:
+			print "found"
+			sb=obj
+			break
+
+	#sb=rc.getObject(sourcename)
 	assert sb <> None
+
 
 	App.setActiveDocument(ad.Label)
 	App.ActiveDocument=ad
-	replaceSketch(sb,targetname)
+
+	sk=replaceSketch(sb,targetname)
+	
+	sk.Label="Copy of "+sourcename+"@"+fn
 	App.closeDocument(rc.Label)
 
 
@@ -125,12 +144,16 @@ def srun(w):
 	reload(nurbswb.sketchmanager)
 
 	target='ufo'
+
 	s=Gui.Selection.getSelection()
-	if s<>[]: target=s[0].Name
+	if s<>[]: 
+		target=s[0].Name
+	print "target is: ",target
 
 	cmd="nurbswb.sketchmanager.loadSketch('" + model +"','Sketch',target)"
-	print cmd
+	print "Run command:",cmd
 	eval(cmd)
+	Gui.SendMsgToActiveView("ViewFit")
 	# w.hide()
 #\endcond
 

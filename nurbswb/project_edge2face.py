@@ -280,7 +280,9 @@ def combineCurve():
 	# recombine
 	[wsz,wxy]=Gui.Selection.getSelection()
 	pts=[FreeCAD.Vector(b.x,b.y,a.z) for a,b in zip(wsz.Points,wxy.Points)]
-	Draft.makeWire(pts)
+	aa=Draft.makeWire(pts)
+	ptsb=aa.Shape.discretize(40)
+	Draft.makeBSpline(ptsb)
 	
 	for i,p in enumerate(pts):
 		if i == 0:  ptsa = []
@@ -294,6 +296,7 @@ def combineCurve():
 			ptsa += [p,p+h,pts[i-1]+h,pts[i-1]-h,p-h,p] 
 
 	Draft.makeWire(ptsa)
+	
 	
 
 

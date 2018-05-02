@@ -675,6 +675,60 @@ def run_createFBS_with_three_Clients():
 	fbs.activeClientC=True
 
 
+def connectPoints(pos):
+	[basesk,ts]=Gui.Selection.getSelection()
+	tp=Gui.Selection.getSelectionEx()[0].PickedPoints[0]
+
+	print tp
+	cx0=getNamedConstraint(ts,'p_0_x')
+	ts.setDriving(cx0,True) 
+	c0=getNamedConstraint(ts,'p_0_y')
+	ts.setDriving(c0,True) 
+	cx1=getNamedConstraint(ts,'p_1_x')
+	ts.setDriving(cx1,True) 
+	c1=getNamedConstraint(ts,'p_1_y')
+	ts.setDriving(c1,True) 
+
+	if pos==0:
+		ts.setDatum(cx0,tp.x) 
+		ts.setDatum(c0,tp.y) 
+
+	if pos==1:
+		ts.setDatum(cx1,tp.x) 
+		ts.setDatum(c1,tp.y) 
+
+	ts.setDriving(c0,False) 
+	ts.setDriving(cx0,False) 
+	ts.setDriving(c1,False) 
+	ts.setDriving(cx1,False) 
+
+	ts.solve()
+	App.activeDocument().recompute()
+
+
+def lockPoints(unlock=False):
+	[ts]=Gui.Selection.getSelection()
+
+	cx0=getNamedConstraint(ts,'p_0_x')
+	c0=getNamedConstraint(ts,'p_0_y')
+	cx1=getNamedConstraint(ts,'p_1_x')
+	c1=getNamedConstraint(ts,'p_1_y')
+
+	if not unlock:
+		ts.setDriving(cx0,True) 
+		ts.setDriving(c0,True) 
+		ts.setDriving(cx1,True) 
+		ts.setDriving(c1,True) 
+
+	else:
+		ts.setDriving(c0,False) 
+		ts.setDriving(cx0,False) 
+		ts.setDriving(c1,False) 
+		ts.setDriving(cx1,False) 
+
+	ts.solve()
+	App.activeDocument().recompute()
+
 
 
 
