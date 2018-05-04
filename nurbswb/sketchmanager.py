@@ -9,6 +9,61 @@ import glob
 from PySide import QtGui, QtCore
 
 
+
+
+import FreeCAD,FreeCADGui
+App=FreeCAD
+Gui=FreeCADGui
+
+import PySide
+from PySide import  QtGui,QtCore
+
+
+def run(w):
+	print "I'm run"
+	print w
+	print w.obj
+	print "-------------"
+	FreeCAD.oo=w.obj
+	sk=w.obj.Object #.Object
+	print sk.Label
+	print sk.Name
+
+
+def dialog(obj):
+
+	w=QtGui.QWidget()
+	w.obj=obj
+
+	box = QtGui.QVBoxLayout()
+	w.setLayout(box)
+	w.setWindowFlags(QtCore.Qt.WindowStaysOnTopHint)
+
+	l=QtGui.QLabel("Anzahl" )
+	w.l=l
+	box.addWidget(l)
+
+	w.r=QtGui.QPushButton("run")
+	box.addWidget(w.r)
+	w.r.pressed.connect(lambda :run(w))
+
+
+	return w
+
+
+
+#-------------
+
+
+
+
+
+
+
+
+
+
+
 #\cond
 class _ViewProvider(nurbswb.pyob.ViewProvider):
 	''' base class view provider '''
@@ -19,6 +74,51 @@ class _ViewProvider(nurbswb.pyob.ViewProvider):
 
 	def getIcon(self):
 		return FreeCAD.ConfigGet("UserAppData") +'/Mod/freecad-nurbs/icons/sketchdriver.svg'
+
+	def setupContextMenu(self, obj, menu):
+		menu.clear()
+		action = menu.addAction("MyMethod #1")
+		action.triggered.connect(lambda:self.methodA(obj.Object))
+		action = menu.addAction("MyMethod #2")
+		menu.addSeparator()
+		action.triggered.connect(lambda:self.methodB(obj.Object))
+		action = menu.addAction("Edit Sketch")
+		action.triggered.connect(lambda:self.myedit(obj.Object))
+
+
+	def myedit(self,obj):
+		self.methodB(None)
+		Gui.activeDocument().setEdit(obj.Name)
+		self.methodA(None)
+
+	def methodA(self,obj):
+#		print "my Method A Finisher"
+#		Gui.activateWorkbench("DraftWorkbench")
+		FreeCAD.activeDocument().recompute()
+
+	def methodB(self,obj):
+		print "my method B Starter"
+		# test starting an extra dialog
+		FreeCAD.d=dialog(self)
+		FreeCAD.d.show()
+		FreeCAD.activeDocument().recompute()
+
+	def methodC(self,obj):
+		print "my method C After Edit finished"
+		Gui.activateWorkbench("NurbsWorkbench")
+		FreeCAD.activeDocument().recompute()
+
+	def unsetEdit(self,vobj,mode=0):
+		self.methodC(None)
+
+
+	def doubleClicked(self,vobj):
+		print "double clicked"
+		self.myedit(vobj.Object)
+		print "Ende double clicked"
+
+
+
 #\endcond
 
 

@@ -42,6 +42,48 @@ class FeaturePython:
 	def __setstate__(self, state):
 		return None
 
+#------------
+
+import FreeCAD,FreeCADGui
+App=FreeCAD
+Gui=FreeCADGui
+
+import PySide
+from PySide import  QtGui,QtCore
+
+
+def run(w):
+	print "I'm run"
+	print w
+	print w.obj
+	print "-------------"
+	FreeCAD.oo=w.obj
+	sk=w.obj.Object.Object
+	print sk.Label
+	print sk.Name
+
+def dialog(obj):
+
+	w=QtGui.QWidget()
+	w.obj=obj
+
+	box = QtGui.QVBoxLayout()
+	w.setLayout(box)
+	w.setWindowFlags(QtCore.Qt.WindowStaysOnTopHint)
+
+	l=QtGui.QLabel("Anzahl" )
+	w.l=l
+	box.addWidget(l)
+
+	w.r=QtGui.QPushButton("run")
+	box.addWidget(w.r)
+	w.r.pressed.connect(lambda :run(w))
+
+
+	return w
+
+
+#-------------
 
 class ViewProvider:
 	''' basic defs '''
@@ -80,6 +122,9 @@ class ViewProvider:
 
 	def methodB(self,obj):
 		print "my method B Starter"
+		# test starting an extra dialog
+		FreeCAD.d=dialog(self)
+		FreeCAD.d.show()
 		FreeCAD.activeDocument().recompute()
 
 	def methodC(self,obj):
