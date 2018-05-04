@@ -304,6 +304,15 @@ def onspread():
 
 if FreeCAD.GuiUp:
 
+#-------------------------------------------
+	mt="Transportation V0"
+	c2a([mt],ondocument,'LoadSketch','sketchmanager','load sketch from a sketchlib','/../icons/sketchlibload.svg',"runLoadSketch()")
+	c2a([mt],onselection2,'Status155','feedbacksketch','connect road to line ',"/../icons/alpha.svg","connectLine()","sketcher")
+	c2b([mt],ondocument,0,'sketch_to_bezier','create Arc Sketch','/../icons/draw.svg')
+	c2b([mt],onselection1,0,'sketch_to_bezier','create Labels','/../icons/draw.svg')
+	c2b([mt],onselection,0,'sketch_to_bezier','update Labels','/../icons/draw.svg')
+
+#-------------------------------------------
 
 	c2b(["SMOOTH"],onselection1,0,'smooth','smooth Wire','/../icons/draw.svg')
 	c2b(["SMOOTH"],onselection1,0,'smooth','smooth Mesh','/../icons/draw.svg')
@@ -536,6 +545,8 @@ if FreeCAD.GuiUp:
 
 	c2a(["Sketchertools"],always,'Status56','sketcher_grids','Create Sketcher Grid',"/../icons/sketchgrid.svg","createGridSketch()","sketcher")
 
+
+	c2a(["Sketchertools"],always,'Status155','feedbacksketch','connect road to line ',"/../icons/alpha.svg","connectLine()","sketcher")
 
 
 

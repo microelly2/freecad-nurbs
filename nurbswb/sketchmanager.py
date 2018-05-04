@@ -87,7 +87,7 @@ def loadSketch(fn,sourcename='Sketch',targetname='Sketch'):
 
 	rc=FreeCAD.open(fn)
 	print "read ",fn
-	print "active document",ad,ad.Label
+	print "active document",ad,ad.Label,ad.Name
 
 	for obj in rc.Objects:
 		print (obj.Name,obj.Label,obj.ViewObject.Visibility)
@@ -100,7 +100,8 @@ def loadSketch(fn,sourcename='Sketch',targetname='Sketch'):
 	assert sb <> None
 
 
-	App.setActiveDocument(ad.Label)
+	# App.setActiveDocument(ad.Label)
+	App.setActiveDocument(ad.Name)
 	App.ActiveDocument=ad
 
 	sk=replaceSketch(sb,targetname)

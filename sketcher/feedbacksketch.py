@@ -729,6 +729,128 @@ def lockPoints(unlock=False):
 	ts.solve()
 	App.activeDocument().recompute()
 
+def connectLine(yy=False):
+	[base,ts]=Gui.Selection.getSelection()
+	try:
+		edge=Gui.Selection.getSelectionEx()[0].SubObjects[0]
+		tp=edge.Vertexes[0].Point
+		tp2=edge.Vertexes[1].Point
+
+	except:
+		tp=base.Shape.Vertexes[0].Point
+		tp2=base.Shape.Vertexes[1].Point
+
+
+	tab=getNamedConstraint(ts,'tangent_AB')
+	ts.setDriving(tab,False) 
+
+#	tp=FreeCAD.Vector(-100,-200,0)
+#	tp2=FreeCAD.Vector(600,800,0)
+
+	print tp
+	cx0=getNamedConstraint(ts,'p_0_x')
+	ts.setDriving(cx0,True) 
+	c0=getNamedConstraint(ts,'p_0_y')
+	ts.setDriving(c0,True) 
+	cx1=getNamedConstraint(ts,'p_1_x')
+	ts.setDriving(cx1,True) 
+	c1=getNamedConstraint(ts,'p_1_y')
+	ts.setDriving(c1,True) 
+
+	ts.setDatum(cx0,tp.x) 
+	ts.setDatum(c0,tp.y) 
+
+	ts.setDatum(cx1,tp2.x) 
+	ts.setDatum(c1,tp2.y) 
+
+	tab=getNamedConstraint(ts,'tangent_AB')
+	mode=1
+
+	try:
+		tab2=getNamedConstraint(ts,'tangent_BC')
+		mode=2
+	except: 
+		pass
+	try:
+		tab3=getNamedConstraint(ts,'tangent_CD')
+		mode=3
+
+	except: 
+		pass
+
+	if mode==1:
+		tab=getNamedConstraint(ts,'tangent_AB')
+		ts.setDriving(tab,True) 
+		
+		l=(tp-tp2).Length
+		n=max((l-200)/2,100)
+		ts.setDatum(tab,n+10)
+
+		ts.solve()
+
+
+	if mode==2:
+		ts.setDriving(tab,True) 
+		ts.setDriving(tab2,True) 
+
+		l=(tp-tp2).Length
+		n=max((l-300)/4,100)
+		ts.setDatum(tab,n+10)
+		ts.setDatum(tab2,n+10)
+
+		ts.solve()
+
+	if mode==3:
+		print ("##",tab,tab2,tab3)
+		ts.setDriving(tab,False) 
+		ts.setDriving(tab2,False) 
+		ts.setDriving(tab3,False) 
+		ts.solve()
+
+		ts.setDriving(tab,True) 
+		ts.setDriving(tab2,True) 
+		ts.setDriving(tab3,True) 
+		FreeCAD.ts=ts
+
+		ts.solve()
+		l=(tp-tp2).Length*1.1
+		n=max((l-400)/6.,100)
+		print n
+		print ("got", tab,ts.getDatum(tab))
+		ts.solve()
+
+		nn=ts.getDatum(tab).Value
+		ts.setDatum(tab,n)
+		print ("got", tab2,ts.getDatum(tab2))
+		ts.setDatum(tab2,n)
+		print ("got", tab3,ts.getDatum(tab3))
+		ts.setDatum(tab3,n)
+		ts.solve()
+
+
+	if 0:
+		ts.setDriving(c0,False) 
+		ts.setDriving(cx0,False) 
+		ts.setDriving(c1,False) 
+		ts.setDriving(cx1,False) 
+
+	if mode==1:
+		ts.setDriving(tab,False) 
+
+	if mode==2:
+		ts.setDriving(tab,False) 
+		ts.setDriving(tab2,False) 
+
+	if mode==3:
+		ts.setDriving(tab,False) 
+		ts.setDriving(tab2,False) 
+		ts.setDriving(tab3,False) 
+
+	ts.solve()
+	App.activeDocument().recompute()
+	
+
+
 
 
 
