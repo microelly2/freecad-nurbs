@@ -274,6 +274,7 @@ def c2a(menu,isactive,title,name,*info):
 
 def c2b(menu,isactive,title,name,text,icon,cmd=None,*info):
 
+	import re
 	global _Command
 	if cmd==None:
 		cmd=re.sub(r' ', '', text)+'()'
