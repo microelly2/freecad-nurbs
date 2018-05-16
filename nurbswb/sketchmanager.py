@@ -25,14 +25,14 @@ def getNamedConstraint(sketch,name):
 
 
 def run(w):
-	print "I'm run"
-	print w
-	print w.obj
-	print "-------------"
+	print ("I'm run")
+	print (w)
+	print (w.obj)
+	print ("-------------")
 	FreeCAD.oo=w.obj
 	sk=w.obj.Object #.Object
-	print sk.Label
-	print sk.Name
+	print (sk.Label)
+	print (sk.Name)
 
 def hideAllConstraints(w,show=False):
 	sk=w.obj.Object
@@ -218,20 +218,24 @@ class _ViewProvider(nurbswb.pyob.ViewProvider):
 		self.methodA(None)
 
 	def methodA(self,obj):
-#		print "my Method A Finisher"
+#		print ("my Method A Finisher")
 #		Gui.activateWorkbench("DraftWorkbench")
 		FreeCAD.activeDocument().recompute()
 
 	def methodB(self,obj):
-		print "my method B Starter"
+		print ("my method B Starter")
 		# test starting an extra dialog
 		FreeCAD.d=dialog(self)
 		#FreeCAD.d.show()
 		FreeCAD.activeDocument().recompute()
 
 	def methodC(self,obj):
+<<<<<<< HEAD
 		print "my method C After Edit finished"
 		
+=======
+		print ("my method C After Edit finished")
+>>>>>>> b33733c818237b44c60c928218c84abadc8e9de3
 		Gui.activateWorkbench("NurbsWorkbench")
 		print "kl"
 #		FreeCAD.d.hide()
@@ -262,9 +266,9 @@ class _ViewProvider(nurbswb.pyob.ViewProvider):
 
 
 	def doubleClicked(self,vobj):
-		print "double clicked"
+		print ("double clicked")
 		self.myedit(vobj.Object)
-		print "Ende double clicked"
+		print ("Ende double clicked")
 
 
 
@@ -310,13 +314,13 @@ def replaceSketch(sketch,name):
 	sk.deleteAllGeometry()
 
 	for g in gs:
-#		print g
+#		print (g)
 		rc=sk.addGeometry(g)
 		sk.setConstruction(rc,g.Construction)
 
-#	print "Constraints ..."
+#	print ("Constraints ...")
 	for c in cs:
-#		print c
+#		print (c)
 		rc=sk.addConstraint(c)
 
 	sk.solve()
@@ -335,18 +339,18 @@ def loadSketch(fn,sourcename='Sketch',targetname='Sketch'):
 		ad=App.newDocument("Unnamed")
 
 	rc=FreeCAD.open(fn)
-	print "read ",fn
-	print "active document",ad,ad.Label,ad.Name
+	print ("read ",fn)
+	print ("active document",ad,ad.Label,ad.Name)
 
 	for obj in rc.Objects:
 		print (obj.Name,obj.Label,obj.ViewObject.Visibility)
 		if obj.ViewObject.Visibility:
-			print "found"
+			print ("found")
 			sb=obj
 			break
 
 	#sb=rc.getObject(sourcename)
-	assert sb <> None
+	assert sb is not None
 
 
 	# App.setActiveDocument(ad.Label)
@@ -378,7 +382,7 @@ def saveSketch(w=None):
 	nd=App.newDocument("XYZ")
 	App.ActiveDocument=nd
 	copySketch(sel,"Sketch")
-	print sel.Label+" - speichere als " + fn
+	print (sel.Label+" - speichere als " + fn)
 	App.ActiveDocument.saveAs(fn)
 	App.closeDocument("XYZ")
 
@@ -397,12 +401,12 @@ def srun(w):
 	target='ufo'
 
 	s=Gui.Selection.getSelection()
-	if s<>[]: 
+	if s != []: 
 		target=s[0].Name
-	print "target is: ",target
+	print ("target is: ",target)
 
 	cmd="nurbswb.sketchmanager.loadSketch('" + model +"','Sketch',target)"
-	print "Run command:",cmd
+	print ("Run command:",cmd)
 	eval(cmd)
 	Gui.SendMsgToActiveView("ViewFit")
 	w.hide()
