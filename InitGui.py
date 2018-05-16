@@ -310,6 +310,8 @@ if FreeCAD.GuiUp:
 	c2a([mt],onselection2,'Status155','feedbacksketch','connect road to line ',"/../icons/alpha.svg","connectLine()","sketcher")
 	c2b([mt],ondocument,0,'sketch_to_bezier','create Arc Sketch','/../icons/draw.svg')
 	c2b([mt],onselection1,0,'sketch_to_bezier','create Labels','/../icons/draw.svg')
+	c2b([mt],onselection1,0,'sketch_to_bezier','create Stations','/../icons/draw.svg')
+	c2b([mt],ondocument,0,'sketch_to_bezier','create LatLonMarker','/../icons/draw.svg')
 	c2b([mt],onselection,0,'sketch_to_bezier','update Labels','/../icons/draw.svg')
 
 #-------------------------------------------
