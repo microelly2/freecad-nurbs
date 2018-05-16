@@ -180,15 +180,15 @@ class _Command():
 
 	def Activated(self):
 		#FreeCAD.ActiveDocument.openTransaction("create " + self.name)
-		if self.command <> '':
-			if self.modul <>'': modul=self.modul
+		if self.command != '':
+			if self.modul !='': modul=self.modul
 			else: modul=self.name
 			FreeCADGui.doCommand("import " + modul)
 			FreeCADGui.doCommand("import "+self.lmod)
 			FreeCADGui.doCommand("reload("+self.lmod+")")
 			FreeCADGui.doCommand(self.command)
 		#FreeCAD.ActiveDocument.commitTransaction()
-		if FreeCAD.ActiveDocument <> None:
+		if FreeCAD.ActiveDocument is not None:
 			FreeCAD.ActiveDocument.recompute()
 
 
@@ -205,7 +205,7 @@ def always():
 
 def ondocument():
 	'''if a document is active'''
-	return FreeCADGui.ActiveDocument <> None
+	return FreeCADGui.ActiveDocument is not None
 
 def onselection():
 	'''if at least one object is selected'''
@@ -225,7 +225,7 @@ def onselection3():
 
 def onselex():
 	'''if at least one subobject is selected'''
-	return len(FreeCADGui.Selection.getSelectionEx())<>0
+	return len(FreeCADGui.Selection.getSelectionEx())!=0
 
 def onselex1():
 	'''if exactly one subobject is selected'''
@@ -274,6 +274,7 @@ def c2a(menu,isactive,title,name,*info):
 
 def c2b(menu,isactive,title,name,text,icon,cmd=None,*info):
 
+	import re
 	global _Command
 	if cmd==None:
 		cmd=re.sub(r' ', '', text)+'()'
