@@ -35,7 +35,7 @@ def tab2np(tab):
 	cc=tab.columnCount()
 	for r in range(rc):
 		for c in range(cc):
-			arr.append(float(tab.item(r,c).text()))
+			arr.append(float(tab.item(r,c).text().replace(',', '.')))
 	return np.array(arr).reshape(rc,cc)
 
 
@@ -226,7 +226,7 @@ def pointEditor(obj,scale=1):
 	return w
 
 
-def run(scale=1000):
+def run(scale=1):
 	print "RUN ---",scale
 	obj=FreeCADGui.Selection.getSelection()[0]
 	print obj
