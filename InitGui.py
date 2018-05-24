@@ -423,6 +423,8 @@ if FreeCAD.GuiUp:
 	c2a(["Faces","create"],ondocument,'simple Hood','simplehood','create a simple hood','/../icons/nurbs.svg',"run()")
 	c2a(["Faces","create"],ondocument,'grid test data','mesh_generator','create a grid testset','/../icons/nurbs.svg',"gentest()")
 
+	c2a(["Faces","create"],ondocument,'helm','helmlet','create a helmlet','/../icons/nurbs.svg',"createHelmlet()")
+
 	c2a(["AAA"],onselection1,'corridor2a','corridor','wire to bspline','/../icons/nurbs.svg',"WireToBSpline()")
 
 	c2a(["Faces","create"],onselection2,'corridor','corridor','create a corridor for a path on s face testset','/../icons/nurbs.svg',"run()")

@@ -35,8 +35,9 @@ def run(w):
 	print (sk.Name)
 
 def hideAllConstraints(w,show=False):
+	FreeCAD.wob=w.obj
 	sk=w.obj.Object
-	c=App.ActiveDocument.ActiveObject.Constraints
+	c=sk.Constraints
 	for i in range(len(c)):
 		sk.setVirtualSpace(i, not show)
 
@@ -53,6 +54,53 @@ def showArcs(w,show=False):
 			cs=getNamedConstraint(sk,l) 
 			sk.setVirtualSpace(cs, not show)
 		except: pass
+
+
+def setEndpoints(w,show=None):
+	sk=w.obj.Object
+
+	for i in [13,14,15,16,22]:
+		sk.toggleDriving(i)
+
+	posa=FreeCAD.Vector(-250000,40000,0)
+	posb=FreeCAD.Vector(800000,50000,0)
+	l=(posa-posb).Length
+	#posa
+	sk.setDatum(13,posa.x)
+	sk.setDatum(14,posa.y)
+	#posb
+	sk.setDatum(15,posb.x)
+	sk.setDatum(16,posb.y)
+	# laenge tangentialabsc.
+	sk.setDatum(19,0.3*l)
+	sk.setDatum(20,0.3*l)
+	sk.setDatum(22,posb.x-0.1*l)
+	#sk.setDatum(11,0.3*l)
+
+	sk.setDatum(17,0.04*l)
+	sk.setDatum(18,0.02*l)
+
+	for i in [13,14,15,16,22]:
+		sk.toggleDriving(i)
+
+
+def lockEndpoints(w,mode=0):
+	sk=w.obj.Object
+	if mode==1:
+		print "toggle 1"
+		sk.toggleDriving(13)
+		sk.toggleDriving(14)
+	if mode==2:
+		print "toggle 2"
+		sk.toggleDriving(15)
+		sk.toggleDriving(16)
+	sk.solve()
+
+
+
+
+
+
 
 import Sketcher
 def runSelection(w,mode=None):
@@ -115,6 +163,20 @@ def dialog(obj):
 	w.r=QtGui.QPushButton("block or unblock selections")
 	box.addWidget(w.r)
 	w.r.pressed.connect(lambda :runSelection(w,None))
+
+
+	w.r=QtGui.QPushButton("set endpoints")
+	box.addWidget(w.r)
+	w.r.pressed.connect(lambda :setEndpoints(w,None))
+
+	w.r=QtGui.QPushButton("toggle startpoint")
+	box.addWidget(w.r)
+	w.r.pressed.connect(lambda :lockEndpoints(w,1))
+
+	w.r=QtGui.QPushButton("toggle endpoint")
+	box.addWidget(w.r)
+	w.r.pressed.connect(lambda :lockEndpoints(w,2))
+
 
 
 	w=ComboViewShowWidget(w)
@@ -214,6 +276,8 @@ class _ViewProvider(nurbswb.pyob.ViewProvider):
 
 	def myedit(self,obj):
 		self.methodB(None)
+		FreeCAD.oo2=obj
+		self.Object=obj
 		Gui.activeDocument().setEdit(obj.Name)
 		self.methodA(None)
 
@@ -230,12 +294,7 @@ class _ViewProvider(nurbswb.pyob.ViewProvider):
 		FreeCAD.activeDocument().recompute()
 
 	def methodC(self,obj):
-<<<<<<< HEAD
-		print "my method C After Edit finished"
-		
-=======
 		print ("my method C After Edit finished")
->>>>>>> b33733c818237b44c60c928218c84abadc8e9de3
 		Gui.activateWorkbench("NurbsWorkbench")
 		print "kl"
 #		FreeCAD.d.hide()
@@ -483,6 +542,134 @@ def runSketchLib():
 	'''method called from Gui menu'''
 	sayexc2("Ups","Noch nicht implementiert")
 
+
+def setDatum(sk,datname,datvalue):
+	
+	c=getNamedConstraint(sk,datname)
+	#c=
+	cc=sk.Constraints[c]
+	print ("---------",c,cc.Value)
+	print cc.Driving
+	cd=cc.Driving
+	sk.setDriving(c,True)
+	sk.setDatum(c,datvalue)
+	sk.setDriving(c,cd)
+	print "rc solve",sk.solve()
+	
+
+def reportSketch(sk):
+	''' report contraints of a sketch'''
+	#sk=App.ActiveDocument.ufo
+	cs=sk.Constraints
+	datumtypes=['Radius','DistanceX','DistanceY','Distance']
+
+	for ci,c in enumerate(cs):
+		# only datums
+		if c.Type in datumtypes:
+			print (ci,c.Name,c.Type,c.Value,c.Driving,c.InVirtualSpace,[c.First,c.FirstPos])
+
+	print "nameless datum ------------------"
+	for ci,c in enumerate(cs):
+		# only datums
+		if c.Type in datumtypes and c.Name=='':
+			print (ci,c.Name,c.Type,c.Value,c.Driving,c.InVirtualSpace,[c.First,c.FirstPos])
+
+	return
+	for v in [30,0,40]:
+		try:
+			setDatum(sk,'line_A',v)
+		except:
+			print "kann nicht ",v 
+
+def createConstraint(sk,line,name,value,blue=False):
+		rc=sk.addConstraint(Sketcher.Constraint('Distance',line,value)) 
+		sk.renameConstraint(rc, name)
+		if blue: 
+			sk.toggleDriving(rc) 
+		return rc
+
+
+
+def connectAll(sk):
+		'''connect all matching geometries'''
+		for i,c in enumerate(sk.Geometry):
+			for i2,c2 in enumerate(sk.Geometry):
+				if i<i2:
+					for j in [1,2]:
+						for j2 in [1,2]:
+							if sk.getPoint(i,j)==sk.getPoint(i2,j2):
+								cc=sk.addConstraint(Sketcher.Constraint('Coincident',i,j,i2,j2)) 
+								if sk.solve()<>0:
+									sk.delConstraint(cc)
+
+
+def genQuadrangle():
+		name="Viereck"
+		sk=App.activeDocument().addObject('Sketcher::SketchObjectPython',name)
+		_ViewProvider(sk.ViewObject)
+		A=FreeCAD.Vector(-100,-50,0)
+		B=FreeCAD.Vector(100,-50,0)
+		C=FreeCAD.Vector(100,50,0)
+		D=FreeCAD.Vector(-100,50,0)
+
+		a=sk.addGeometry(Part.LineSegment(A,B),False)
+		b=sk.addGeometry(Part.LineSegment(B,C),False)
+		c=sk.addGeometry(Part.LineSegment(C,D),False)
+		d=sk.addGeometry(Part.LineSegment(D,A),False)
+		e=sk.addGeometry(Part.LineSegment(A,C),True)
+		f=sk.addGeometry(Part.LineSegment(B,D),True)
+
+#		c1=sk.addConstraint(Sketcher.Constraint('Block',a)) 
+#		c2=sk.addConstraint(Sketcher.Constraint('Block',c)) 
+
+		connectAll(sk)
+
+		if 1:
+			length_a=createConstraint(sk,a,'length_a',300)
+			length_b=createConstraint(sk,b,'length_b',200)
+			length_c=createConstraint(sk,c,'length_c',300)
+			length_d=createConstraint(sk,d,'length_d',300)
+
+			length_e=createConstraint(sk,e,'length_e',300,blue=True)
+			length_f=createConstraint(sk,f,'length_f',300,blue=True)
+			
+
+		sk.solve()
+		App.activeDocument().recompute()
+		print "done"
+		reportSketch(sk)
+
+		FreeCAD.ActiveDocument.openTransaction("set length_c 105")
+		sk.setDatum(length_c,105)
+		reportSketch(sk)
+		FreeCAD.ActiveDocument.commitTransaction()
+
+		# Fehler erkennen
+		FreeCAD.ActiveDocument.openTransaction("set length_c 1205")
+		try:
+			sk.setDatum(length_c,1200)
+			FreeCAD.ActiveDocument.commitTransaction()
+		except:
+			print "Fehler gemacht"
+			reportSketch(sk)
+			print "roll back"
+			#FreeCAD.ActiveDocument.abortTransaction()
+		reportSketch(sk)
+		App.activeDocument().recompute()
+		
+		
+
+		
+
+
+
+
+
+
 if __name__=='__main__':
-	runLoadSketch()
+	# 	runLoadSketch()
+	pass
+
+
+
 
