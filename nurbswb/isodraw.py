@@ -537,6 +537,45 @@ def createGrid(mapobj,upmode=False):
 		face=obj.faceObject.Shape.Faces[obj.faceNumber]
 		bs=face.Surface
 	except: return Part.Shape()
+	
+	print "createGrid for special faces"
+	print face
+	import numpy as np
+
+	sf=face.Surface
+	if sf.__class__.__name__ == 'Cone':
+
+		alpha,beta,hmin,hmax = FreeCAD.face.ParameterRange
+
+		r2=sf.Radius
+		r1=(sf.Apex-sf.Center).Length
+
+		alpha=r2*np.pi/r1
+
+		su=21
+		sv=21
+
+		pts=np.zeros(su*sv*3).reshape(su,sv,3)
+
+		comp=[]
+		for u in range(su):
+			for v in range(sv):
+				#print (beta-alpha)*u/2
+				p=FreeCAD.Vector((r1+hmax*v/sv)*np.cos((alpha)*u/su),(r1+hmax*v/sv)*np.sin((alpha)*u/su))
+				pts[u,v]=p
+
+
+		for z in pts:
+			comp += [Part.makePolygon([FreeCAD.Vector(p) for p in z])]
+
+		pts=pts.swapaxes(0,1)
+		for z in pts:
+			comp += [Part.makePolygon([FreeCAD.Vector(p) for p in z])]
+
+		#Part.show(Part.Compound(comp))
+
+		return Part.Compound(comp)
+
 
 #	face=obj.faceObject.Shape.Face1
 

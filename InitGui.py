@@ -39,81 +39,81 @@ __dir__ = os.path.dirname(nurbswb.__file__)
 # from workfeature macro
 global get_SelectedObjects
 def get_SelectedObjects(info=0, printError=True):
-    """ Return selected objects as
-        Selection = (Number_of_Points, Number_of_Edges, Number_of_Planes,
-                    Selected_Points, Selected_Edges, Selected_Planes)
-    """
-    def storeShapeType(Object, Selected_Points, Selected_Edges, Selected_Planes):
-        if Object.ShapeType == "Vertex":
-            Selected_Points.append(Object)
-            return True
-        if Object.ShapeType == "Edge":
-            Selected_Edges.append(Object)
-            return True 
-        if Object.ShapeType == "Face":
-            Selected_Planes.append(Object)
-            return True
-        return False
-            
-    m_actDoc=FreeCAD.ActiveDocument
-    
-    if m_actDoc.Name:    
-        # Return a list of SelectionObjects for a given document name.
-        # "getSelectionEx" Used for selecting subobjects
-        m_selEx = Gui.Selection.getSelectionEx(m_actDoc.Name)
+	""" Return selected objects as
+		Selection = (Number_of_Points, Number_of_Edges, Number_of_Planes,
+					Selected_Points, Selected_Edges, Selected_Planes)
+	"""
+	def storeShapeType(Object, Selected_Points, Selected_Edges, Selected_Planes):
+		if Object.ShapeType == "Vertex":
+			Selected_Points.append(Object)
+			return True
+		if Object.ShapeType == "Edge":
+			Selected_Edges.append(Object)
+			return True 
+		if Object.ShapeType == "Face":
+			Selected_Planes.append(Object)
+			return True
+		return False
+			
+	m_actDoc=FreeCAD.ActiveDocument
+	
+	if m_actDoc.Name:    
+		# Return a list of SelectionObjects for a given document name.
+		# "getSelectionEx" Used for selecting subobjects
+		m_selEx = Gui.Selection.getSelectionEx(m_actDoc.Name)
  
-        m_num = len(m_selEx)
-        if info != 0:
-            print_msg("m_selEx : " + str(m_selEx))
-            print_msg("m_num   : " + str(m_num))
-            
-        if m_num >= 1: 
-            Selected_Points = []
-            Selected_Edges = []
-            Selected_Planes = []
-            Selected_Objects = []
-            for Sel_i_Object in m_selEx:
-                if info != 0:
-                    print_msg("Processing : " + str(Sel_i_Object.ObjectName))
-                                
-                if Sel_i_Object.HasSubObjects:                
-                    for Object in Sel_i_Object.SubObjects:
-                        if info != 0:
-                            print_msg("SubObject : " + str(Object)) 
-                        if hasattr(Object, 'ShapeType'):
-                            storeShapeType(Object, Selected_Points, Selected_Edges, Selected_Planes)
-                        if hasattr(Object, 'Shape'):
-                            Selected_Objects.append(Object)
-                else:
-                    if info != 0:
-                        print_msg("Object : " + str(Sel_i_Object))
-                    if hasattr(Sel_i_Object, 'Object'):
-                        if hasattr(Sel_i_Object.Object, 'ShapeType'):
-                            storeShapeType(Sel_i_Object.Object, Selected_Points, Selected_Edges, Selected_Planes)
-                        if hasattr(Sel_i_Object.Object, 'Shape'):
-                            if hasattr(Sel_i_Object.Object.Shape, 'ShapeType'):
-                                if not storeShapeType(Sel_i_Object.Object.Shape, Selected_Points, Selected_Edges, Selected_Planes):
-                                    Selected_Objects.append(Sel_i_Object.Object)
-                    
-                    
-            Number_of_Points = len(Selected_Points)
-            Number_of_Edges = len(Selected_Edges)
-            Number_of_Planes = len(Selected_Planes)
-            Selection = (Number_of_Points, Number_of_Edges, Number_of_Planes,
-                    Selected_Points, Selected_Edges, Selected_Planes, Selected_Objects)
-            if info != 0:
-                print_msg("Number_of_Points, Number_of_Edges, Number_of_Planes," +
-                           "Selected_Points, Selected_Edges, Selected_Planes , Selected_Objects = " + str(Selection))
-            return Selection
-        else:
-            if info != 0:
-                print_msg("No Object selected !")
-            if printError:
-                printError_msg("Select at least one object !")
-            return None
-    else:
-        printError_msg("No active document !")
-    return 
+		m_num = len(m_selEx)
+		if info != 0:
+			print_msg("m_selEx : " + str(m_selEx))
+			print_msg("m_num   : " + str(m_num))
+			
+		if m_num >= 1: 
+			Selected_Points = []
+			Selected_Edges = []
+			Selected_Planes = []
+			Selected_Objects = []
+			for Sel_i_Object in m_selEx:
+				if info != 0:
+					print_msg("Processing : " + str(Sel_i_Object.ObjectName))
+								
+				if Sel_i_Object.HasSubObjects:                
+					for Object in Sel_i_Object.SubObjects:
+						if info != 0:
+							print_msg("SubObject : " + str(Object)) 
+						if hasattr(Object, 'ShapeType'):
+							storeShapeType(Object, Selected_Points, Selected_Edges, Selected_Planes)
+						if hasattr(Object, 'Shape'):
+							Selected_Objects.append(Object)
+				else:
+					if info != 0:
+						print_msg("Object : " + str(Sel_i_Object))
+					if hasattr(Sel_i_Object, 'Object'):
+						if hasattr(Sel_i_Object.Object, 'ShapeType'):
+							storeShapeType(Sel_i_Object.Object, Selected_Points, Selected_Edges, Selected_Planes)
+						if hasattr(Sel_i_Object.Object, 'Shape'):
+							if hasattr(Sel_i_Object.Object.Shape, 'ShapeType'):
+								if not storeShapeType(Sel_i_Object.Object.Shape, Selected_Points, Selected_Edges, Selected_Planes):
+									Selected_Objects.append(Sel_i_Object.Object)
+					
+					
+			Number_of_Points = len(Selected_Points)
+			Number_of_Edges = len(Selected_Edges)
+			Number_of_Planes = len(Selected_Planes)
+			Selection = (Number_of_Points, Number_of_Edges, Number_of_Planes,
+					Selected_Points, Selected_Edges, Selected_Planes, Selected_Objects)
+			if info != 0:
+				print_msg("Number_of_Points, Number_of_Edges, Number_of_Planes," +
+						   "Selected_Points, Selected_Edges, Selected_Planes , Selected_Objects = " + str(Selection))
+			return Selection
+		else:
+			if info != 0:
+				print_msg("No Object selected !")
+			if printError:
+				printError_msg("Select at least one object !")
+			return None
+	else:
+		printError_msg("No active document !")
+	return 
 
 #------------------------------
 
@@ -123,17 +123,17 @@ def get_SelectedObjects(info=0, printError=True):
 # define the Commands of the Test Application module
 #---------------------------------------------------------------------------
 class MyTestCmd2:
-    """Opens a Qt dialog with all inserted unit tests"""
-    def Activated(self):
-        import QtUnitGui
-        QtUnitGui.addTest("nurbswb.TestNurbsGui")
-        QtUnitGui.addTest("nurbswb.TestNurbs")
-        QtUnitGui.addTest("nurbswb.TestMeinAll.Col1")
-        QtUnitGui.addTest("nurbswb.TestMeinAll.Col2")
-        QtUnitGui.addTest("TestMeinAll.Col2")
+	"""Opens a Qt dialog with all inserted unit tests"""
+	def Activated(self):
+		import QtUnitGui
+		QtUnitGui.addTest("nurbswb.TestNurbsGui")
+		QtUnitGui.addTest("nurbswb.TestNurbs")
+		QtUnitGui.addTest("nurbswb.TestMeinAll.Col1")
+		QtUnitGui.addTest("nurbswb.TestMeinAll.Col2")
+		QtUnitGui.addTest("TestMeinAll.Col2")
 
-    def GetResources(self):
-        return {'MenuText': 'Test-test...', 'ToolTip': 'Runs the self-test for the workbench'}
+	def GetResources(self):
+		return {'MenuText': 'Test-test...', 'ToolTip': 'Runs the self-test for the workbench'}
 
 
 FreeCADGui.addCommand('My_Test2'        ,MyTestCmd2())
@@ -146,6 +146,76 @@ FreeCADGui.addCommand('My_Test2'        ,MyTestCmd2())
 #------------------------------------------
 # fast command adder template
 
+global _Command2
+
+
+class _Command2():
+
+	def __init__(self, lib=None, name=None, icon=None, command=None, modul='nurbswb'):
+
+		if lib == None:
+			lmod = modul
+		else:
+			lmod = modul + '.' + lib
+		if command == None:
+			command = lmod + ".run()"
+		else:
+			command = lmod + "." + command
+
+		self.lmod = lmod
+		self.command = command
+		self.modul = modul
+		if icon != None:
+			self.icon = __dir__ + icon
+		else:
+			self.icon = None
+
+		if name == None:
+			name = command
+		self.name = name
+
+	def GetResources(self):
+		if self.icon != None:
+			return {'Pixmap': self.icon,
+					'MenuText': self.name,
+					'ToolTip': self.name,
+					'CmdType': "ForEdit"  # bleibt aktiv, wenn sketch editor oder andere tasktab an ist
+					}
+		else:
+			return {
+				#'Pixmap' : self.icon,
+				'MenuText': self.name,
+				'ToolTip': self.name,
+				'CmdType': "ForEdit"  # bleibt aktiv, wenn sketch editor oder andere tasktab an ist
+			}
+
+	def IsActive(self):
+		if Gui.ActiveDocument:
+			return True
+		else:
+			return False
+
+	def Activated(self):
+
+		# FreeCAD.ActiveDocument.openTransaction("create " + self.name)
+		if self.command != '':
+			if self.modul != '':
+				modul = self.modul
+			else:
+				modul = self.name
+			Gui.doCommand("import " + modul)
+			Gui.doCommand("import " + self.lmod)
+			Gui.doCommand("reload(" + self.lmod + ")")
+			docstring = "print " + re.sub(r'\(.*\)', '.__doc__', self.command)
+
+			Gui.doCommand(docstring)
+			Gui.doCommand(self.command)
+		# FreeCAD.ActiveDocument.commitTransaction()
+		if FreeCAD.ActiveDocument != None:
+			FreeCAD.ActiveDocument.recompute()
+
+
+
 
 
 global _Command
@@ -153,18 +223,27 @@ class _Command():
 
 	def __init__(self,lib=None,name=None,icon='/../icons/nurbs.svg',command=None,modul='nurbswb'):
 
+		print "axr"
 		if lib==None: lmod=modul
 		else: lmod=modul+'.'+lib
 		if command==None: command=lmod+".run()"
 		else: command =lmod + "."+command
 
+		print "axq"
 		self.lmod=lmod
 		self.command=command
 		self.modul=modul
-		self.icon=  __dir__+ icon
-
+		print "axqq4"
+		try:
+			self.icon=  __dir__+ icon
+		except:
+			pass
+		print "axqs"
 		if name==None: name=command
+		print "axqq1"
 		self.name=name
+		print "axqq2"
+
 
 
 	def GetResources(self): 
@@ -288,6 +367,56 @@ def c2b(menu,isactive,title,name,text,icon,cmd=None,*info):
 	FreeCADGui.addCommand(name1,t)
 	FreeCAD.tcmds5.append([menu,name1])
 
+#-----------------------------
+
+# the menu entry list
+FreeCAD.tcmdsNurbs = []
+# create menu entries
+
+
+def c3b(menu, isactive, name, text, icon='None', cmd=None, *info):
+
+	import re
+	global _Command2
+	if cmd == None:
+		cmd = re.sub(r' ', '', text) + '()'
+	if name == 0:
+		name = re.sub(r' ', '', text)
+	t = _Command2(name, text, icon, cmd, *info)
+	# if title ==0:
+	title = re.sub(r' ', '', text)
+	print title
+	name1 = "Nurbs_" + title
+	t.IsActive = isactive
+	Gui.addCommand(name1, t)
+	print "hu"
+	
+	FreeCAD.tcmdsNurbs.append([menu, name1])
+	return name1
+
+
+def c3bG(menu, isactive, name, text, icon='None', cmd=None, *info):
+
+	import re
+	global _Command2
+	if cmd == None:
+		cmd = re.sub(r' ', '', text + 'GUI') + '()'
+	if name == 0:
+		name = re.sub(r' ', '', text + 'GUI')
+
+	t = _Command2(name, text, icon, cmd, *info)
+	# if title ==0:
+	title = re.sub(r' ', '', text)
+	name1 = "Transportation_" + title
+	t.IsActive = isactive
+	Gui.addCommand(name1, t)
+	FreeCAD.tcmdsNurbs.append([menu, name1])
+	return name1
+
+
+
+
+
 
 # special conditions for actions
 def onneedle():
@@ -304,6 +433,28 @@ def onspread():
 
 
 if FreeCAD.GuiUp:
+
+	c3b(["Bezier"], always, 'berings', 'create BePlane')
+	c3b(["Bezier"], always, 'berings', 'create BeTube')
+	c3b(["Bezier"], always, 'berings', 'create Plane Tube Connector')
+	
+	c3b(["Bezier"], always, 'berings', 'create Bering')
+	c3b(["Bezier"], always, 'berings', 'create Beface')
+#	c3bG(["Bezier"], always, 'parameters', 'run')
+	c3b(["Bezier"], always, 'berings', 'create Product')
+	c3b(["Bezier"], always, 'berings', 'connect Faces')
+	c3b(["Bezier"], always, 'berings', 'create Seam')
+	c3b(["Bezier"], always, 'berings', 'AA')
+	c3b(["Bezier"], always, 'berings', 'BB')
+	c3b(["Bezier"], always, 'berings', 'fix Corner')
+	c3b(["Bezier"], always, 'berings', 'create Datum Plane')
+	c3b(["Bezier"], always, 'berings', 'create Datum Line')
+	c3b(["Bezier"], always, 'berings', 'create Be Grid')
+	
+	c3b(["Bezier"], always, 'berings', 'add Knot')
+	c3b(["Bezier"], always, 'berings', 'Surface Editor')
+	c3b(["Bezier"], always, 'berings', 'BSpline To Bezier Curve')
+	c3b(["Bezier"], always, 'berings', 'BSpline To Bezier Surface')
 
 #-------------------------------------------
 	mt="Transportation V0"
@@ -550,8 +701,8 @@ if FreeCAD.GuiUp:
 
 	c2a(["Sketchertools"],always,'Status56','sketcher_grids','Create Sketcher Grid',"/../icons/sketchgrid.svg","createGridSketch()","sketcher")
 
-
-	c2a(["Sketchertools"],always,'Status155','feedbacksketch','connect road to line ',"/../icons/alpha.svg","connectLine()","sketcher")
+# hier ist ein fehler
+#	c2a(["Sketchertools"],always,'Status155','feedbacksketch','connect road to line ',"/../icons/alpha.svg","connectLine()","sketcher")
 
 
 
@@ -609,9 +760,10 @@ static char * nurbs_xpm[] = {
 		try: # some methods from curve wb
 			import ZebraTool
 			import ParametricComb
+			import GeomInfo
 		except: pass
 
-		cmds= ['ZebraTool','ParametricComb','Nurbs_DraftBSpline Editor',
+		cmds= ['ZebraTool','ParametricComb','GeomInfo','Nurbs_DraftBSpline Editor',
 		'Nurbs_Create Shoe','Nurbs_Create Sole','Nurbs_Sole Change Model',
 		'Nurbs_scanbackbonecut','Nurbs_createsketchspline','Nurbs_Curves to Face', 'Nurbs_facedraw',
 		'Nurbs_createcloverleaf',
@@ -646,6 +798,26 @@ static char * nurbs_xpm[] = {
 
 		for m in ml:
 			self.appendMenu(list(m),menues[m])
+
+		# create menues
+		menues = {}
+		ml = []
+		for _t in FreeCAD.tcmdsNurbs:
+			c = _t[0]
+			a = _t[1]
+			try:
+				menues[tuple(c)].append(a)
+
+			except:
+				menues[tuple(c)] = [a]
+				ml.append(tuple(c))
+
+		for m in ml:
+			self.appendMenu(list(m), menues[m])
+
+
+
+
 
 FreeCADGui.addWorkbench(NurbsWorkbench)
 

@@ -827,11 +827,11 @@ def createMap(mode=''):
 	# last selection == face
 	# other sels: wires to project
 
-	s0=Gui.Selection.getSelection()
-	face=s0[-1]
+	for face in Gui.Selection.getSelection():
+		#face=s0[-1]
 
-	moa=nurbswb.isodraw.createMap(mode)
-	moa.faceObject=face
+		moa=nurbswb.isodraw.createMap(mode)
+		moa.faceObject=face
 
 
 ## stop the facecdraw eventserver
