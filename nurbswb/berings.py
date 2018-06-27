@@ -1174,28 +1174,39 @@ def begrid(bs,showTangents=True,showKnotCurves=True):
 			tl=10
 			for u in range(nu):
 				for v in range(nv):
-					comps += [Part.makePolygon([FreeCAD.Vector(poles[3*u,3*v]),FreeCAD.Vector(poles[3*u,3*v+1])])]
-					comps += [Part.makePolygon([FreeCAD.Vector(poles[3*u,3*v]),FreeCAD.Vector(poles[3*u+1,3*v])])]
-					if u>0:
-						comps += [Part.makePolygon([FreeCAD.Vector(poles[3*u-1,3*v]),FreeCAD.Vector(poles[3*u,3*v])])]
-					if v>0:
-						comps += [Part.makePolygon([FreeCAD.Vector(poles[3*u,3*v-1]),FreeCAD.Vector(poles[3*u,3*v])])]
+					try:
+						comps += [Part.makePolygon([FreeCAD.Vector(poles[3*u,3*v]),FreeCAD.Vector(poles[3*u,3*v+1])])]
+						comps += [Part.makePolygon([FreeCAD.Vector(poles[3*u,3*v]),FreeCAD.Vector(poles[3*u+1,3*v])])]
+						if u>0:
+							comps += [Part.makePolygon([FreeCAD.Vector(poles[3*u-1,3*v]),FreeCAD.Vector(poles[3*u,3*v])])]
+						if v>0:
+							comps += [Part.makePolygon([FreeCAD.Vector(poles[3*u,3*v-1]),FreeCAD.Vector(poles[3*u,3*v])])]
+					except: pass
 			for u in range(nu):
-				v=vc-1
-				comps += [Part.makePolygon([FreeCAD.Vector(poles[3*u,v]),FreeCAD.Vector(poles[3*u+1,v])])]
-				comps += [Part.makePolygon([FreeCAD.Vector(poles[3*u,v-1]),FreeCAD.Vector(poles[3*u,v])])]
-				if u>0:
-					comps += [Part.makePolygon([FreeCAD.Vector(poles[3*u-1,v]),FreeCAD.Vector(poles[3*u,v])])]
+				try:
+					v=vc-1
+					comps += [Part.makePolygon([FreeCAD.Vector(poles[3*u,v]),FreeCAD.Vector(poles[3*u+1,v])])]
+					comps += [Part.makePolygon([FreeCAD.Vector(poles[3*u,v-1]),FreeCAD.Vector(poles[3*u,v])])]
+					if u>0:
+						comps += [Part.makePolygon([FreeCAD.Vector(poles[3*u-1,v]),FreeCAD.Vector(poles[3*u,v])])]
+				except:
+					pass
 			for v in range(nv):
+				try:
+					u=uc-1
+					comps += [Part.makePolygon([FreeCAD.Vector(poles[u,3*v]),FreeCAD.Vector(poles[u,3*v+1])])]
+					comps += [Part.makePolygon([FreeCAD.Vector(poles[u,3*v]),FreeCAD.Vector(poles[u-1,3*v])])]
+					if v>0:
+						comps += [Part.makePolygon([FreeCAD.Vector(poles[u,3*v]),FreeCAD.Vector(poles[u,3*v-1])])]
+				except:
+					pass
+			try:
 				u=uc-1
-				comps += [Part.makePolygon([FreeCAD.Vector(poles[u,3*v]),FreeCAD.Vector(poles[u,3*v+1])])]
-				comps += [Part.makePolygon([FreeCAD.Vector(poles[u,3*v]),FreeCAD.Vector(poles[u-1,3*v])])]
-				if v>0:
-					comps += [Part.makePolygon([FreeCAD.Vector(poles[u,3*v]),FreeCAD.Vector(poles[u,3*v-1])])]
-			u=uc-1
-			v=vc-1
-			comps += [Part.makePolygon([FreeCAD.Vector(poles[u,v]),FreeCAD.Vector(poles[u,v-1])])]
-			comps += [Part.makePolygon([FreeCAD.Vector(poles[u,v]),FreeCAD.Vector(poles[u-1,v])])]
+				v=vc-1
+				comps += [Part.makePolygon([FreeCAD.Vector(poles[u,v]),FreeCAD.Vector(poles[u,v-1])])]
+				comps += [Part.makePolygon([FreeCAD.Vector(poles[u,v]),FreeCAD.Vector(poles[u-1,v])])]
+			except:
+				pass
 
 		return comps
 
@@ -2049,7 +2060,7 @@ class BeTube(FeaturePython):
 		obj.addProperty("App::PropertyFloat","vSize")
 		obj.addProperty("App::PropertyFloat","noise")
 
-		obj.uSegments=4
+		obj.uSegments=5
 		obj.vSegments=3
 		obj.uSize=1000
 		obj.vSize=200
@@ -2225,3 +2236,149 @@ def connectPlaneToTube():
 
 def AA():
 	createPlaneTubeConnector()
+
+def BB():
+	print "AA-neu"
+
+
+
+
+class HelmetTubeConnector(FeaturePython):
+
+	def __init__(self, obj):
+		FeaturePython.__init__(self, obj)
+#		obj.addProperty("App::PropertyInteger","uSegments")
+#		obj.addProperty("App::PropertyInteger","vSegments")
+		obj.addProperty("App::PropertyLink","helmet")
+		obj.addProperty("App::PropertyLink","tube")
+
+		obj.addProperty("App::PropertyInteger","offset")
+		obj.addProperty("App::PropertyInteger","level")
+		obj.addProperty("App::PropertyBool","swap")
+		obj.addProperty("App::PropertyBool","reverse")
+		obj.addProperty("App::PropertyFloat","tangentFactorTube")
+		obj.addProperty("App::PropertyFloat","tangentFactorHelmet")
+
+		obj.tangentFactorTube=1
+		obj.tangentFactorHelmet=1
+
+
+
+	def execute(self,fp):
+
+		import numpy as np
+		import Draft
+
+		sf=fp.helmet.Shape.Face1.Surface
+		#sf=App.ActiveDocument.helmet.Shape.Face1.Surface
+		poles=np.array(sf.getPoles())
+		print "!###",poles.shape
+		a=poles
+
+		print 
+
+		ring=np.concatenate([
+			a[:-1,0],
+			a[-1,:-1],
+			a[1:,-1][::-1],
+			a[0,1:][::-1]
+			])
+		print "!",len(ring)
+
+		ring2=np.concatenate([
+			[a[1,1]],
+			a[1:-2,1],
+			[a[-2,1]],[a[-2,1]],
+			a[-2,1:-2],
+			[a[-2,-2]],[a[-2,-2]],
+			a[2:-1,-2][::-1],
+			[a[1,-2]],[a[1,-2]],
+			a[1,2:-1][::-1],
+			[a[1,1]]
+			
+			])
+
+
+		print "!",len(ring)
+		print "!",len(ring2)
+
+#		ring2[::,2]+= -400
+
+		k1=fp.tangentFactorHelmet
+		ring2a=(1+k1)*ring-k1*ring2
+		ring2=ring2a
+
+
+		ring3=ring2.copy()
+		ring3[::,2] += -300
+		#ring3 *=1.3
+
+		ring3=[FreeCAD.Vector(p) for p in ring3]
+
+		ring4=ring2.copy()
+		ring4[::,2] += -500
+		ring4 *=1.2
+
+
+		# daten von woanders
+		tube=App.ActiveDocument.BeTube
+		tube=fp.tube
+		tsf=tube.Shape.Face1.Surface
+		tps=np.array(tsf.getPoles()).swapaxes(0,1)
+		k2=fp.tangentFactorTube
+		print "tps"
+		
+		print tps.shape
+		if fp.swap:
+			ring4=tps[fp.level]
+			ring3=(1+k2)*tps[fp.level]-k2*tps[1+fp.level]
+		else:
+			ring4=tps[-1-fp.level]
+			ring3=(1+k2)*tps[-1-fp.level]-k2*tps[-2-fp.level]
+
+		if fp.reverse:
+			offset=fp.offset*3+1
+		else:
+			offset=fp.offset*3
+
+		ring3a=np.concatenate([ring3[offset:],ring3[:offset]])
+		ring4a=np.concatenate([ring4[offset:],ring4[:offset]])
+		if fp.reverse:
+			ring3,ring4=ring3a[::-1],ring4a[::-1]
+		else:
+			ring3,ring4=ring3a,ring4a
+
+
+		if 0:
+			Draft.makeWire([FreeCAD.Vector(p) for p in ring])
+			Draft.makeWire([FreeCAD.Vector(p) for p in ring2])
+			Draft.makeWire([FreeCAD.Vector(p) for p in ring3])
+			Draft.makeWire([FreeCAD.Vector(p) for p in ring4])
+
+		bs=Part.BSplineSurface()
+		print np.array([ring,ring2,ring3,ring4]).shape
+		
+		bs.buildFromPolesMultsKnots([ring,ring2,ring3,ring4],
+			[4,4],[3,3,3,3,3,3,3,3,3],
+			[0,1],range(9),
+			False,True,3,3)
+
+#		sk=App.ActiveDocument.addObject('Part::Spline','adapter')
+#		sk.Shape=bs.toShape()
+
+
+		fp.Shape=bs.toShape()
+
+
+
+def createHelmet():
+	import nurbswb.helmet
+	reload(nurbswb.helmet)
+	nurbswb.helmet.createHelmet()
+
+def createHelmetTubeConnector():
+	sf=App.ActiveDocument.addObject('Part::FeaturePython','BeConnector')
+	sf.ViewObject.ShapeColor=(0.5+random.random(),random.random(),random.random(),)
+	HelmetTubeConnector(sf)
+	(sf.helmet,sf.tube)=Gui.Selection.getSelection()
+	ViewProvider(sf.ViewObject)

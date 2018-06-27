@@ -436,7 +436,9 @@ if FreeCAD.GuiUp:
 
 	c3b(["Bezier"], always, 'berings', 'create BePlane')
 	c3b(["Bezier"], always, 'berings', 'create BeTube')
+	c3b(["Bezier"], always, 'berings', 'create Helmet')
 	c3b(["Bezier"], always, 'berings', 'create Plane Tube Connector')
+	c3b(["Bezier"], always, 'berings', 'create Helmet Tube Connector')
 	
 	c3b(["Bezier"], always, 'berings', 'create Bering')
 	c3b(["Bezier"], always, 'berings', 'create Beface')
