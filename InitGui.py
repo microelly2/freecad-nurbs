@@ -153,6 +153,8 @@ class _Command2():
 
 	def __init__(self, lib=None, name=None, icon=None, command=None, modul='nurbswb'):
 
+		print ("!! command 2:",icon,modul,lib,command)
+
 		if lib == None:
 			lmod = modul
 		else:
@@ -223,7 +225,7 @@ class _Command():
 
 	def __init__(self,lib=None,name=None,icon='/../icons/nurbs.svg',command=None,modul='nurbswb'):
 
-		print "axr"
+		print ("!! command:",icon,modul,lib,command)
 		if lib==None: lmod=modul
 		else: lmod=modul+'.'+lib
 		if command==None: command=lmod+".run()"
@@ -382,6 +384,10 @@ def c3b(menu, isactive, name, text, icon='None', cmd=None, *info):
 		cmd = re.sub(r' ', '', text) + '()'
 	if name == 0:
 		name = re.sub(r' ', '', text)
+	if icon=='None':
+		pic=re.sub(r' ', '', text)
+		icon='/../icons/'+pic+'.svg'
+
 	t = _Command2(name, text, icon, cmd, *info)
 	# if title ==0:
 	title = re.sub(r' ', '', text)

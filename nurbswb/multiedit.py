@@ -673,48 +673,23 @@ import FreeCADGui as Gui
 
 def flattenRegion(selections):
 
-	import numpy as np
-
-	bs=App.ActiveDocument.BePlane.Shape.Face1.Surface
-
-	print selections
-	
-	ua=selections[0][1]
-	va=selections[0][2]
-	ub=selections[1][1]
-	vb=selections[1][2]
-	
-	try:
-		App.ActiveDocument.ActiveObject.ViewObject.hide()
-	except:
-		pass
 
 
 
 
 	def flattenregion(bs,ua,ub,va,vb):
 
-		if 0:
-			ua=ua*3
-			ub=ub*3
-			va=va*3
-			vb=vb*3
-		
-		print ("ua,va, ...", ua,va,ub,vb)
 
 		poles=np.array(bs.getPoles())
 		poles2=np.zeros(4*4*3).reshape(4,4,3)
 
 		v=va
 		u=ua
-		print "--",u,v
 
 		poles2[0:2,0:2]=poles[u:u+2,v:v+2]
 		u=ub
-		print "--"
 
 		poles2[2:4,0:2]=poles[u-1:u+1,v:v+2]
-		print "--"
 
 
 		v=vb
@@ -722,10 +697,6 @@ def flattenRegion(selections):
 		poles2[0:2,2:4]=poles[u:u+2,v-1:v+1]
 		u=ub
 		poles2[2:4,2:4]=poles[u-1:u+1,v-1:v+1]
-		print "##"
-
-
-
 
 
 		bs2=Part.BSplineSurface()
@@ -733,7 +704,7 @@ def flattenRegion(selections):
 			[4,4],[4,4],
 			[0,1],[0,1],
 			False,False,3,3)
-			
+
 		Part.show(bs2.toShape())
 
 
@@ -787,22 +758,24 @@ def flattenRegion(selections):
 
 
 	bs=App.ActiveDocument.BePlane.Shape.Face1.Surface
+	print selections
+
+	ua=selections[0][1]
+	va=selections[0][2]
+	ub=selections[1][1]
+	vb=selections[1][2]
 	
-#	ua,va=1,1
-#	ub,vb=5+2,4
+	try:
+		App.ActiveDocument.ActiveObject.ViewObject.hide()
+	except:
+		pass
 
 	bs=flattenregion(bs,ua,ub,va,vb)
 
-	if 0:
+	if 0: #repeat with multiple areas 
 		ua,va=6,6
-		ub,vb=4,5
-
+		ub,vb=12,15
 		bs=flattenregion(bs,ua,ub,va,vb)
-
-		ua,va=8,9
-		ub,vb=11,12
-		bs=flattenregion(bs,ua,ub,va,vb)
-
 
 	Part.show(bs.toShape())
 	App.ActiveDocument.ActiveObject.ViewObject.ShapeColor=(random.random(),random.random(),random.random())
