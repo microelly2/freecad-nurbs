@@ -433,10 +433,11 @@ def onspread():
 
 
 if FreeCAD.GuiUp:
-
+	c3b(["Bezier"], always, 'multiedit', 'multiEdit')
 	c3b(["Bezier"], always, 'berings', 'create BePlane')
 	c3b(["Bezier"], always, 'berings', 'create BeTube')
 	c3b(["Bezier"], always, 'berings', 'create Helmet')
+	c3b(["Bezier"], always, 'berings', 'create Triangle')
 	c3b(["Bezier"], always, 'berings', 'create Plane Tube Connector')
 	c3b(["Bezier"], always, 'berings', 'create Helmet Tube Connector')
 	
@@ -452,11 +453,14 @@ if FreeCAD.GuiUp:
 	c3b(["Bezier"], always, 'berings', 'create Datum Plane')
 	c3b(["Bezier"], always, 'berings', 'create Datum Line')
 	c3b(["Bezier"], always, 'berings', 'create Be Grid')
-	
+	c3b(["Bezier"], always, 'berings', 'create Tangent Stripes')
 	c3b(["Bezier"], always, 'berings', 'add Knot')
 	c3b(["Bezier"], always, 'berings', 'Surface Editor')
 	c3b(["Bezier"], always, 'berings', 'BSpline To Bezier Curve')
 	c3b(["Bezier"], always, 'berings', 'BSpline To Bezier Surface')
+	c3b(["Bezier"], always, 'berings', 'Split Into Cells')
+	c3b(["Bezier"], always, 'berings', 'create Cell')
+	
 
 #-------------------------------------------
 	mt="Transportation V0"
@@ -777,6 +781,7 @@ static char * nurbs_xpm[] = {
 		cmds3=['Nurbs_CreateWorkspace','Nurbs_CreateWSLink','Nurbs_ViewsQV','Nurbs_Views2H','Nurbs_DarkRoom','Nurbs_LightOn','Nurbs_LightOff']
 		cmds4=['Nurbs_pta','Nurbs_ptb','Nurbs_ptc','Nurbs_ptd','Nurbs_pte']
 		cmds5=['Nurbs_geodesic'+str(a+1) for a in range(6)]
+		cmds5 += ['Nurbs_multiEdit']
 
 
 

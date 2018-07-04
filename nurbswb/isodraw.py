@@ -808,8 +808,9 @@ def createGrid(mapobj,upmode=False):
 				t2=pmh.multiply(th)
 				vh2=t2.Base
 				ll += [vh2]
-
-			comps += [ Part.makePolygon(ll) ]
+			try:
+				comps += [ Part.makePolygon(ll) ]
+			except: pass
 
 		'''
 		comps=[]
@@ -931,11 +932,15 @@ def createGrid(mapobj,upmode=False):
 		if obj.flipxy:
 			if 1:
 				for pts in ptsa[obj.uMin:obj.uMax]:
-					comps += [ Part.makePolygon([FreeCAD.Vector(fx*p[1],fy*p[0],fz*p[2]) for p in pts[obj.vMin:obj.vMax]]) ]
+					try:
+						comps += [ Part.makePolygon([FreeCAD.Vector(fx*p[1],fy*p[0],fz*p[2]) for p in pts[obj.vMin:obj.vMax]]) ]
+					except: pass
 
 				ptsa=np.array(ptsa).swapaxes(0,1)
 				for pts in ptsa[obj.vMin:obj.vMax]:
-					comps += [ Part.makePolygon([FreeCAD.Vector(fx*p[1],fy*p[0],fz*p[2]) for p in pts[obj.uMin:obj.uMax]]) ]
+					try:
+						comps += [ Part.makePolygon([FreeCAD.Vector(fx*p[1],fy*p[0],fz*p[2]) for p in pts[obj.uMin:obj.uMax]]) ]
+					except: pass
 
 		else :
 			if 1:

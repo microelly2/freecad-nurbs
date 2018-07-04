@@ -7,6 +7,13 @@ import Draft,Points,Part
 from say import *
 import random
 
+def AA():
+	print "AA-nip"
+
+def BB():
+	print "BB-nip"
+
+
 
 class FeaturePython:
 	''' basic defs'''
@@ -69,6 +76,7 @@ class Bering(FeaturePython):
 		obj.addProperty("App::PropertyInteger","end")
 		obj.addProperty("App::PropertyFloat","scale").scale=1.0
 		obj.addProperty("App::PropertyBool","detach").detach
+		obj.addProperty("App::PropertyBool","cyclic")
 
 
 	def onChanged(self, fp, prop):
@@ -80,6 +88,26 @@ class Bering(FeaturePython):
 
 
 	def execute(self,fp):
+
+		if fp.cyclic:
+			bc=Part.BSplineCurve()
+			
+
+			pts=[v.Point for v in fp.source.Shape.Vertexes]
+			pts=pts[1:]+pts[:1]
+			l=len(pts)+3
+			print l
+			ms=[3]*(l/3)
+			ks=range(len(ms))
+			print ms
+			print ks			
+			bc.buildFromPolesMultsKnots(pts,
+					ms,
+					ks,
+					True,3)
+			fp.Shape=bc.toShape()
+			return
+
 
 		if fp.detach:
 			ptsa=[fp.getPoint(g,1) for g  in range(len(fp.Geometry))]
@@ -132,7 +160,7 @@ class Beface(FeaturePython):
 		obj.addProperty("App::PropertyInteger","end")
 		obj.addProperty("App::PropertyBool","showStripes")
 		obj.addProperty("App::PropertyBool","generatedBackbone")
-		
+
 
 
 	def execute(self,fp):
@@ -866,6 +894,9 @@ class FaceConnection(FeaturePython):
 #		obj.addProperty("App::PropertyInteger","end")
 		obj.addProperty("App::PropertyBool","swapA")
 		obj.addProperty("App::PropertyBool","swapB")
+		obj.addProperty("App::PropertyBool","flipA")
+		obj.addProperty("App::PropertyBool","flipB")
+
 		obj.addProperty("App::PropertyBool","reverseA")
 		obj.addProperty("App::PropertyBool","reverseB")
 		obj.addProperty("App::PropertyBool","close")
@@ -874,6 +905,7 @@ class FaceConnection(FeaturePython):
 		obj.addProperty("App::PropertyEnumeration","mode").mode=['Connect','Seam']
 		obj.addProperty("App::PropertyFloat","tangfacA").tangfacA=1
 		obj.addProperty("App::PropertyFloat","tangfacB").tangfacB=1
+		obj.addProperty("App::PropertyFloat","factor").factor=3
 
 	def execute(self,fp):
 		if fp.mode=='Seam':
@@ -983,6 +1015,18 @@ class FaceConnection(FeaturePython):
 		sfb=b.Shape.Face1.Surface
 		pb0=sfb.getPoles()
 
+		if fp.flipB:
+			pb1=np.array(pb0).swapaxes(0,1)
+			pb2=pb1[::-1]
+			pb0=np.array(pb2).swapaxes(0,1)
+
+		if fp.flipA:
+			pa1=np.array(pa0).swapaxes(0,1)
+			pa2=pa1[::-1]
+			pa0=np.array(pa2).swapaxes(0,1)
+
+
+
 		print "shapes ..."
 		print np.array(pa0).shape
 		print np.array(pb0).shape
@@ -990,6 +1034,7 @@ class FaceConnection(FeaturePython):
 		tt=0.8
 	#	tt=0.6
 		tt=0.3
+		tt=fp.factor*0.1
 
 		shapes=[]
 
@@ -1020,6 +1065,7 @@ class FaceConnection(FeaturePython):
 
 			if fp.mergeEdge:
 				pa[0]=pa[1]*tt+pb[1]*(1-tt)
+				
 			else:
 				tb=pb[1]-pb[0]
 				ta=pa[1]-pa[0]
@@ -1086,6 +1132,11 @@ class FaceConnection(FeaturePython):
 
 			if fp.mergeEdge:
 				pb[0]=pa[1]*tt+pb[1]*(1-tt)
+				## neu
+#				tb=pb[1]-pb[0]
+#				ta=pa[1]-pa[0]
+#
+#				pb[1] = pb[0]+(tb-ta)
 
 			else:
 				tb=pb[1]-pb[0]
@@ -1220,15 +1271,21 @@ class BeGrid(FeaturePython):
 		obj.addProperty("App::PropertyLink","Source")
 		obj.addProperty("App::PropertyBool","showTangents")
 		obj.addProperty("App::PropertyBool","showKnotCurves")
-		
-		
-		obj.showKnotCurves=True
+
+		#obj.showKnotCurves=True
+		obj.showTangents=True
+		obj.ViewObject.Selectable=False
+		obj.ViewObject.LineWidth=1
 
 	def execute(self,fp):
-		bs=fp.Source.Shape.Face1.Surface
-		showTangents=fp.showTangents
-		showKnotCurves=fp.showKnotCurves
-		comps=begrid(bs,showTangents,showKnotCurves)
+		comps=[]
+		for f in fp.Source.Shape.Faces:
+			bs=f.Surface
+			showTangents=fp.showTangents
+			showKnotCurves=fp.showKnotCurves
+			compsf=begrid(bs,showTangents,showKnotCurves)
+			comps +=compsf
+
 		fp.ViewObject.LineColor=fp.Source.ViewObject.ShapeColor
 		fp.ViewObject.PointColor=fp.Source.ViewObject.ShapeColor
 		fp.Shape=Part.Compound(comps)
@@ -1242,7 +1299,6 @@ def createBeGrid():
 	BeGrid(sf)
 
 	ViewProvider(sf.ViewObject)
-	#(us,vs)=Gui.Selection.getSelection()
 	sf.Source=fa
 
 	App.activeDocument().recompute()
@@ -1250,93 +1306,110 @@ def createBeGrid():
 
 
 def BSplineToBezierCurve():
-	bc=App.ActiveDocument.Sketch.Shape.Edge1.Curve
+	bc=Gui.Selection.getSelection()[0].Shape.Edge1.Curve
 
 	mults=bc.getMultiplicities()
 	knots=range(len(mults))
 
 	bc2=Part.BSplineCurve()
 	bc2.buildFromPolesMultsKnots(
-
 		bc.getPoles(),
 		mults,
 		knots,
 		False,3
 	)
 
-	#t=App.ActiveDocument.addObject('Part::Spline','jj')
-	#t.Shape=bc2.toShape()
-	#t.ViewObject.ControlPoints=True
 
 	for i in range(1,len(mults)-1):
 		print (i,mults[i])
 		if mults[i]<3:
 			bc2.insertKnot(i,3)
 
-	t=App.ActiveDocument.addObject('Part::Spline','jj2')
+	t=App.ActiveDocument.addObject('Part::Spline','jj2a')
 	t.Shape=bc2.toShape()
 	t.ViewObject.ControlPoints=True
+
+#---------------
+
+
+class BezierSurface(FeaturePython):
+
+	def __init__(self, obj):
+		FeaturePython.__init__(self, obj)
+
+		obj.addProperty("App::PropertyLink","source")
+
+		obj.addProperty("App::PropertyInteger","offset")
+		obj.addProperty("App::PropertyInteger","level")
+		obj.addProperty("App::PropertyBool","swap")
+		obj.addProperty("App::PropertyBool","reverse")
+		obj.addProperty("App::PropertyFloat","tangentFactor")
+
+		obj.tangentFactor=1
+
+
+
+
+	def execute(self,fp):
+
+		bs=Part.BSplineSurface()
+		sf=fp.source.Shape.Face1.Surface
+
+		um=sf.getUMultiplicities()
+		vm=sf.getVMultiplicities()
+
+
+		umults=sf.getUMultiplicities()
+		uknots=range(len(umults))
+
+		vmults=sf.getVMultiplicities()
+		vknots=range(len(vmults))
+
+		bc2=Part.BSplineSurface()
+		bc2.buildFromPolesMultsKnots(
+			sf.getPoles(),
+			umults,
+			vmults,
+			uknots,
+			vknots,
+			False,False,3,3
+		)
+
+		for i in range(1,len(umults)-1):
+			print (i,umults[i])
+			if umults[i]<3:
+				bc2.insertUKnot(i,3,0)
+
+		for i in range(1,len(vmults)-1):
+			print (i,umults[i])
+			if vmults[i]<3:
+				bc2.insertVKnot(i,3,0)
+
+		fp.Shape=bs.toShape()
+
+
+
+#---------------
+
+
 
 def BSplineToBezierSurface():
-#	bc=App.ActiveDocument.Nurbs.
+
 	s=Gui.Selection.getSelection()[0]
-	bc=s.Shape.Face1.Surface
-	
+	sf=App.ActiveDocument.addObject('Part::FeaturePython','BezierSurface')
 
-	umults=bc.getUMultiplicities()
-	uknots=range(len(umults))
-
-	vmults=bc.getVMultiplicities()
-	vknots=range(len(vmults))
-
-	bc2=Part.BSplineSurface()
-	bc2.buildFromPolesMultsKnots(
-
-		bc.getPoles(),
-		umults,
-		vmults,
-		uknots,
-		vknots,
-		False,False,3,3
-	)
-
-	#t=App.ActiveDocument.addObject('Part::Spline','jj')
-	#t.Shape=bc2.toShape()
-	#t.ViewObject.ControlPoints=True
-
-	for i in range(1,len(umults)-1):
-		print (i,umults[i])
-		if umults[i]<3:
-			bc2.insertUKnot(i,3,0)
-
-	for i in range(1,len(vmults)-1):
-		print (i,umults[i])
-		if vmults[i]<3:
-			bc2.insertVKnot(i,3,0)
-
-	t=App.ActiveDocument.addObject('Part::Spline','jj2')
-	t.Shape=bc2.toShape()
-	t.ViewObject.ControlPoints=True
+	sf.ViewObject.ShapeColor=(0.5+random.random(),random.random(),random.random(),)
+	BezierSurface(sf)
+	ViewProvider(sf.ViewObject)
+	sf.source=s
+	App.activeDocument().recompute()
 
 
-
-def BB():
-	mode='DockWidget'
-	if mode == 'VerticalLayoutTab':
-		layout = layoutVT
-	elif mode == 'MainWindow':
-		layout = layoutMW
-	elif mode == 'DockWidget':
-		layout = layoutDW
-
-	mikigui = createMikiGui(layout, MikiApp)
-	return mikigui
 
 
 
 def SurfaceEditor():
 
-	print "--------------"
 	from nurbswb.miki_g import createMikiGui2, MikiApp
 
 	layout = '''
@@ -1498,12 +1571,29 @@ def SurfaceEditor():
 			vpn=int(self.root.ids['vx'].text())
 			poles=bs.getPoles()
 
+			uct,vct,_=np.array(poles).shape
+			print ("XXXXXXXXXXXXXXXXXXXXXX   vec",vec)
+			print(upn,vpn)
+
 			center=poles[upn*3][vpn*3]
 			poles=np.array(poles)
 
-			ttp=poles[upn*3-1:upn*3+2,vpn*3-1:vpn*3+2] - center
+			center=poles[upn*3][vpn*3]
+			poles=np.array(poles)
+
+			startu=max(0,upn*3-1)
+			endu=min(upn*3+2,uct)
+			
+			startv=max(0,vpn*3-1)
+			endv=min(vpn*3+2,vct)
+			print ("startu,endu",startu,endu)
+			print ("startv,endv",startv,endv)
+
+
+			ttp=poles[startu:endu,startv:endv] - center
 			ttp += vec 
-			poles[upn*3-1:upn*3+2,vpn*3-1:vpn*3+2]=ttp
+			
+			poles[startu:endu,startv:endv]=ttp
 
 			ss=Part.Sphere()
 			ss.Radius=100
@@ -1546,10 +1636,15 @@ def SurfaceEditor():
 			self.NameObj2=obj2.Name
 
 			comps=begrid(bs2,False,True)
-			bs3=bs2.copy()
-			bs3.segment(upn-1,upn+1,vpn-1,vpn+1)
+			try:
+				bs3=bs2.copy()
+				bs3.segment(upn-1,upn+1,vpn-1,vpn+1)
+			except:
+				pass
 
 			obj2.Shape=Part.Compound(comps+[s] + [bs3.toShape()])
+			print "KUGELLLLLLLLLLLLLLLLL"
+			print s
 
 
 			App.activeDocument().recompute()
@@ -1643,35 +1738,71 @@ def SurfaceEditor():
 						self.root.ids['zdial'].value()*self.root.ids['scale'].value()
 						)
 
-			upn=int(self.root.ids['ux'].text())
-			vpn=int(self.root.ids['vx'].text())
+			try:
+				upn=int(self.root.ids['ux'].text())
+				vpn=int(self.root.ids['vx'].text())
+			except:
+				print "invalid input ux,vx"
+				return
+
 			poles=bs.getPoles()
 
 
 			print "shape ",np.array(poles).shape
+			uct,vct,_=np.array(poles).shape
 			print ("vec",vec)
 			print(upn,vpn)
 
 
 			center=poles[upn*3][vpn*3]
 			poles=np.array(poles)
+			
+			startu=max(0,upn*3-1)
+			endu=min(upn*3+2,uct)
+			
+			startv=max(0,vpn*3-1)
+			endv=min(vpn*3+2,vct)
+			print ("startu,endu",startu,endu)
+			print ("startv,endv",startv,endv)
 
-			ttp=poles[upn*3-1:upn*3+2,vpn*3-1:vpn*3+2] - center
-			rot=FreeCAD.Rotation(self.root.ids['xrot'].value(),self.root.ids['yrot'].value(),self.root.ids['zrot'].value())
+#			if 0:
+#				ttp=poles[upn*3-1:upn*3+2,vpn*3-1:vpn*3+2] - center
+#				r#ot=FreeCAD.Rotation(self.root.ids['xrot'].value(),self.root.ids['yrot'].value(),self.root.ids['zrot'].value())
 
-			for u in 0,1,2:
-				for v in 0,1,2:
-					ttp[u,v]=rot.multVec(FreeCAD.Vector(ttp[u,v]))
+#				for u in 0,1,2:
+#					for v in 0,1,2:
+#						ttp[u,v]=rot.multVec(FreeCAD.Vector(ttp[u,v]))
 
-			(t1,t2)=bs.tangent(upn,vpn)
-			n=bs.normal(upn,vpn)
-			vectn=t1*self.root.ids['udial'].value()*self.root.ids['scale'].value()+\
-						t2*self.root.ids['vdial'].value()*self.root.ids['scale'].value()+\
-						n*self.root.ids['ndial'].value()*self.root.ids['scale'].value()
+#				(t1,t2)=bs.tangent(upn,vpn)
+#				n=bs.normal(upn,vpn)
+#				vectn=t1*self.root.ids['udial'].value()*self.root.ids['scale'].value()+\
+#							t2*self.root.ids['vdial'].value()*self.root.ids['scale'].value()+\
+#							n*self.root.ids['ndial'].value()*self.root.ids['scale'].value()
 
 
-			ttp += vec + center +vectn
-			poles[upn*3-1:upn*3+2,vpn*3-1:vpn*3+2]=ttp
+#				ttp += vec + center +vectn
+#				poles[upn*3-1:upn*3+2,vpn*3-1:vpn*3+2]=ttp
+
+			if 1 :
+				ttp=poles[startu:endu,startv:endv] - center
+				rot=FreeCAD.Rotation(self.root.ids['xrot'].value(),self.root.ids['yrot'].value(),self.root.ids['zrot'].value())
+
+				for u in range(0,endu-startu):
+					for v in range(0,endv-startv):
+						ttp[u,v]=rot.multVec(FreeCAD.Vector(ttp[u,v]))
+
+				(t1,t2)=bs.tangent(upn,vpn)
+				n=bs.normal(upn,vpn)
+				vectn=t1*self.root.ids['udial'].value()*self.root.ids['scale'].value()+\
+							t2*self.root.ids['vdial'].value()*self.root.ids['scale'].value()+\
+							n*self.root.ids['ndial'].value()*self.root.ids['scale'].value()
+
+
+				ttp += vec + center +vectn
+				poles[startu:endu,startv:endv]=ttp
+
+
+
 
 			ss=Part.Sphere()
 			ss.Radius=100
@@ -1702,7 +1833,7 @@ def SurfaceEditor():
 			self.Shape=bs2.toShape()
 			if not save:
 				print "Time B2 ",time.time()-st
-				# comps += [s]
+				#comps += [s]
 				obj.Shape=Part.Compound(comps)
 				#obj.Shape=Part.Compound(comps+ [s])
 				print "Time B2a ",time.time()-st
@@ -1722,10 +1853,18 @@ def SurfaceEditor():
 				print "Time B3 ",time.time()-st
 				comps=begrid(bs2,False,True)
 				bs3=bs2.copy()
-				bs3.segment(upn-1,upn+1,vpn-1,vpn+1)
-				print "Time B4 ",time.time()-st
-				obj2.Shape=Part.Compound(comps+[s] + [bs3.toShape()])
-				print "Time B ",time.time()-st
+				print "frames"
+				print (startu,endu-1,startv,endv-1)
+				print bs3.getUKnots()
+				print bs3.getVKnots()
+				try:
+					bs3.segment(startu,endu-1,startv,endv-1)
+					print "Time B4 ",time.time()-st
+					obj2.Shape=Part.Compound(comps+[s] + [bs3.toShape()])
+					print "Time B ",time.time()-st
+				except:
+					obj2.Shape=Part.Compound(comps+[s])
+					pass
 
 			if save:
 				print "SAVE"
@@ -2017,6 +2156,11 @@ class BePlane(FeaturePython):
 		for v in range(vc):
 			poles[:,v,1]=fp.vSize*v
 		
+		poles[0,:,2]=0
+		poles[-1,:,2]=0
+		poles[:,0,2]=0
+		poles[:,-1,2]=0
+		
 		um=[4]+[1]*(fp.uSegments-1)+[4]
 		vm=[4]+[1]*(fp.vSegments-1)+[4]
 		bs=Part.BSplineSurface()
@@ -2091,7 +2235,7 @@ class BeTube(FeaturePython):
 
 		fp.Shape=bs.toShape()
 
-	def execute(self,fp): # gehts
+	def XXXXexecute(self,fp): # gehts
 		uc=fp.uSegments*3+3
 		vc=fp.vSegments*3+1
 		poles=np.random.random(uc*vc*3).reshape(uc,vc,3)
@@ -2125,12 +2269,9 @@ class BeTube(FeaturePython):
 		for v in range(vc):
 			poles[:,v,2] += fp.vSize*v
 
-
 		um=[1]*(fp.uSegments+4)
 		vm=[4]+[1]*(fp.vSegments-1)+[4]
-		print poles.shape
-		print um
-		print vm
+
 		bs=Part.BSplineSurface()
 		bs.buildFromPolesMultsKnots(
 			poles,
@@ -2146,11 +2287,6 @@ class BeTube(FeaturePython):
 		fp.Shape=bs.toShape()
 
 
-		sf=bs
-		print (sf.getUMultiplicities(),sf.getVMultiplicities(),sf.getUKnots(),sf.getVKnots(),)
-		print poles.shape
-
-
 
 def createBeTube():
 	sf=App.ActiveDocument.addObject('Part::FeaturePython','BeTube')
@@ -2163,8 +2299,7 @@ class BePlaneTubeConnector(FeaturePython):
 
 	def __init__(self, obj):
 		FeaturePython.__init__(self, obj)
-#		obj.addProperty("App::PropertyInteger","uSegments")
-#		obj.addProperty("App::PropertyInteger","vSegments")
+
 		obj.addProperty("App::PropertyLink","plane")
 		obj.addProperty("App::PropertyLink","tube")
 
@@ -2173,10 +2308,8 @@ class BePlaneTubeConnector(FeaturePython):
 		obj.addProperty("App::PropertyBool","swap")
 		obj.addProperty("App::PropertyBool","reverse")
 		obj.addProperty("App::PropertyFloat","tangentFactor")
-#		obj.addProperty("App::PropertyFloat","vSize")
+
 		obj.tangentFactor=1
-#		obj.plane=App.ActiveDocument.BePlane
-#		obj.tube=App.ActiveDocument.BeTube
 
 
 
@@ -2230,15 +2363,6 @@ def createPlaneTubeConnector():
 	ViewProvider(sf.ViewObject)
 
 
-	
-def connectPlaneToTube():
-	pass
-
-def AA():
-	createPlaneTubeConnector()
-
-def BB():
-	print "AA-neu"
 
 
 
@@ -2247,8 +2371,6 @@ class HelmetTubeConnector(FeaturePython):
 
 	def __init__(self, obj):
 		FeaturePython.__init__(self, obj)
-#		obj.addProperty("App::PropertyInteger","uSegments")
-#		obj.addProperty("App::PropertyInteger","vSegments")
 		obj.addProperty("App::PropertyLink","helmet")
 		obj.addProperty("App::PropertyLink","tube")
 
@@ -2266,16 +2388,9 @@ class HelmetTubeConnector(FeaturePython):
 
 	def execute(self,fp):
 
-		import numpy as np
-		import Draft
-
 		sf=fp.helmet.Shape.Face1.Surface
-		#sf=App.ActiveDocument.helmet.Shape.Face1.Surface
 		poles=np.array(sf.getPoles())
-		print "!###",poles.shape
 		a=poles
-
-		print 
 
 		ring=np.concatenate([
 			a[:-1,0],
@@ -2283,7 +2398,6 @@ class HelmetTubeConnector(FeaturePython):
 			a[1:,-1][::-1],
 			a[0,1:][::-1]
 			])
-		print "!",len(ring)
 
 		ring2=np.concatenate([
 			[a[1,1]],
@@ -2299,36 +2413,16 @@ class HelmetTubeConnector(FeaturePython):
 			])
 
 
-		print "!",len(ring)
-		print "!",len(ring2)
-
-#		ring2[::,2]+= -400
-
 		k1=fp.tangentFactorHelmet
 		ring2a=(1+k1)*ring-k1*ring2
 		ring2=ring2a
 
 
-		ring3=ring2.copy()
-		ring3[::,2] += -300
-		#ring3 *=1.3
-
-		ring3=[FreeCAD.Vector(p) for p in ring3]
-
-		ring4=ring2.copy()
-		ring4[::,2] += -500
-		ring4 *=1.2
-
-
-		# daten von woanders
-		tube=App.ActiveDocument.BeTube
 		tube=fp.tube
 		tsf=tube.Shape.Face1.Surface
 		tps=np.array(tsf.getPoles()).swapaxes(0,1)
 		k2=fp.tangentFactorTube
-		print "tps"
-		
-		print tps.shape
+
 		if fp.swap:
 			ring4=tps[fp.level]
 			ring3=(1+k2)*tps[fp.level]-k2*tps[1+fp.level]
@@ -2343,29 +2437,20 @@ class HelmetTubeConnector(FeaturePython):
 
 		ring3a=np.concatenate([ring3[offset:],ring3[:offset]])
 		ring4a=np.concatenate([ring4[offset:],ring4[:offset]])
+
 		if fp.reverse:
 			ring3,ring4=ring3a[::-1],ring4a[::-1]
 		else:
 			ring3,ring4=ring3a,ring4a
 
 
-		if 0:
-			Draft.makeWire([FreeCAD.Vector(p) for p in ring])
-			Draft.makeWire([FreeCAD.Vector(p) for p in ring2])
-			Draft.makeWire([FreeCAD.Vector(p) for p in ring3])
-			Draft.makeWire([FreeCAD.Vector(p) for p in ring4])
-
 		bs=Part.BSplineSurface()
 		print np.array([ring,ring2,ring3,ring4]).shape
-		
+
 		bs.buildFromPolesMultsKnots([ring,ring2,ring3,ring4],
 			[4,4],[3,3,3,3,3,3,3,3,3],
 			[0,1],range(9),
 			False,True,3,3)
-
-#		sk=App.ActiveDocument.addObject('Part::Spline','adapter')
-#		sk.Shape=bs.toShape()
-
 
 		fp.Shape=bs.toShape()
 
@@ -2382,3 +2467,432 @@ def createHelmetTubeConnector():
 	HelmetTubeConnector(sf)
 	(sf.helmet,sf.tube)=Gui.Selection.getSelection()
 	ViewProvider(sf.ViewObject)
+
+
+
+class BeTriangle(FeaturePython):
+
+	def __init__(self, obj):
+		FeaturePython.__init__(self, obj)
+		obj.addProperty("App::PropertyLink","curveA")
+		obj.addProperty("App::PropertyLink","curveB")
+		obj.addProperty("App::PropertyLink","curveC")
+
+		obj.addProperty("App::PropertyString","edgeA")
+		obj.addProperty("App::PropertyString","edgeB")
+		obj.addProperty("App::PropertyString","edgeC")
+
+		obj.addProperty("App::PropertyInteger","offset")
+		obj.addProperty("App::PropertyInteger","level")
+		obj.addProperty("App::PropertyBool","swap")
+		obj.addProperty("App::PropertyBool","reverse")
+#		obj.addProperty("App::PropertyFloat","tangentFactorTube")
+#		obj.addProperty("App::PropertyFloat","tangentFactorHelmet")
+
+#		obj.tangentFactorTube=1
+#		obj.tangentFactorHelmet=1
+
+		obj.edgeC="Edge1"
+		obj.edgeA="Edge1"
+
+
+	def execute(self,fp):
+
+		import numpy as np
+
+
+		#zusammensetzung
+		spa=[[-100,0,0],[-80,20,0],[-20,80,0],[0,100,0]]
+		spb=[[0,100,0],[20,80,0],[80,20,0],[100,0,0]]
+		spc=[[-100,0,0],[-80,0,0],[-20,0,-20],[0,0,-20],[20,0,-20],[80,0,0],[100,0,0]]
+
+		if fp.edgeA=='':
+			spa=[v.Point for v in fp.curveA.Shape.Vertexes]
+		else:
+			edge=getattr(fp.curveA.Shape,fp.edgeA)
+			try:
+				spa=edge.Curve.getPoles()
+			except: 
+				print "no Vertexes"
+				try:
+					spa=[v.Point for v in edge.Vertexes]
+				except:
+					print "no poles"
+					return
+
+#		spb=[v.Point for v in fp.curveB.Shape.Vertexes]
+
+		if fp.edgeB=='':
+			spb=[v.Point for v in fp.curveB.Shape.Vertexes]
+		else:
+			edge=getattr(fp.curveB.Shape,fp.edgeB)
+			try:
+				spb=edge.Curve.getPoles()
+			except: 
+				print "no Vertexes"
+				try:
+					spb=[v.Point for v in edge.Vertexes]
+				except:
+					print "no poles"
+					return
+
+		if fp.edgeC=='':
+			spc=[v.Point for v in fp.curveC.Shape.Vertexes]
+		else:
+			edge=getattr(fp.curveC.Shape,fp.edgeC)
+			try:
+				spc=edge.Curve.getPoles()
+			except: 
+				print "no Vertexes"
+				try:
+					spc=[v.Point for v in edge.Vertexes]
+				except:
+					print "no poles"
+					return
+		print "ha----------------------------ha"
+
+
+		
+		if (spa[-1]-spb[-1]).Length<0.01:
+			spb=spb[::-1]
+		if (spa[0]-spb[-1]).Length<0.01:
+			spb=spb[::-1]
+			spa=spa[::-1]
+		if (spa[0]-spb[0]).Length<0.01:
+			spa=spa[::-1]
+		if (spc[-1]-spa[0]).Length<0.01:
+			spc=spc[::-1]
+		if (spc[0]-spb[-1]).Length<0.01:
+			spc=spc[::-1]
+
+
+		print "--spa--"
+		print spa
+		print "--spb-----"
+		print spb
+		print "--spc-----"
+		print spc
+		assert (spa[-1]-spb[0]).Length<0.01
+		assert (spb[-1]-spc[-1]).Length<0.01
+		assert (spc[0]-spa[0]).Length<0.01
+
+
+		rings=np.zeros(4*4*3).reshape(4,4,3)
+		rings[0]=spa
+		rings[-1]=spc[3:]
+		rings[:,-1]=spb
+		rings[:,0]=spc[0:4]
+		for i in 1,2:
+			for j in 1,2:
+				rings[i,j]=(2+rings[i,0]+rings[i,-1]+2*rings[0,j]+rings[-1,j])/6 +30
+
+		rr=np.array(rings)
+
+
+		rcc=rings[-1][::-1]
+
+		bs=Part.BSplineSurface()
+		bs.buildFromPolesMultsKnots(rr,
+			[4,4],[4,4],
+			[0,2],[0,2],
+			False,False,3,3)
+		if 0:
+			bs.insertUKnot(1,3,0)
+			bs.insertVKnot(1,3,0)
+			bs.insertVKnot(1.5,3,0)
+			bs.insertUKnot(1.5,3,0)
+
+		bs2=Part.BSplineSurface()
+		um=bs.getUMultiplicities()
+		vm=bs.getVMultiplicities()
+		bs2.buildFromPolesMultsKnots(bs.getPoles(),
+			um,vm,range(len(um)),range(len(vm)),
+			False,False,3,3)
+		bs=bs2
+
+
+
+		fp.Shape=bs.toShape()
+
+		return
+		# ab hier tangentsspiele todo!!
+
+#--------------------------------
+		rA=np.array([rr[0],rr[0]+[-30,30,30]])
+		bs=Part.BSplineSurface()
+		bs.buildFromPolesMultsKnots(rA,
+			[2,2],[4,4],
+			[0,2],[0,2],
+			False,False,1,3)
+		sk=App.ActiveDocument.addObject('Part::Spline','rA')
+		sk.Shape=bs.toShape()
+
+	#	rr[1]=rr[0]+rA[0]-rA[1]
+
+		rrs=rr.swapaxes(0,1)
+		
+		rcc2=rrs[0][::-1]
+
+		ptsa=[FreeCAD.Vector(p) for  p in rcc[:-1]]
+		ptsa += [FreeCAD.Vector(p) for  p in rcc2]
+		ptsb=[p+ FreeCAD.Vector(0,-30,0) for p in ptsa]
+		# Draft.makeWire(ptsa)
+		for p in ptsa:
+			print p 
+		
+		bs=Part.BSplineSurface()
+		bs.buildFromPolesMultsKnots([ptsa,ptsb],
+			[2,2],[4,3,4],
+			[0,2],[0,1,2],
+			False,False,1,3)
+		sk=App.ActiveDocument.addObject('Part::Spline','rC')
+		sk.Shape=bs.toShape()
+		
+
+
+		rB=np.array([rrs[-1],rrs[-1]+[30,30,20]])
+		bs=Part.BSplineSurface()
+		bs.buildFromPolesMultsKnots(rB,
+			[2,2],[4,4],
+			[0,2],[0,2],
+			False,False,1,3)
+		sk=App.ActiveDocument.addObject('Part::Spline','rB')
+		sk.Shape=bs.toShape()
+
+		#rrs[-2][2:]=rrs[-1][2:]+rB[0][2:]-rB[1][2:]
+		rrs[-2][1:]=rrs[-1][1:]+rB[0][1:]-rB[1][1:]
+
+		rru=rrs.swapaxes(0,1)
+		#rru=rings
+		#rru=rr
+
+
+
+
+
+		bs=Part.BSplineSurface()
+		bs.buildFromPolesMultsKnots(rru,
+			[4,4],[4,4],
+			[0,2],[0,2],
+			False,False,3,3)
+		if 0:
+			bs.insertUKnot(1,3,0)
+			bs.insertVKnot(1,3,0)
+
+			bs.insertUKnot(1.5,3,0)
+
+
+
+def createTriangle():
+	'''createTriangle: creates a BSpline Surface for an area of 3 selected and connected curves
+	at the moment the curves must have 4,4,7 poles 
+	the long side should have multiplicities 4,3,4
+	
+	'''
+	sf=App.ActiveDocument.addObject('Part::FeaturePython','BeTriangle')
+	sf.ViewObject.ShapeColor=(0.5+random.random(),random.random(),random.random(),)
+	BeTriangle(sf)
+	(sf.curveA,sf.curveB,sf.curveC)=Gui.Selection.getSelection()
+	ViewProvider(sf.ViewObject)
+
+
+def SplitIntoCells():
+	'''split a BSpline Face into segment cells'''
+
+	obj=Gui.Selection.getSelection()[0]
+	f=obj.Shape.Face1
+	bs=f.Surface
+	luks=len(bs.getUKnots())
+	lvks=len(bs.getVKnots())
+
+	uks=bs.getUKnots()
+	vks=bs.getVKnots()
+
+	comps=[]
+	for ui in range(0,luks-1):
+		for vi in range(0,lvks-1):
+			bsa=bs.copy()
+			bsa.segment(uks[ui],uks[ui+1],vks[vi],vks[vi+1])
+			comps +=[bsa.toShape()]
+
+
+	sk=App.ActiveDocument.addObject('Part::Spline','split')
+	sk.Shape=Part.Compound(comps)
+
+
+
+def createTangentStripes():
+
+	obj=Gui.Selection.getSelection()[0]
+	f=obj.Shape.Face1
+	bs=f.Surface
+	luks=len(bs.getUKnots())
+	lvks=len(bs.getVKnots())
+
+	uks=bs.getUKnots()
+	vks=bs.getVKnots()
+
+	comps=[]
+	stripes=[
+		[0,1],
+		[-2,-1]
+	]
+	poles=np.array(bs.getPoles())
+	for a,b in stripes:
+		rb=[poles[a],poles[b]]
+		bs2=Part.BSplineSurface()
+		bs2.buildFromPolesMultsKnots(rb,
+			[2,2],bs.getVMultiplicities(),
+			[0,2],bs.getVKnots(),
+			False,False,1,3)
+
+		sk=App.ActiveDocument.addObject('Part::Spline','split')
+		sk.Shape=bs2.toShape()
+
+	poles=np.array(poles).swapaxes(0,1)
+
+	for a,b in stripes:
+		rb=[poles[a],poles[b]]
+		bs2=Part.BSplineSurface()
+		bs2.buildFromPolesMultsKnots(rb,
+			[2,2],bs.getUMultiplicities(),
+			[0,2],bs.getUKnots(),
+			False,False,1,3)
+
+		sk=App.ActiveDocument.addObject('Part::Spline','split')
+		sk.Shape=bs2.toShape()
+
+#-----------------
+
+
+
+class Cell(FeaturePython):
+
+	def __init__(self, obj):
+		FeaturePython.__init__(self, obj)
+		obj.addProperty("App::PropertyLink","source")
+		obj.addProperty("App::PropertyLink","curveB")
+		obj.addProperty("App::PropertyLink","curveC")
+
+#		obj.addProperty("App::PropertyString","edgeA")
+#		obj.addProperty("App::PropertyString","edgeB")
+#		obj.addProperty("App::PropertyString","edgeC")
+
+		obj.addProperty("App::PropertyInteger","uBegin").uBegin=0
+		obj.addProperty("App::PropertyInteger","uEnd").uEnd=-1
+		
+		obj.addProperty("App::PropertyInteger","vBegin")
+		obj.addProperty("App::PropertyInteger","vEnd").vEnd=-1
+		obj.addProperty("App::PropertyInteger","level")
+		obj.addProperty("App::PropertyBool","uvSwap")
+		obj.addProperty("App::PropertyBool","uReverse")
+		obj.addProperty("App::PropertyBool","vReverse")
+#		obj.addProperty("App::PropertyFloat","tangentFactorTube")
+#		obj.addProperty("App::PropertyFloat","tangentFactorHelmet")
+
+
+
+
+	def execute(self,fp):
+
+		import numpy as np
+		bs=fp.source.Shape.Face1.Surface
+		luks=len(bs.getUKnots())
+		lvks=len(bs.getVKnots())
+
+		uks=bs.getUKnots()
+		vks=bs.getVKnots()
+		bs2=bs.copy()
+
+
+#		bs2.buildFromPolesMultsKnots(bs.getPoles(),
+#			um,vm,range(len(um)),range(len(vm)),
+#			False,False,3,3)
+		bs2.segment(uks[fp.uBegin],uks[fp.uEnd],vks[fp.vBegin],vks[fp.vEnd])
+
+		fp.Shape=bs2.toShape()
+
+
+
+
+def createCell():
+	
+	sf=App.ActiveDocument.addObject('Part::FeaturePython','Cell')
+	sf.ViewObject.ShapeColor=(random.random(),0.5+random.random(),random.random(),)
+	Cell(sf)
+	sf.source=Gui.Selection.getSelection()[0]
+	ViewProvider(sf.ViewObject)
+
+
+
+
+
+#-----------------
+
+
+
+def AA():
+	obj=Gui.Selection.getSelection()[0]
+	f=obj.Shape.Face1
+	print f
+	n=f.toNurbs()
+	sf=n.Face1.Surface
+	for e in n.Edges:
+		print e
+		c=e.Curve
+		Part.show(c.toShape())
+
+	Part.show(sf.toShape())
+
+
+
+def BB():
+	'''yankee face'''
+
+	import numpy as np
+
+	obj1=App.ActiveDocument.FaceConnection_Cell
+	obj2=App.ActiveDocument.FaceConnection001_Cell001
+
+
+	sf1=obj1.Shape.Face1.Surface
+	sf2=obj2.Shape.Face1.Surface
+
+
+	poles1=np.array(sf1.getPoles()).swapaxes(0,1)
+	poles2=np.array(sf2.getPoles()).swapaxes(0,1)
+
+	allp=np.concatenate([poles1,[2*poles1[-1]-poles1[-2],2*poles2[0]-poles2[1]],poles2])
+
+	vmults=sf1.getUMultiplicities()
+	vknots=range(len(vmults))
+
+	print allp.shape
+	lu=allp.shape[0]
+	for i in range(2,7):
+			allp[4,i]=allp[3,i]
+			allp[5,i]=allp[3,i]
+
+	print "lu.",lu
+	umults=[4,3,3,4]
+	uknots=range(len(umults))
+
+
+	sf=Part.BSplineSurface()
+
+
+	sf.buildFromPolesMultsKnots(
+				allp,
+				umults,
+				vmults,
+				uknots,
+				vknots,
+				False,False,3,3
+			)
+
+	sf.segment(1,2,0,1)
+	Part.show(sf.toShape())
+
+
+
+
