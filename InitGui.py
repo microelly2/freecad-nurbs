@@ -199,7 +199,9 @@ class _Command2():
 
 	def Activated(self):
 
-		# FreeCAD.ActiveDocument.openTransaction("create " + self.name)
+		ta=True
+		if ta:
+			FreeCAD.ActiveDocument.openTransaction(self.name)
 		if self.command != '':
 			if self.modul != '':
 				modul = self.modul
@@ -208,11 +210,12 @@ class _Command2():
 			Gui.doCommand("import " + modul)
 			Gui.doCommand("import " + self.lmod)
 			Gui.doCommand("reload(" + self.lmod + ")")
-			docstring = "print " + re.sub(r'\(.*\)', '.__doc__', self.command)
+			docstring = "print();print " + re.sub(r'\(.*\)', '.__doc__', self.command)
 
 			Gui.doCommand(docstring)
 			Gui.doCommand(self.command)
-		# FreeCAD.ActiveDocument.commitTransaction()
+		if ta:
+			FreeCAD.ActiveDocument.commitTransaction()
 		if FreeCAD.ActiveDocument != None:
 			FreeCAD.ActiveDocument.recompute()
 
@@ -464,8 +467,11 @@ if FreeCAD.GuiUp:
 	c3b(["Bezier"], always, 'berings', 'Surface Editor')
 	c3b(["Bezier"], always, 'berings', 'BSpline To Bezier Curve')
 	c3b(["Bezier"], always, 'berings', 'BSpline To Bezier Surface')
+	c3b(["Bezier"], always, 'berings', 'Face To Bezier Surface')
 	c3b(["Bezier"], always, 'berings', 'Split Into Cells')
 	c3b(["Bezier"], always, 'berings', 'create Cell')
+	c3b(["Bezier"], always, 'berings', 'create QuadPlacement')
+	c3b(["Bezier"], always, 'berings', 'stretch and bend')
 	
 
 #-------------------------------------------

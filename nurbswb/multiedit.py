@@ -1,4 +1,9 @@
+'''
+multiple bspline faces editor
+'''
+
 import FreeCAD,Part
+import FreeCADGui as Gui
 import numpy as np
 import time,random
 App=FreeCAD
@@ -16,24 +21,10 @@ StepSize
 '''
 
 
-if 0:
-	faces=[
-		App.ActiveDocument.Cell,
-		App.ActiveDocument.Cell001,
-		App.ActiveDocument.Cell002,
-	#	App.ActiveDocument.Cell003,
-	#	App.ActiveDocument.BePlane
-		]
+faces=Gui.Selection.getSelection()
+print faces
 
-faces=[
-#	App.ActiveDocument.Cell,
-#	App.ActiveDocument.Cell001,
-#	App.ActiveDocument.Cell002,
-#	App.ActiveDocument.BePlane002,
-#	App.ActiveDocument.BePlane001,
-	App.ActiveDocument.BePlane
-	]
-
+ 
 import nurbswb.say
 
 
@@ -50,12 +41,19 @@ class Point(object):
 	def printFaces(self):
 		print self.point
 		for f in self.fs:
-
 			print f.Label," ",
 		print
 
 def editcross(poles,u,v):
+	'''create an object of curves to display the selected area u,v of the poles under focus of the editor'''
 	comps=[]
+	s=Part.Sphere()
+	s.Radius=20
+	ss=s.toShape()
+	ss.Placement.Base=FreeCAD.Vector(poles[u,v])+FreeCAD.Vector(11,11,11)
+	comps += [ss]
+	uu,vv=u,v
+
 #	v -=1
 #	print ("editcross------------------",u,v,poles.shape)
 	uc,vc,_=poles.shape
@@ -78,6 +76,16 @@ def editcross(poles,u,v):
 					bc=Part.BSplineCurve()
 					bc.buildFromPolesMultsKnots(poles[u,v:v+4],[4,4],[0,1],False,3)
 					comps += [bc.toShape()]
+	for u in range(umi,uma+1):
+			for v in range(vmi,vma):
+					if uu==u and vv==v: continue
+					try:
+						ve=(FreeCAD.Vector(poles[u,v])-FreeCAD.Vector(poles[uu,vv])).normalize()*(-1)
+						v0=FreeCAD.Vector(poles[uu,vv])
+						comps += [Part.makePolygon([v0+10*ve,v0+50*ve])]
+					except:
+						print "problem editcross polygon"
+
 	return comps
 
 
@@ -98,7 +106,9 @@ class Multiface(object):
 		if obj2==None:
 			#obj2=App.activeDocument().addObject("Part::Compound","Compound")
 			obj2=App.ActiveDocument.addObject('Part::Feature',self.nameP)
-			obj2.Placement.Base.z=100
+
+			obj2.Placement.Base=FreeCAD.Vector(1,1,1)
+
 			obj2.ViewObject.PointColor=(1.0,0.6,0.8)
 			obj2.ViewObject.PointSize=6
 
@@ -108,6 +118,7 @@ class Multiface(object):
 			#obj2=App.activeDocument().addObject("Part::Compound","Compound")
 			obj3=App.ActiveDocument.addObject('Part::Feature',self.nameE)
 			obj3.ViewObject.LineColor=(1.0,0.,0.)
+			obj3.ViewObject.ShapeColor=(1.0,1.,0.)
 			obj3.ViewObject.LineWidth=3
 
 
@@ -141,16 +152,14 @@ class Multiface(object):
 		points={}
 		for f in faces:
 			sf=f.Shape.Face1.Surface
-			sf.NbUPoles
-			#poles=np.array(sf.getPoles()).reshape(sf.NbUPoles*sf.NbVPoles,3)
 			poles=[v.Point for v in f.Shape.Vertexes]
 			for p in poles:
 				t=tuple(p)
-				try: points[t].addsf(sf,f)
-				
+				try: 
+					points[t].addsf(sf,f)
 				except:
 					points[t]=Point(p,sf,f)
-		print "getPoints",len(points)
+#		print "getPoints",len(points)
 		self.points=points
 
 	def findPoint(self,vec):
@@ -171,8 +180,8 @@ class Multiface(object):
 
 	def movePoint(self,vec,mov,scanonly=False,params=None):
 			points=self.points
-#			print "Move points........"
-#			print "suche ", vec
+			#print "Move points........"
+
 
 			arc=50-random.random()*100
 			arc=0
@@ -247,6 +256,13 @@ class Multiface(object):
 						poles=poles.reshape(sf.NbUPoles,sf.NbVPoles,3)
 	#					print "nachbarn ",pps
 						# nachbaren mitnehmen
+						
+						print "tangent rotations !!!"
+						turot=params.root.ids['turot'].value()
+						tvrot=params.root.ids['tvrot'].value()
+						
+						print (turot,tvrot)
+						
 						for (u,v) in pps:
 	#						print (u,v)
 							
@@ -275,7 +291,7 @@ class Multiface(object):
 						bs.buildFromPolesMultsKnots(poles,
 								sf.getUMultiplicities(),sf.getVMultiplicities(),
 								sf.getUKnots(),sf.getVKnots(),
-								False,False,sf.UDegree,sf.VDegree)
+								False,False,sf.UDegree,sf.VDegree,sf.getWeights())
 
 						comp += [bs.toShape()]
 #					print "Time step ",time.time()-ta
@@ -307,13 +323,15 @@ class Multiface(object):
 			obj2.Shape=Part.Compound(comp2)
 			obj2.Placement=pm
 
-
 			obj3=App.ActiveDocument.getObject(self.nameE)
-			obj3.Shape=Part.Compound(compe)
-
+			if len(compe)<>0:
+				obj3.Shape=Part.Compound(compe)
+			else:
+				obj3.Shape=Part.Shape()
+			
 			self.comp=comp
-			
-			
+
+
 			print "Time compB  ",time.time()-ta
 
 			if 0:
@@ -434,7 +452,7 @@ class Multiface(object):
 							bs.buildFromPolesMultsKnots(poles,
 									sf.getUMultiplicities(),sf.getVMultiplicities(),
 									sf.getUKnots(),sf.getVKnots(),
-									False,False,sf.UDegree,sf.VDegree)
+									False,False,sf.UDegree,sf.VDegree,sf.getWeights())
 
 							comp += [bs.toShape()]
 	#					print "Time step ",time.time()-ta
@@ -509,7 +527,7 @@ class Multiface(object):
 							bs.buildFromPolesMultsKnots(poles,
 									sf.getUMultiplicities(),sf.getVMultiplicities(),
 									sf.getUKnots(),sf.getVKnots(),
-									False,False,sf.UDegree,sf.VDegree)
+									False,False,sf.UDegree,sf.VDegree,sf.getWeights())
 
 							comp += [bs.toShape()]
 
@@ -566,8 +584,24 @@ class Multiface(object):
 		)
 
 
+
 		compe=[]
 		comp=[c for c in self.comp]
+
+		if params.root.ids['centerofmass'].isChecked():
+
+			ps=FreeCAD.Vector()
+			for s in self.selection:
+				print s
+				[ci,ui,vi]=s[0:3]
+				pp=comp[ci].Surface.getPoles()
+				p=pp[ui][vi]
+				ps +=p 
+			ps *= 1.0/len(self.selection)
+			com=ps
+
+
+
 
 		print "SELECTION LOOP"
 		for sel in self.selection:
@@ -581,6 +615,11 @@ class Multiface(object):
 			print "------------------"
 		
 			sf=comp[si].Surface
+			print ("position",ui,vi)
+
+			print sf.getUKnots()
+			print sf.getVKnots()
+			
 
 			pps=[]
 			umi=max(ui-1,0)
@@ -591,10 +630,10 @@ class Multiface(object):
 			pps += [(uk,vk) for uk in range(umi,uma+1) for vk in range(vmi,vma+1)]
 
 			try:
-				(t1,t2)=sf.tangent(ui,vi)
+				(t1,t2)=sf.tangent(ui/3,vi/3)
 				t1=t1.normalize()
 				t2=t2.normalize()
-				n=sf.normal(ui,vi)
+				n=sf.normal(ui/3,vi/3)
 				n=n.normalize()
 				vectn=t1*params.root.ids['udial'].value()*params.root.ids['scale'].value()+\
 								t2*params.root.ids['vdial'].value()*params.root.ids['scale'].value()+\
@@ -603,19 +642,71 @@ class Multiface(object):
 			except:
 				vectn=FreeCAD.Vector()
 
-			#	ttp += vec + center +vectn
-			#	poles[startu:endu,startv:endv]=ttp
+			turot=params.root.ids['tvrot'].value()
+			tvrot=params.root.ids['turot'].value()
+			tuscale=params.root.ids['tuscale'].value()/30.
+			tvscale=params.root.ids['tvscale'].value()/30.
 
 
+#			t1=FreeCAD.Vector(poles[ui,vi]-poles[ui+1,vi]).normalize()
+#			t2=FreeCAD.Vector(poles[ui,vi]-poles[ui,vi+1]).normalize()
+#			n=t1.cross(t2)
 
-			for (u,v) in pps:
-#				rot=FreeCAD.Rotation(arc,0,0)
-				vv=FreeCAD.Vector(poles[u,v]-base)
-				vv=rot.multVec(vv)
-				poles[u,v] =base+vv+mov+vectn
+			try:
+#				(t1,t2)=sf.tangent(ui/3,vi/3)
+#				t1=t1.normalize()
+#				t2=t2.normalize()
+				n=sf.normal(ui/3,vi/3)
+				n=n.normalize()
+
+				urot=FreeCAD.Rotation(n,turot)
+				vrot=FreeCAD.Rotation(n,-tvrot)
+
+			except:
+				print "KEINE NORMALE"
+				n=None
+
+			print "center of mass", params.root.ids['centerofmass'].isChecked()
+
+			if params.root.ids['centerofmass'].isChecked():
+
+				base=com
+				for (u,v) in pps:
+					vv=FreeCAD.Vector(poles[u,v]-base)
+					vv=rot.multVec(vv)
+					print "scalfactor val", params.root.ids['scale'].value()
+					print "scalfactor", params.root.ids['scale'].value()*0.1
+					vv *= params.root.ids['scale'].value()*0.1
+					poles[u,v] =base+vv+mov
+
+			elif params.root.ids['referencepoint'].isChecked():
+
+				base=App.ActiveDocument.getObject('tmp_referencePoint').Placement.Base
+				for (u,v) in pps:
+					vv=FreeCAD.Vector(poles[u,v]-base)
+					vv=rot.multVec(vv)
+					vv *= params.root.ids['scale'].value()*0.1
+					poles[u,v] =base+vv+mov
+				
+
+
+			else:
+				for (u,v) in pps:
+	#				rot=FreeCAD.Rotation(arc,0,0)
+					vv=FreeCAD.Vector(poles[u,v]-base)
+					# vv=rot.multVec(vv)
+					if n <>None:
+						if u==ui and (v==vi-1 or v==vi+1):
+							vv=urot.multVec(vv)
+							vv *= tuscale
+						if v==vi and (u==ui-1 or u==ui+1):
+							vv=vrot.multVec(vv)
+							vv *= tvscale
+
+					poles[u,v] =base+vv+mov+vectn
 
 			compe += editcross(poles,ui,vi)
-
+			#------------------
 
 #			poles[ui,vi] += mov
 
@@ -624,14 +715,16 @@ class Multiface(object):
 			bs.buildFromPolesMultsKnots(poles,
 					sf.getUMultiplicities(),sf.getVMultiplicities(),
 					sf.getUKnots(),sf.getVKnots(),
-					False,False,sf.UDegree,sf.VDegree)
+					False,False,sf.UDegree,sf.VDegree,sf.getWeights())
 			comp[si]=bs.toShape()
 
 		obj=App.ActiveDocument.getObject(self.nameF)
 		obj.Shape=Part.Compound(comp)
 		if force:
+			print "force"
 			self.comp=comp
-
+		else:
+			print "no force"
 
 		# alle poles ausrechnen
 		pts=[]
@@ -753,7 +846,7 @@ def flattenRegion(selections):
 						bs.getVMultiplicities(),
 						bs.getUKnots(),
 						bs.getVKnots(),
-						False,False,3,3)
+						False,False,3,3,bs.getWeights())
 		return bs3
 
 
@@ -786,173 +879,321 @@ def flattenRegion(selections):
 
 
 def SurfaceEditor():
+	'''gui for the surface editor'''
 
 	from nurbswb.miki_g import createMikiGui2, MikiApp
+	reload( nurbswb.miki_g)
 
 	layout = '''
-	MainWindow:
-		QtGui.QLabel:
-			setText:"***  Multi Face Poles Editor   D E M O  V 0.4 ***"
-#		HorizontalGroup:
-#			setTitle: "Pole u v"
-#			QtGui.QLineEdit:
-#				id: 'ux'
-#				setText:"1"
-#				textChanged.connect: app.relativeMode
-#			QtGui.QLineEdit:
-#				id: 'vx'
-#				setText:"1"
-#				textChanged.connect: app.relativeMode
+#MainWindow:
+	MyTabWidget:
+		tabname: "Editor"
+		VerticalLayout:
+			VerticalLayout:	
+				QtGui.QLabel:
+					setText:"***   Multi Face Poles Editor   D E M O    V 0.9    ***"
+		#			QtGui.QLineEdit:
+		#				id: 'vx'
+		#				setText:"1"
+		#				textChanged.connect: app.relativeMode
+				HorizontalGroup:
+					setTitle: "Position UV-tangential Normal"
+					QtGui.QDial:
+						id: 'udial'
+						setFocusPolicy: QtCore.Qt.StrongFocus
+						valueChanged.connect: app.relativeMode
+						setMinimum: -100
+						setMaximum: 100
+					QtGui.QDial:
+						id: 'vdial'
+						setMinimum: -100
+						setMaximum: 100
+						valueChanged.connect: app.relativeMode
+					QtGui.QDial:
+						id: 'ndial'
+						setMinimum: -100
+						setMaximum: 100
+						valueChanged.connect: app.relativeMode
+					QtGui.QPushButton:
 
-		HorizontalGroup:
-			setTitle: "Position UV-tangential Normal"
-			QtGui.QDial:
-				id: 'udial'
-				setFocusPolicy: QtCore.Qt.StrongFocus
-				valueChanged.connect: app.relativeMode
-				setMinimum: -100
-				setMaximum: 100
-			QtGui.QDial:
-				id: 'vdial'
-				setMinimum: -100
-				setMaximum: 100
-				valueChanged.connect: app.relativeMode
-			QtGui.QDial:
-				id: 'ndial'
-				setMinimum: -100
-				setMaximum: 100
-				valueChanged.connect: app.relativeMode
+				HorizontalGroup:
+					setTitle: "Position XYZ"
+					QtGui.QDial:
+						id: 'xdial'
+						setMinimum: -100
+						setMaximum: 100
+						#setValue: 90
+						setFocusPolicy: QtCore.Qt.StrongFocus
+						valueChanged.connect: app.update
+					QtGui.QDial:
+						id: 'ydial'
+						setMinimum: -100
+						setMaximum: 100
+						valueChanged.connect: app.update
+					QtGui.QDial:
+						id: 'zdial'
+						setMinimum: -100.
+						setMaximum: 100.
+						#setValue: 90.
+						valueChanged.connect: app.update
+					QtGui.QPushButton:
 
-		HorizontalGroup:
-			setTitle: "Position XYZ"
-			QtGui.QDial:
-				id: 'xdial'
-				setMinimum: -100
-				setMaximum: 100
-				#setValue: 90
-				setFocusPolicy: QtCore.Qt.StrongFocus
-				valueChanged.connect: app.update
-			QtGui.QDial:
-				id: 'ydial'
-				setMinimum: -100
-				setMaximum: 100
-				valueChanged.connect: app.update
-			QtGui.QDial:
-				id: 'zdial'
-				setMinimum: -100.
-				setMaximum: 100.
-				#setValue: 90.
-				valueChanged.connect: app.update
 
-		HorizontalGroup:
-			setTitle: "Rotation Euler"
-			QtGui.QDial:
-				id: 'xrot'
-				setMinimum: -100
-				setMaximum: 100
-				setFocusPolicy: QtCore.Qt.StrongFocus
-				valueChanged.connect: app.relativeMode
-			QtGui.QDial:
-				id: 'yrot'
-				setMinimum: -100
-				setMaximum: 100
-				valueChanged.connect: app.relativeMode
-			QtGui.QDial:
-				id: 'zrot'
-				setMinimum: -100.
-				setMaximum: 100.
-				valueChanged.connect: app.relativeMode
+			HorizontalGroup:
+				setTitle: "Transformation Center for Rotation/Scale"
 
-		HorizontalGroup:
-			setTitle: "scale"
-			QtGui.QSlider:
-				id: 'scale'
-				setValue: 10.0
-				setOrientation: PySide.QtCore.Qt.Orientation.Horizontal
-				valueChanged.connect: app.update
+				HorizontalLayout:
+					QtGui.QCheckBox:
+						id: 'centerofmass'
+						setText: 'center of mass'
+						stateChanged.connect: app.centerofmass
+#						valueChanged.connect: app.centerofmass
+						#setChecked: True
 
-		QtGui.QCheckBox:
-			id: 'showface'
-			setText: 'Show Face'
-			stateChanged.connect: app.relativeMode
-			setChecked: True
-
-		QtGui.QCheckBox:
-			id: 'showtangents'
-			setText: 'Show Tangents'
-			stateChanged.connect: app.relativeMode
-			setChecked: True
-
-		QtGui.QCheckBox:
-			id: 'showcurves'
-			setText: 'Show Curves'
-			stateChanged.connect: app.relativeMode
-			setChecked: True
+				HorizontalLayout:
+					QtGui.QCheckBox:
+						id: 'referencepoint'
+						setText: 'reference point'
+						stateChanged.connect: app.referencepoint
+						#setChecked: True
 
 
 
-#		HorizontalGroup:
-#			setTitle: "Mode"
-#			QtGui.QComboBox:
-#				id: 'mode'
-#				addItem: "u"
-#				addItem: "v"
-#		QtGui.QPushButton:
-#			setText: "Run Action"
-#			clicked.connect: app.run
-
-		QtGui.QPushButton:
-			setText: "connect to selected point"
-#			clicked.connect: app.connectSelection
 
 
-		QtGui.QPushButton:
-			setText: "apply"
-			clicked.connect: app.apply
-
-		QtGui.QPushButton:
-			setText: "apply and close"
-			clicked.connect: app.applyandclose
-
-		QtGui.QPushButton:
-			setText: "cancel and close"
-			clicked.connect: app.myclose
-
-		QtGui.QPushButton:
-			setText: "reset dialog"
-			clicked.connect: app.resetDialog
-
-		QtGui.QPushButton:
-			setText: "init data"
-			clicked.connect: app.initData
-
-		QtGui.QPushButton:
-			setText: "clear selection"
-			clicked.connect: app.clearSelection
-
-		QtGui.QPushButton:
-			setText: "set selection"
-			clicked.connect: app.setSelection
-
-		QtGui.QPushButton:
-			setText: "add selection"
-			clicked.connect: app.addSelection
-
-		QtGui.QPushButton:
-			setText: "update"
-			clicked.connect: app.update
-
-		QtGui.QPushButton:
-			setText: "merge"
-			clicked.connect: app.merge
-
-		QtGui.QPushButton:
-			setText: "flatten region"
-			clicked.connect: app.flattenregion
+			setSpacer:
 
 
-		setSpacer:
+			HorizontalGroup:
+				setTitle: "Command Line"
+				QtGui.QLineEdit:
+					id: 'ux'
+					#setText:""
+					setPlaceholderText: "write command please"
+					textChanged.connect: app.textprocessor
+#				returnPressed.connect: app.textprocessor2
+					editingFinished.connect: app.textprocessor3
+
+				QtGui.QComboBox:
+					id: 'mode'
+					addItem: "FreeCAD"
+					addItem: "Blender"
+
+			HorizontalGroup:
+				setTitle: "grp 1"
+
+				QtGui.QPushButton:
+					setText: "apply"
+					clicked.connect: app.apply
+
+				QtGui.QPushButton:
+					setText: "apply and close"
+					clicked.connect: app.applyandclose
+
+				QtGui.QPushButton:
+					setText: "cancel and close"
+					clicked.connect: app.myclose
+
+				QtGui.QPushButton:
+					setText: "reset dialog"
+					clicked.connect: app.resetDialog
+
+
+			HorizontalGroup:
+				setTitle: "grp 2"
+
+#				QtGui.QPushButton:
+#					setText: "init data"
+#					clicked.connect: app.initData
+
+				QtGui.QPushButton:
+					setText: "clear selection"
+					clicked.connect: app.clearSelection
+
+				QtGui.QPushButton:
+					setText: "add selection"
+					clicked.connect: app.addSelection
+
+				QtGui.QPushButton:
+					setText: "set selection"
+					clicked.connect: app.setSelection
+
+
+
+
+		tabname: "Extension"
+		VerticalLayout:
+			HorizontalGroup:
+				setTitle: "Rotation Euler: Nick Roll Gier"
+				QtGui.QDial:
+					id: 'xrot'
+					setMinimum: -100
+					setMaximum: 100
+					setFocusPolicy: QtCore.Qt.StrongFocus
+					valueChanged.connect: app.relativeMode
+				QtGui.QDial:
+					id: 'yrot'
+					setMinimum: -100
+					setMaximum: 100
+					valueChanged.connect: app.relativeMode
+				QtGui.QDial:
+					id: 'zrot'
+					setMinimum: -100.
+					setMaximum: 100.
+					valueChanged.connect: app.relativeMode
+
+
+
+
+			HorizontalGroup:
+				setTitle: "scale"
+				QtGui.QSlider:
+					id: 'scale'
+					setMinimum: 1
+					setValue: 10.0
+					setOrientation: PySide.QtCore.Qt.Orientation.Horizontal
+					valueChanged.connect: app.update
+
+
+			HorizontalGroup:
+				setTitle: "Rotation Tangents UV"
+				QtGui.QDial:
+					id: 'turot'
+					setMinimum: -100
+					setMaximum: 100
+					setFocusPolicy: QtCore.Qt.StrongFocus
+					valueChanged.connect: app.relativeMode
+				QtGui.QDial:
+					id: 'tvrot'
+					setMinimum: -100
+					setMaximum: 100
+					valueChanged.connect: app.relativeMode
+
+
+			HorizontalGroup:
+				setTitle: "scale Tangents UV"
+				QtGui.QSlider:
+					id: 'tvscale'
+					setValue: 30.0
+					setOrientation: PySide.QtCore.Qt.Orientation.Horizontal
+					valueChanged.connect: app.update
+				QtGui.QSlider:
+					id: 'tuscale'
+					setValue: 30.0
+					setOrientation: PySide.QtCore.Qt.Orientation.Horizontal
+					valueChanged.connect: app.update
+
+
+
+
+
+			setSpacer:
+
+		tabname: "Special Methods"
+		VerticalLayout:
+
+			HorizontalGroup:
+				setTitle: ""
+
+				QtGui.QPushButton:
+					setText: "update"
+					clicked.connect: app.update
+
+				QtGui.QPushButton:
+					setText: "merge"
+					clicked.connect: app.merge
+
+				QtGui.QPushButton:
+					setText: "flatten region"
+					clicked.connect: app.flattenregion
+
+			QtGui.QPushButton:
+				setText: "connect to selected point"
+	#			clicked.connect: app.connectSelection
+
+
+#			QtGui.QPushButton:
+#				setText: 'Toggle Begrid'
+#				clicked.connect: app.showbegrid
+#				setChecked: True
+
+#			QtGui.QPushButton:
+#				setText: 'Toggle Map'
+#				clicked.connect: app.showmap
+#				setChecked: True
+
+
+			setSpacer:
+
+
+		tabname: "Configuration"
+		VerticalLayout:
+
+			HorizontalLayout:
+				QtGui.QCheckBox:
+					id: 'showface'
+					setText: 'Show Face'
+					stateChanged.connect: app.relativeMode
+					setChecked: True
+
+				QtGui.QCheckBox:
+					id: 'showtangents'
+					setText: 'Show Tangents'
+					stateChanged.connect: app.relativeMode
+					setChecked: True
+
+				QtGui.QCheckBox:
+					id: 'showcurves'
+					setText: 'Show Curves'
+					stateChanged.connect: app.relativeMode
+					setChecked: True
+
+
+	#			QtGui.QCheckBox:
+	#				setText: 'Show Tangents'
+	#				stateChanged.connect: app.relativeMode
+	#				setChecked: True
+
+
+
+
+	#		HorizontalGroup:
+	#			setTitle: "Mode"
+	#			QtGui.QComboBox:
+	#				id: 'mode'
+	#				addItem: "u"
+	#				addItem: "v"
+	#		QtGui.QPushButton:
+	#			setText: "Run Action"
+	#			clicked.connect: app.run
+
+			setSpacer:
+
+
+		tabname: "Develop"
+		VerticalLayout:
+
+			HorizontalLayout:
+				QtGui.QCheckBox:
+					id: 'showface'
+					setText: 'Show Face'
+					stateChanged.connect: app.relativeMode
+					setChecked: True
+
+			QtGui.QPushButton:
+				setText: 'Set Selection 1,1 and 1,2'
+				clicked.connect: app.setselection1
+				setChecked: True
+
+
+
+			setSpacer:
+
+		setCurrentIndex: 0
+
 		'''
+
+
 
 	def edit(u,v,s=10):
 
@@ -966,16 +1207,206 @@ def SurfaceEditor():
 	class EditorApp(MikiApp):
 
 		def resetDialog(self):
+			'''set all parameters fo the dialog to default values'''
+			
 			for idx in  'udial','vdial','ndial','scale','xdial','ydial','zdial','xrot','yrot','zrot':
 				if self.root.ids[idx].value()<>0:
 					self.root.ids[idx].setValue(0)
 
 			self.root.ids['scale'].setValue(10)
-#			upn=int(self.root.ids['ux'].text())
-#			vpn=int(self.root.ids['vx'].text())
-
-
 			App.activeDocument().recompute()
+
+		def setselection1(self):
+			u=1
+			v=2
+			self.multiface.selection=[
+				[0,3,3,FreeCAD.Vector()],
+				[0,3*u,3*v,FreeCAD.Vector()],
+				]
+			print ("set selection",u,v)
+
+
+		def centerofmass(self):
+			print "display and use center of mass"
+			ps=FreeCAD.Vector()
+			for s in self.multiface.selection:
+				print s
+				[ci,ui,vi]=s[0:3]
+				pp=self.multiface.comp[ci].Surface.getPoles()
+				p=pp[ui][vi]
+				ps +=p 
+			ps *= 1.0/len(self.multiface.selection)
+			obj=App.ActiveDocument.getObject('tmp_CenterOfMass_Selection')
+			if obj == None:
+				obj=App.ActiveDocument.addObject("Part::Cone",'tmp_CenterOfMass_Selection')
+				obj.ViewObject.ShapeColor=(1.,1.,0.)
+				obj.Height=500
+				obj.Radius2=50
+			obj.Placement.Base=ps
+
+		def referencepoint(self):
+			obj=App.ActiveDocument.getObject('tmp_referencePoint')
+			if obj == None:
+				obj=App.ActiveDocument.addObject("Part::Cone",'tmp_referencePoint')
+				obj.ViewObject.ShapeColor=(0.7,1.,0.7)
+				obj.Height=500
+				obj.Radius2=50
+
+
+
+
+
+
+
+
+		def textprocessor(self):
+			print "TEXTPROZESSOR"
+			print "ux:",self.root.ids['ux'].text()
+
+#		def textprocessor2(self):
+#			print "TEXTPROZESSOR 2"
+#			print "ux:",self.root.ids['ux'].text()
+
+		def textprocessor3(self):
+			'''command line execution after presse enter in the command line '''
+			print "TEXTPROZESSOR 3"
+			print "ux:",self.root.ids['ux'].text()
+			# anylize the text
+			w=self.root.ids['ux'].text()
+			# print w.split()
+			cmds=w.split(';')
+			cmdtab={ 'FreeCAD':	{
+							'x': 'xdial',
+							'y': 'ydial',
+							'z': 'zdial',
+							'u': 'udial',
+							'v': 'vdial',
+							'n': 'ndial',
+							's': 'scale',
+							'rn': 'xrot',
+							'rr': 'yrot',
+							'rg': 'zrot',
+
+						},
+					'Blender': {
+							'gx': 'xdial',
+							'gy': 'ydial',
+							'gz': 'zdial',
+							'u': 'udial',
+							'v': 'vdial',
+							'n': 'ndial',
+							's': 'scale',
+							'rx': 'xrot',
+							'ry': 'yrot',
+							'rz': 'zrot',
+						}
+					}
+
+			mode=self.root.ids['mode'].currentText()
+			print "mode ",mode
+			for c in cmds:
+				print c.split()
+				sp=c.split()
+				if len(sp)==3:
+					[cmd,val1,val2]=sp
+					if cmd=='seladd':
+						print "select add ring"
+						val1=int(val1)
+						val2=int(val2)
+						self.multiface.selection += [[0,3*val1,3*val2,None]]
+						print self.multiface.selection
+						self.update()
+
+				if len(sp)==2:
+					[cmd,val]=sp
+					val=float(val)
+					print val
+					try:
+						if cmd=='s':val *= 10.
+						print ("scale command ------------",cmd,val)
+						self.root.ids[cmdtab[mode][cmd]].setValue(val)
+						self.update()
+
+					except:
+						print "kann kommndo nicht ausfuehren"
+					
+					if cmd=='selu':
+						print "select u ring"
+						self.multiface.selection=[]
+						val=int(val)
+						pp=self.multiface.comp[0].Surface.NbVPoles/3
+						
+						for v in range(pp+1):
+							self.multiface.selection += [[0,3*val,3*v,None]]
+						print self.multiface.selection
+						self.update()
+					if cmd=='selv':
+						print "select v ring"
+						self.multiface.selection=[]
+						val=int(val)
+						pp=self.multiface.comp[0].Surface.NbUPoles/3
+						for u in range(pp+1):
+							self.multiface.selection += [[0,3*u,3*val,None]]
+						self.update()
+
+				if len(sp)==0:
+					print "Hide mode .........."
+					print self.last
+					if self.last <>'hide':
+						App.ActiveDocument.BeGrid.ViewObject.Visibility= not App.ActiveDocument.BeGrid.ViewObject.Visibility
+						self.last='hide'
+					else:
+						self.last=''
+					return
+
+				if len(sp)==1:
+					cmd=sp[0]
+					if cmd=='a':
+						self.apply()
+					elif cmd=='1':
+						Gui.activeDocument().activeView().viewFront()
+					elif cmd=='2':
+						Gui.activeDocument().activeView().viewTop()
+					elif cmd=='3':
+						Gui.activeDocument().activeView().viewRight()
+					elif cmd=='4':
+						Gui.activeDocument().activeView().viewRear()
+					elif cmd=='5':
+						Gui.activeDocument().activeView().viewBottom()
+					elif cmd=='6':
+						Gui.activeDocument().activeView().viewLeft()
+					elif cmd=='0':
+						Gui.activeDocument().activeView().viewAxonometric()
+					elif cmd==',':
+						import workspace
+						import workspace.views
+						try: self.light
+						except: self.light=False
+						if self.light:
+							workspace.views.lightOff()
+						else:	
+							workspace.views.lightOn()
+						self.light = not self.light
+					elif cmd=='+':
+						Gui.ActiveDocument.ActiveView.zoomIn()
+					elif cmd=='-':
+						Gui.ActiveDocument.ActiveView.zoomOut()
+					elif cmd=='q':
+						self.close()
+
+			self.last=''
+			self.root.ids['ux'].setText('')
+
+
+		def showbegrid(self):
+			print "showgrid"
+			App.ActiveDocument.BeGrid.ViewObject.Visibility= not App.ActiveDocument.BeGrid.ViewObject.Visibility
+
+
+		def showmap(self):
+			print "showmap"
+			App.ActiveDocument.MAP.ViewObject.Visibility= not App.ActiveDocument.MAP.ViewObject.Visibility
+
 
 		def flattenregion(self):
 			for s in self.multiface.selection:
@@ -1000,24 +1431,26 @@ def SurfaceEditor():
 
 			tt=time.time()
 			obj.ViewObject.hide()
-			obj.Shape=self.Shape
-			print "savetime hidden ",time.time()-tt
-			tt=time.time()
-			obj.ViewObject.show()
-			obj.Shape=self.Shape
-			print "savetime show ",time.time()-tt
+#			obj.Shape=self.Shape
+#			print "savetime hidden ",time.time()-tt
+#			tt=time.time()
+#			obj.ViewObject.show()
 
-			tt=time.time()
-			z=self.Shape
-			z=self.Shape
-			print "savetime intern ",time.time()-tt
+#			obj.Shape=self.Shape
+			objA=App.ActiveDocument.getObject('tmp_multiFace')
+			obj.Shape=objA.Shape
+#			print "savetime show ",time.time()-tt
+
+#			tt=time.time()
+#			z=self.Shape
+#			z=self.Shape
+#			print "savetime intern ",time.time()-tt
 
 			self.obj=obj
 			self.resultobj=obj
 #			print "savetb ",time.time()-tt
 
 		def applyandclose(self):
-			fp=self.obj
 			self.save()
 			try:
 				App.ActiveDocument.removeObject(self.NameObj2)
@@ -1050,7 +1483,7 @@ def SurfaceEditor():
 			print "relative mode called"
 			self.update()
 
-		def Xapply(self,save=True):
+		def xyz_apply(self,save=True):
 #			print "apply  implemented"
 			st=time.time()
 
@@ -1068,9 +1501,12 @@ def SurfaceEditor():
 			m.getPoints()
 			self.multiface=m
 			self.multiface.movePoint(None,FreeCAD.Vector(0,0,1000),True)
-			print ("comp anz", len(self.multiface.comp))
-
-
+			# print ("comp anz", len(self.multiface.comp))
+			self.multiface.selection = [
+				(0,3,3,FreeCAD.Vector()),
+				(0,1,1,FreeCAD.Vector()),
+				(0,2,1,FreeCAD.Vector()),
+			]
 
 
 
@@ -1093,12 +1529,16 @@ def SurfaceEditor():
 			App.activeDocument().recompute()
 			App.ActiveDocument.getObject(self.multiface.nameE).ViewObject.show()
 
+			self.root.ids['ux'].setFocus()
+			self.last='hide2'
+
 		def update(self):
 			ta=time.time()
-			self.multiface.update(params=self,force=False)
-			App.activeDocument().recompute()
-			print len(self.multiface.selection)
-			print "update ",time.time()-ta
+			if hasattr(self,'multiface'):
+				self.multiface.update(params=self,force=False)
+				App.activeDocument().recompute()
+				print len(self.multiface.selection)
+				print "update ",time.time()-ta
 
 		def apply(self):
 			ta=time.time()
@@ -1111,7 +1551,7 @@ def SurfaceEditor():
 
 
 
-		def Xupdate(self):
+		def xyz_update(self):
 			ta=time.time()
 			
 			print len(self.multiface.selection)
@@ -1131,19 +1571,25 @@ def SurfaceEditor():
 			print 
 			selps=Gui.Selection.getSelectionEx()[0].PickedPoints
 			#self.multiface.compe=[]
-			# self.multiface.selection=[]
+			pres=self.multiface.selection
 			for vt in selps:
 				print vt 
 				vt -= App.ActiveDocument.tmp_poles.Placement.Base
 				self.multiface.movePoint(vt,FreeCAD.Vector(0,0,2000),True)
+			# self.multiface.selection += pres
 			print "SELECTIONS"
 			for s in self.multiface.selection:
 				print s
+			
+			self.update()
 			App.activeDocument().recompute()
 			App.ActiveDocument.getObject(self.multiface.nameE).ViewObject.show()
 
+			self.root.ids['ux'].setFocus()
+			self.last='hide2'
 
-		def Xapply(self):
+
+		def xyz_apply(self):
 			print "SELECTIONS pre"	
 			for s in self.multiface.selection:
 				print s
@@ -1202,7 +1648,6 @@ def SurfaceEditor():
 				vmaa=min(sf.NbVPoles-1,via+1)
 
 				mova= mm-ma
-				print "move a",mova
 
 				sf=comp[sib].Surface
 				pps=[]
@@ -1230,7 +1675,7 @@ def SurfaceEditor():
 				bs.buildFromPolesMultsKnots(polesa,
 								sf.getUMultiplicities(),sf.getVMultiplicities(),
 								sf.getUKnots(),sf.getVKnots(),
-								False,False,sf.UDegree,sf.VDegree)
+								False,False,sf.UDegree,sf.VDegree,sf.getWeights())
 
 				comp[sia] = bs.toShape()
 
@@ -1295,7 +1740,7 @@ def SurfaceEditor():
 				bs.buildFromPolesMultsKnots(polesb,
 								sf.getUMultiplicities(),sf.getVMultiplicities(),
 								sf.getUKnots(),sf.getVKnots(),
-								False,False,sf.UDegree,sf.VDegree)
+								False,False,sf.UDegree,sf.VDegree,sf.getWeights())
 
 
 
@@ -1322,34 +1767,56 @@ def SurfaceEditor():
 			self.multiface.comp=comp
 			self.multiface.compe=compe
 
+
 			obj2=App.ActiveDocument.getObject(self.multiface.nameP)
 			pm=obj2.Placement
+			print "Poles placement -------"
+			print pm
+			
 			comp2=[Part.Vertex(FreeCAD.Vector(p)) for p in pts]
 			obj2.Shape=Part.Compound(comp2)
 			obj2.Placement=pm
-
-
 
 #			Part.show(Part.Compound(comp))
 
 
 
-
-
-
-
-
-
-
-
 	mikigui = createMikiGui2(layout, EditorApp)
-	print mikigui
-#	mikigui.obj=fp
-#	mikigui.NameObj=obj.Name
 	mikigui.initData()
+	mikigui.last=''
+	mikigui.light=False
 
+'''
+if App.ActiveDocument.BeGrid.Source == None:
+	App.ActiveDocument.BeGrid.Source=App.ActiveDocument.tmp_multiFace
+	App.activeDocument().recompute()
 
+if App.ActiveDocument.MAP.faceObject == None:
+	App.ActiveDocument.MAP.faceObject=App.ActiveDocument.tmp_multiFace
+	App.activeDocument().recompute()
+'''
 
 
 def multiEdit():
 	SurfaceEditor()
+
+
+def AA():
+
+	import nurbswb
+	import nurbswb.berings
+	reload(nurbswb.berings)
+	nurbswb.berings.createBeGrid()
+	import nurbswb.facedraw
+	reload(nurbswb.facedraw)
+	nurbswb.facedraw.createMap()
+
+
+
+	if App.ActiveDocument.BeGrid.Source == None:
+		App.ActiveDocument.BeGrid.Source=App.ActiveDocument.tmp_multiFace
+		App.activeDocument().recompute()
+
+	if App.ActiveDocument.MAP.faceObject == None:
+		App.ActiveDocument.MAP.faceObject=App.ActiveDocument.tmp_multiFace
+		App.activeDocument().recompute()

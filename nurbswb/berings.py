@@ -4,17 +4,47 @@ create curves and faces like Bezier format
 
 import numpy as np
 import Draft,Points,Part
-from say import *
+import nurbswb.say
+from nurbswb.say import *
 import random
 
 def AA():
+	'''dummy method for testing'''
 	print "AA-nip"
 
 def BB():
+	'''dummy method for testing'''
 	print "BB-nip"
 
 
 
+import inspect
+reload (nurbswb.say)
+
+
+
+
+def checkcurve(curve):
+	'''check the curve to be a supported bezier curve'''
+	try:
+		assert curve.Degree <= 3
+		kns= curve.getMultiplicities()
+		if curve.Degree == 3:
+			assert kns[0] == 4 and kns[-1]== 4  
+			assert min(kns[1:-1])==3 and max(kns[1:-1])==3
+		if curve.Degree == 2:
+			assert kns[0] == 3 and kns[-1]== 3
+			assert len(kns)==2  
+		if curve.Degree == 1:
+			assert kns[0] == 2 and kns[-1]== 2
+			assert len(kns)==2  
+	except:
+		sayexc("checkcurve results")
+		sayexc2("checkcurve Error","assertion failed")
+
+
+
+##\cond
 class FeaturePython:
 	''' basic defs'''
 
@@ -44,10 +74,10 @@ class ViewProvider:
 
 	def __setstate__(self, state):
 		return None
-
+##\endcond
 
 def copySketch(sketch,target):
-	'''kopiert sketch in sketchobjectpython'''
+	'''kopiert sketch geometry und constraints into trarget sketch'''
 	sb=sketch
 	gs=sb.Geometry
 	cs=sb.Constraints
@@ -68,6 +98,8 @@ def copySketch(sketch,target):
 
 
 class Bering(FeaturePython):
+	'''special bezier curve'''
+	  
 	def __init__(self, obj):
 		FeaturePython.__init__(self, obj)
 		obj.addProperty("App::PropertyInteger","level")
@@ -80,9 +112,8 @@ class Bering(FeaturePython):
 
 
 	def onChanged(self, fp, prop):
-		#if not hasattr(fp,'onchange') or not fp.onchange : return
-#		print "bering ########################## changed ",prop
-		if prop == "detach" and  fp.detach:
+		'''if detached then make a copy of the source and forget the sourced'''
+		if prop == "detach" and fp.detach:
 			print " copy from sketch"
 			copySketch(fp.source,fp)
 
@@ -90,26 +121,28 @@ class Bering(FeaturePython):
 	def execute(self,fp):
 
 		if fp.cyclic:
-			bc=Part.BSplineCurve()
+			# make a cyclic bezier chain from the points of the source polygon
 			
+			bc=Part.BSplineCurve()
 
 			pts=[v.Point for v in fp.source.Shape.Vertexes]
 			pts=pts[1:]+pts[:1]
 			l=len(pts)+3
-			print l
+			try: 
+				assert l%3 == 0
+			except:
+				sayexc2(
+					"error number of vertexes",
+					"for a cyclic Bering 3n points are required not valid source:" + fp.source.Label 
+					)
+
 			ms=[3]*(l/3)
 			ks=range(len(ms))
-			print ms
-			print ks			
-			bc.buildFromPolesMultsKnots(pts,
-					ms,
-					ks,
-					True,3)
+			bc.buildFromPolesMultsKnots(pts,ms,ks,True,3)
 			fp.Shape=bc.toShape()
 			return
 
-
-		if fp.detach:
+		if fp.detach: #use the own data instead of the source
 			ptsa=[fp.getPoint(g,1) for g  in range(len(fp.Geometry))]
 			ptsa +=[fp.getPoint(len(fp.Geometry)-1,2)]
 		else:
@@ -118,15 +151,19 @@ class Bering(FeaturePython):
 			except:
 				ptsa=[v.Point*fp.scale for v in fp.source.Shape.Vertexes]
 
+		print len(ptsa)
+
 		# testen ob geschlossenes oder offnes modell
-		print ("Lanege test",len(ptsa),len(ptsa)%3)
+		if len(ptsa)%3 == 2:
+			sayexc2(
+					"error number of vertexes",
+					"for a Bering 3n or 3n+1 points are required not valid source:" + fp.source.Label 
+				)
+
 		if len(ptsa)%3==0:
-
 			pts=ptsa[1:]+[ptsa[0],ptsa[1]]
-
 		else:
 			pts=ptsa
-
 
 		if fp.start==0 and fp.end==0:
 			ecken=(len(pts))/3-1
@@ -138,15 +175,8 @@ class Bering(FeaturePython):
 
 		ms=[4]+[3]*ecken+[4]
 
-		print ("start,end",fp.start,fp.end)
-		print ("ms",ms,"Ecken",ecken,"len pts", len(pts))
-
 		bc=Part.BSplineCurve()
-		bc.buildFromPolesMultsKnots(pts, 
-			ms,
-			range(len(ms)),
-			False,3)
-
+		bc.buildFromPolesMultsKnots(pts, ms, range(len(ms)), False,3)
 		fp.Shape=bc.toShape()
 
 
@@ -600,6 +630,7 @@ class Corner(FeaturePython):
 #			ww=Part.makePolygon(pts)
 			ss=Part.Sphere()
 			ss.Radius=100
+			ss.Radius=10
 			sa=ss.toShape()
 			
 			sa.Placement.Base=_moveCorner(obj,True)
@@ -1596,7 +1627,7 @@ def SurfaceEditor():
 			poles[startu:endu,startv:endv]=ttp
 
 			ss=Part.Sphere()
-			ss.Radius=100
+			ss.Radius=10
 			s=ss.toShape()
 			s.Placement.Base=poles[upn*3][vpn*3]
 
@@ -1805,7 +1836,7 @@ def SurfaceEditor():
 
 
 			ss=Part.Sphere()
-			ss.Radius=100
+			ss.Radius=10
 			s=ss.toShape()
 			s.Placement.Base=poles[upn*3][vpn*3]
 
@@ -2787,6 +2818,7 @@ class Cell(FeaturePython):
 		obj.addProperty("App::PropertyBool","uvSwap")
 		obj.addProperty("App::PropertyBool","uReverse")
 		obj.addProperty("App::PropertyBool","vReverse")
+		obj.addProperty("App::PropertyBool","complement")
 #		obj.addProperty("App::PropertyFloat","tangentFactorTube")
 #		obj.addProperty("App::PropertyFloat","tangentFactorHelmet")
 
@@ -2802,16 +2834,35 @@ class Cell(FeaturePython):
 
 		uks=bs.getUKnots()
 		vks=bs.getVKnots()
-		bs2=bs.copy()
 
+#		fp.uBegin=1
+#		fp.uEnd=-2
+#		fp.vBegin=1
+#		fp.vEnd=-2
 
-#		bs2.buildFromPolesMultsKnots(bs.getPoles(),
-#			um,vm,range(len(um)),range(len(vm)),
-#			False,False,3,3)
-		bs2.segment(uks[fp.uBegin],uks[fp.uEnd],vks[fp.vBegin],vks[fp.vEnd])
+		
+		if not fp.complement:
 
-		fp.Shape=bs2.toShape()
+			bs2=bs.copy()
 
+	#		bs2.buildFromPolesMultsKnots(bs.getPoles(),
+	#			um,vm,range(len(um)),range(len(vm)),
+	#			False,False,3,3)
+			bs2.segment(uks[fp.uBegin],uks[fp.uEnd],vks[fp.vBegin],vks[fp.vEnd])
+
+			fp.Shape=bs2.toShape()
+
+		else:
+			comps=[]
+			segs=[(0,fp.uBegin,0,-1),(fp.uEnd,-1,0,-1),
+				(fp.uBegin,fp.uEnd,0,fp.vBegin),(fp.uBegin,fp.uEnd,fp.vEnd,-1)]
+			for (a,b,c,d) in segs:
+				bs2=bs.copy()
+				bs2.segment(uks[a],uks[b],vks[c],vks[d])
+				comps += [bs2.toShape()]
+			fp.Shape=Part.Compound(comps)
+			fp.ViewObject.DisplayMode="Shaded"
+			fp.ViewObject.Transparency=40
 
 
 
@@ -2892,6 +2943,303 @@ def BB():
 
 	sf.segment(1,2,0,1)
 	Part.show(sf.toShape())
+
+
+class QuadPm(FeaturePython):
+
+	def __init__(self, obj):
+		FeaturePython.__init__(self, obj)
+		obj.addProperty("App::PropertyPlacement","pointA")
+		obj.addProperty("App::PropertyPlacement","pointB")
+		obj.addProperty("App::PropertyPlacement","pointC")
+		obj.addProperty("App::PropertyPlacement","pointD")
+
+		obj.addProperty("App::PropertyLink","sourceA")
+		obj.addProperty("App::PropertyLink","sourceB")
+		obj.addProperty("App::PropertyLink","sourceC")
+		obj.addProperty("App::PropertyLink","sourceD")
+
+		
+		obj.addProperty("App::PropertyLink","source")
+		obj.addProperty("App::PropertyLink","curveB")
+		obj.addProperty("App::PropertyLink","curveC")
+
+#		obj.addProperty("App::PropertyString","edgeA")
+#		obj.addProperty("App::PropertyString","edgeB")
+#		obj.addProperty("App::PropertyString","edgeC")
+
+		obj.addProperty("App::PropertyInteger","uBegin").uBegin=0
+		obj.addProperty("App::PropertyInteger","uEnd").uEnd=-1
+		
+		obj.addProperty("App::PropertyInteger","vBegin")
+		obj.addProperty("App::PropertyInteger","vEnd").vEnd=-1
+		obj.addProperty("App::PropertyInteger","level")
+		obj.addProperty("App::PropertyBool","uvSwap")
+		obj.addProperty("App::PropertyBool","uReverse")
+		obj.addProperty("App::PropertyBool","vReverse")
+		obj.addProperty("App::PropertyBool","complement")
+#		obj.addProperty("App::PropertyFloat","tangentFactorTube")
+#		obj.addProperty("App::PropertyFloat","tangentFactorHelmet")
+
+
+
+	def execute(self,fp):
+
+		import numpy as np
+
+		comps=[]
+		if fp.sourceA <> None:
+			fp.pointA=fp.sourceA.Placement
+		if fp.sourceB <> None:
+			fp.pointB=fp.sourceB.Placement
+		if fp.sourceC <> None:
+			fp.pointC=fp.sourceC.Placement
+		if fp.sourceD <> None:
+			fp.pointD=fp.sourceD.Placement
+
+
+
+		try:
+			comps += [Part.makePolygon([fp.pointA.Base,fp.pointB.Base])]
+			comps += [Part.makePolygon([fp.pointB.Base,fp.pointD.Base])]
+			comps += [Part.makePolygon([fp.pointC.Base,fp.pointD.Base])]
+			comps += [Part.makePolygon([fp.pointC.Base,fp.pointA.Base])]
+		except:
+			pass
+		fp.Shape=Part.Compound(comps)
+		fp.ViewObject.Transparency=40
+
+
+
+def createCell():
+
+	sf=App.ActiveDocument.addObject('Part::FeaturePython','Cell')
+	sf.ViewObject.ShapeColor=(random.random(),0.5+random.random(),random.random(),)
+	Cell(sf)
+	sf.source=Gui.Selection.getSelection()[0]
+	ViewProvider(sf.ViewObject)
+
+
+
+
+def createQuadPlacement():
+
+	sf=App.ActiveDocument.addObject('Part::FeaturePython','QuadPM')
+	sf.ViewObject.ShapeColor=(random.random(),0.5+random.random(),random.random(),)
+	QuadPm(sf)
+	ViewProvider(sf.ViewObject)
+	
+	sf.pointA=Gui.Selection.getSelection()[0].Placement
+	sf.pointB=Gui.Selection.getSelection()[1].Placement
+	sf.pointC=Gui.Selection.getSelection()[2].Placement
+	sf.pointD=Gui.Selection.getSelection()[3].Placement
+
+	sf.sourceA=Gui.Selection.getSelection()[0]
+	sf.sourceB=Gui.Selection.getSelection()[1]
+	sf.sourceC=Gui.Selection.getSelection()[2]
+	sf.sourceD=Gui.Selection.getSelection()[3]
+	
+
+def AA():
+	createQuadPlacement()
+
+
+
+def BB():
+	obj=Gui.Selection.getSelection()[0]
+	curve=obj.Shape.Edge1.Curve
+	checkcurve(curve)
+	pass
+
+
+def FaceToBezierSurface():
+	'''selektierte flaeche in bspline surface umwandeln'''
+	obj=Gui.Selection.getSelection()[0]
+	a=Gui.Selection.getSelectionEx()[0]
+	for s in a.SubObjects:
+		print s
+		n=s.toNurbs()
+		sf=n.Face1.Surface
+		sf.increaseDegree(3,3)
+		print sf.getUKnots()
+		print sf.getVKnots()
+		print sf.getUMultiplicities()
+		print sf.getVMultiplicities()
+
+		bs=Part.BSplineSurface()
+		bs.buildFromPolesMultsKnots(sf.getPoles(),
+			sf.getUMultiplicities(),sf.getVMultiplicities(),
+			range(sf.NbUKnots),range(sf.NbVKnots),
+			False,False,sf.UDegree,sf.VDegree,sf.getWeights())
+
+		bs.insertUKnot(0.5,3,0)
+		bs.insertVKnot(0.5,3,0)
+
+		tt=App.ActiveDocument.addObject('Part::Spline',obj.Label +"_toNurbs")
+		tt.Shape=bs.toShape()
+		# tt.ViewObject.ControlPoints = True
+
+
+
+
+def stretchandbend():
+	#  transformation berechnen
+
+
+	pass2=False
+	pass2=0
+
+	b=App.ActiveDocument.BePlane
+	
+	if pass2:
+		b=App.ActiveDocument.Shape012
+	
+	sf=b.Shape.Face1.Surface
+	poles=np.array(sf.getPoles())
+
+	a=App.ActiveDocument.QuadPM
+	vaa2=np.array([a.pointA.Base,a.pointB.Base,a.pointC.Base,a.pointD.Base])
+
+	vaa2[0] -= poles[0,0]
+	vaa2[1] -= poles[-1,0]
+	vaa2[2] -= poles[0,-1]
+	vaa2[3] -= poles[-1,-1]
+
+
+	uc,vc,c=poles.shape
+	poles2=poles.copy()
+	for ui in range(uc):
+		for vi in range(vc):
+			poles2[ui,vi] +=  vaa2[3]*ui*vi/(uc-1)/(vc-1)
+			poles2[ui,vi] +=  vaa2[2]*(uc-1-ui)*(vi)/(uc-1)/(vc-1)
+			poles2[ui,vi] +=  vaa2[0]*(uc-1-ui)*(vc-1-vi)/(uc-1)/(vc-1)
+			poles2[ui,vi] +=  vaa2[1]*(ui)*(vc-1-vi)/(uc-1)/(vc-1)
+
+
+	import Draft
+
+
+
+
+#	poles=poles2.reshape(a,b,3)
+
+	bs=Part.BSplineSurface()
+	bs.buildFromPolesMultsKnots(poles2,
+			sf.getUMultiplicities(),sf.getVMultiplicities(),
+			sf.getUKnots(),sf.getVKnots(),
+			False,False,sf.UDegree,sf.VDegree)
+
+	Part.show(bs.toShape())
+
+
+	App.ActiveDocument.ActiveObject.Label="stretch "
+
+	if pass2:
+		return
+
+	xd=FreeCAD.Vector(1,0,0)*4000
+	yd=FreeCAD.Vector(0,1,0)*4000
+
+	puA=a.pointA.Rotation.multVec(xd)
+	pvA=a.pointA.Rotation.multVec(yd)
+
+	puB=a.pointB.Rotation.multVec(xd)
+	pvB=a.pointB.Rotation.multVec(yd)
+
+	puC=a.pointC.Rotation.multVec(xd)
+	pvC=a.pointC.Rotation.multVec(yd)
+
+	puD=a.pointD.Rotation.multVec(xd)
+	pvD=a.pointD.Rotation.multVec(yd)
+
+
+	poles3=np.array([
+	a.pointA.Base,a.pointA.Base+puA,a.pointB.Base-puB,a.pointB.Base,
+	a.pointA.Base+pvA,a.pointA.Base+puA+pvA,a.pointB.Base-puB+pvB,a.pointB.Base+pvB,
+
+	a.pointC.Base-pvC,a.pointC.Base+puC-pvC,a.pointD.Base-puD-pvD,a.pointD.Base-pvD,
+	a.pointC.Base,a.pointC.Base+puC,a.pointD.Base-puD,a.pointD.Base]
+	).reshape(4,4,3).swapaxes(0,1)
+	
+	bs3=Part.BSplineSurface()
+	bs3.buildFromPolesMultsKnots(poles3,[4,4],[4,4],[0,1],[0,1],
+			False,False,3,3,)
+
+
+	# da s muss parametric werden
+	bs3.insertUKnot(0.25,3,0)
+	bs3.insertUKnot(0.5,3,0)
+	bs3.insertUKnot(0.75,3,0)
+	
+	bs3.insertVKnot(0.33,3,0)
+	bs3.insertVKnot(0.67,3,0)
+
+	poles3=np.array(bs3.getPoles())
+
+	bs=Part.BSplineSurface()
+	bs.buildFromPolesMultsKnots(poles3,
+			sf.getUMultiplicities(),sf.getVMultiplicities(),
+			sf.getUKnots(),sf.getVKnots(),
+			False,False,sf.UDegree,sf.VDegree)
+
+	Part.show(bs.toShape())
+	App.ActiveDocument.ActiveObject.Label="base"
+
+
+
+#	bs=Part.BSplineSurface()
+#	bs.buildFromPolesMultsKnots((poles2+poles3)*0.5,
+#			sf.getUMultiplicities(),sf.getVMultiplicities(),
+#			sf.getUKnots(),sf.getVKnots(),
+#			False,False,sf.UDegree,sf.VDegree)
+#	Part.show(bs.toShape())
+#	App.ActiveDocument.ActiveObject.Label="stretch and morph"
+
+
+#	bs=Part.BSplineSurface()
+#	bs.buildFromPolesMultsKnots((poles2+poles3),
+#			sf.getUMultiplicities(),sf.getVMultiplicities(),
+#			sf.getUKnots(),sf.getVKnots(),
+#			False,False,sf.UDegree,sf.VDegree)
+#	Part.show(bs.toShape())
+#	App.ActiveDocument.ActiveObject.Label="moprh only"
+
+
+	poles=poles2+poles3
+
+	a=App.ActiveDocument.QuadPM
+	vaa2=np.array([a.pointA.Base,a.pointB.Base,a.pointC.Base,a.pointD.Base])
+
+	vaa2[0] -= poles[0,0]
+	vaa2[1] -= poles[-1,0]
+	vaa2[2] -= poles[0,-1]
+	vaa2[3] -= poles[-1,-1]
+
+
+	uc,vc,c=poles.shape
+	poles2=poles.copy()
+	for ui in range(uc):
+		for vi in range(vc):
+			poles2[ui,vi] +=  vaa2[3]*ui*vi/(uc-1)/(vc-1)
+			poles2[ui,vi] +=  vaa2[2]*(uc-1-ui)*(vi)/(uc-1)/(vc-1)
+			poles2[ui,vi] +=  vaa2[0]*(uc-1-ui)*(vc-1-vi)/(uc-1)/(vc-1)
+			poles2[ui,vi] +=  vaa2[1]*(ui)*(vc-1-vi)/(uc-1)/(vc-1)
+
+
+
+
+
+
+#	poles=poles2.reshape(a,b,3)
+
+	bs=Part.BSplineSurface()
+	bs.buildFromPolesMultsKnots(poles2,
+			sf.getUMultiplicities(),sf.getVMultiplicities(),
+			sf.getUKnots(),sf.getVKnots(),
+			False,False,sf.UDegree,sf.VDegree)
+
+	Part.show(bs.toShape())
+	App.ActiveDocument.ActiveObject.Label="stretch and morph v2 "
 
 
 

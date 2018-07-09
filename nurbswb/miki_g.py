@@ -352,8 +352,8 @@ class Miki(object):
 		app = self.app
 		line = 0
 		depth = 0
-		d = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
-		ln = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+		d = [0]*30
+		ln = [0]*30
 		refs = {}
 		rs = []
 		r = None
@@ -646,7 +646,12 @@ class Miki(object):
 
 
 		if str(c.__class__).startswith("<type 'PySide.QtGui."):
-			p.layout.addWidget(c)
+			print "!!",c
+			print "!!",p," -- ",p.__class__.__name__
+			if p.__class__.__name__ ==  '_MyTabWidget':
+				p.addWidget(c)
+			else:
+				p.layout.addWidget(c)
 			return
 
 		if cc.startswith('So'):
@@ -903,6 +908,50 @@ def getMainWindowByName(name):
 	r.setWindowFlags(QtCore.Qt.WindowStaysOnTopHint)
 	r.show()
 	return r
+
+class _MyTabWidget(QtGui.QTabWidget):
+
+	def __init__(self,):
+		QtGui.QTabWidget.__init__(self)
+		self.setMinimumSize(500, 800)
+
+	def addWidget(self,w):
+		print "addWidget----------------"
+		print "count ",self.count()
+		self.addTab(w,self.tabname)
+		self.show()
+
+
+class MyWidget(QtGui.QLabel):
+
+	def __init__(self,):
+		QtGui.QLabel.__init__(self)
+
+	def setTabname(self,name):
+		self.tabname=nae
+
+def MyTabWidget(title=''):
+	
+	'''create the dialog as a main window (not a dock widget)'''
+
+	w = _MyTabWidget()
+
+#	layout = QtGui.QVBoxLayout()
+#	layout.setAlignment(QtCore.Qt.AlignTop)
+#	w.layout = layout
+#	w.setLayout(layout)
+#
+	w.setWindowFlags(QtCore.Qt.WindowStaysOnTopHint)
+#	w.show()
+
+	try:
+		FreeCAD.w5.append(w)
+	except:
+		FreeCAD.w5 = [w]
+	return w
+
+
+
 
 
 
