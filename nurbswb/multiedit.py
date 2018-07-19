@@ -1,6 +1,25 @@
 '''
 multiple bspline faces editor
 '''
+# -*- coding: utf-8 -*-
+#-------------------------------------------------
+#-- multiple bspline faces editor
+#--
+#-- microelly 2018
+#--
+#-- GNU Lesser General Public License (LGPL)
+#-------------------------------------------------
+
+
+# pylint: disable=W0331
+# pylint: disable=unused-import
+# pylint: disable=invalid-name
+# xpylint: disable=bare-except
+# xpylint: disable=exec-used
+
+'''
+multiple bspline faces editor
+'''
 
 import FreeCAD,Part
 import FreeCADGui as Gui
@@ -175,8 +194,6 @@ class Multiface(object):
 			if (vec-FreeCAD.Vector(p)).Length<0.1 :
 				print "gefunden ",i
 				return FreeCAD.Vector(p)
-
-
 
 	def movePoint(self,vec,mov,scanonly=False,params=None):
 			points=self.points
@@ -765,9 +782,6 @@ import FreeCADGui as Gui
 
 
 def flattenRegion(selections):
-
-
-
 
 
 	def flattenregion(bs,ua,ub,va,vb):
@@ -1509,7 +1523,6 @@ def SurfaceEditor():
 			]
 
 
-
 		def clearSelection(self):
 			self.multiface.selection=[]
 
@@ -1777,7 +1790,7 @@ def SurfaceEditor():
 			obj2.Shape=Part.Compound(comp2)
 			obj2.Placement=pm
 
-#			Part.show(Part.Compound(comp))
+
 
 
 
@@ -1786,15 +1799,6 @@ def SurfaceEditor():
 	mikigui.last=''
 	mikigui.light=False
 
-'''
-if App.ActiveDocument.BeGrid.Source == None:
-	App.ActiveDocument.BeGrid.Source=App.ActiveDocument.tmp_multiFace
-	App.activeDocument().recompute()
-
-if App.ActiveDocument.MAP.faceObject == None:
-	App.ActiveDocument.MAP.faceObject=App.ActiveDocument.tmp_multiFace
-	App.activeDocument().recompute()
-'''
 
 
 def multiEdit():

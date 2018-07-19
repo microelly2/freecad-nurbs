@@ -15,6 +15,7 @@ import FreeCAD,FreeCADGui
 App=FreeCAD
 Gui=FreeCADGui
 
+import numpy as np
 
 
 
@@ -56,6 +57,31 @@ def dialog():
 	w.maxa = QtGui.QLabel("Anzahl" )
 	w.maxa.setText('3')
 	box.addWidget(w.maxa)
+
+def dialogForce():
+
+	w=QtGui.QWidget()
+
+	box = QtGui.QVBoxLayout()
+	w.setLayout(box)
+	w.setWindowFlags(QtCore.Qt.WindowStaysOnTopHint)
+
+	l=QtGui.QLabel("Anzahl" )
+	w.l=l
+	box.addWidget(l)
+
+	w.mina = QtGui.QLabel("Anzahl" )
+	w.mina.setText('3')
+	box.addWidget(w.mina)
+
+#	w.anz = QtGui.QLabel("Anzahl" )
+#	w.anz.setText('13')
+#	box.addWidget(w.anz)
+
+	w.maxa = QtGui.QLabel("Anzahl" )
+	w.maxa.setText('3')
+	box.addWidget(w.maxa)
+
 
 
 #	w.random=QtGui.QCheckBox("Zufall")
@@ -113,6 +139,8 @@ class Monitor(PartFeature):
 		obj.addProperty("App::PropertyFloat","minVal","")
 		obj.addProperty("App::PropertyFloat","maxVal","")
 		obj.addProperty("App::PropertyBool","noExecute" ,"Base")
+		obj.addProperty("App::PropertyEnumeration","mode" ,"Base")
+		obj.mode=['lenght','force']
 		
 		ViewProvider(obj.ViewObject)
 
@@ -133,8 +161,57 @@ class Monitor(PartFeature):
 		except:
 			print("except proxy lock")
 		proxy.lock=True
-		proxy.myexecute(obj)
+		if obj.mode=='force':
+			proxy.monitorforce(obj)
+		else:
+			proxy.myexecute(obj)
 		proxy.lock=False
+
+	def monitorforce(proxy,obj):
+		ss=obj.source.Shape
+		pts=[v.Point for v in ss.Vertexes]
+
+		lp=len(pts)
+		su=0
+		for i in range(1,lp-1):
+			ll =((pts[i]-pts[i-1]).normalize().cross((pts[i+1]-pts[i]).normalize())).Length
+			ls =((pts[i]-pts[i-1]).normalize().dot((pts[i+1]-pts[i]).normalize()))
+#			print (pts[i]-pts[i-1]).normalize().cross((pts[i+1]-pts[i]).normalize())
+#			print (pts[i]-pts[i-1]).normalize().dot((pts[i+1]-pts[i]).normalize())
+#			print ll
+#			
+			print "!! ",np.arctan2(ll,ls)*180./np.pi
+			su += np.arctan2(ll,ls)*180./np.pi
+
+
+		ss2=obj.source2.Shape
+
+		pls=ss2.Curve.getPoles()
+		basel=0
+		ll=(len(pls)-1)/3
+		for i in range(ll):
+			basel += (pls[3*i]-pls[3*i+3]).Length
+
+		print ("Bend force",su)
+		print ("Base length",basel)
+		print ("Stretch force:",ss2.Curve.length()-basel)
+
+		sk=round(ss2.Curve.length()-basel,2)
+		su=round(su,2)
+
+		try: proxy.dialog
+		except: 
+			proxy.dialog=dialogForce()
+		try:
+			proxy.dialog.l.setText("Forces for " + str(obj.source.Label))
+		except:
+			pass
+		proxy.dialog.mina.setText("BendArc: {:>10.1f} ".format(su))
+		proxy.dialog.maxa.setText("Stretch: {:>10.1f}%".format(sk/basel*100))
+		proxy.dialog.show()
+
+
+
 
 
 	def myexecute(proxy,obj):
@@ -179,6 +256,16 @@ def run():
 	a=FreeCAD.activeDocument().addObject("Part::FeaturePython","MyMonitor")
 
 	m=Monitor(a)
+	a.source=Gui.Selection.getSelection()[0]
+	a.source2=Gui.Selection.getSelection()[1]
+
+
+#--------------------------
+# monitor forces
+def runforce():
+	a=FreeCAD.activeDocument().addObject("Part::FeaturePython","MyMonitor")
+	m=Monitor(a)
+	a.mode='force'
 	a.source=Gui.Selection.getSelection()[0]
 	a.source2=Gui.Selection.getSelection()[1]
 

@@ -210,7 +210,7 @@ class _Command2():
 			Gui.doCommand("import " + modul)
 			Gui.doCommand("import " + self.lmod)
 			Gui.doCommand("reload(" + self.lmod + ")")
-			docstring = "print();print " + re.sub(r'\(.*\)', '.__doc__', self.command)
+			docstring = "print;print " + re.sub(r'\(.*\)', '.__doc__', self.command)
 
 			Gui.doCommand(docstring)
 			Gui.doCommand(self.command)
@@ -394,7 +394,7 @@ def c3b(menu, isactive, name, text, icon='None', cmd=None, *info):
 	t = _Command2(name, text, icon, cmd, *info)
 	# if title ==0:
 	title = re.sub(r' ', '', text)
-	print title
+#	print title
 	name1 = "Nurbs_" + title
 	t.IsActive = isactive
 	Gui.addCommand(name1, t)
@@ -472,6 +472,9 @@ if FreeCAD.GuiUp:
 	c3b(["Bezier"], always, 'berings', 'create Cell')
 	c3b(["Bezier"], always, 'berings', 'create QuadPlacement')
 	c3b(["Bezier"], always, 'berings', 'stretch and bend')
+	c3bG(["Bezier"], always, 'berings', 'create Gordon')
+	c3bG(["Bezier"], always, 'berings', 'create Hole')
+	
 	
 
 #-------------------------------------------
@@ -719,6 +722,10 @@ if FreeCAD.GuiUp:
 
 	c2a(["Sketchertools"],always,'Status56','sketcher_grids','Create Sketcher Grid',"/../icons/sketchgrid.svg","createGridSketch()","sketcher")
 
+
+	c2a(["Bezier"],ondocument,'monitorforce','monitor','create a force monitor','/../icons/nurbs.svg',"runforce()")
+
+
 # hier ist ein fehler
 #	c2a(["Sketchertools"],always,'Status155','feedbacksketch','connect road to line ',"/../icons/alpha.svg","connectLine()","sketcher")
 
@@ -793,7 +800,7 @@ static char * nurbs_xpm[] = {
 		cmds3=['Nurbs_CreateWorkspace','Nurbs_CreateWSLink','Nurbs_ViewsQV','Nurbs_Views2H','Nurbs_DarkRoom','Nurbs_LightOn','Nurbs_LightOff']
 		cmds4=['Nurbs_pta','Nurbs_ptb','Nurbs_ptc','Nurbs_ptd','Nurbs_pte']
 		cmds5=['Nurbs_geodesic'+str(a+1) for a in range(6)]
-		cmds5 += ['Nurbs_multiEdit']
+		cmds5 += ['Nurbs_multiEdit', 'Nurbs_AA','Nurbs_BB']
 
 
 

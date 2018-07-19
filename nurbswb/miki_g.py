@@ -28,6 +28,10 @@ import re
 import pivy
 from pivy import coin
 
+import nurbswb.configuration
+reload (nurbswb.configuration)
+from nurbswb.configuration import getcb
+
 
 def getMainWindow():
 	'''returns the main window'''
@@ -131,7 +135,6 @@ def setSpacer():
 
 def run_magic(p,c):
 	''' special command wrapper'''
-	print ("run_magic", p, c)
 	p.layout.addItem(QtGui.QSpacerItem(
 			10, 10, QtGui.QSizePolicy.Minimum, QtGui.QSizePolicy.Expanding))
 
@@ -446,6 +449,7 @@ class Miki(object):
 		##\endcond
 
 		debug = 1
+		debug = getcb("mikidebug")
 		if debug:
 			print ("lines parsed ...")
 			for r in rs:
@@ -646,8 +650,8 @@ class Miki(object):
 
 
 		if str(c.__class__).startswith("<type 'PySide.QtGui."):
-			print "!!",c
-			print "!!",p," -- ",p.__class__.__name__
+#			print "!!",c
+#			print "!!",p," -- ",p.__class__.__name__
 			if p.__class__.__name__ ==  '_MyTabWidget':
 				p.addWidget(c)
 			else:
@@ -681,7 +685,6 @@ class Miki(object):
 				except:
 					try:
 						if c.startswith('__MAGIC_'):
-							print  ("MAGIC")
 							run_magic(p,c)
 					except:
 						FreeCAD.Console.PrintError("\naddObject funktioniert nicht")
@@ -692,7 +695,6 @@ class Miki(object):
 				except:
 					try:
 						if c.startswith('__MAGIC_'):
-							print  ("MAGIC")
 							run_magic(p,c)
 					except:
 						FreeCAD.Console.PrintError("\naddObject funktioniert nicht")

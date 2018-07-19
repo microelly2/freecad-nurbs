@@ -7,6 +7,8 @@ import Draft,Points,Part
 import nurbswb.say
 from nurbswb.say import *
 import random
+import time
+
 
 def AA():
 	'''dummy method for testing'''
@@ -21,6 +23,12 @@ def BB():
 import inspect
 reload (nurbswb.say)
 
+from nurbswb.miki_g import createMikiGui2, MikiApp
+reload( nurbswb.miki_g)
+
+import nurbswb.configuration
+reload (nurbswb.configuration)
+from nurbswb.configuration import getcf,getcb
 
 
 
@@ -109,6 +117,8 @@ class Bering(FeaturePython):
 		obj.addProperty("App::PropertyFloat","scale").scale=1.0
 		obj.addProperty("App::PropertyBool","detach").detach
 		obj.addProperty("App::PropertyBool","cyclic")
+		obj.addProperty("App::PropertyFloatList","extraKnots").extraKnots=[0.2,0.4]
+		obj.addProperty("App::PropertyEnumeration","mode").mode=['curve','poles','compound']
 
 
 	def onChanged(self, fp, prop):
@@ -116,6 +126,7 @@ class Bering(FeaturePython):
 		if prop == "detach" and fp.detach:
 			print " copy from sketch"
 			copySketch(fp.source,fp)
+			# und knoten einfuegen 
 
 
 	def execute(self,fp):
@@ -177,6 +188,21 @@ class Bering(FeaturePython):
 
 		bc=Part.BSplineCurve()
 		bc.buildFromPolesMultsKnots(pts, ms, range(len(ms)), False,3)
+
+		if 1 or not fp.detach: 
+			for i in fp.extraKnots:
+					print "knot ",i
+					bc.insertKnot(i,3)
+
+		if fp.mode == 'compound':
+			comp=[Part.makePolygon(bc.getPoles()),bc.toShape()]
+			fp.Shape=Part.Compound(comp)
+			return
+
+		if fp.mode == 'poles':
+			fp.Shape=Part.makePolygon(bc.getPoles())
+			return
+
 		fp.Shape=bc.toShape()
 
 
@@ -432,9 +458,10 @@ class Beface(FeaturePython):
 				tt.ViewObject.ControlPoints = True
 				tt.ViewObject.ShapeColor=(.0,0.0,1.0)
 
-def genk(start,ende,scale,pos,source):
+def genk(start,ende,scale,pos,source,show=True):
 	# kurven erzeugen
 	sk=App.ActiveDocument.addObject('Sketcher::SketchObjectPython','BeringSketch')
+	if not show: sk.ViewObject.hide()
 	Bering(sk)
 	ViewProvider(sk.ViewObject)
 	sk.source=source
@@ -726,70 +753,203 @@ class Product(FeaturePython):
 		obj.addProperty("App::PropertyBool","onlyu")
 		obj.addProperty("App::PropertyBool","onlyv")
 		
+		obj.addProperty("App::PropertyBool","uInverse")
+		obj.addProperty("App::PropertyBool","u2Inverse")
+		obj.addProperty("App::PropertyBool","vInverse")
+		obj.addProperty("App::PropertyBool","v2Inverse")
+		
+		
 
 	def execute(self,fp):
 		self.createP(fp)
 
 	def createP(self,fp):
+		
+		if fp.uSource2<>None and fp.vSource2<>None:
+			
+			ptsu= np.array(fp.uSource.Shape.Edge1.Curve.getPoles())
+			ptsu2= np.array(fp.uSource2.Shape.Edge1.Curve.getPoles())
+			ptsv= np.array(fp.vSource.Shape.Edge1.Curve.getPoles())
+			ptsv2= np.array(fp.vSource2.Shape.Edge1.Curve.getPoles())
+			
+			if fp.uInverse:
+				ptsu=np.array(ptsu)[::-1]
+			if fp.u2Inverse:
+				ptsu2=np.array(ptsu2)[::-1]
+
+			if fp.vInverse:
+				ptsv=np.array(ptsv)[::-1]
+
+			if fp.v2Inverse:
+				ptsv2=np.array(ptsv2)[::-1]
+
+
+			
+			
+			sa=len(ptsu)
+			sb=len(ptsv)
+			pts=np.zeros(sa*sb*3).reshape(sa,sb,3)
+			
+			for u in range(sa):
+				pts[u]=(ptsv*(sa-1-u)+ptsv2*(u))*1.0/(sa-1)
+
+			poles=pts.copy()
+
+			if 1:
+				pts=pts.swapaxes(0,1)
+				for v in range(sb):
+					pts[v]=(ptsu*(sb-1-v)+ptsu2*(v))*1.0/(sb-1)
+
+			poles += pts.swapaxes(0,1)
+
+			for u in range(sa):
+				for v in range(sb):
+					pts[u,v] = ptsv[0]*(sa-1-u)*(sb-1-v)+ptsv[-1]*(u)*(sb-1-v) + ptsu[-1]*(sa-1-u)*(v)+ptsu2[-1]*(u)*(v)
+					pts[u,v] *= 1.0/(sa-1)/(sb-1)
+
+			poles -= pts.swapaxes(0,1)
+
+
+
+			aecken=(sa-1)/3
+			ya=[4]+[3]*(aecken-1)+[4]
+			becken=(sb-1)/3
+			yb=[4]+[3]*(becken-1)+[4]
+
+			db=min(3,sb-1)
+			if db==3:
+				ya=[4]+[3]*(aecken-1)+[4]
+			if db==2:
+				ya=[3,3]
+			if db==1:
+				ya=[2,2]
+
+			af=Part.BSplineSurface()
+			af.buildFromPolesMultsKnots(poles, 
+					ya,yb,
+					range(len(ya)),range(len(yb)),
+					False,False,db,3)
+
+			fp.Shape=af.toShape()
+			#Part.show(af.toShape())
+
+
+
+
+
+
+
+			return
 
 		sourceA=fp.uSource
 		sourceB=fp.vSource
 
+
 		ptsa=[p.Point for p in sourceA.Shape.Vertexes]
 		sa=len(ptsa)
+		if sa == 2:
+			# assume curve
+			print "curve u"
+			ptsa= sourceA.Shape.Edge1.Curve.getPoles()
+
+		sa=len(ptsa)
+
+		if fp.uInverse:
+			ptsa=np.array(ptsa)[::-1]
+		else:
+			ptsa=np.array(ptsa)
+
+
 		ptsa=np.array(ptsa).reshape(sa,1,3)
 
 		ptsb=[p.Point for p in sourceB.Shape.Vertexes]
 		sb=len(ptsb)
-		
-		ptsb=np.array(ptsb)
-		
+
+		if sb == 2:
+			# assume curve
+			print "curve V"
+			ptsb= sourceB.Shape.Edge1.Curve.getPoles()
+
+		sb=len(ptsb)
+
+		#richtung umschalten
+		if fp.vInverse:
+			ptsb=np.array(ptsb)[::-1]
+		else:
+			ptsb=np.array(ptsb)
+
 		print ptsb[0]
 		print ptsa[0]
 
-		if 1: # startpunkte zusammenlagen auf anfang von a
+		if 1: # startpunkte zusammenlagen # auf anfang von a
 			ptsb += -ptsb[0] # + ptsa[0]
 
+		sb=len(ptsb)
+		
 		print ptsb[0]
 		endeb=ptsb[-1]
 		startb=ptsb[0]
 
-		ptsb=ptsb.reshape(1,sb,3)
+		ptsb2=ptsb.reshape(1,sb,3)
 
 
 		if fp.uSource2<>None:
 #			ptsbj=[p.Point for p in sourceB.Shape.Vertexes]
-			ptsa=np.array([p.Point for p in sourceA.Shape.Vertexes])
+#			ptsa=np.array([p.Point for p in sourceA.Shape.Vertexes])
 
+
+			ptsa=np.array(ptsa).reshape(sa,3)
 
 			ptsa2=np.array([p.Point+ fp.uOffset  for p in fp.uSource2.Shape.Vertexes])
 
-			if 1: # startpunkte zusammenlagen auf anfang von a
-				ptsa2 -= ptsa2[0] -ptsa[0]
-				ptsa2  += -startb
-			
-			print "!! ",endeb-startb
+			sa2=len(ptsa2)
+			print "sa2----------",sa2
+			if sa2 == 2:
+				# assume curve
+				print "curve u-----------------------------------------"
+				ptsa2= fp.uSource2.Shape.Edge1.Curve.getPoles()
 
+			sa2=len(ptsa2)
+
+			if fp.u2Inverse:
+				ptsa2=np.array(ptsa2)[::-1]
+			else:
+				ptsa2=np.array(ptsa2)
+
+			print "shape ptsa2 A ",ptsa2.shape
+
+#			if 1: # startpunkte zusammenlegen
+#				ptsa2 -= ptsa2[0] + +ptsa[0]+ ptsb[-1]
+
+			print "shape ptsa2 B ",ptsa2.shape
+			print "shape ptsa C ",ptsa.shape
+			print ptsa[0]
+			print ptsa2[0]
+			print "--"
 
 			ll=1.0*sb-1
-			ptsaa=[ptsa*(ll-i)/ll+ptsa2*i/ll for i in range(sb)]
+			ptsaa=np.array([ptsa*(ll-i)/ll+ptsa2*i/ll  for i in range(sb)])
+
+			for i in range(sb):
+				t=ptsaa[i,0]
+				ptsaa[i] += ptsb[i] -t 
 
 			print "shape ptsa ",ptsa.shape
 
-			ptsa=np.array(ptsaa)
-			print "shape ptsaa ",ptsa.shape
+			ptsaa=np.array(ptsaa)
+			ptsaa[:,:] += -ptsaa[0,0] + ptsa[0]
 
 
 ##		ptsa[:,0] += fp.Offset
 
-			ptsa=ptsa.swapaxes(0,1)
+			#ptsa=ptsa.swapaxes(0,1)
 
 			if fp.borderMode:
 				ptsa *= 0.5
 				#ptsb[:,:,0:1] *= 0.5
 
 
-		if fp.vSource2<>None:
+		if 0 and fp.vSource2<>None:
 			ptsb=[p.Point  for p in sourceB.Shape.Vertexes]
 			sb=len(ptsb)
 			ptsb=np.array(ptsb)
@@ -815,13 +975,16 @@ class Product(FeaturePython):
 		print "shape X ptsa",ptsa.shape
 		print "shape X ptsb",ptsb.shape
 		
-		poles=ptsa+ptsb
+		if fp.uSource2<>None:
+			poles=np.array(ptsaa)
+		else:
+			poles=ptsa+ptsb2
+
 		if fp.onlyu:
 			poles=ptsa
 		if fp.onlyv:
 			poles=ptsb
 
-		
 
 		(a,b,c)=poles.shape
 		print ("poles.shape a,b",a,b)
@@ -875,9 +1038,10 @@ def createProduct():
 	sel=Gui.Selection.getSelection()
 	sf.uSource=sel[0]
 	sf.vSource=sel[1]
-	if len(sel)==3:	
+	if len(sel)>=3:	
 		sf.uSource2=sel[2]
-
+	if len(sel)>=4:	
+		sf.vSource2=sel[3]
 
 '''
 	# alte Testfaelle
@@ -1322,41 +1486,43 @@ class BeGrid(FeaturePython):
 		fp.Shape=Part.Compound(comps)
 
 def createBeGrid():
-	fa=Gui.Selection.getSelection()[0]
-	#fa=App.ActiveDocument.Seam_ProductFace001
+	for  fa in Gui.Selection.getSelection():
+		#fa=App.ActiveDocument.Seam_ProductFace001
 
-	sf=App.ActiveDocument.addObject('Part::FeaturePython','BeGrid')
-	sf.ViewObject.ShapeColor=(0.5+random.random(),random.random(),random.random(),)
-	BeGrid(sf)
+		sf=App.ActiveDocument.addObject('Part::FeaturePython','BeGrid')
+		sf.ViewObject.ShapeColor=(0.5+random.random(),random.random(),random.random(),)
+		BeGrid(sf)
 
-	ViewProvider(sf.ViewObject)
-	sf.Source=fa
+		ViewProvider(sf.ViewObject)
+		sf.Source=fa
 
-	App.activeDocument().recompute()
+		App.activeDocument().recompute()
 
 
 
 def BSplineToBezierCurve():
-	bc=Gui.Selection.getSelection()[0].Shape.Edge1.Curve
+	'''create a degree 3 curve with multiplicities always 3'''
+
+	obj=Gui.Selection.getSelection()[0]
+	bc=obj.Shape.Edge1.Curve
+
+	if bc.Degree>3:
+		nurbswb.say.showdialog("curves with degree >3 are not supported")
+	bc.increaseDegree(3)
 
 	mults=bc.getMultiplicities()
 	knots=range(len(mults))
 
 	bc2=Part.BSplineCurve()
-	bc2.buildFromPolesMultsKnots(
-		bc.getPoles(),
-		mults,
-		knots,
-		False,3
-	)
-
+	bc2.buildFromPolesMultsKnots(bc.getPoles(),	mults,knots,False,3)
 
 	for i in range(1,len(mults)-1):
 		print (i,mults[i])
 		if mults[i]<3:
 			bc2.insertKnot(i,3)
 
-	t=App.ActiveDocument.addObject('Part::Spline','jj2a')
+	t=App.ActiveDocument.addObject('Part::Spline',obj.Name)
+	t.Label=obj.Label+" Bezier"
 	t.Shape=bc2.toShape()
 	t.ViewObject.ControlPoints=True
 
@@ -2186,11 +2352,12 @@ class BePlane(FeaturePython):
 			poles[u,:,0]=fp.uSize*u
 		for v in range(vc):
 			poles[:,v,1]=fp.vSize*v
-		
-		poles[0,:,2]=0
-		poles[-1,:,2]=0
-		poles[:,0,2]=0
-		poles[:,-1,2]=0
+
+		if 0:
+			poles[0,:,2]=0
+			poles[-1,:,2]=0
+			poles[:,0,2]=0
+			poles[:,-1,2]=0
 		
 		um=[4]+[1]*(fp.uSegments-1)+[4]
 		vm=[4]+[1]*(fp.vSegments-1)+[4]
@@ -2242,7 +2409,7 @@ class BeTube(FeaturePython):
 
 
 	# offen form
-	def XXexecute(self,fp):
+	def execute(self,fp):
 		uc=fp.uSegments*3+1
 		vc=fp.vSegments*3+1
 		poles=np.random.random(uc*vc*3).reshape(uc,vc,3)
@@ -2264,9 +2431,58 @@ class BeTube(FeaturePython):
 			range(len(um)),range(len(vm)),
 			False,False,3,3)
 
+		for i in range(0,fp.uSegments):
+			bs.insertUKnot(i,3,0)
+		for i in range(1,fp.vSegments):
+			bs.insertVKnot(i,3,0)
+
 		fp.Shape=bs.toShape()
 
-	def XXXXexecute(self,fp): # gehts
+	def execute(self,fp):
+		uc=3+fp.uSegments
+		vc=3+fp.vSegments
+		poles=np.random.random(uc*vc*3).reshape(uc,vc,3)
+		poles=np.random.random(uc*vc*3).reshape(uc,vc,3)*fp.noise
+
+		for u in range(uc):
+			poles[u,:,0]+= fp.uSize*np.cos(2*u*np.pi/(uc-1))
+			poles[u,:,1]+= fp.uSize*np.sin(2*u*np.pi/(uc-1))
+
+		poles[-1]=poles[0]
+		poles[-2]=2*poles[0]-poles[1]
+
+		for v in range(vc):
+			poles[:,v,2]=fp.vSize*v
+
+		if 0:
+			poles[0,:,2]=0
+			poles[-1,:,2]=0
+			poles[:,0,2]=0
+			poles[:,-1,2]=0
+		
+		um=[4]+[1]*(fp.uSegments-1)+[4]
+		vm=[4]+[1]*(fp.vSegments-1)+[4]
+		bs=Part.BSplineSurface()
+		bs.buildFromPolesMultsKnots(
+			poles,
+			um,vm,
+			range(len(um)),range(len(vm)),
+			False,False,3,3)
+		fp.Shape=bs.toShape()
+
+		for i in range(1,fp.uSegments):
+			bs.insertUKnot(i,3,0)
+		for i in range(1,fp.vSegments):
+			bs.insertVKnot(i,3,0)
+
+		sf=bs
+		print (sf.getUMultiplicities(),sf.getVMultiplicities(),sf.getUKnots(),sf.getVKnots(),)
+		print poles.shape
+
+
+
+
+	def Xexecute(self,fp): # gehts
 		uc=fp.uSegments*3+3
 		vc=fp.vSegments*3+1
 		poles=np.random.random(uc*vc*3).reshape(uc,vc,3)
@@ -2287,9 +2503,10 @@ class BeTube(FeaturePython):
 			True,False,3,3)
 
 
+
 		fp.Shape=bs.toShape()
 
-	def execute(self,fp):
+	def Xexecute(self,fp):
 		uc=fp.uSegments+3
 		vc=fp.vSegments+3
 		poles=np.random.random(uc*vc*3).reshape(uc,vc,3)
@@ -2316,6 +2533,10 @@ class BeTube(FeaturePython):
 			bs.insertVKnot(i,3,0)
 
 		fp.Shape=bs.toShape()
+
+
+
+
 
 
 
@@ -3244,3 +3465,638 @@ def stretchandbend():
 
 
 
+def AA():
+	ss=App.ActiveDocument.Sketch.Shape
+	pts=[v.Point for v in ss.Vertexes]
+	import Draft
+	ptss=pts[1:]+pts[:1]
+	#pts=ptss
+	#Draft.makeWire(pts)
+
+	#biegekraft
+	lp=len(pts)
+	su=0
+	for i in range(1,lp-1):
+		su += ((pts[i]-pts[i-1]).normalize().cross((pts[i+1]-pts[i]).normalize())).Length
+
+	print ("Bend force",su)
+
+	ss2=App.ActiveDocument.BeringSketch.Shape
+	print ("Stretch force:",ss2.Curve.length())
+	pls=ss2.Curve.getPoles()
+	basel=0
+	ll=(len(pls)-1)/3
+	for i in range(ll):
+		basel += (pls[3*i]-pls[3*i+3]).Length
+
+	print basel
+
+
+
+
+def BB():
+	# mache zelle zu ring
+	import numpy as np
+	bs=App.ActiveDocument.Cell004.Shape.Face1.Surface
+
+
+	luks=len(bs.getUKnots())
+	lvks=len(bs.getVKnots())
+
+	uks=bs.getUKnots()
+	vks=bs.getVKnots()
+
+	comps=[]
+	stripes=[
+		[0,1],
+		[-2,-1]
+	]
+
+	poles=np.array(bs.getPoles())
+	poles2=poles.swapaxes(0,1)
+
+	pts=np.concatenate([
+		poles[0],
+		poles2[-1],
+		poles[-1][::-1],
+		poles2[0][::-1],
+
+	])
+
+	pts=[FreeCAD.Vector(p) for p in pts]
+	pts=pts[2:]+pts[:2]
+	import Draft
+	Draft.makeWire(pts)
+
+
+
+#----------------------------
+
+
+
+
+
+def genbase(pts,center=FreeCAD.Vector(),offset=2):
+	# Basiszelle
+
+	import Draft
+	ptsa=[FreeCAD.Vector(p[0],p[1],p[2]) +center for p in pts]
+	ptsb=ptsa[offset:]+ptsa[:offset]
+	ptsb=ptsa
+	Draft.makeWire(ptsb)
+
+	source=App.ActiveDocument.ActiveObject
+	aa=genk(0,0,1,FreeCAD.Vector(),source,show=False)
+	return aa,ptsa
+
+
+
+def gencircle(h=300,radius=400,center=None):
+
+	c = 0.551915024494
+	vv=radius*c
+
+	ptsa = [
+		[radius+vv,radius-vv],
+		[radius,radius],
+		[radius-vv,radius+vv],
+		[-radius+vv,radius+vv],
+		[-radius,radius],
+		[-radius-vv,radius-vv],
+		[-radius-vv,-radius+vv],
+		[-radius,-radius],
+		[-radius+vv,-radius-vv],
+		[radius-vv,-radius-vv],
+		[radius,-radius],
+		[radius+vv,-radius+vv]
+	]
+
+#	pts2=ptsa[3:]+ptsa[:3]
+	pts2=ptsa[6:]+ptsa[:6]
+
+
+	import Draft
+	ptsa=[FreeCAD.Vector(p[0],p[1],h)+center for p in pts2]
+	rot=FreeCAD.Rotation(0,70,0)
+	print ptsa
+	print "hu"
+	print pts2
+	for p in pts2:
+		print rot.multVec(FreeCAD.Vector(p[0],p[0],h))+center
+
+	ptsa=[rot.multVec(FreeCAD.Vector(p[0],p[1],h))+center for p in pts2]
+
+	ptsb=ptsa[1:]+ptsa[:1]
+	ptsb=ptsa
+	Draft.makeWire(ptsb)
+
+	source=App.ActiveDocument.ActiveObject
+	bb=genk(0,0,1,FreeCAD.Vector(),source)
+	return bb,ptsb
+
+
+import random
+
+def createEndface(pts,label):
+	# abschlussfleche erzeugen oben
+	aa=np.array([pts[1:5],pts[4:8],pts[7:11][::-1],pts[7:11][::-1],]).reshape(4,4,3)
+
+	aa[1,0]=pts[0]
+	aa[1,3]=pts[5]
+	aa[2,0]=pts[11]
+	aa[2,3]=pts[6]
+
+	bs3=Part.BSplineSurface()
+	bs3.buildFromPolesMultsKnots(aa, [4,4],[4,4],[0,1],[0,1],False,False,3,3)
+
+	sk=App.ActiveDocument.addObject('Part::Spline',label)
+	#sk.ViewObject.hide()
+	sk.Shape=bs3.toShape()
+
+
+
+# MAIN -----------------
+
+def createHole(height=100):
+	''' anschluss kreis an zelle '''
+
+	obj=Gui.Selection.getSelection()[0]
+	
+	endfaces=False
+	radius=4
+	height=3
+	
+	# zelle
+	pts=[
+			[400,301],
+			[400,400],
+			[300,400],
+			[-300,400],
+			[-400,400],
+			[-400,300],
+			[-400,-300],
+			[-400,-400],
+			[-300,-400],
+			[300,-400],
+			[400,-400],
+			[400,300]
+	]
+
+
+	print "get bool mikidebug:",getcb("mikidebug")
+	#return
+
+	poles=np.array(obj.Shape.Face1.Surface.getPoles())
+
+	center=FreeCAD.Vector((poles[0,0]+poles[-1,-1])*0.5)+FreeCAD.Vector(2,-10,5)
+
+
+
+	Draft.makePoint(center)
+
+	print "-----------------"
+
+	pts=[poles[-1,-2],
+		poles[-1,-1],poles[-2,-1],poles[1,-1],poles[0,-1],
+		poles[0,2],poles[0,1],poles[0,0],
+		poles[1,0],poles[2,0],poles[3,0],poles[3,1]]
+
+	Draft.makeWire([FreeCAD.Vector(p) for p in pts])
+
+
+	ta=time.time()
+	for i in range(1):
+		for j in range(1):
+			n=0
+			ptsu=pts[::-1]
+			aa,ptsa=genbase(ptsu,offset=6)
+			hh=10
+			bb,ptsb=gencircle(hh+height*.5,radius=radius,center=center)
+			cc,ptsc=gencircle(hh+height,radius=radius,center=center)
+			dd,ptsd=gencircle(hh+height*2,radius=radius,center=center)
+
+			sf=App.ActiveDocument.addObject('Sketcher::SketchObjectPython','BeringFace')
+			#sf.ViewObject.hide()
+			_=Beface(sf)
+			
+			sf.berings=[aa,bb,cc,dd]
+			#sf.berings=[bb,cc,dd]
+			ViewProvider(sf.ViewObject)
+			sf.Placement.Base.x=1600*i
+			sf.Placement.Base.y=1600*j
+			
+			bg=App.ActiveDocument.addObject('Part::FeaturePython','BeGrid')
+			bg.ViewObject.ShapeColor=(0.5+random.random(),random.random(),random.random(),)
+			BeGrid(bg)
+
+			ViewProvider(bg.ViewObject)
+			bg.Source=sf
+			# bg.ViewObject.show()
+
+			print
+			print time.time()-ta
+			App.activeDocument().recompute()
+			Gui.updateGui()
+
+	if endfaces:
+		createEndface(ptsd,"oben")
+		createEndface(ptsc,"mitte")
+		createEndface(ptsa,"unten")
+
+	App.activeDocument().recompute()
+
+
+def createHoleGUI():
+	'''Gui for creater of a hole'''
+
+
+	class MyApp(MikiApp):
+
+		def run(self):
+			createHole(height=self.root.ids['height'].value())
+			App.activeDocument().recompute()
+
+	layout = '''
+MainWindow:
+	QtGui.QLabel:
+		setText:"***  Gordon Hole configuration  ***"
+	VerticalLayout:
+		HorizontalGroup:
+			setTitle: "Layout"
+			QtGui.QSlider:
+				id: 'height'
+				setMinimum: -100.
+				setValue: 30.0
+				setMaximum: 100.0
+				setOrientation: PySide.QtCore.Qt.Orientation.Horizontal
+	#			valueChanged.connect: app.run
+		QtGui.QPushButton:
+			setText: "run"
+			clicked.connect: app.run
+		QtGui.QPushButton:
+			setText: "close"
+			clicked.connect: app.close
+	setSpacer:
+	'''
+
+
+	mikigui = createMikiGui2(layout, MyApp)
+	return mikigui
+
+
+
+	'''Gui for creater of a hole'''
+
+
+def createHoleGUI():
+	createHole(
+		height=10,
+	)
+
+
+
+
+
+
+class GordonFace(FeaturePython):
+
+	def __init__(self, obj):
+		FeaturePython.__init__(self, obj)
+
+		obj.addProperty("App::PropertyLinkList","ribs")
+		obj.addProperty("App::PropertyLinkList","meridians")
+		obj.addProperty("App::PropertyLink","grid")
+		obj.addProperty("App::PropertyInteger","uCount").uCount=3
+		obj.addProperty("App::PropertyInteger","vCount").vCount=3
+		obj.addProperty("App::PropertyInteger","uWeight").uWeight=10
+		obj.addProperty("App::PropertyInteger","vWeight").vWeight=10
+
+
+
+	def execute(self,fp):
+
+		print "EXECute GORDON"
+		createGordon(fp,scale=5.0)
+
+
+
+
+
+
+
+def createGordon(obj,scale=5.0):
+
+
+
+
+	if obj.ribs<>None:
+		polsu=np.array([a.Shape.Edge1.Curve.getPoles() for a in obj.ribs])
+		suc=len(obj.ribs)-1
+	if obj.meridians<>None:
+		polsv=np.array([a.Shape.Edge1.Curve.getPoles() for a in obj.meridians])
+		svc=len(obj.meridians)-1
+
+	if obj.grid<>None:
+		
+		suc=obj.uCount-1
+		svc=obj.vCount-1
+		try: 
+			print obj.grid.Links
+			polsu=np.array([a.Shape.Edge1.Curve.getPoles() for a in obj.grid.Links[0:suc+1]])
+			polsv=np.array([a.Shape.Edge1.Curve.getPoles() for a in obj.grid.Links[suc+1:suc+svc+2]])
+
+		except:
+			a=obj.grid
+			lenedges=[len(e.Curve.getPoles()) for e in a.Shape.Edges]
+			print lenedges
+			vcc=(lenedges[0]+2)/3
+			ucc=(lenedges[-1]+2)/3
+			print (ucc,vcc,len(lenedges))
+			assert ucc+vcc==len(lenedges)
+			obj.uCount=ucc
+			obj.vCount=vcc
+			suc=obj.uCount-1
+			svc=obj.vCount-1
+
+			polsu=np.array([a.Shape.Edges[i].Curve.getPoles() for i in range(0,suc+1)])
+			polsv=np.array([a.Shape.Edges[i].Curve.getPoles() for i in range(suc+1,suc+svc+2)])
+
+			assert polsu.shape==(ucc,lenedges[0],3)
+			assert polsv.shape==(vcc,lenedges[-1],3)
+
+
+	print "shapes u v "
+	print polsu.shape
+	print polsv.shape
+
+	#return
+
+#	return
+	if 0: # mein beispiel
+		es=App.ActiveDocument.BeGrid.Shape.Edges
+
+		poles=[]
+		for e in es:
+			poles += [e.Curve.getPoles()]
+
+
+		#anzahl segmente
+		suc=3 # 
+		svc=3
+
+		polsu=np.array(poles[0:suc+1])
+		polsv=np.array(poles[suc+1:suc+svc+2])
+
+	# lagrange polynoms as blender
+	# fuer suc==svc==2
+	ablender=[
+		lambda t: (t-1)*(t-2),
+		lambda t: (t-0)*(t-2),
+		lambda t: (t-0)*(t-1),
+	]
+
+	# fuer suc==svc==3
+	ablender=[
+		lambda t: (t-1)*(t-2)*(t-3),
+		lambda t: (t-0)*(t-2)*(t-3),
+		lambda t: (t-0)*(t-1)*(t-3),
+		lambda t: (t-0)*(t-1)*(t-2),
+		
+	]
+
+
+
+	def blender(c,t):
+#		if abs(c-t)>=1.: return 0
+
+#		return (c+1-t)*(c-1-t)*(-1)
+
+		return (1-min(abs(c-t),1))
+		return (1-min(abs(c-t),1))**2
+
+
+
+
+	s3tt=np.zeros((3*suc+1)*(3*svc+1)*3).reshape(3*suc+1,3*svc+1,3)
+
+	dd=scale*0.01
+	
+
+	uli=[0,dd]
+	for i in range(1,suc):
+		uli += [i-dd,i,i+dd]
+	uli += [suc-dd,suc]
+	vli=[0,dd]
+	for i in range(1,svc):
+		vli += [i-dd,i,i+dd]
+	vli += [svc-dd,svc]
+
+
+	for ui,u in enumerate(uli):
+		for vi,v in enumerate(vli):
+			for i in range(suc+1):
+				for j in range(svc+1):
+					s3tt[ui,vi] += (polsu[i][3*j]*obj.uWeight+polsv[j][3*i]*obj.vWeight)*blender(i,u)/blender(i,i)*blender(j,v)/blender(j,j)/(obj.uWeight+obj.vWeight)
+
+	mu=[4]+[3]*(suc-1)+[4]
+	mv=[4]+[3]*(svc-1)+[4]
+	ag=Part.BSplineSurface()
+	ag.buildFromPolesMultsKnots(s3tt, 
+			mu,mv,range(suc+1),range(svc+1),
+			False,False,3,3)
+
+	name="gordonS3"
+	tt=App.ActiveDocument.getObject(name)
+	if tt==None:
+		tt=App.ActiveDocument.addObject('Part::Spline',name)
+	tt.Shape=ag.toShape()
+
+	ptsarr=[]
+	for ui,u in enumerate(uli):
+		pts=np.zeros((3*svc+1)*3).reshape(1,3*svc+1,3)
+		for i in range(suc+1):
+			pts += [polsu[i]*blender(i,u)/blender(i,i)]
+		ptsa=[FreeCAD.Vector(p) for p in pts[0]]
+		ptsarr += [ptsa]
+
+	ag=Part.BSplineSurface()
+	ag.buildFromPolesMultsKnots(np.array(ptsarr), 
+			mu,mv,range(suc+1),range(svc+1),
+			False,False,3,3)
+
+	name="gordonU"
+	tt=App.ActiveDocument.getObject(name)
+	if tt==None:
+		tt=App.ActiveDocument.addObject('Part::Spline',name)
+	tt.Shape=ag.toShape()
+
+	ptsarr2=[]
+	for vi,v in enumerate(vli):
+		pts=np.zeros((3*suc+1)*3).reshape(1,3*suc+1,3)
+		for i in range(svc+1):
+			pts += [polsv[i]*blender(i,v)/blender(i,i)]
+		ptsa=[FreeCAD.Vector(p) for p in pts[0]]
+		ptsarr2 += [ptsa]
+
+	ag=Part.BSplineSurface()
+	ag.buildFromPolesMultsKnots(np.array(ptsarr2), 
+			mv,mu,range(svc+1),range(suc+1),
+			False,False,3,3)
+
+	name="gordonV"
+	tt=App.ActiveDocument.getObject(name)
+	if tt==None:
+		tt=App.ActiveDocument.addObject('Part::Spline',name)
+	tt.Shape=ag.toShape()
+
+
+
+	ptsarr3=(np.array(ptsarr) +np.array(ptsarr2).swapaxes(0,1)-s3tt)
+
+#	ptsarr3=(np.array(ptsarr) +np.array(ptsarr2).swapaxes(0,1))*0.5
+
+
+	ag=Part.BSplineSurface()
+	ag.buildFromPolesMultsKnots(ptsarr3, 
+			mu,mv,range(suc+1),range(svc+1),
+			False,False,3,3)
+
+	name="gordon"
+	tt=App.ActiveDocument.getObject(name)
+	if tt==None:
+		tt=App.ActiveDocument.addObject('Part::Spline',name)
+	tt.Shape=ag.toShape()
+
+	ptsarr3=(np.array(ptsarr)*2*obj.uWeight/(obj.uWeight+obj.vWeight) +np.array(ptsarr2).swapaxes(0,1)*2*obj.vWeight/(obj.uWeight+obj.vWeight)-s3tt)
+	
+	ag=Part.BSplineSurface()
+	ag.buildFromPolesMultsKnots(ptsarr3, 
+			mu,mv,range(suc+1),range(svc+1),
+			False,False,3,3)
+
+	obj.Shape=ag.toShape()
+
+
+def createGordonGUI():
+	'''Gui dialog for creating a Gorden surface'''
+
+	class YYApp(MikiApp):
+
+		def run(self):
+			name="Gordon"
+			tt=App.ActiveDocument.getObject(name)
+			if 1 or tt==None:
+				tt=App.ActiveDocument.addObject('Part::FeaturePython',"Gordon")
+				GordonFace(tt)
+
+
+				if 0:
+					tt.meridians=[
+							App.ActiveDocument.BeringSketch,
+							App.ActiveDocument.BeringSketch001,
+							App.ActiveDocument.BeringSketch002,
+						]
+
+
+					tt.ribs=[
+						App.ActiveDocument.BeringSketch003,
+						App.ActiveDocument.BeringSketch005,
+						App.ActiveDocument.BeringSketch004,
+					]
+				else:
+					rr.grid=App.ActiveDocument.Compound
+				
+			createGordon(tt,self.root.ids['scale'].value())
+			#tt.Shape=shape
+			ViewProvider(tt.ViewObject)
+			App.activeDocument().recompute()
+
+
+	layout = '''
+MainWindow:
+	QtGui.QLabel:
+		setText:"***  Gordon Surface configuration  ***"
+	VerticalLayout:
+		HorizontalGroup:
+			setTitle: "tangent Force"
+			QtGui.QSlider:
+				id: 'scale'
+				setMinimum: 1
+				setValue: 30.0
+				setMaximum: 100.0
+				setOrientation: PySide.QtCore.Qt.Orientation.Horizontal
+	#			valueChanged.connect: app.run
+		QtGui.QPushButton:
+			setText: "run"
+			clicked.connect: app.run
+		QtGui.QPushButton:
+			setText: "close"
+			clicked.connect: app.close
+	setSpacer:
+	'''
+
+
+	mikigui = createMikiGui2(layout, YYApp)
+	return mikigui
+
+
+
+
+def createGordonGUI():
+	'''variant ohne dialog'''
+	name="Gordon"
+	tt=App.ActiveDocument.getObject(name)
+	if 1 or tt==None:
+		tt=App.ActiveDocument.addObject('Part::FeaturePython',"Gordon")
+		GordonFace(tt)
+
+		if 0:
+			tt.meridians=[
+					App.ActiveDocument.BeringSketch,
+					App.ActiveDocument.BeringSketch001,
+					App.ActiveDocument.BeringSketch002,
+				]
+
+
+			tt.ribs=[
+				App.ActiveDocument.BeringSketch003,
+				App.ActiveDocument.BeringSketch005,
+				App.ActiveDocument.BeringSketch004,
+			]
+		else:
+			# compound in richtiger reihenfolge
+			#tt.grid=App.ActiveDocument.Compound
+			# grid anorndung von begrid
+#			tt.grid=App.ActiveDocument.BeGrid
+			tt.grid=Gui.Selection.getSelection()[0]
+			try:
+				tt.uCount=tt.grid.Source.uSegments+1
+				tt.vCount=tt.grid.Source.vSegments+1
+			except:
+				pass
+			
+
+	ViewProvider(tt.ViewObject)
+	createGordon(tt)
+	#tt.Shape=shape
+	
+	App.activeDocument().recompute()
+
+
+
+
+
+def AA():
+	'''vergelich # zwei M;aps vergleichen'''
+	print len(App.ActiveDocument.MAP.Shape.Vertexes)
+	print len(App.ActiveDocument.MAP001.Shape.Vertexes)
+	comp=[]
+	for p,q in zip(App.ActiveDocument.MAP.Shape.Vertexes,App.ActiveDocument.MAP001.Shape.Vertexes):
+		try:
+			pol=Part.makePolygon([p.Point,q.Point])
+			if pol.Length >0:
+				comp += [Part.makePolygon([p.Point,q.Point])]
+		except:
+			pass
+
+	Part.show(Part.Compound(comp))
