@@ -596,8 +596,8 @@ def createGrid(mapobj,upmode=False):
 
 	refpos=bs.value(mpv,mpu)
 
-	su=bs.UPeriod()
-	sv=bs.VPeriod()
+	#su=bs.UPeriod()
+	#sv=bs.VPeriod()
 	
 	print "hack DD suu asv"
 	su=face.ParameterRange[1]
@@ -1946,8 +1946,8 @@ def getmap3(mapobj,obj,calcZ=None):
 	bs=obj.Shape.Face1.Surface
 	face=obj.Shape.Face1
 
-	su=bs.UPeriod()
-	sv=bs.VPeriod()
+	#su=bs.UPeriod()
+	#sv=bs.VPeriod()
 
 	print "hack BB su sv aa bb XX"
 
