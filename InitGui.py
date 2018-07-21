@@ -473,6 +473,7 @@ if FreeCAD.GuiUp:
 	c3b(["Bezier"], always, 'berings', 'create QuadPlacement')
 	c3b(["Bezier"], always, 'berings', 'stretch and bend')
 	c3bG(["Bezier"], always, 'berings', 'create Gordon')
+	c3bG(["Bezier"], always, 'berings', 'polish G1')
 	c3bG(["Bezier"], always, 'berings', 'create Hole')
 	
 	

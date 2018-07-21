@@ -3,7 +3,7 @@ create curves and faces like Bezier format
 '''
 
 import numpy as np
-import Draft,Points,Part
+import Draft,Points,Part,Sketcher
 import nurbswb.say
 from nurbswb.say import *
 import random
@@ -117,16 +117,18 @@ class Bering(FeaturePython):
 		obj.addProperty("App::PropertyFloat","scale").scale=1.0
 		obj.addProperty("App::PropertyBool","detach").detach
 		obj.addProperty("App::PropertyBool","cyclic")
-		obj.addProperty("App::PropertyFloatList","extraKnots").extraKnots=[0.2,0.4]
+		obj.addProperty("App::PropertyBool","inverse")
+		obj.addProperty("App::PropertyFloatList","extraKnots") #.extraKnots=[0.2,0.4]
 		obj.addProperty("App::PropertyEnumeration","mode").mode=['curve','poles','compound']
 
 
 	def onChanged(self, fp, prop):
 		'''if detached then make a copy of the source and forget the sourced'''
-		if prop == "detach" and fp.detach:
-			print " copy from sketch"
-			copySketch(fp.source,fp)
-			# und knoten einfuegen 
+		pass
+		#if prop == "detach" and fp.detach:
+		#	print " copy from sketch"
+		#	copySketch(fp.source,fp)
+		#	# und knoten einfuegen 
 
 
 	def execute(self,fp):
@@ -164,6 +166,8 @@ class Bering(FeaturePython):
 
 		print len(ptsa)
 
+
+
 		# testen ob geschlossenes oder offnes modell
 		if len(ptsa)%3 == 2:
 			sayexc2(
@@ -172,7 +176,8 @@ class Bering(FeaturePython):
 				)
 
 		if len(ptsa)%3==0:
-			pts=ptsa[1:]+[ptsa[0],ptsa[1]]
+			# pts=ptsa[1:]+[ptsa[0],ptsa[1]]
+			pts=ptsa+[ptsa[0]]
 		else:
 			pts=ptsa
 
@@ -185,6 +190,9 @@ class Bering(FeaturePython):
 			print(fp.start*3,ecken*3+4)
 
 		ms=[4]+[3]*ecken+[4]
+
+		if fp.inverse:
+				pts=pts[::-1]
 
 		bc=Part.BSplineCurve()
 		bc.buildFromPolesMultsKnots(pts, ms, range(len(ms)), False,3)
@@ -204,7 +212,23 @@ class Bering(FeaturePython):
 			return
 
 		fp.Shape=bc.toShape()
-
+		
+		# create the inner geometry
+		try:
+			if not fp.detach:
+				pts=bc.getPoles()
+				print pts[0:4]
+				pm=fp.source.Placement
+				rot=pm.Rotation
+				pts=[rot.multVec(p) for p in pts]
+				fp.deleteAllGeometry()
+				for  i in range(len(pts)-1):
+					fp.addGeometry(Part.LineSegment(pts[i],pts[i+1]),False)
+				for  i in range(len(pts)-2):
+					fp.addConstraint(Sketcher.Constraint('Coincident',i,2,i+1,1)) 
+		except:
+			print "probleme mot sketch erstellung"
+			pass
 
 
 class Beface(FeaturePython):
@@ -231,9 +255,6 @@ class Beface(FeaturePython):
 			assert ll == len(pps)
 			ptsa += [pps]
 
-		print "##"
-		print len(ptsa)
-		print len(ptsa[0])
 		poles=np.array(ptsa)
 #		print ptsa
 #		print poles
@@ -265,9 +286,6 @@ class Beface(FeaturePython):
 			if db==1:
 				ya=[2,2]
 
-			print ("a---",a,db,ya)
-			print ("b---",b,db,yb)
-
 		else:
 			ya=[4]+[1]*(a-4)+[4]
 			yb=fp.berings[0].Shape.Edge1.Curve.getMultiplicities()
@@ -280,7 +298,6 @@ class Beface(FeaturePython):
 
 
 		for i in range(1,len(ya)-1):
-			print (i,ya[i])
 			if ya[i]<3:
 				af.insertUKnot(i,3,0)
 
@@ -469,7 +486,7 @@ def genk(start,ende,scale,pos,source,show=True):
 	sk.end=ende
 	sk.scale=scale
 	sk.Placement.Base=pos
-	App.activeDocument().recompute()
+	#App.activeDocument().recompute()
 	return sk
 
 
@@ -3536,22 +3553,26 @@ def BB():
 
 
 
-def genbase(pts,center=FreeCAD.Vector(),offset=2):
+def genbase(fp,pts,center=FreeCAD.Vector(),offset=2):
 	# Basiszelle
 
-	import Draft
 	ptsa=[FreeCAD.Vector(p[0],p[1],p[2]) +center for p in pts]
 	ptsb=ptsa[offset:]+ptsa[:offset]
 	ptsb=ptsa
-	Draft.makeWire(ptsb)
+	
+	sf=App.ActiveDocument.getObject(fp.Name+"_base")
+	if sf == None:
+		sk=App.ActiveDocument.addObject('Part::Spline',fp.Name+"_base")
+		sk.ViewObject.hide()
 
-	source=App.ActiveDocument.ActiveObject
-	aa=genk(0,0,1,FreeCAD.Vector(),source,show=False)
+	sk.Shape=Part.makePolygon(ptsb)
+	aa=genk(0,0,1,FreeCAD.Vector(),sk,show=False)
+	aa.ViewObject.hide()
 	return aa,ptsa
 
 
 
-def gencircle(h=300,radius=400,center=None):
+def gencircle(fp,n,h=300,radius=400,center=None):
 
 	c = 0.551915024494
 	vv=radius*c
@@ -3577,21 +3598,24 @@ def gencircle(h=300,radius=400,center=None):
 
 	import Draft
 	ptsa=[FreeCAD.Vector(p[0],p[1],h)+center for p in pts2]
-	rot=FreeCAD.Rotation(0,70,0)
-	print ptsa
-	print "hu"
-	print pts2
-	for p in pts2:
-		print rot.multVec(FreeCAD.Vector(p[0],p[0],h))+center
+	rot=fp.location.Rotation
 
 	ptsa=[rot.multVec(FreeCAD.Vector(p[0],p[1],h))+center for p in pts2]
 
 	ptsb=ptsa[1:]+ptsa[:1]
 	ptsb=ptsa
-	Draft.makeWire(ptsb)
+	sf=App.ActiveDocument.getObject(fp.Name+"_circle_"+str(n))
+	if sf == None:
+		sk=App.ActiveDocument.addObject('Part::Spline',fp.Name+"_circle_"+str(n))
+		sk.ViewObject.hide()
+
+	sk.ViewObject.hide()
+	sk.Shape=Part.makePolygon(ptsb)
+
 
 	source=App.ActiveDocument.ActiveObject
 	bb=genk(0,0,1,FreeCAD.Vector(),source)
+	bb.ViewObject.hide()
 	return bb,ptsb
 
 
@@ -3617,11 +3641,40 @@ def createEndface(pts,label):
 
 # MAIN -----------------
 
-def createHole(height=100):
+
+
+
+
+class HoleFace(FeaturePython):
+
+	def __init__(self, obj):
+		FeaturePython.__init__(self, obj)
+
+#		obj.addProperty("App::PropertyLinkList","ribs")
+#		obj.addProperty("App::PropertyLinkList","meridians")
+		obj.addProperty("App::PropertyLink","source")
+#		obj.addProperty("App::PropertyInteger","uCount").uCount=3
+#		obj.addProperty("App::PropertyInteger","vCount").vCount=3
+#		obj.addProperty("App::PropertyInteger","uWeight").uWeight=10
+#		obj.addProperty("App::PropertyInteger","vWeight").vWeight=10
+		obj.addProperty("App::PropertyPlacement","location")
+
+
+
+	def execute(self,fp):
+
+		print "EXECute createHole"
+		createHole(fp)
+
+
+
+def createHole(fp,height=100):
 	''' anschluss kreis an zelle '''
 
-	obj=Gui.Selection.getSelection()[0]
+	obj=fp.source
 	
+	print "Location"
+	print fp.location
 	endfaces=False
 	radius=4
 	height=3
@@ -3649,10 +3702,11 @@ def createHole(height=100):
 	poles=np.array(obj.Shape.Face1.Surface.getPoles())
 
 	center=FreeCAD.Vector((poles[0,0]+poles[-1,-1])*0.5)+FreeCAD.Vector(2,-10,5)
+	center += fp.location.Base
 
 
 
-	Draft.makePoint(center)
+#	Draft.makePoint(center)
 
 	print "-----------------"
 
@@ -3661,49 +3715,48 @@ def createHole(height=100):
 		poles[0,2],poles[0,1],poles[0,0],
 		poles[1,0],poles[2,0],poles[3,0],poles[3,1]]
 
-	Draft.makeWire([FreeCAD.Vector(p) for p in pts])
+#	Draft.makeWire([FreeCAD.Vector(p) for p in pts])
 
 
 	ta=time.time()
-	for i in range(1):
-		for j in range(1):
-			n=0
-			ptsu=pts[::-1]
-			aa,ptsa=genbase(ptsu,offset=6)
-			hh=10
-			bb,ptsb=gencircle(hh+height*.5,radius=radius,center=center)
-			cc,ptsc=gencircle(hh+height,radius=radius,center=center)
-			dd,ptsd=gencircle(hh+height*2,radius=radius,center=center)
+	n=0
+	ptsu=pts[::-1]
+	aa,ptsa=genbase(fp,ptsu,offset=6)
+	hh=10
+	bb,ptsb=gencircle(fp,1,hh+height*.5,radius=radius,center=center)
+	cc,ptsc=gencircle(fp,2,hh+height,radius=radius,center=center)
+	dd,ptsd=gencircle(fp,3,hh+height*2,radius=radius,center=center)
 
-			sf=App.ActiveDocument.addObject('Sketcher::SketchObjectPython','BeringFace')
-			#sf.ViewObject.hide()
-			_=Beface(sf)
-			
-			sf.berings=[aa,bb,cc,dd]
-			#sf.berings=[bb,cc,dd]
-			ViewProvider(sf.ViewObject)
-			sf.Placement.Base.x=1600*i
-			sf.Placement.Base.y=1600*j
-			
-			bg=App.ActiveDocument.addObject('Part::FeaturePython','BeGrid')
-			bg.ViewObject.ShapeColor=(0.5+random.random(),random.random(),random.random(),)
-			BeGrid(bg)
+	sf=App.ActiveDocument.getObject(fp.Name+"_hole")
+	if sf == None:
+		sf=App.ActiveDocument.addObject('Sketcher::SketchObjectPython',fp.Name+"_hole")
+		#sf.ViewObject.hide()
+		_=Beface(sf)
+	
+	sf.berings=[aa,bb,cc,dd]
+	#sf.berings=[bb,cc,dd]
+	ViewProvider(sf.ViewObject)
 
-			ViewProvider(bg.ViewObject)
-			bg.Source=sf
-			# bg.ViewObject.show()
+#	bg=App.ActiveDocument.addObject('Part::FeaturePython','BeGrid')
+#	bg.ViewObject.ShapeColor=(0.5+random.random(),random.random(),random.random(),)
+#	BeGrid(bg)
+#
+#	ViewProvider(bg.ViewObject)
+#	bg.Source=sf
 
-			print
-			print time.time()-ta
-			App.activeDocument().recompute()
-			Gui.updateGui()
+	# bg.ViewObject.show()
+
+	print
+	print time.time()-ta
+#	App.activeDocument().recompute()
+#	Gui.updateGui()
 
 	if endfaces:
 		createEndface(ptsd,"oben")
 		createEndface(ptsc,"mitte")
 		createEndface(ptsa,"unten")
 
-	App.activeDocument().recompute()
+
 
 
 def createHoleGUI():
@@ -3749,9 +3802,18 @@ MainWindow:
 
 
 def createHoleGUI():
-	createHole(
-		height=10,
-	)
+#	createHole(
+#		height=10,
+#	)
+
+	bg=App.ActiveDocument.addObject('Part::FeaturePython','HoleFace')
+	bg.ViewObject.ShapeColor=(0.5+random.random(),random.random(),random.random(),)
+	HoleFace(bg)
+	bg.source=Gui.Selection.getSelection()[0]
+	
+
+	ViewProvider(bg.ViewObject)
+	App.activeDocument().recompute()
 
 
 
@@ -3829,6 +3891,10 @@ def createGordon(obj,scale=5.0):
 	print polsu.shape
 	print polsv.shape
 
+#	suc=3
+#	svc=2
+
+
 	#return
 
 #	return
@@ -3867,17 +3933,24 @@ def createGordon(obj,scale=5.0):
 
 
 	def blender(c,t):
-#		if abs(c-t)>=1.: return 0
+		if abs(c-t)>=1.: rc=0
+		else:
+			rc=(1-min(abs(c-t),1))**0.7
+#		print ("blender c,t",c,t,rc)
+		return rc
 
-#		return (c+1-t)*(c-1-t)*(-1)
 
-		return (1-min(abs(c-t),1))
-		return (1-min(abs(c-t),1))**2
-
-
+	def Xblender(c,t):
+		if abs(c-t)>=1.: rc=0
+		else:
+			rc=  (c+1-t)*(c-1-t)*(-1)
+		print ("blender c,t",c,t,rc)
+		return rc
 
 
 	s3tt=np.zeros((3*suc+1)*(3*svc+1)*3).reshape(3*suc+1,3*svc+1,3)
+	print ("!shape s3tt",s3tt.shape)
+	print ("suc,svc",suc,svc)
 
 	dd=scale*0.01
 	
@@ -3891,25 +3964,35 @@ def createGordon(obj,scale=5.0):
 		vli += [i-dd,i,i+dd]
 	vli += [svc-dd,svc]
 
+	print ("shape polsu",polsu.shape)
 
-	for ui,u in enumerate(uli):
-		for vi,v in enumerate(vli):
-			for i in range(suc+1):
-				for j in range(svc+1):
-					s3tt[ui,vi] += (polsu[i][3*j]*obj.uWeight+polsv[j][3*i]*obj.vWeight)*blender(i,u)/blender(i,i)*blender(j,v)/blender(j,j)/(obj.uWeight+obj.vWeight)
+	if 10:
+		for ui,u in enumerate(uli):
+			for vi,v in enumerate(vli):
+				print ("ui,vi",ui,vi)
+				for i in range(suc+1):
+					for j in range(svc+1):
+						print ("i,j,blender",i,j,blender(j,v),blender(i,u))
+	#					s3tt[ui,vi] += (polsu[i][3*j]*obj.uWeight+polsv[j][3*i]*obj.vWeight)*blender(i,u)/blender(i,i)*blender(j,v)/blender(j,j)/(obj.uWeight+obj.vWeight)
+	#					print s3tt[ui,vi]
+	#					print polsu[i][3*j]
+						s3tt[ui,vi] += (polsu[i][3*j])*blender(i,u)/blender(i,i)*blender(j,v)/blender(j,j)
 
-	mu=[4]+[3]*(suc-1)+[4]
-	mv=[4]+[3]*(svc-1)+[4]
-	ag=Part.BSplineSurface()
-	ag.buildFromPolesMultsKnots(s3tt, 
-			mu,mv,range(suc+1),range(svc+1),
-			False,False,3,3)
 
-	name="gordonS3"
-	tt=App.ActiveDocument.getObject(name)
-	if tt==None:
-		tt=App.ActiveDocument.addObject('Part::Spline',name)
-	tt.Shape=ag.toShape()
+
+
+		mu=[4]+[3]*(suc-1)+[4]
+		mv=[4]+[3]*(svc-1)+[4]
+		ag=Part.BSplineSurface()
+		ag.buildFromPolesMultsKnots(s3tt, 
+				mu,mv,range(suc+1),range(svc+1),
+				False,False,3,3)
+
+		name="gordonS3"
+		tt=App.ActiveDocument.getObject(name)
+		if tt==None:
+			tt=App.ActiveDocument.addObject('Part::Spline',name)
+		tt.Shape=ag.toShape()
 
 	ptsarr=[]
 	for ui,u in enumerate(uli):
@@ -3931,8 +4014,12 @@ def createGordon(obj,scale=5.0):
 	tt.Shape=ag.toShape()
 
 	ptsarr2=[]
+	
 	for vi,v in enumerate(vli):
 		pts=np.zeros((3*suc+1)*3).reshape(1,3*suc+1,3)
+		print ("shapes",suc,svc)
+		print pts.shape
+		print polsv.shape
 		for i in range(svc+1):
 			pts += [polsv[i]*blender(i,v)/blender(i,i)]
 		ptsa=[FreeCAD.Vector(p) for p in pts[0]]
@@ -3950,25 +4037,35 @@ def createGordon(obj,scale=5.0):
 	tt.Shape=ag.toShape()
 
 
+	if 0:
+		ptsarr3=(np.array(ptsarr) +np.array(ptsarr2).swapaxes(0,1)-s3tt)
 
-	ptsarr3=(np.array(ptsarr) +np.array(ptsarr2).swapaxes(0,1)-s3tt)
-
-#	ptsarr3=(np.array(ptsarr) +np.array(ptsarr2).swapaxes(0,1))*0.5
+	#	ptsarr3=(np.array(ptsarr) +np.array(ptsarr2).swapaxes(0,1))*0.5
 
 
-	ag=Part.BSplineSurface()
-	ag.buildFromPolesMultsKnots(ptsarr3, 
-			mu,mv,range(suc+1),range(svc+1),
-			False,False,3,3)
 
-	name="gordon"
-	tt=App.ActiveDocument.getObject(name)
-	if tt==None:
-		tt=App.ActiveDocument.addObject('Part::Spline',name)
-	tt.Shape=ag.toShape()
+		ag=Part.BSplineSurface()
+		ag.buildFromPolesMultsKnots(ptsarr3, 
+				mu,mv,range(suc+1),range(svc+1),
+				False,False,3,3)
+
+		name="gordon"
+		tt=App.ActiveDocument.getObject(name)
+		if tt==None:
+			tt=App.ActiveDocument.addObject('Part::Spline',name)
+		tt.Shape=ag.toShape()
 
 	ptsarr3=(np.array(ptsarr)*2*obj.uWeight/(obj.uWeight+obj.vWeight) +np.array(ptsarr2).swapaxes(0,1)*2*obj.vWeight/(obj.uWeight+obj.vWeight)-s3tt)
+
+	# RANDER ..
+	print  "raaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+	ptsarr3[0]=polsu[-1]
+	ptsarr3[-1]=polsu[0]
 	
+
+
+
+
 	ag=Part.BSplineSurface()
 	ag.buildFromPolesMultsKnots(ptsarr3, 
 			mu,mv,range(suc+1),range(svc+1),
@@ -4100,3 +4197,118 @@ def AA():
 			pass
 
 	Part.show(Part.Compound(comp))
+
+
+
+
+
+
+
+
+import numpy as np
+#def AA():
+def  polishG1GUI():
+	''' make surface G1 continues'''
+
+	obj=Gui.Selection.getSelection()[0]
+	sf=obj.Shape.Face1.Surface
+	poles=np.array(sf.getPoles())
+
+
+	def mod(u,v):
+		seg=poles[3*u-1:3*u+3,3*v-1:3*v+3]
+		# print seg.shape
+
+		b=seg[1,1]
+
+		te=seg[2,1]-b
+		tw=seg[0,1]-b
+		tn=seg[1,2]-b
+		ts=seg[1,0]-b
+
+	#	print te,tw
+
+		te=FreeCAD.Vector(te)
+		tw=FreeCAD.Vector(tw)
+		fe=te.Length/(te.Length+tw.Length)
+		fw=tw.Length/(te.Length+tw.Length)
+
+
+		tn=FreeCAD.Vector(tn)
+		ts=FreeCAD.Vector(ts)
+		fn=tn.Length/(tn.Length+ts.Length)
+		fs=ts.Length/(tn.Length+ts.Length)
+
+		# parallel ?
+		if te.cross(tw).Length >10**-5:
+			print ("run",u,v)
+			print "ost west nicht parallel"
+			print te.cross(tw).Length
+
+
+			tu=(te+tw)
+
+	#		print tu
+	#		print fe
+	#		print fw
+
+			seg[2,1] -= fe*tu
+			seg[0,1] -= fw*tu
+
+
+		# parallel ?
+		if tn.cross(ts).Length >10**-5:
+			print ("run",u,v)
+			print "nord sued nicht parallel"
+			print tn.cross(ts).Length
+			tu=(tn+ts)
+
+	#		print tu
+	#		print fn
+	#		print fs
+
+			seg[1,2] -= fn*tu
+			seg[1,0] -= fs*tu
+			
+		
+		seg[0,0]=seg[0,1]+seg[1,0]-seg[1,1]
+		seg[0,2]=seg[0,1]+seg[1,2]-seg[1,1]
+		seg[2,0]=seg[1,0]+seg[2,1]-seg[1,1]
+		seg[2,2]=seg[1,2]+seg[2,1]-seg[1,1]
+
+
+		poles[3*u-1:3*u+3,3*v-1:3*v+3]=seg
+
+	for u in [1,2,3,4,5,6]:
+		for v in [1,2,3,4,5,6]:
+			mod(u,v)
+			mod(u,v)
+
+
+	bs=Part.BSplineSurface()
+	bs.buildFromPolesMultsKnots(poles, 
+							sf.getUMultiplicities(),sf.getVMultiplicities(),
+							sf.getUKnots(),sf.getVKnots(),
+							False,False,3,3)
+	Part.show(bs.toShape())
+
+
+
+	if 0:
+
+		sf=App.ActiveDocument.ProductFace001.Shape.Face1.Surface
+		poles2=np.array(sf.getPoles())
+		a,b,c=poles2.shape
+		poles2=poles2.reshape(a*b*c) + (15-np.random.random(a*b*c)*30)
+		poles2=poles2.reshape(a,b,c)
+
+
+
+
+		bs=Part.BSplineSurface()
+		bs.buildFromPolesMultsKnots(poles2, 
+								sf.getUMultiplicities(),sf.getVMultiplicities(),
+								sf.getUKnots(),sf.getVKnots(),
+								False,False,3,3)
+		Part.show(bs.toShape())
+
