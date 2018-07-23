@@ -51,7 +51,6 @@ def checkcurve(curve):
 		sayexc2("checkcurve Error","assertion failed")
 
 
-
 ##\cond
 class FeaturePython:
 	''' basic defs'''
@@ -59,6 +58,8 @@ class FeaturePython:
 	def __init__(self, obj):
 		obj.Proxy = self
 		self.Object = obj
+		obj.addProperty("App::PropertyBool","_noExecute",'zzz')
+		obj.addProperty("App::PropertyBool","_debug",'zzz')
 
 	def attach(self, vobj):
 		self.Object = vobj.Object
@@ -107,7 +108,7 @@ def copySketch(sketch,target):
 
 class Bering(FeaturePython):
 	'''special bezier curve'''
-	  
+
 	def __init__(self, obj):
 		FeaturePython.__init__(self, obj)
 		obj.addProperty("App::PropertyInteger","level")
@@ -122,20 +123,15 @@ class Bering(FeaturePython):
 		obj.addProperty("App::PropertyEnumeration","mode").mode=['curve','poles','compound']
 
 
-	def onChanged(self, fp, prop):
-		'''if detached then make a copy of the source and forget the sourced'''
-		pass
-		#if prop == "detach" and fp.detach:
-		#	print " copy from sketch"
-		#	copySketch(fp.source,fp)
-		#	# und knoten einfuegen 
+#	def onChanged(self, fp, prop):
+#		pass
 
 
 	def execute(self,fp):
 
 		if fp.cyclic:
 			# make a cyclic bezier chain from the points of the source polygon
-			
+
 			bc=Part.BSplineCurve()
 
 			pts=[v.Point for v in fp.source.Shape.Vertexes]
@@ -300,6 +296,9 @@ class Beface(FeaturePython):
 		for i in range(1,len(ya)-1):
 			if ya[i]<3:
 				af.insertUKnot(i,3,0)
+
+
+
 
 
 
@@ -475,6 +474,88 @@ class Beface(FeaturePython):
 				tt.ViewObject.ControlPoints = True
 				tt.ViewObject.ShapeColor=(.0,0.0,1.0)
 
+
+	def execute(self,fp):
+		print "ZACK"
+		# variante mit drei rippen
+
+#		assert (len(fp.berings)-1)%3==0
+		
+		ptsa=[]
+		ll=-1
+		for r in fp.berings:
+			pps=r.Shape.Edge1.Curve.getPoles()
+			if ll==-1:ll=len(pps)
+			assert ll == len(pps)
+			ptsa += [pps]
+
+		poles=np.array(ptsa)
+#		print ptsa
+#		print poles
+		print poles.shape
+
+#		poles2=[poles[0],poles[1]+[0,-10,0],poles[1],poles[1]+[0,10,0],poles[-1]]
+#		poles=np.array(poles2)
+
+		af=Part.BSplineSurface()
+		(a,b,c)=poles.shape
+
+		if not fp.generatedBackbone:
+			ecken=(a-1)/3
+
+			if fp.end>0:
+				ecken=fp.end-fp.start
+				poles=poles[3*fp.start:3*fp.end+1]
+
+			ya=[4]+[3]*(ecken-1)+[4]
+
+			(a,b,c)=poles.shape
+			print ("poles.shape a,b",a,b)
+
+			# die bezier variante
+			yb=fp.berings[0].Shape.Edge1.Curve.getMultiplicities()
+
+			db=min(3,a-1)
+			if db==3:
+				ya=[4]+[3]*(ecken-1)+[4]
+			if db==2:
+				ya=[3,3]
+			if db==1:
+				ya=[2,2]
+
+		else:
+			ya=[4]+[1]*(a-4)+[4]
+			yb=fp.berings[0].Shape.Edge1.Curve.getMultiplicities()
+			db=3
+
+		print ya
+		print yb
+		print poles.shape
+		print db
+
+		af.buildFromPolesMultsKnots(poles, 
+				ya,yb,
+				range(len(ya)),range(len(yb)),
+				False,False,db,3)
+
+
+		for i in range(1,len(ya)-1):
+			if ya[i]<3:
+				af.insertUKnot(i,3,0)
+
+
+
+
+
+
+		fp.Shape=af.toShape()
+
+
+
+
+
+
+
 def genk(start,ende,scale,pos,source,show=True):
 	# kurven erzeugen
 	sk=App.ActiveDocument.addObject('Sketcher::SketchObjectPython','BeringSketch')
@@ -545,8 +626,9 @@ def genB():
 	App.activeDocument().recompute()
 
 def createBering():
-		for source in Gui.Selection.getSelection():
-			genk(0,0,1,FreeCAD.Vector(),source)
+	'''create Bering Sketches for selected objects'''
+	for source in Gui.Selection.getSelection():
+		genk(0,0,1,FreeCAD.Vector(),source)
 
 
 def AA():
@@ -1479,12 +1561,10 @@ class BeGrid(FeaturePython):
 
 	def __init__(self, obj):
 		FeaturePython.__init__(self, obj)
-		
 		obj.addProperty("App::PropertyLink","Source")
 		obj.addProperty("App::PropertyBool","showTangents")
 		obj.addProperty("App::PropertyBool","showKnotCurves")
 
-		#obj.showKnotCurves=True
 		obj.showTangents=True
 		obj.ViewObject.Selectable=False
 		obj.ViewObject.LineWidth=1
@@ -1504,7 +1584,6 @@ class BeGrid(FeaturePython):
 
 def createBeGrid():
 	for  fa in Gui.Selection.getSelection():
-		#fa=App.ActiveDocument.Seam_ProductFace001
 
 		sf=App.ActiveDocument.addObject('Part::FeaturePython','BeGrid')
 		sf.ViewObject.ShapeColor=(0.5+random.random(),random.random(),random.random(),)
@@ -1543,6 +1622,68 @@ def BSplineToBezierCurve():
 	t.Shape=bc2.toShape()
 	t.ViewObject.ControlPoints=True
 
+def BSplineToBezierCurve():
+	'''create a degree 3 curve with multiplicities always 3'''
+
+
+	for obj in Gui.Selection.getSelection():
+		poles=[]
+		for i,e in enumerate(obj.Shape.Edges):
+			bc=e.Curve
+
+			if bc.Degree>3:
+				nurbswb.say.showdialog("curves with degree >3 are not supported")
+			bc.increaseDegree(3)
+
+			mults=bc.getMultiplicities()
+			print mults
+			pp=bc.getPoles()
+			if i == 0:
+				poles = bc.getPoles()
+			if i == 1:
+				print "in 1"
+				if (poles[0]-pp[0]).Length<0.1 or (poles[0]-pp[-1]).Length<0.1:
+					print "drehen"
+					poles=poles[::-1]
+				if (poles[-1]-pp[-1]).Length <0.1:
+					print "drehen 2"
+					pp=pp[::-1]
+				poles += pp[1:]
+			if i>1:
+				if (poles[-1]-pp[-1]).Length <0.1:
+					print "drehen 2"
+					pp=pp[::-1]
+				poles += pp[1:]
+
+
+			pp=bc.getPoles()
+#				print p
+			print len(bc.getPoles())
+			print pp[0]
+			print pp[-1]
+
+		Draft.makeWire(poles)
+	#	return
+
+		print len(poles)
+		mults=[4]+[3]*((len(poles)-1)/3-1)+[4]
+		knots=range(len(mults))
+		print "huhu"
+		print mults
+		print knots
+
+		bc2=Part.BSplineCurve()
+		bc2.buildFromPolesMultsKnots(poles,	mults,knots,False,3)
+
+		for i in range(1,len(mults)-1):
+			print (i,mults[i])
+			if mults[i]<3:
+				bc2.insertKnot(i,3)
+
+		t=App.ActiveDocument.addObject('Part::Spline',obj.Name)
+		t.Label=obj.Label+" Bezier"
+		t.Shape=bc2.toShape()
+		t.ViewObject.ControlPoints=True
 #---------------
 
 
@@ -1624,7 +1765,6 @@ def BSplineToBezierSurface():
 
 def SurfaceEditor():
 
-	from nurbswb.miki_g import createMikiGui2, MikiApp
 
 	layout = '''
 	MainWindow:
@@ -2098,12 +2238,11 @@ def SurfaceEditor():
 
 
 	fp=Gui.Selection.getSelection()[0]
+
 	obj=App.ActiveDocument.getObject('YY_'+fp.Name)
 	if obj == None:
 		obj=App.ActiveDocument.addObject('Part::Spline','temp_YY1')
-	
 	obj.Shape=fp.Shape
-
 
 	mikigui = createMikiGui2(layout, EditorApp)
 	print mikigui
@@ -2117,7 +2256,6 @@ def SurfaceEditor():
 
 def addKnot():
 
-	from nurbswb.miki_g import createMikiGui2, MikiApp
 
 	layout = '''
 	MainWindow:
@@ -2767,9 +2905,6 @@ class BeTriangle(FeaturePython):
 
 	def execute(self,fp):
 
-		import numpy as np
-
-
 		#zusammensetzung
 		spa=[[-100,0,0],[-80,20,0],[-20,80,0],[0,100,0]]
 		spb=[[0,100,0],[20,80,0],[80,20,0],[100,0,0]]
@@ -3065,7 +3200,6 @@ class Cell(FeaturePython):
 
 	def execute(self,fp):
 
-		import numpy as np
 		bs=fp.source.Shape.Face1.Surface
 		luks=len(bs.getUKnots())
 		lvks=len(bs.getVKnots())
@@ -3095,22 +3229,19 @@ class Cell(FeaturePython):
 			segs=[(0,fp.uBegin,0,-1),(fp.uEnd,-1,0,-1),
 				(fp.uBegin,fp.uEnd,0,fp.vBegin),(fp.uBegin,fp.uEnd,fp.vEnd,-1)]
 			for (a,b,c,d) in segs:
-				bs2=bs.copy()
-				bs2.segment(uks[a],uks[b],vks[c],vks[d])
-				comps += [bs2.toShape()]
+				
+				try:
+					bs2=bs.copy()
+					bs2.segment(uks[a],uks[b],vks[c],vks[d])
+					comps += [bs2.toShape()]
+				except:
+					print ("cannot create segment ",a,b,c,d)
+					pass
+
 			fp.Shape=Part.Compound(comps)
 			fp.ViewObject.DisplayMode="Shaded"
 			fp.ViewObject.Transparency=40
 
-
-
-def createCell():
-	
-	sf=App.ActiveDocument.addObject('Part::FeaturePython','Cell')
-	sf.ViewObject.ShapeColor=(random.random(),0.5+random.random(),random.random(),)
-	Cell(sf)
-	sf.source=Gui.Selection.getSelection()[0]
-	ViewProvider(sf.ViewObject)
 
 
 
@@ -3120,7 +3251,8 @@ def createCell():
 
 
 
-def AA():
+def selectionToNurbs():
+	'''convert selection to a nurbs face and all edges tos nurbs curvse'''
 	obj=Gui.Selection.getSelection()[0]
 	f=obj.Shape.Face1
 	print f
@@ -3135,18 +3267,14 @@ def AA():
 
 
 
-def BB():
-	'''yankee face'''
-
-	import numpy as np
+def createYankee():
+	'''create a yankee face (two finger)'''
 
 	obj1=App.ActiveDocument.FaceConnection_Cell
 	obj2=App.ActiveDocument.FaceConnection001_Cell001
 
-
 	sf1=obj1.Shape.Face1.Surface
 	sf2=obj2.Shape.Face1.Surface
-
 
 	poles1=np.array(sf1.getPoles()).swapaxes(0,1)
 	poles2=np.array(sf2.getPoles()).swapaxes(0,1)
@@ -3166,10 +3294,7 @@ def BB():
 	umults=[4,3,3,4]
 	uknots=range(len(umults))
 
-
 	sf=Part.BSplineSurface()
-
-
 	sf.buildFromPolesMultsKnots(
 				allp,
 				umults,
@@ -3178,7 +3303,6 @@ def BB():
 				vknots,
 				False,False,3,3
 			)
-
 	sf.segment(1,2,0,1)
 	Part.show(sf.toShape())
 
@@ -3222,8 +3346,6 @@ class QuadPm(FeaturePython):
 
 
 	def execute(self,fp):
-
-		import numpy as np
 
 		comps=[]
 		if fp.sourceA <> None:
@@ -3276,14 +3398,10 @@ def createQuadPlacement():
 	sf.sourceB=Gui.Selection.getSelection()[1]
 	sf.sourceC=Gui.Selection.getSelection()[2]
 	sf.sourceD=Gui.Selection.getSelection()[3]
-	
-
-def AA():
-	createQuadPlacement()
 
 
-
-def BB():
+def checkCurveGUI():
+	''' testcase checkcurve'''
 	obj=Gui.Selection.getSelection()[0]
 	curve=obj.Shape.Edge1.Curve
 	checkcurve(curve)
@@ -3352,9 +3470,6 @@ def stretchandbend():
 			poles2[ui,vi] +=  vaa2[2]*(uc-1-ui)*(vi)/(uc-1)/(vc-1)
 			poles2[ui,vi] +=  vaa2[0]*(uc-1-ui)*(vc-1-vi)/(uc-1)/(vc-1)
 			poles2[ui,vi] +=  vaa2[1]*(ui)*(vc-1-vi)/(uc-1)/(vc-1)
-
-
-	import Draft
 
 
 
@@ -3483,12 +3598,10 @@ def stretchandbend():
 
 
 def AA():
+	'''berechne  Verformungskraft'''
 	ss=App.ActiveDocument.Sketch.Shape
 	pts=[v.Point for v in ss.Vertexes]
-	import Draft
 	ptss=pts[1:]+pts[:1]
-	#pts=ptss
-	#Draft.makeWire(pts)
 
 	#biegekraft
 	lp=len(pts)
@@ -3511,46 +3624,9 @@ def AA():
 
 
 
-def BB():
-	# mache zelle zu ring
-	import numpy as np
-	bs=App.ActiveDocument.Cell004.Shape.Face1.Surface
 
-
-	luks=len(bs.getUKnots())
-	lvks=len(bs.getVKnots())
-
-	uks=bs.getUKnots()
-	vks=bs.getVKnots()
-
-	comps=[]
-	stripes=[
-		[0,1],
-		[-2,-1]
-	]
-
-	poles=np.array(bs.getPoles())
-	poles2=poles.swapaxes(0,1)
-
-	pts=np.concatenate([
-		poles[0],
-		poles2[-1],
-		poles[-1][::-1],
-		poles2[0][::-1],
-
-	])
-
-	pts=[FreeCAD.Vector(p) for p in pts]
-	pts=pts[2:]+pts[:2]
-	import Draft
-	Draft.makeWire(pts)
-
-
-
-#----------------------------
-
-
-
+def AA():
+	borderToWire()
 
 
 def genbase(fp,pts,center=FreeCAD.Vector(),offset=2):
@@ -3596,7 +3672,6 @@ def gencircle(fp,n,h=300,radius=400,center=None):
 	pts2=ptsa[6:]+ptsa[:6]
 
 
-	import Draft
 	ptsa=[FreeCAD.Vector(p[0],p[1],h)+center for p in pts2]
 	rot=fp.location.Rotation
 
@@ -3619,7 +3694,6 @@ def gencircle(fp,n,h=300,radius=400,center=None):
 	return bb,ptsb
 
 
-import random
 
 def createEndface(pts,label):
 	# abschlussfleche erzeugen oben
@@ -3913,24 +3987,6 @@ def createGordon(obj,scale=5.0):
 		polsu=np.array(poles[0:suc+1])
 		polsv=np.array(poles[suc+1:suc+svc+2])
 
-	# lagrange polynoms as blender
-	# fuer suc==svc==2
-	ablender=[
-		lambda t: (t-1)*(t-2),
-		lambda t: (t-0)*(t-2),
-		lambda t: (t-0)*(t-1),
-	]
-
-	# fuer suc==svc==3
-	ablender=[
-		lambda t: (t-1)*(t-2)*(t-3),
-		lambda t: (t-0)*(t-2)*(t-3),
-		lambda t: (t-0)*(t-1)*(t-3),
-		lambda t: (t-0)*(t-1)*(t-2),
-		
-	]
-
-
 
 	def blender(c,t):
 		if abs(c-t)>=1.: rc=0
@@ -3949,12 +4005,8 @@ def createGordon(obj,scale=5.0):
 
 
 	s3tt=np.zeros((3*suc+1)*(3*svc+1)*3).reshape(3*suc+1,3*svc+1,3)
-	print ("!shape s3tt",s3tt.shape)
-	print ("suc,svc",suc,svc)
 
 	dd=scale*0.01
-	
-
 	uli=[0,dd]
 	for i in range(1,suc):
 		uli += [i-dd,i,i+dd]
@@ -3964,7 +4016,6 @@ def createGordon(obj,scale=5.0):
 		vli += [i-dd,i,i+dd]
 	vli += [svc-dd,svc]
 
-	print ("shape polsu",polsu.shape)
 
 	if 10:
 		for ui,u in enumerate(uli):
@@ -4061,8 +4112,6 @@ def createGordon(obj,scale=5.0):
 	print  "raaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
 	ptsarr3[0]=polsu[-1]
 	ptsarr3[-1]=polsu[0]
-	
-
 
 
 
@@ -4074,18 +4123,17 @@ def createGordon(obj,scale=5.0):
 	obj.Shape=ag.toShape()
 
 
-def createGordonGUI():
-	'''Gui dialog for creating a Gorden surface'''
+def aGUI():
+	'''Gui dialog for  template/later'''
 
-	class YYApp(MikiApp):
+	class App(MikiApp):
 
 		def run(self):
 			name="Gordon"
 			tt=App.ActiveDocument.getObject(name)
 			if 1 or tt==None:
-				tt=App.ActiveDocument.addObject('Part::FeaturePython',"Gordon")
+				tt=App.ActiveDocument.addObject('Part::FeaturePython',"???")
 				GordonFace(tt)
-
 
 				if 0:
 					tt.meridians=[
@@ -4183,30 +4231,25 @@ def createGordonGUI():
 
 
 
-def AA():
-	'''vergelich # zwei M;aps vergleichen'''
-	print len(App.ActiveDocument.MAP.Shape.Vertexes)
-	print len(App.ActiveDocument.MAP001.Shape.Vertexes)
+def compareMaps():
+	'''vergleich zwei Maps '''
+	(ma,mb)=Gui.Selection.getSelection()
 	comp=[]
-	for p,q in zip(App.ActiveDocument.MAP.Shape.Vertexes,App.ActiveDocument.MAP001.Shape.Vertexes):
-		try:
-			pol=Part.makePolygon([p.Point,q.Point])
-			if pol.Length >0:
-				comp += [Part.makePolygon([p.Point,q.Point])]
-		except:
-			pass
+	for p,q in zip(ma.Shape.Vertexes,mb.Shape.Vertexes):
+		if (p.Point-q.Point).Length >0:
+			comp += [Part.makePolygon([p.Point,q.Point])]
 
 	Part.show(Part.Compound(comp))
 
 
 
+def BB():
+	compareMaps()
 
 
 
 
 
-import numpy as np
-#def AA():
 def  polishG1GUI():
 	''' make surface G1 continues'''
 
@@ -4269,32 +4312,31 @@ def  polishG1GUI():
 
 			seg[1,2] -= fn*tu
 			seg[1,0] -= fs*tu
-			
-		
+
 		seg[0,0]=seg[0,1]+seg[1,0]-seg[1,1]
 		seg[0,2]=seg[0,1]+seg[1,2]-seg[1,1]
 		seg[2,0]=seg[1,0]+seg[2,1]-seg[1,1]
 		seg[2,2]=seg[1,2]+seg[2,1]-seg[1,1]
 
-
 		poles[3*u-1:3*u+3,3*v-1:3*v+3]=seg
 
 	for u in [1,2,3,4,5,6]:
 		for v in [1,2,3,4,5,6]:
-			mod(u,v)
-			mod(u,v)
-
+			try:
+				mod(u,v)
+				mod(u,v)
+			except: pass
 
 	bs=Part.BSplineSurface()
 	bs.buildFromPolesMultsKnots(poles, 
-							sf.getUMultiplicities(),sf.getVMultiplicities(),
-							sf.getUKnots(),sf.getVKnots(),
-							False,False,3,3)
+				sf.getUMultiplicities(),sf.getVMultiplicities(),
+				sf.getUKnots(),sf.getVKnots(),
+				False,False,3,3)
 	Part.show(bs.toShape())
 
 
 
-	if 0:
+	if 0: #erzeuge unstete flaeche
 
 		sf=App.ActiveDocument.ProductFace001.Shape.Face1.Surface
 		poles2=np.array(sf.getPoles())
@@ -4302,13 +4344,115 @@ def  polishG1GUI():
 		poles2=poles2.reshape(a*b*c) + (15-np.random.random(a*b*c)*30)
 		poles2=poles2.reshape(a,b,c)
 
-
-
-
 		bs=Part.BSplineSurface()
 		bs.buildFromPolesMultsKnots(poles2, 
 								sf.getUMultiplicities(),sf.getVMultiplicities(),
 								sf.getUKnots(),sf.getVKnots(),
 								False,False,3,3)
+
 		Part.show(bs.toShape())
 
+
+	#+#
+	
+
+def AA():
+	#selectionToNurbs()
+	obj=App.ActiveDocument.result001
+	pp=(App.ActiveDocument.result001.Shape.PrincipalProperties)
+	for p in pp:
+		print (p,pp[p])
+	pm=np.array(pp['Moments'])
+	print pm/min(pm)
+
+def createTangentHelpersGUI():
+	for obj in Gui.Selection.getSelection():
+		axis2= obj.Shape.PrincipalProperties['FirstAxisOfInertia']
+		print axis2
+		axis2 *=400
+
+		cp=App.ActiveDocument.copyObject(obj)
+		cp.Placement.Base = -axis2 
+
+		cp=App.ActiveDocument.copyObject(obj)
+		cp.Placement.Base += axis2
+
+
+
+class Border(FeaturePython):
+
+	def __init__(self, obj):
+		FeaturePython.__init__(self, obj)
+
+		obj.addProperty("App::PropertyLink","source")
+		obj.addProperty("App::PropertyInteger","offset")
+		obj.addProperty("App::PropertyBool","reverse")
+
+
+
+	def execute(self,fp):
+
+		print "EXECute border"
+
+
+#	def borderToWire():
+		'''create a closed path olf the border poles of a bspline surface'''
+
+		# mache zelle zu ring
+		obj=fp.source
+		bs=obj.Shape.Face1.Surface
+
+		luks=len(bs.getUKnots())
+		lvks=len(bs.getVKnots())
+
+		uks=bs.getUKnots()
+		vks=bs.getVKnots()
+
+		comps=[]
+		stripes=[
+			[0,1],
+			[-2,-1]
+		]
+
+		poles=np.array(bs.getPoles())
+		poles2=poles.swapaxes(0,1)
+
+		pts=np.concatenate([
+			poles[0],
+			poles2[-1],
+			poles[-1][::-1],
+			poles2[0][::-1],
+
+		])
+
+		pts=np.concatenate([
+			poles[0][:-1],
+			poles2[-1][:-1],
+			poles[-1][::-1][:-1],
+			poles2[0][::-1][:-1],
+
+		])
+
+
+		pts=[FreeCAD.Vector(p) for p in pts]
+		offset=2
+		offset=7
+		offset=4
+		offset=fp.offset
+		print len(pts)
+		pts2=pts[offset:]+pts[:offset]
+#		pts2=pts[offset:]
+		if fp.reverse:
+			pts2=pts2[::-1]
+		print len(pts)
+		fp.Shape=Part.makePolygon(pts2)
+
+
+
+
+def createBorderGUI():
+	tt=App.ActiveDocument.addObject('Part::FeaturePython',"Border")
+	Border(tt)
+	tt.source=Gui.Selection.getSelection()[0]
+	ViewProvider(tt.ViewObject)
+	App.activeDocument().recompute()

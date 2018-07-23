@@ -475,6 +475,8 @@ if FreeCAD.GuiUp:
 	c3bG(["Bezier"], always, 'berings', 'create Gordon')
 	c3bG(["Bezier"], always, 'berings', 'polish G1')
 	c3bG(["Bezier"], always, 'berings', 'create Hole')
+	c3bG(["Bezier"], always, 'berings', 'create Border')
+	c3bG(["Bezier"], always, 'berings', 'create Tangent Helpers')
 	
 	
 
