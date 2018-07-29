@@ -71,4 +71,10 @@ _*
 *.txt
 nurbswb/latex
 nurbswb/html
+nurbswb/nurbswb/
+Test*py
+Doxyfile
+gendok.py
+makefile
+*.css
 

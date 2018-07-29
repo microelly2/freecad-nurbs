@@ -1,4 +1,5 @@
-'''ausgabe von programmablaufinformationen, importieren der wichtigsten module'''
+'''package ausgabe von programmablaufinformationen, importieren der wichtigsten module'''
+
 # -*- coding: utf-8 -*-
 #-------------------------------------------------
 #-- (c) microelly 2017 v 0.4

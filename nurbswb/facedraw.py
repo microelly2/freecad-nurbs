@@ -54,8 +54,8 @@ class EventFilter(QtCore.QObject):
 		self.posy=-1
 		self.lasttime=time.time()
 		self.lastkey='#'
-		self.colorA=0
-		self.colors=[]
+		self.colorA=1
+		self.colors=range(30)
 		self.pts=[]
 		self.ptsm=[]
 		self.mode='n'
@@ -78,6 +78,9 @@ class EventFilter(QtCore.QObject):
 				z == 'PySide.QtCore.QEvent.Type.UpdateRequest'  : 
 			return QtGui.QWidget.eventFilter(self, o, e)
 
+		if event.type() == QtCore.QEvent.MouseButtonRelease:
+			self.pts += [None]
+
 		if event.type() == QtCore.QEvent.MouseMove:
 				(x,y)=Gui.ActiveDocument.ActiveView.getCursorPos()
 				t=Gui.ActiveDocument.ActiveView.getObjectsInfo((x,y))
@@ -86,50 +89,64 @@ class EventFilter(QtCore.QObject):
 
 				cursor=QtGui.QCursor()
 				p = cursor.pos()
-				if p.x()<100 or p.y()<100: 
-					print "jump cursor facedraw 92"
+
+#				if p.x()<100 or p.y()<100: 
+#					print "jump cursor facedraw 92"
 #					cursor.setPos(p.x()+100, p.y()+100)
 				#-----------------------------------
 
 				if t<>None: # if objects are under the mouse
 					for tt in t:
+						if not  hasattr(self,'objname'):
+#							print "*",tt
+							self.x,self.y,self.z=tt['x'],tt['y'],tt['z']
+							break
+
 						if tt['Object']==self.objname and tt['Component']==self.subelement:
 							self.x,self.y,self.z=tt['x'],tt['y'],tt['z']
 							break
 
-					if event.buttons()==QtCore.Qt.LeftButton:
-						#print "LEFT BUTTON drawing"
+					if not  hasattr(self,'objname') and event.buttons()==QtCore.Qt.LeftButton:
 						vf=FreeCAD.Vector(self.x,self.y,self.z)
-						bs=self.subobj.Surface
-
-						(u,v)=bs.parameter(vf)
-						#print (u,v)
-						lu=0.5
-						lv=0.5
-
-						ba=bs.vIso(u)
-						ky=ba.length(v,lv)
-						if v<0.5: ky =-ky
-
-						bbc=bs.vIso(v)
-						kx=bbc.length(lu,u)
-						if u<0.5: kx =-kx
-
-						mf=FreeCAD.Vector(self.x,self.y,0)
-						mf=FreeCAD.Vector(-1*ky,-1*kx,0)
-
 						self.pts += [vf]
-						self.ptsm += [mf]
+						if self.colorA not in self.colors:
+							self.colors += [self.colorA]
+						drawColorpath(self.pts,self.colors,self.colorA,self.drawname)
 
-						self.colors += [self.colorA]
-						drawColorpath(self.pts,self.colors,self.colorA)
-						self.wire.ViewObject.Visibility=False
+					else:
+						if event.buttons()==QtCore.Qt.LeftButton:
+							#print "LEFT BUTTON drawing"
+							vf=FreeCAD.Vector(self.x,self.y,self.z)
+							bs=self.subobj.Surface
 
-						if len(self.pts)>1:
-							self.wire.Shape=Part.makePolygon(self.pts)
-							self.wirem.Shape=Part.makePolygon(self.ptsm)
+							(u,v)=bs.parameter(vf)
+							#print (u,v)
+							lu=0.5
+							lv=0.5
 
-						return True
+							ba=bs.vIso(u)
+							ky=ba.length(v,lv)
+							if v<0.5: ky =-ky
+
+							bbc=bs.vIso(v)
+							kx=bbc.length(lu,u)
+							if u<0.5: kx =-kx
+
+							mf=FreeCAD.Vector(self.x,self.y,0)
+							mf=FreeCAD.Vector(-1*ky,-1*kx,0)
+
+							self.pts += [vf]
+							self.ptsm += [mf]
+
+							self.colors += [self.colorA]
+							drawColorpath(self.pts,self.colors,self.colorA)
+							self.wire.ViewObject.Visibility=False
+
+							if len(self.pts)>1:
+								self.wire.Shape=Part.makePolygon(self.pts)
+								self.wirem.Shape=Part.makePolygon(self.ptsm)
+
+							return True
 
 		if z == 'PySide.QtCore.QEvent.Type.KeyPress':
 			# http://doc.qt.io/qt-4.8/qkeyevent.html
@@ -165,11 +182,25 @@ class EventFilter(QtCore.QObject):
 						stop()
 
 #+hack
-					elif e.key() ==  QtCore.Qt.Key_4:
-						say("-------------4----------")
-						
-						stop()
+					elif e.key() ==  QtCore.Qt.Key_F6:
+						say("--------appy and new-----7----------")
+						self.pts += [None]
+
+
+
+					elif e.key() ==  QtCore.Qt.Key_F7:
+						say("--------appy and new-----7----------")
+						self.dialog.applyandnew()
+
+					elif e.key() ==  QtCore.Qt.Key_F8:
+						say("-------------8----------")
+						print self.colorA
+						self.colorA =(self.colorA+1)%7
+						print self.colorA
+						drawColorpath(self.pts,self.colors,self.colorA,self.drawname)
+
 #-hack
+
 
 
 # some key bindings not used at teh moment
@@ -214,6 +245,7 @@ class EventFilter(QtCore.QObject):
 							drawColorpath(self.pts,self.colors,self.colorA)
 
 					else: # letter key pressed
+						
 						ee=e.text()
 						if len(ee)>0: r=ee[0]
 						else: r="key:"+ str(e.key())
@@ -221,30 +253,32 @@ class EventFilter(QtCore.QObject):
 						self.lastkey=e.text()
 
 						#color select for drawing
-						if r=='h':
-							self.colorA=0
-							return True
-						if r=='y':
-							self.colorA=1
-							return True
-						if r=='n':
-							self.colorA=2
-							return True
-						if r=='g':
-							self.colorA=3
-							return True
-						if r=='j':
-							self.colorA=4
-							return True
-						if r=='z':
-							self.colorA=6
-							return True
-						if r=='x':
-							self.colorA=5
-							return True
-						if r=='#':
-							self.colorA=7
-							return True
+						print "SET Color--------------",r
+						if 0:
+							if r=='h':
+								self.colorA=0
+								return True
+							if r=='y':
+								self.colorA=1
+								return True
+							if r=='n':
+								self.colorA=2
+								return True
+							if r=='g':
+								self.colorA=3
+								return True
+							if r=='j':
+								self.colorA=4
+								return True
+							if r=='z':
+								self.colorA=6
+								return True
+							if r=='x':
+								self.colorA=5
+								return True
+							if r=='#':
+								self.colorA=7
+								return True
 
 						# zooming +-*
 						if r=='+':
@@ -425,7 +459,6 @@ def _drawring(name,wires,dirs,face,facepos=FreeCAD.Vector()):
 		e1_1 = bs2d.toShape(t)
 
 
-		print "huhuhu22"
 
 		sp=App.ActiveDocument.getObject(wireA.Label+"_ASpline")
 		print  sp
@@ -531,21 +564,27 @@ def createnewwire(widget):
 
 	ef=widget.ef
 
-	w=App.ActiveDocument.addObject("Part::Feature","A Drawing on " + ef.objname + ": "+ ef.subelement +"#")
-	w.Shape=Part.Shape()
-	wam=App.ActiveDocument.addObject("Part::Feature","YY Drawing on " + ef.objname + ": "+ ef.subelement +"#")
-	wam.Shape=Part.Shape()
+	if hasattr(ef,'objname'):
+		w=App.ActiveDocument.addObject("Part::Feature","A Drawing on " + ef.objname + ": "+ ef.subelement +"#")
 
-	if 10:
-		c=PySide.QtGui.QColorDialog.getColor(QtGui.QColor(random.randint(10,255),random.randint(10,255),random.randint(10,255)))
-		w.ViewObject.LineColor=(1.0/255*c.red(),1.0/255*c.green(),1.0/255*c.blue())
-		w.ViewObject.PointColor=(1.0/255*c.red(),1.0/255*c.green(),1.0/255*c.blue())
-	else:
-		w.ViewObject.LineColor=(random.random(),random.random(),random.random())
+		wam=App.ActiveDocument.addObject("Part::Feature","YY Drawing on " + ef.objname + ": "+ ef.subelement +"#")
 
-	ef.wire=w
-	ef.wirem=wam
-	ef.pts=[]
+#		w=App.ActiveDocument.addObject("Part::Feature","Drawing")
+#		wam=App.ActiveDocument.addObject("Part::Feature","YY_Drawing")
+
+		w.Shape=Part.Shape()
+		wam.Shape=Part.Shape()
+
+	#	if 0:
+	#		c=PySide.QtGui.QColorDialog.getColor(QtGui.QColor(random.randint(10,255),random.randint(10,255),random.randint(10,255)))
+	#		w.ViewObject.LineColor=(1.0/255*c.red(),1.0/255*c.green(),1.0/255*c.blue())
+	#		w.ViewObject.PointColor=(1.0/255*c.red(),1.0/255*c.green(),1.0/255*c.blue())
+	#	else:
+	#		w.ViewObject.LineColor=(random.random(),random.random(),random.random())
+
+		ef.wire=w
+		ef.wirem=wam
+		ef.pts=[]
 
 
 
@@ -560,15 +599,26 @@ class MyWidget(QtGui.QWidget):
 
 	def apply(self):
 		'''draw the curve and stop'''
-		try: drawcurve(self.ef.wire,self.ef.subobj)
+		try: 
+			if hasattr(self.ef,"subobj"): 
+				drawcurve(self.ef.wire,self.ef.subobj)
 		except: sayexc2()
 		stop()
 
 	def applyandnew(self):
 		'''draw the curve and start a new curve'''
-		try: drawcurve(self.ef.wire,self.ef.subobj)
+		try: 
+			if hasattr(self.ef,"subobj"): 
+				drawcurve(self.ef.wire,self.ef.subobj)
 		except: sayexc2()
+		self.ef.colorpathcount += 1
+		self.ef.colorA = (self.ef.colorA +1)%7
+		self.ef.pts=[]
+		
 		createnewwire(self)
+		
+		iv=App.ActiveDocument.addObject("App::InventorObject","draw_"+str(self.ef.colorpathcount)+"_")
+		self.ef.drawname=iv.Name
 
 	def update(self):
 		''' dummy method'''
@@ -608,8 +658,10 @@ def dialog(source=None):
 	btn=QtGui.QPushButton("Apply and close")
 	btn.clicked.connect(w.apply)
 
-	cobtn=QtGui.QPushButton("Apply and new")
+	cobtn=QtGui.QPushButton("Apply and new (F7)")
 	cobtn.clicked.connect(w.applyandnew)
+
+	cl=QtGui.QLabel("Change Color = F8 ")
 
 	cbtn=QtGui.QPushButton("Stop Dialog (preserve Aux)")
 	cbtn.clicked.connect(stop)
@@ -627,7 +679,7 @@ def dialog(source=None):
 	box = QtGui.QVBoxLayout()
 	w.setLayout(box)
 	
-	for ww in [btn,cobtn] :
+	for ww in [btn,cobtn,cl] :
 		box.addWidget(ww)
 
 	return w
@@ -665,22 +717,36 @@ def createRibCage(bs,rc=100):
 
 ## create the inventor string for the colored wire
 
-def genbuffer(pts,colors=None):
+def genbuffer(pts,color=5):
 	'''create the inventor string for the colored wire
 	pts - list of points
 	colors - list of color indexes
 	'''
+	print "genbuffer",len(pts)
 
 	colix=""
 	pix=""
 	cordix=""
+	
+	j=-1
 	for i,p in enumerate(pts):
-		if i>0:
-			if colors==None:colix += " "+str(random.randint(0,7))
-			else:
-				colix += " "+str(colors[i])
-		pix += str(p.x)+" "+str(p.y) +" " +str(p.z)+"\n"
-		if i>0:cordix +=  str(i-1)+" "+str(i)+" -1\n" 
+		if p <>None: 
+			j +=1
+
+#		if i>0:
+#			if colors==None:colix += " "+str(random.randint(0,7))
+#			else:
+#				colix += " "+str(colors[i])
+
+			colix += " " +str(color)
+
+			pix += str(p.x)+" "+str(p.y) +" " +str(p.z)+"\n"
+#			if i>0 and pts[i-1]<>None:cordix +=  str(i-1)+" "+str(i)+" -1\n" 
+			if i>0 and pts[i-1]<>None:cordix +=  str(j-1)+" "+str(j)+" -1\n" 
+			# if i%2==1:cordix +=  str(i-1)+" "+str(i)+" -1\n" 
+#		else:
+#			i=-1
+
 
 	buff ='''#Inventor V2.1 ascii
 	Separator {
@@ -730,15 +796,23 @@ def drawColorpath(pts,colors,colorB=None,name='ColorPath'):
 
 	iv=App.ActiveDocument.getObject(name)
 	if iv==None:iv=App.ActiveDocument.addObject("App::InventorObject",name)
-	iv.Buffer=genbuffer(pts,colors)
+	iv.Buffer=genbuffer(pts,colorB)
 
 ## create and initialize the event filter
 
-def start():
+def start(free=False):
 	'''create and initialize the event filter'''
 
+	free=True # hack
+	
 	ef=EventFilter()
 	ef.mouseWheel=0
+	ef.colorpathcount=0
+	ef.colorA=2
+	print "start--"
+	iv=App.ActiveDocument.addObject("App::InventorObject","draw_"+str(ef.colorpathcount)+"_")
+	ef.drawname=iv.Name
+
 	try:
 			sel=Gui.Selection.getSelection()
 			fob=sel[0]
@@ -767,8 +841,11 @@ def start():
 			Gui.Selection.clearSelection()
 
 	except:
-		sayexc2("no surface selected","Select first a face you want to draw on it")
-		return
+		if not free:
+			sayexc2("no surface selected","Select first a face you want to draw on it")
+			return
+		else:
+			print "run free----------------------"
 
 	FreeCAD.eventfilter=ef
 
@@ -777,21 +854,26 @@ def start():
 	ef.keyPressed2=False
 
 	# the result wire
-	w=App.ActiveDocument.addObject("Part::Feature","Drawing on " + ef.objname + ": "+ ef.subelement)
-	w.Shape=Part.Shape()
-	w.ViewObject.Visibility=False
-	w.ViewObject.LineColor=(1.0,0.0,0.0)
-	w.ViewObject.LineWidth=10
+	if hasattr(ef,'objname'):
+		w=App.ActiveDocument.addObject("Part::Feature","Drawing on " + ef.objname + ": "+ ef.subelement)
+
+		w.Shape=Part.Shape()
+		w.ViewObject.Visibility=False
+		w.ViewObject.LineColor=(1.0,0.0,0.0)
+		w.ViewObject.LineWidth=10
 
 	# the helper wire
-	wam=App.ActiveDocument.addObject("Part::Feature","M_Drawing on " + ef.objname + ": "+ ef.subelement)
-	wam.Shape=Part.Shape()
-	wam.ViewObject.Visibility=False
-	wam.ViewObject.LineColor=(1.0,0.0,1.0)
-	wam.ViewObject.LineWidth=10
+	if hasattr(ef,'objname'):
+		wam=App.ActiveDocument.addObject("Part::Feature","M_Drawing on " + ef.objname + ": "+ ef.subelement)
 
-	ef.wire=w
-	ef.wirem=wam
+
+		wam.Shape=Part.Shape()
+		wam.ViewObject.Visibility=False
+		wam.ViewObject.LineColor=(1.0,0.0,1.0)
+		wam.ViewObject.LineWidth=10
+
+		ef.wire=w
+		ef.wirem=wam
 
 	ef.dialog=dialog()
 	ef.dialog.ef=ef
@@ -852,9 +934,10 @@ def stop():
 	except:
 		pass
 
-	fob=ef.fob
-	[fob.ViewObject.Visibility,fob.ViewObject.Transparency,fob.ViewObject.Selectable]=ef.stack
-
+	try:
+		fob=ef.fob
+		[fob.ViewObject.Visibility,fob.ViewObject.Transparency,fob.ViewObject.Selectable]=ef.stack
+	except: pass
 	App.ActiveDocument.removeObject(ef.wirem.Name)
 
 

@@ -14,6 +14,18 @@ Thomas W. Sederberg]  (http://cagd.cs.byu.edu/~557/text/cagd.pdf)
 
 Videos
 ======
+
+2018
+
+ - [Motorhaube mit Scheinwerfereinsatz] (https://youtu.be/lQDyemO4iFM)(26.07.2018)<br>
+ Die Motorhaube wird aus vier Sketches erzeugt. Mit zwei weiteren Sketchen  werden Kotflügel und Frontfläche angeschlossen.
+ In die Motorhaube werden zwei Aufnahmen für Scheinwerfer eingelassen.<br> 
+ Verwendendet: nurbswb.berings.Product,  nurbswb.berings.Bering,  nurbswb.berings.Beface
+
+
+
+2017
+
    - [Sole Sketch](https://www.youtube.com/edit?o=U&video_id=l3U9SAbo9TE)(26.06.2017)<br>
 die Schuh-Sohle als eine spezielle Anwendung des Offset und Sketch
 
