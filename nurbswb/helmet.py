@@ -18,6 +18,10 @@ Gui = FreeCADGui
 import numpy as np
 import time
 
+import nurbswb.pyob
+from nurbswb.pyob import  FeaturePython,ViewProvider
+reload (nurbswb.pyob)
+
 
 class FeaturePython:
 	''' basic defs'''
@@ -36,19 +40,8 @@ class FeaturePython:
 		return None
 
 
-class ViewProvider:
+class _VPH(ViewProvider):
 	''' basic defs '''
-
-	def __init__(self, obj):
-		obj.Proxy = self
-		self.Object = obj
-
-	def __getstate__(self):
-		return None
-
-	def __setstate__(self, state):
-		return None
-
 
 
 	def setupContextMenu(self, obj, menu):
@@ -272,7 +265,7 @@ def createHelmet(obj=None):
 	createSketch(a)
 	a.recompute()
 
-	ViewProvider(a.ViewObject)
+	_VPH(a.ViewObject,'freecad-nurbs/icons/createHelmet.svg')
 	# a.ViewObject.Transparency=60
 	a.ViewObject.ShapeColor=(0.3,0.6,0.3)
 	if obj<>None:

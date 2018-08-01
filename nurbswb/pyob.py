@@ -21,6 +21,9 @@ class FeaturePython:
 	def __init__(self, obj):
 		obj.Proxy = self
 		self.Object = obj
+		obj.addProperty("App::PropertyBool","_noExecute",'zzz')
+		obj.addProperty("App::PropertyBool","_debug",'zzz')
+
 
 	def attach(self, vobj):
 		self.Object = vobj.Object
@@ -42,6 +45,12 @@ class ViewProvider:
 		obj.Proxy = self
 		self.Object = obj
 		self.icon=icon
+		if icon==None:
+			icon= 'freecad-nurbs/icons/BB.svg'
+		if icon.startswith('/'): ic= self.icon
+		else: ic= FreeCAD.ConfigGet("UserAppData") +'/Mod/' + icon 
+
+		obj.addProperty("App::PropertyString",'icon').icon=ic
 
 	def __getstate__(self):
 		return None
@@ -49,11 +58,45 @@ class ViewProvider:
 	def __setstate__(self, state):
 		return None
 
+	def attach(self, vobj):
+		self.ViewObject = vobj
+		self.Object = vobj.Object
+
 
 	def getIcon(self):
-		if self.icon.startswith('/'): return self.icon
-		else: return FreeCAD.ConfigGet("UserAppData") +'/Mod/' + self.icon 
+		try: return self.Object.ViewObject.icon
+		except: return self.Object.Object.ViewObject.icon
+
+	def claimChildren(self):
+		try: s=self.Object.Object
+		except: s=self.Object
+		rc=[]
+		for prop in  s.PropertiesList:
+			if s.getTypeIdOfProperty(prop) in ['App::PropertyLink']:
+				v=s.getPropertyByName(prop)
+				if v <>None:
+					rc += [v]
+			elif s.getTypeIdOfProperty(prop) in ['App::PropertyLinkList']:
+				v=s.getPropertyByName(prop)
+				if len(v) <> 0:
+					rc += v
+		return rc
+
+
+
+
+
+
+
 ##\endcond
+
+
+
+
+
+
+
+
 
 
 # proxies for the python objects 
@@ -95,6 +138,6 @@ def Spreadsheet(name='MySketch'):
 	return obj
 
 
-a=Sketch()
-b=Spreadsheet()
+#a=Sketch()
+#b=Spreadsheet()
 

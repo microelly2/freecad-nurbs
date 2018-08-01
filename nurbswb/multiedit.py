@@ -27,6 +27,12 @@ import numpy as np
 import time,random
 App=FreeCAD
 
+import nurbswb.configuration
+reload (nurbswb.configuration)
+from nurbswb.configuration import getcf,getcb,getcs,setcb,setcf,setcs
+
+
+
 # constraints
 '''
 obj=App.ActiveDocument.addObject('Part::FeaturePython','BePlane')
@@ -66,11 +72,6 @@ class Point(object):
 def editcross(poles,u,v):
 	'''create an object of curves to display the selected area u,v of the poles under focus of the editor'''
 	comps=[]
-	s=Part.Sphere()
-	s.Radius=20
-	ss=s.toShape()
-	ss.Placement.Base=FreeCAD.Vector(poles[u,v])+FreeCAD.Vector(11,11,11)
-	comps += [ss]
 	uu,vv=u,v
 
 #	v -=1
@@ -81,6 +82,14 @@ def editcross(poles,u,v):
 	vmi=max(v-3,0)
 	vma=min(vc-1,v+3)
 #	print  (umi,uma,vmi,vma)
+	s=Part.Sphere()
+#	s.Radius=20
+	s.Radius=(FreeCAD.Vector(poles[uma,vma])-FreeCAD.Vector(poles[umi,vmi])).Length*0.01
+	ss=s.toShape()
+	ss.Placement.Base=FreeCAD.Vector(poles[u,v])+FreeCAD.Vector(11,11,11)
+	comps += [ss]
+
+
 	for u in range(umi,uma):
 		if u%3==0:
 			for v in range(vmi,vma+1):
@@ -200,6 +209,11 @@ class Multiface(object):
 			#print "Move points........"
 
 
+			ms=getcf("moveScale")
+			if ms==0:
+				setcf("moveScale",1.0)
+				ms=1
+
 			arc=50-random.random()*100
 			arc=0
 
@@ -215,7 +229,7 @@ class Multiface(object):
 				)
 #			upn=int(self.root.ids['ux'].text())
 #			vpn=int(self.root.ids['vx'].text())
-
+				mov *= ms
 
 			for sfi,sfa in enumerate(self.comp):
 				try:

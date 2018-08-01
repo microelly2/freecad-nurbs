@@ -51,9 +51,17 @@ path="BaseApp/Preferences/Mod/nurbswb/editor"
 
 def setcf(name,value):
 	group = App.ParamGet("User parameter:"+path)
-	group.SetString(name, value)
+	group.SetFloat(name, value)
 
 def getcf(name):
+	group = App.ParamGet("User parameter:"+path)
+	return group.GetFloat(name)
+
+def setcs(name,value):
+	group = App.ParamGet("User parameter:"+path)
+	group.SetString(name, value)
+
+def getcs(name):
 	group = App.ParamGet("User parameter:"+path)
 	return group.GetString(name)
 	

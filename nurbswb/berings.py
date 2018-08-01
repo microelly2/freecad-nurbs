@@ -38,7 +38,7 @@ reload( nurbswb.miki_g)
 
 import nurbswb.configuration
 reload (nurbswb.configuration)
-from nurbswb.configuration import getcf,getcb
+from nurbswb.configuration import getcf,getcb,getcs
 
 
 
@@ -62,37 +62,11 @@ def checkcurve(curve):
 
 
 ##\cond
-class FeaturePython:
-	''' basic defs'''
 
-	def __init__(self, obj):
-		obj.Proxy = self
-		self.Object = obj
-		obj.addProperty("App::PropertyBool","_noExecute",'zzz')
-		obj.addProperty("App::PropertyBool","_debug",'zzz')
+import nurbswb.pyob
+from nurbswb.pyob import  FeaturePython,ViewProvider
+reload (nurbswb.pyob)
 
-	def attach(self, vobj):
-		self.Object = vobj.Object
-
-	def __getstate__(self):
-		return None
-
-	def __setstate__(self, state):
-		return None
-
-
-class ViewProvider:
-	''' basic defs '''
-
-	def __init__(self, obj):
-		obj.Proxy = self
-		self.Object = obj
-
-	def __getstate__(self):
-		return None
-
-	def __setstate__(self, state):
-		return None
 ##\endcond
 
 def copySketch(sketch,target):
@@ -118,6 +92,11 @@ def copySketch(sketch,target):
 ## Eine spezielle Bezier-Kurve, auf der alles aus dem Bering-Modul aufbaut
 #
 
+class _VPBering(ViewProvider): 
+	pass
+
+
+
 class Bering(FeaturePython):
 	'''special bezier curve'''
 
@@ -134,7 +113,7 @@ class Bering(FeaturePython):
 		obj.addProperty("App::PropertyFloatList","extraKnots") #.extraKnots=[0.2,0.4]
 		obj.addProperty("App::PropertyEnumeration","mode").mode=['curve','poles','compound']
 
-
+##\cond
 #	def onChanged(self, fp, prop):
 #		pass
 
@@ -240,6 +219,12 @@ class Bering(FeaturePython):
 			print "probleme mot sketch erstellung"
 			pass
 		print "fertig--------!"
+##\endcond
+
+
+class _VPBeface(ViewProvider): 
+	pass
+
 
 ## Eine Bezier-Fläche, die aus Berings zusammengesetzt ist
 
@@ -254,7 +239,9 @@ class Beface(FeaturePython):
 		obj.addProperty("App::PropertyBool","showStripes",'xyz diagnostic')
 		obj.addProperty("App::PropertyBool","generatedBackbone",'xyz diagnostic')
 
+
 	def execute(self,fp):
+		'''show strips or surface'''
 
 		if fp.showStripes:
 			self.showstripes(fp)
@@ -554,7 +541,13 @@ class Beface(FeaturePython):
 # wenn die Anzahl der Punkte durch 3 teilbar ist, wird eine geschlossene Kurve erzeugt
 #
 # wenn die Anzahl 3n+2 ist, ist die erzeugte Bezier offen und beginnt beim ersten Punkt
-#
+# \param start erster Knoten der Rippe
+# \param ende letzter Knoten der Rippen
+# \param scale Skalierung der Kurve
+# \param pos Verschiebung der Kurve
+# \param source Polygon oder Bezierkurve 
+# \param name Name des erzeugtn Objekts
+# \param show Wenn Falsch, wird erzeugts Objekt nicht angezeigt
 
 
 
@@ -570,7 +563,7 @@ def genk(start,ende,scale,pos,source,name="BeringSketch",show=True):
 		sk=App.ActiveDocument.addObject('Sketcher::SketchObjectPython',name)
 		if not show: sk.ViewObject.hide()
 		Bering(sk)
-		ViewProvider(sk.ViewObject)
+		_VPBering(sk.ViewObject)
 
 	sk.source=source
 	sk.start=start
@@ -682,7 +675,7 @@ def createBeface():
 	sf=App.ActiveDocument.addObject('Sketcher::SketchObjectPython','BeringFace')
 	Beface(sf)
 	sf.berings=sks
-	ViewProvider(sf.ViewObject)
+	_VPBeface(sf.ViewObject)
 
 
 
@@ -741,6 +734,7 @@ class Corner(FeaturePython):
 		obj.addProperty("App::PropertyInteger","modeC","Base")
 		ViewProvider(obj.ViewObject)
 
+##\cond
 	def execute(proxy,obj):
 		comps=_moveCorner(obj)
 		# comps=[obj.sourceA.Shape,obj.sourceB.Shape,obj.sourceC.Shape,]
@@ -771,7 +765,7 @@ class Corner(FeaturePython):
 			comps += [sa]
 			obj.Shape=Part.Compound(comps)
 
-
+##\endcond
 
 
 
@@ -844,6 +838,7 @@ def _moveCorner(res,onlypos=False):
 # be inverted by the  *Inverse flags
 
 
+
 class Product(FeaturePython):
 
 	def __init__(self, obj):
@@ -866,7 +861,7 @@ class Product(FeaturePython):
 		obj.addProperty("App::PropertyBool","vInverse")
 		obj.addProperty("App::PropertyBool","v2Inverse")
 
-
+##\cond
 	def execute(self,fp):
 
 		if fp.uSource2<>None and fp.vSource2<>None:
@@ -1042,6 +1037,10 @@ class Product(FeaturePython):
 ##\endcond
 
 
+class _VPProduct(ViewProvider): 
+	pass
+
+
 
 
 def createProduct():
@@ -1054,7 +1053,7 @@ def createProduct():
 
 	sf=App.ActiveDocument.addObject('Part::FeaturePython','ProductFace')
 	Product(sf)
-	ViewProvider(sf.ViewObject)
+	_VPProduct(sf.ViewObject,'/home/thomas/.FreeCAD/Mod/freecad-nurbs/icons/createProduct.svg')
 	sel=Gui.Selection.getSelection()
 	sf.uSource=sel[0]
 	sf.vSource=sel[1]
@@ -1067,7 +1066,7 @@ def createProduct():
 def debugP(pts,label):
 	'''a method to display points *pts* as wire in a object wth name *label*'''
 
-	print "debugP deaktiviert";return
+#	print "debugP deaktiviert";return
 
 	pts=[FreeCAD.Vector(p) for p in pts]
 	obj=App.ActiveDocument.getObject(label)
@@ -1104,7 +1103,10 @@ class FaceConnection(FeaturePython):
 		obj.addProperty("App::PropertyFloat","tangfacB").tangfacB=1
 		obj.addProperty("App::PropertyFloat","factor").factor=3
 
+
 	def execute(self,fp):
+		'''create a connection or the seam between the faces'''
+
 		if fp.mode=='Seam':
 			self.createSeam(fp)
 		else:
@@ -1156,9 +1158,10 @@ class FaceConnection(FeaturePython):
 			pb[:]=pb[:][::-1]
 			pb=pb.swapaxes(0,1)
 
-		debugP(pa[0],"pa_0")
-		debugP(pb[1],"pb_1_x")
-		debugP(pa[1],"pa_1_x")
+		if fp._debug:
+			debugP(pa[0],"pa_0")
+			debugP(pb[1],"pb_1_x")
+			debugP(pa[1],"pa_1_x")
 
 		poles=np.array([pa[0],pa[0]+fp.tangfacA*(pa[0]-pa[1]),pb[0]+fp.tangfacB*(pb[0]-pb[1]),pb[0]]).swapaxes(0,1)
 
@@ -1256,10 +1259,10 @@ class FaceConnection(FeaturePython):
 #				pb=pb[::-1]
 
 
-
-			debugP(pa[0],"pa_0")
-			debugP(pb[1],"pb_1_x")
-			debugP(pa[1],"pa_1_x")
+			if fp._debug:
+				debugP(pa[0],"pa_0")
+				debugP(pb[1],"pb_1_x")
+				debugP(pa[1],"pa_1_x")
 
 			if fp.mergeEdge:
 				pa[0]=pa[1]*tt+pb[1]*(1-tt)
@@ -1268,8 +1271,9 @@ class FaceConnection(FeaturePython):
 				ta=pa[1]-pa[0]
 				pa[1] = pa[0]+(ta-tb)
 
-			debugP(pa[0],"pa_0_neu")
-			debugP(pa[1],"pa_1_neu")
+			if fp._debug:
+				debugP(pa[0],"pa_0_neu")
+				debugP(pa[1],"pa_1_neu")
 
 
 			if fp.close:
@@ -1319,10 +1323,10 @@ class FaceConnection(FeaturePython):
 				pa=pa[::-1]
 			if fp.reverseB:
 				pb=pb[::-1]
-
-			debugP(pb[0],"pb_0")
-			debugP(pb[1],"pb_1")
-			debugP(pa[1],"pa_1")
+			if fp._debug:
+				debugP(pb[0],"pb_0")
+				debugP(pb[1],"pb_1")
+				debugP(pa[1],"pa_1")
 
 			if fp.mergeEdge:
 				pb[0]=pa[1]*tt+pb[1]*(1-tt)
@@ -1347,8 +1351,9 @@ class FaceConnection(FeaturePython):
 				#	ta=pa[-2]-pa[-1]
 				#	pb[-2] = pb[-1]+(tb-ta)
 
-			debugP(pb[0],"pb_0_neu")
-			debugP(pb[1],"pb_1_neu")
+			if fp._debug:
+				debugP(pb[0],"pb_0_neu")
+				debugP(pb[1],"pb_1_neu")
 
 
 			if fp.swapB:
@@ -1394,12 +1399,17 @@ def createSeam():
 
 
 def createDatumPlane():
+	'''create a PD DatumPlane'''
 	return App.activeDocument().addObject('PartDesign::Plane','DatumPlane')
 
 def createDatumLine():
+	'''create a PD DatumLine'''
 	return App.activeDocument().addObject('PartDesign::Line','DatumLine')
 
+##create the begrid curves reurn the result as a compound
+
 def begrid(bs,showTangents=True,showKnotCurves=True):
+		'''create the begrid curves return the result as a compound '''
 
 		comps=[]
 		if showTangents:
@@ -1455,6 +1465,7 @@ def begrid(bs,showTangents=True,showKnotCurves=True):
 
 		return comps
 
+## uiso curves and viso curves for the knots of bezier surface
 
 
 class BeGrid(FeaturePython):
@@ -1482,14 +1493,18 @@ class BeGrid(FeaturePython):
 		fp.ViewObject.PointColor=fp.Source.ViewObject.ShapeColor
 		fp.Shape=Part.Compound(comps)
 
+## create a BeGrid object for the selected objects''' 
+
 def createBeGrid():
+	'''create BeGrids for the selected objects''' 
+
 	for  fa in Gui.Selection.getSelection():
 
 		sf=App.ActiveDocument.addObject('Part::FeaturePython','BeGrid')
 		sf.ViewObject.ShapeColor=(0.5+random.random(),random.random(),random.random(),)
 		BeGrid(sf)
 
-		ViewProvider(sf.ViewObject)
+		ViewProvider(sf.ViewObject,'freecad-nurbs/icons/createBeGrid.svg')
 		sf.Source=fa
 
 		App.activeDocument().recompute()
@@ -1521,6 +1536,7 @@ def BSplineToBezierCurve():
 	t.Label=obj.Label+" Bezier"
 	t.Shape=bc2.toShape()
 	t.ViewObject.ControlPoints=True
+
 
 def BSplineToBezierCurve():
 	'''create a degree 3 curve with multiplicities always 3'''
@@ -1586,6 +1602,8 @@ def BSplineToBezierCurve():
 		t.ViewObject.ControlPoints=True
 #---------------
 
+## a Bezier Surface on base of a given BSpline Surface
+#
 
 class BezierSurface(FeaturePython):
 
@@ -1594,25 +1612,23 @@ class BezierSurface(FeaturePython):
 
 		obj.addProperty("App::PropertyLink","source")
 
-		obj.addProperty("App::PropertyInteger","offset")
-		obj.addProperty("App::PropertyInteger","level")
-		obj.addProperty("App::PropertyBool","swap")
-		obj.addProperty("App::PropertyBool","reverse")
-		obj.addProperty("App::PropertyFloat","tangentFactor")
+#		obj.addProperty("App::PropertyInteger","offset")
+#		obj.addProperty("App::PropertyInteger","level")
+#		obj.addProperty("App::PropertyBool","swap")
+#		obj.addProperty("App::PropertyBool","reverse")
+#		obj.addProperty("App::PropertyFloat","tangentFactor")
 
-		obj.tangentFactor=1
-
-
+#		obj.tangentFactor=1
 
 
 	def execute(self,fp):
 
-		bs=Part.BSplineSurface()
 		sf=fp.source.Shape.Face1.Surface
+		sf.increaseDegree(3,3)
 
 		um=sf.getUMultiplicities()
 		vm=sf.getVMultiplicities()
-
+		ww=sf.getWeights()
 
 		umults=sf.getUMultiplicities()
 		uknots=range(len(umults))
@@ -1627,26 +1643,26 @@ class BezierSurface(FeaturePython):
 			vmults,
 			uknots,
 			vknots,
-			False,False,3,3
+			False,False,3,3,
+			ww
 		)
 
 		for i in range(1,len(umults)-1):
-			print (i,umults[i])
 			if umults[i]<3:
 				bc2.insertUKnot(i,3,0)
 
 		for i in range(1,len(vmults)-1):
-			print (i,umults[i])
 			if vmults[i]<3:
 				bc2.insertVKnot(i,3,0)
 
-		fp.Shape=bs.toShape()
+		fp.Shape=bc2.toShape()
 
 
 
 #---------------
 
 
+## create a Bezier Surface for a selectde BSpline Surface
 
 def BSplineToBezierSurface():
 
@@ -2154,10 +2170,10 @@ def SurfaceEditor():
 
 ##\endcond
 
-
+## interactive add knots to a surface
 
 def addKnot():
-	'''inteactive add knots to a surface'''
+	'''interactive add knots to a surface'''
 
 ##\cond
 	layout = '''
@@ -2337,13 +2353,16 @@ def addKnot():
 ##\endcond
 
 
+## create connection objects for two given faces
+# two faces must be selected 
 
 def connectFaces():
+	'''create connection objects for two given faces'''
 
 	sf=App.ActiveDocument.addObject('Part::FeaturePython','FaceConnection')
 	sf.ViewObject.ShapeColor=(0.5+random.random(),random.random(),random.random(),)
 	FaceConnection(sf)
-	ViewProvider(sf.ViewObject)
+	
 	if 1:
 		(fa,fb)=Gui.Selection.getSelection()
 		sf.aSource=fa
@@ -2358,10 +2377,13 @@ def connectFaces():
 		sf.swapB=True
 		sf.mergeEdge=True
 
+	ViewProvider(sf.ViewObject)
 	App.activeDocument().recompute()
 
 
 
+# find  a common corner for three faces
+# 
 
 def fixCorner():
 
@@ -2371,7 +2393,9 @@ def fixCorner():
 	App.activeDocument().recompute()
 
 
-
+## a planer Bezier Face
+# size and number of poles configurable
+# some random noise cam be added
 
 
 
@@ -2383,6 +2407,8 @@ class BePlane(FeaturePython):
 		obj.addProperty("App::PropertyInteger","vSegments")
 		obj.addProperty("App::PropertyBool","swap")
 		obj.addProperty("App::PropertyBool","reverse")
+		obj.addProperty("App::PropertyBool","flatBorder")
+		obj.addProperty("App::PropertyBool","flatTangentBorder")
 		obj.addProperty("App::PropertyFloat","uSize")
 		obj.addProperty("App::PropertyFloat","vSize")
 		obj.addProperty("App::PropertyFloat","zSize")
@@ -2430,12 +2456,18 @@ class BePlane(FeaturePython):
 		for v in range(vc):
 			poles[:,v,1]=fp.vSize*v
 
-		if 0:
+		if fp.flatBorder:
 			poles[0,:,2]=0
 			poles[-1,:,2]=0
 			poles[:,0,2]=0
 			poles[:,-1,2]=0
-		
+		if fp.flatTangentBorder:
+			poles[0:2,:,2]=0
+			poles[-2:,:,2]=0
+			poles[:,0:2,2]=0
+			poles[:,-2:,2]=0
+
+
 		um=[4]+[1]*(fp.uSegments-1)+[4]
 		vm=[4]+[1]*(fp.vSegments-1)+[4]
 		bs=Part.BSplineSurface()
@@ -2463,7 +2495,13 @@ def createBePlane():
 	sf=App.ActiveDocument.addObject('Part::FeaturePython','BePlane')
 	sf.ViewObject.ShapeColor=(0.5+random.random(),random.random(),random.random(),)
 	BePlane(sf)
-	ViewProvider(sf.ViewObject)
+	ViewProvider(sf.ViewObject,'freecad-nurbs/icons/createBePlane.svg')
+
+
+## a cylindric Bezier Face
+# size and number of poles configurable
+# some random noise cam be added
+
 
 
 class BeTube(FeaturePython):
@@ -2558,7 +2596,7 @@ class BeTube(FeaturePython):
 
 
 
-
+'''
 	def Xexecute(self,fp): # gehts
 		uc=fp.uSegments*3+3
 		vc=fp.vSegments*3+1
@@ -2578,8 +2616,6 @@ class BeTube(FeaturePython):
 			um,vm,
 			range(len(um)),range(len(vm)),
 			True,False,3,3)
-
-
 
 		fp.Shape=bs.toShape()
 
@@ -2610,7 +2646,7 @@ class BeTube(FeaturePython):
 			bs.insertVKnot(i,3,0)
 
 		fp.Shape=bs.toShape()
-
+'''
 
 
 
@@ -2623,6 +2659,9 @@ def createBeTube():
 	BeTube(sf)
 	ViewProvider(sf.ViewObject)
 
+
+## connects an edge of a BePlane with a BeTube
+#
 
 class BePlaneTubeConnector(FeaturePython):
 
@@ -2693,6 +2732,8 @@ def createPlaneTubeConnector():
 
 
 
+## connects a tube and a helmet
+# schuhspitze an leisten
 
 
 
@@ -2785,10 +2826,15 @@ class HelmetTubeConnector(FeaturePython):
 
 
 
+
 def createHelmet():
 	import nurbswb.helmet
 	reload(nurbswb.helmet)
 	nurbswb.helmet.createHelmet()
+
+
+
+
 
 def createHelmetTubeConnector():
 	sf=App.ActiveDocument.addObject('Part::FeaturePython','BeConnector')
@@ -2797,7 +2843,8 @@ def createHelmetTubeConnector():
 	(sf.helmet,sf.tube)=Gui.Selection.getSelection()
 	ViewProvider(sf.ViewObject)
 
-
+## a Bezier face which connects 3 faces by a triangle layout
+#
 
 class BeTriangle(FeaturePython):
 
@@ -2823,8 +2870,9 @@ class BeTriangle(FeaturePython):
 
 		obj.edgeC="Edge1"
 		obj.edgeA="Edge1"
+		obj.edgeB="Edge1"
 
-
+##\cond
 	def execute(self,fp):
 
 		#zusammensetzung
@@ -2898,6 +2946,10 @@ class BeTriangle(FeaturePython):
 		print spb
 		print "--spc-----"
 		print spc
+		assert len(spa) == 4
+		assert len(spb) == 4
+		assert len(spc) == 7
+
 		assert (spa[-1]-spb[0]).Length<0.01
 		assert (spb[-1]-spc[-1]).Length<0.01
 		assert (spc[0]-spa[0]).Length<0.01
@@ -2943,7 +2995,7 @@ class BeTriangle(FeaturePython):
 		return
 		# ab hier tangentsspiele todo!!
 
-#--------------------------------
+		#--------------------------------
 		rA=np.array([rr[0],rr[0]+[-30,30,30]])
 		bs=Part.BSplineSurface()
 		bs.buildFromPolesMultsKnots(rA,
@@ -2953,7 +3005,7 @@ class BeTriangle(FeaturePython):
 		sk=App.ActiveDocument.addObject('Part::Spline','rA')
 		sk.Shape=bs.toShape()
 
-	#	rr[1]=rr[0]+rA[0]-rA[1]
+		#	rr[1]=rr[0]+rA[0]-rA[1]
 
 		rrs=rr.swapaxes(0,1)
 		
@@ -2995,7 +3047,6 @@ class BeTriangle(FeaturePython):
 
 
 
-
 		bs=Part.BSplineSurface()
 		bs.buildFromPolesMultsKnots(rru,
 			[4,4],[4,4],
@@ -3007,6 +3058,7 @@ class BeTriangle(FeaturePython):
 
 			bs.insertUKnot(1.5,3,0)
 
+##\endcond
 
 
 def createTriangle():
@@ -3019,7 +3071,7 @@ def createTriangle():
 	sf.ViewObject.ShapeColor=(0.5+random.random(),random.random(),random.random(),)
 	BeTriangle(sf)
 	(sf.curveA,sf.curveB,sf.curveC)=Gui.Selection.getSelection()
-	ViewProvider(sf.ViewObject)
+	ViewProvider(sf.ViewObject,'freecad-nurbs/icons/createTriangle.svg')
 
 
 def SplitIntoCells():
@@ -3101,6 +3153,8 @@ def createTangentStripes():
 #-----------------
 
 
+## a segmemt of a surface object 
+#
 
 class Cell(FeaturePython):
 
@@ -3129,7 +3183,7 @@ class Cell(FeaturePython):
 
 
 
-
+##\cond
 	def execute(self,fp):
 
 		bs=fp.source.Shape.Face1.Surface
@@ -3174,7 +3228,7 @@ class Cell(FeaturePython):
 			fp.ViewObject.DisplayMode="Shaded"
 			fp.ViewObject.Transparency=40
 
-
+##\endcond
 
 
 
@@ -3184,18 +3238,28 @@ class Cell(FeaturePython):
 
 
 def selectionToNurbs():
+
 	'''convert selection to a nurbs face and all edges tos nurbs curvse'''
 	obj=Gui.Selection.getSelection()[0]
-	f=obj.Shape.Face1
-	print f
-	n=f.toNurbs()
-	sf=n.Face1.Surface
-	for e in n.Edges:
-		print e
-		c=e.Curve
-		Part.show(c.toShape())
+	
+	#eine Flaeche oder alle
+	if len(obj.Shape.Faces) == 0:
+		for e in obj.Shape.Edges:
+			print e
+			c=e.Curve
+			Part.show(c.toShape())
 
-	Part.show(sf.toShape())
+	for f in obj.Shape.Faces:
+		# f=obj.Shape.Face1
+		print f
+		n=f.toNurbs()
+		sf=n.Face1.Surface
+		for e in n.Edges:
+			print e
+			c=e.Curve
+			Part.show(c.toShape())
+
+		Part.show(sf.toShape())
 
 
 
@@ -3238,6 +3302,8 @@ def createYankee():
 	sf.segment(1,2,0,1)
 	Part.show(sf.toShape())
 
+## create a quadrangle by 4 points 
+# \todo  documentation
 
 class QuadPm(FeaturePython):
 
@@ -3332,7 +3398,8 @@ def createQuadPlacement():
 	sf.sourceD=Gui.Selection.getSelection()[3]
 
 
-def checkCurveGUI():
+
+def _checkCurveGUI():
 	''' testcase checkcurve'''
 	obj=Gui.Selection.getSelection()[0]
 	curve=obj.Shape.Edge1.Curve
@@ -3806,7 +3873,7 @@ def createHole(fp,height=100):
 
 
 
-def createHoleGUI():
+def _createHoleGUI():
 	'''Gui for creater of a hole'''
 
 
@@ -3866,6 +3933,9 @@ def createHoleGUI():
 
 
 
+## gordon surface ao a set of ribs and meridians
+# \todo works only with compound
+#
 
 class GordonFace(FeaturePython):
 
@@ -4350,6 +4420,8 @@ def createTangentHelpersGUI():
 		cp=App.ActiveDocument.copyObject(obj)
 		cp.Placement.Base += axis2
 
+## the polygon of poles, which describe the border of a face
+#
 
 
 class Border(FeaturePython):
@@ -4385,23 +4457,164 @@ class Border(FeaturePython):
 		fp.Shape=Part.makePolygon(pts2)
 
 
+class _VPApprox(ViewProvider): 
+
+	def claimChildren(self):
+		try: return [self.Object.Source]
+		except: return [self.Object.Object.Source]
 
 
-def createBorderGUI():
+def createBorder(objs):
 
-	tt=App.ActiveDocument.addObject('Part::FeaturePython',"Border")
-	Border(tt)
-	tt.source=Gui.Selection.getSelection()[0]
-	ViewProvider(tt.ViewObject)
-	App.activeDocument().recompute()
+	for obj in objs:
+		tt=App.ActiveDocument.addObject('Part::FeaturePython',"Border")
+		Border(tt)
+		tt.source=obj
+		tt.Label="Border for " + obj.Label
+		ViewProvider(tt.ViewObject)
+		App.activeDocument().recompute()
 
 
+def _createBorderGUI():
+	createBorder(Gui.Selection.getSelection())
+
+##  the approximation of a curve by a bezier curve 
+# with parametric number of (equidistant) controlpoints
+
+class Approx(FeaturePython):
+
+	def __init__(self, obj):
+		FeaturePython.__init__(self, obj)
+		obj.addProperty("App::PropertyLink","Source")
+		obj.addProperty("App::PropertyFloat","tangentFactor").tangentFactor=10
+		obj.addProperty("App::PropertyInteger","segmentCount").segmentCount=6
+		obj.addProperty("App::PropertyInteger","wire").wire=0
+		obj.addProperty("App::PropertyInteger","edge")
+		obj.addProperty("App::PropertyBool","showPolygon")
+		obj.addProperty("App::PropertyBool","closed")
+		
+	def execute(self,fp):
+		try: self.Lock
+		except: self.Lock=False
+
+		if not self.Lock:
+			self.Lock=True
+			try:
+				print "run myexecute"
+				self.myexecute(fp)
+				pass
+			except:
+				print "problems with myexecute"
+			self.Lock=False
+		else:
+			print "no myexecute"
+
+
+	def onChanged(self,fp,prop):
+		if prop not in ['tangentFactor', 'segmentCount']: return
+		self.myupdate(fp)
+		print "change done"
+
+
+	def myupdate(self,fp):
+		if fp.Source==None:return
+		print ("update the core object",fp.Source.Label)
+
+		if fp.wire==-1:
+			a=fp.Source.Shape.Edges[fp.edge]
+		else:
+			a=fp.Source.Shape.Wires[fp.wire].Edges[fp.edge]
+		try:
+			c=a.Curve
+		except: return
+
+		poles=c.discretize(fp.segmentCount)
+
+		if fp.closed:
+			ptsa=poles[:-1]
+
+			pts=[]
+			k=fp.tangentFactor
+
+			for p in ptsa:
+				v=c.parameter(p)
+				[t]=c.tangent(v)
+				pts += [p-t*k,p,p+t*k]
+
+			pts=pts[1:]+[pts[0]]
+
+			bc=Part.BSplineCurve()
+
+			l=len(pts)+3
+			ms=[3]*(l/3)
+
+		else:
+			ptsa=poles
+
+			pts=[]
+			k=fp.tangentFactor
+
+			for p in ptsa:
+				v=c.parameter(p)
+				[t]=c.tangent(v)
+				pts += [p-t*k,p,p+t*k]
+
+			pts=pts[1:-1]
+
+			l=len(pts)-3
+			ms=[4]+[3]*(l/3)+[4]
+
+		ks=range(len(ms))
+
+		if fp.showPolygon:
+			fp.Shape=Part.makePolygon(pts)
+		else:
+			bc=Part.BSplineCurve()
+			bc.buildFromPolesMultsKnots(pts,ms,ks,fp.closed,3)
+			fp.Shape=bc.toShape()
+
+
+
+	def myexecute(self,fp):
+		pass
+#		fp.Shape=fp.Source.Shape
+#		fp.Source.purgeTouched()
+
+def createApprox(sels=None):
+
+	if sels==None:
+		sels=Gui.Selection.getSelection()
+
+	for  fa in sels:
+
+		sf=App.ActiveDocument.addObject('Part::FeaturePython','Approx')
+		sf.ViewObject.ShapeColor=(0.5+random.random(),random.random(),random.random(),)
+		Approx(sf)
+
+		sf.Source=fa
+		sf.Label="Approx for " + fa.Label
+		_VPApprox(sf.ViewObject,'freecad-nurbs/icons/AA.svg')
+
+		App.activeDocument().recompute()
+		sf.Proxy.execute(sf)
+
+
+def _createApproxGUI():
+	createApprox(Gui.Selection.getSelection())
+
+## start the createHole Dialog
 def AA():
 	createHoleGUI()
 
 
+## create a solid for all selected faces
+#
+# two objects are added:
+# a shell and a solid
+
 
 def BB():
+
 	sls=[a.Shape for a in Gui.Selection.getSelection()]
 
 	sh=Part.makeShell(sls)
@@ -4410,3 +4623,11 @@ def BB():
 
 	ssh=App.ActiveDocument.addObject('Part::Feature',"solid")
 	ssh.Shape=Part.makeSolid(sh)
+
+
+def BB():
+	# selectionToNurbs()
+	createApprox()
+	
+
+

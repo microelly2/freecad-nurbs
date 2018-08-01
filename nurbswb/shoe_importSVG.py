@@ -1487,8 +1487,15 @@ def export_svg():
 	__objs__=[]
 	# __objs__.append(FreeCAD.getDocument("tt4").getObject("MAP"))
 	__objs__= [FreeCAD.ActiveDocument.Line,FreeCAD.ActiveDocument.Circle]
+	__objs__= FreeCADGui.Selection.getSelection()
 	import importSVG
-	importSVG.export(__objs__,u"/home/thomas/Schreibtisch/xx.svg")
+	fn="/tmp/export.svg"
+	import time
+	fn='/tmp/export_'+str(time.time())+".svg"
+	print fn
+
+	print __objs__
+	importSVG.export(__objs__,fn)
 
 	del __objs__
 

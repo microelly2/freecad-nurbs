@@ -23,6 +23,8 @@
 
 __title__="FreeCAD Nurbs Library"
 
+__vers__="V???"
+
 
 import FreeCAD, FreeCADGui
 import sys
@@ -151,9 +153,9 @@ global _Command2
 
 class _Command2():
 
-	def __init__(self, lib=None, name=None, icon=None, command=None, modul='nurbswb'):
+	def __init__(self, lib=None, name=None, icon=None, command=None, modul='nurbswb',tooltip='No Tooltip'):
 
-		print ("!! command 2:",icon,modul,lib,command)
+		print ("!! command 2:",icon,modul,lib,command,tooltip)
 
 		if lib == None:
 			lmod = modul
@@ -175,12 +177,13 @@ class _Command2():
 		if name == None:
 			name = command
 		self.name = name
+		self.tooltip=tooltip
 
 	def GetResources(self):
 		if self.icon != None:
 			return {'Pixmap': self.icon,
 					'MenuText': self.name,
-					'ToolTip': self.name,
+					'ToolTip': self.tooltip,
 					'CmdType': "ForEdit"  # bleibt aktiv, wenn sketch editor oder andere tasktab an ist
 					}
 		else:
@@ -234,20 +237,15 @@ class _Command():
 		if command==None: command=lmod+".run()"
 		else: command =lmod + "."+command
 
-		print "axq"
 		self.lmod=lmod
 		self.command=command
 		self.modul=modul
-		print "axqq4"
 		try:
 			self.icon=  __dir__+ icon
 		except:
 			pass
-		print "axqs"
 		if name==None: name=command
-		print "axqq1"
 		self.name=name
-		print "axqq2"
 
 
 
@@ -379,7 +377,30 @@ FreeCAD.tcmdsNurbs = []
 # create menu entries
 
 
-def c3b(menu, isactive, name, text, icon='None', cmd=None, *info):
+def c3b(menu, isactive, name, text, icon=None, cmd=None, *info):
+
+	import re
+	global _Command2
+	if cmd == None:
+		cmd = re.sub(r' ', '', text) + '()'
+	if name == 0:
+		name = re.sub(r' ', '', text)
+#	if icon==None:
+#		pic=re.sub(r' ', '', text)
+#		icon='/../icons/'+pic+'.svg'
+
+	t = _Command2(name, text, icon, cmd, *info)
+	# if title ==0:
+	title = re.sub(r' ', '', text)
+#	print title
+	name1 = "Nurbs_" + title
+	t.IsActive = isactive
+	Gui.addCommand(name1, t)
+
+	FreeCAD.tcmdsNurbs.append([menu, name1])
+	return name1
+
+def c3bI(menu, isactive, name, text, icon='None', cmd=None, tooltip='',*info):
 
 	import re
 	global _Command2
@@ -391,17 +412,16 @@ def c3b(menu, isactive, name, text, icon='None', cmd=None, *info):
 		pic=re.sub(r' ', '', text)
 		icon='/../icons/'+pic+'.svg'
 
-	t = _Command2(name, text, icon, cmd, *info)
-	# if title ==0:
+	if tooltip=='':
+		tooltip=name
+	t = _Command2(name, text, icon, cmd, tooltip=tooltip,*info)
 	title = re.sub(r' ', '', text)
-#	print title
 	name1 = "Nurbs_" + title
 	t.IsActive = isactive
 	Gui.addCommand(name1, t)
-	print "hu"
-	
 	FreeCAD.tcmdsNurbs.append([menu, name1])
 	return name1
+
 
 
 def c3bG(menu, isactive, name, text, icon='None', cmd=None, *info):
@@ -409,7 +429,7 @@ def c3bG(menu, isactive, name, text, icon='None', cmd=None, *info):
 	import re
 	global _Command2
 	if cmd == None:
-		cmd = re.sub(r' ', '', text + 'GUI') + '()'
+		cmd = "_" + re.sub(r' ', '', text + 'GUI') + '()'
 	if name == 0:
 		name = re.sub(r' ', '', text + 'GUI')
 
@@ -442,26 +462,30 @@ def onspread():
 
 
 if FreeCAD.GuiUp:
-	c3b(["Bezier"], always, 'multiedit', 'multiEdit')
-	c3b(["Bezier"], always, 'berings', 'create BePlane')
-	c3b(["Bezier"], always, 'berings', 'create BeTube')
-	c3b(["Bezier"], always, 'berings', 'create Helmet')
-	c3b(["Bezier"], always, 'berings', 'create Triangle')
+
+	beztools=[]
+
+	beztools += [c3bI(["Bezier","Create"], always, 'berings', 'create BePlane')]
+
+	beztools += [c3b(["Bezier"], always, 'multiedit', 'multiEdit')]
+	beztools += [c3b(["Bezier","Create"], always, 'berings', 'create BeTube')]
+	beztools += [c3bI(["Bezier","Create"], always, 'berings', 'create Helmet')]
+	c3bI(["Bezier","Create"], always, 'berings', 'create Triangle')
 	c3b(["Bezier"], always, 'berings', 'create Plane Tube Connector')
 	c3b(["Bezier"], always, 'berings', 'create Helmet Tube Connector')
 	
 	c3b(["Bezier"], always, 'berings', 'create Bering')
 	c3b(["Bezier"], always, 'berings', 'create Beface')
 #	c3bG(["Bezier"], always, 'parameters', 'run')
-	c3b(["Bezier"], always, 'berings', 'create Product')
+	c3bI(["Bezier"], always, 'berings', 'create Product')
 	c3b(["Bezier"], always, 'berings', 'connect Faces')
 	c3b(["Bezier"], always, 'berings', 'create Seam')
-	c3b(["Bezier"], always, 'berings', 'AA')
-	c3b(["Bezier"], always, 'berings', 'BB')
+	beztools += [c3bI(["Bezier"], always, 'berings', 'AA',tooltip="Eine Testfunktion")]
+	beztools += [c3bI(["Bezier"], always, 'berings', 'BB',tooltip="Eine andere Testfunktion")]
 	c3b(["Bezier"], always, 'berings', 'fix Corner')
-	c3b(["Bezier"], always, 'berings', 'create Datum Plane')
-	c3b(["Bezier"], always, 'berings', 'create Datum Line')
-	c3b(["Bezier"], always, 'berings', 'create Be Grid')
+	c3b(["Bezier","Create"], always, 'berings', 'create Datum Plane')
+	c3b(["Bezier","Create"], always, 'berings', 'create Datum Line')
+	c3bI(["Bezier"], always, 'berings', 'create Be Grid')
 	c3b(["Bezier"], always, 'berings', 'create Tangent Stripes')
 	c3b(["Bezier"], always, 'berings', 'add Knot')
 	c3b(["Bezier"], always, 'berings', 'Surface Editor')
@@ -474,11 +498,13 @@ if FreeCAD.GuiUp:
 	c3b(["Bezier"], always, 'berings', 'stretch and bend')
 	c3bG(["Bezier"], always, 'berings', 'create Gordon')
 	c3bG(["Bezier"], always, 'berings', 'polish G1')
-	c3bG(["Bezier"], always, 'berings', 'create Hole')
+	c3bG(["Bezier"], always, 'berings', 'create Hole',"/../icons/alpha.svg")
 	c3bG(["Bezier"], always, 'berings', 'create Border')
 	c3bG(["Bezier"], always, 'berings', 'create Tangent Helpers')
-	
-	
+	c3b(["Bezier"],ondocument,'monitor','create a force monitor','/../icons/nurbs.svg',"runforce()")
+	c3bG(["Bezier"], always, 'berings', 'create Approx')
+
+
 
 #-------------------------------------------
 	mt="Transportation V0"
@@ -726,7 +752,6 @@ if FreeCAD.GuiUp:
 	c2a(["Sketchertools"],always,'Status56','sketcher_grids','Create Sketcher Grid',"/../icons/sketchgrid.svg","createGridSketch()","sketcher")
 
 
-	c2a(["Bezier"],ondocument,'monitorforce','monitor','create a force monitor','/../icons/nurbs.svg',"runforce()")
 
 
 # hier ist ein fehler
@@ -737,6 +762,12 @@ if FreeCAD.GuiUp:
 #	for cmd in FreeCADGui.listCommands():
 #		if cmd.startswith("Nurbs_"):
 #			print cmd
+
+
+	toolbars = [
+				['Bezier Tools', beztools]
+			]
+
 
 
 '''
@@ -780,6 +811,14 @@ static char * nurbs_xpm[] = {
 	def GetClassName(self):
 		return "Gui::PythonWorkbench"
 
+
+	def __init__(self, toolbars, version):
+
+		self.toolbars = toolbars
+		self.version = version
+
+
+
 	def Initialize(self):
 
 		Gui.activateWorkbench("DraftWorkbench")
@@ -808,12 +847,19 @@ static char * nurbs_xpm[] = {
 
 
 		if 1:
-			self.appendToolbar("Nurbs", cmds )
 			self.appendMenu("Nurbs", cmds)
 #			self.appendToolbar("TTT", cmds2 )
+			self.appendToolbar("Nurbs", cmds )
 			self.appendToolbar("Workspaces and Views", cmds3 )
 			self.appendToolbar("Points Workspaces and Views", cmds4 )
 			self.appendToolbar("Geodesic Patch Tests", cmds5 )
+
+			print "create toolbars-------------------------"
+			for t in self.toolbars:
+				print t
+				self.appendToolbar(t[0], t[1])
+
+
 		menues={}
 		ml=[]
 		for _t in FreeCAD.tcmds5:
@@ -848,5 +894,5 @@ static char * nurbs_xpm[] = {
 
 
 
-FreeCADGui.addWorkbench(NurbsWorkbench)
+FreeCADGui.addWorkbench(NurbsWorkbench(toolbars, __vers__))
 
