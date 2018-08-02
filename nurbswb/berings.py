@@ -1199,7 +1199,8 @@ class FaceConnection(FeaturePython):
 
 
 
-
+## the connection of two faces by modification of the connection borders
+#
 
 	def connect(self,fp):
 
@@ -3638,9 +3639,16 @@ def genbase(fp,pts,center=FreeCAD.Vector(),offset=2):
 	aa.ViewObject.hide()
 	return aa,ptsa
 
-
+## create a circle bspline curve
+# \param fp object with parameters for the location of the circle
+# \param h  height of the circle tube
+# \param radius of the circle
+# \param center position of the center
+# \param n  not used
+# returns a bering object and the list of the poles
 
 def gencircle(fp,n,h=300,radius=400,center=None):
+	'''create a circle bspline curve '''
 
 	c = 0.551915024494
 	radius=fp.radius
@@ -3662,7 +3670,6 @@ def gencircle(fp,n,h=300,radius=400,center=None):
 	]
 
 
-#	pts2=ptsa[3:]+ptsa[:3]
 	pts2=ptsa[fp.offset:]+ptsa[:fp.offset]
 
 
@@ -3673,25 +3680,24 @@ def gencircle(fp,n,h=300,radius=400,center=None):
 
 	ptsb=ptsa[1:]+ptsa[:1]
 	ptsb=ptsa
-	print "moechte " + fp.Name+"_circle_"+str(n)
-	
-	
+
 	sk=App.ActiveDocument.getObject(fp.Name+"_circle_"+str(n))
 	if sk == None:
 		sk=App.ActiveDocument.addObject('Part::Spline',fp.Name+"_circle_"+str(n))
 		#sk.ViewObject.hide()
 
 	sk.ViewObject.hide()
-	print "habe:",sk.Name
-	print "-#-#-#"
-	for p in ptsb:
-		print p
-	print "--------------"
+#	print "habe:",sk.Name
+#	print "-#-#-#"
+#	for p in ptsb:
+#		print p
+#	print "--------------"
 	sk.Shape=Part.makePolygon(ptsb)
 
 	source=App.ActiveDocument.ActiveObject
 	bb=genk(0,0,1,FreeCAD.Vector(),sk,sk.Name)
 	bb.ViewObject.hide()
+
 	print " Ergebnis ",bb.Name
 
 	return bb,ptsb
@@ -4457,6 +4463,7 @@ class Border(FeaturePython):
 		fp.Shape=Part.makePolygon(pts2)
 
 
+
 class _VPApprox(ViewProvider): 
 
 	def claimChildren(self):
@@ -4580,7 +4587,15 @@ class Approx(FeaturePython):
 #		fp.Shape=fp.Source.Shape
 #		fp.Source.purgeTouched()
 
+
+
+## create an approximation of a cure by a bezier curve
+# use equidistant points on the source curve as controlpoints
+# number of segements and force of the tangents is parametric
+# \param sels selected curve objects
+
 def createApprox(sels=None):
+	'''create an approximation of the curves by bezier curves'''
 
 	if sels==None:
 		sels=Gui.Selection.getSelection()

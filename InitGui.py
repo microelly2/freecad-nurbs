@@ -465,44 +465,57 @@ if FreeCAD.GuiUp:
 
 	beztools=[]
 
-	beztools += [c3bI(["Bezier","Create"], always, 'berings', 'create BePlane')]
 
-	beztools += [c3b(["Bezier"], always, 'multiedit', 'multiEdit')]
-	beztools += [c3b(["Bezier","Create"], always, 'berings', 'create BeTube')]
+	beztools += [c3bI(["Bezier","Create"], always, 'berings', 'create BePlane')]
+	beztools += [c3bI(["Bezier","Create"], always, 'berings', 'create BeTube')]
 	beztools += [c3bI(["Bezier","Create"], always, 'berings', 'create Helmet')]
-	c3bI(["Bezier","Create"], always, 'berings', 'create Triangle')
-	c3b(["Bezier"], always, 'berings', 'create Plane Tube Connector')
-	c3b(["Bezier"], always, 'berings', 'create Helmet Tube Connector')
-	
-	c3b(["Bezier"], always, 'berings', 'create Bering')
-	c3b(["Bezier"], always, 'berings', 'create Beface')
-#	c3bG(["Bezier"], always, 'parameters', 'run')
-	c3bI(["Bezier"], always, 'berings', 'create Product')
-	c3b(["Bezier"], always, 'berings', 'connect Faces')
-	c3b(["Bezier"], always, 'berings', 'create Seam')
-	beztools += [c3bI(["Bezier"], always, 'berings', 'AA',tooltip="Eine Testfunktion")]
-	beztools += [c3bI(["Bezier"], always, 'berings', 'BB',tooltip="Eine andere Testfunktion")]
-	c3b(["Bezier"], always, 'berings', 'fix Corner')
+
 	c3b(["Bezier","Create"], always, 'berings', 'create Datum Plane')
 	c3b(["Bezier","Create"], always, 'berings', 'create Datum Line')
-	c3bI(["Bezier"], always, 'berings', 'create Be Grid')
-	c3b(["Bezier"], always, 'berings', 'create Tangent Stripes')
+
+	c3bI(["Bezier","Assembly"], always, 'berings', 'create Triangle')
+	c3bI(["Bezier","Assembly"], always, 'berings', 'create Plane Tube Connector')
+	c3bI(["Bezier","Assembly"], always, 'berings', 'create Helmet Tube Connector')
+	
+	c3bI(["Bezier","Assembly"], always, 'berings', 'create Bering')
+	c3bG(["Bezier","Assembly"], always, 'berings', 'create Tangent Helpers')
+	c3bI(["Bezier","Assembly"], always, 'berings', 'create Beface')
+#	c3bG(["Bezier"], always, 'parameters', 'run')
+	c3bI(["Bezier","Assembly"], always, 'berings', 'create Product')
+	c3bI(["Bezier","Assembly"], always, 'berings', 'connect Faces')
+	c3bI(["Bezier","Assembly"], always, 'berings', 'create Seam')
+	c3bG(["Bezier","Assembly"], always, 'berings', 'create Gordon')
+
+	c3b(["Bezier","Convert"], always, 'berings', 'BSpline To Bezier Curve')
+	c3b(["Bezier","Convert"], always, 'berings', 'BSpline To Bezier Surface')
+	c3b(["Bezier","Convert"], always, 'berings', 'Face To Bezier Surface')
+	c3bG(["Bezier","Convert"], always, 'berings', 'create Approx')
+
+
+	beztools += [c3bI(["Bezier"], always, 'berings', 'AA',tooltip="Eine Testfunktion")]
+	beztools += [c3bI(["Bezier"], always, 'berings', 'BB',tooltip="Eine andere Testfunktion")]
+
 	c3b(["Bezier"], always, 'berings', 'add Knot')
-	c3b(["Bezier"], always, 'berings', 'Surface Editor')
-	c3b(["Bezier"], always, 'berings', 'BSpline To Bezier Curve')
-	c3b(["Bezier"], always, 'berings', 'BSpline To Bezier Surface')
-	c3b(["Bezier"], always, 'berings', 'Face To Bezier Surface')
-	c3b(["Bezier"], always, 'berings', 'Split Into Cells')
-	c3b(["Bezier"], always, 'berings', 'create Cell')
-	c3b(["Bezier"], always, 'berings', 'create QuadPlacement')
-	c3b(["Bezier"], always, 'berings', 'stretch and bend')
-	c3bG(["Bezier"], always, 'berings', 'create Gordon')
-	c3bG(["Bezier"], always, 'berings', 'polish G1')
-	c3bG(["Bezier"], always, 'berings', 'create Hole',"/../icons/alpha.svg")
-	c3bG(["Bezier"], always, 'berings', 'create Border')
-	c3bG(["Bezier"], always, 'berings', 'create Tangent Helpers')
-	c3b(["Bezier"],ondocument,'monitor','create a force monitor','/../icons/nurbs.svg',"runforce()")
-	c3bG(["Bezier"], always, 'berings', 'create Approx')
+	beztools += [c3b(["Bezier"], always, 'multiedit', 'multiEdit')]
+
+#	old version Surface Editor
+#	c3b(["Bezier"], always, 'berings', 'Surface Editor')
+
+	c3bI(["Bezier"], always, 'berings', 'create Be Grid')
+
+	c3bI(["Bezier","Segments"], always, 'berings', 'Split Into Cells')
+	c3bI(["Bezier","Segments"], always, 'berings', 'create Cell')
+	c3bG(["Bezier","Segments"], always, 'berings', 'create Hole',"/../icons/alpha.svg")
+	c3bG(["Bezier","Segments"], always, 'berings', 'create Border')
+
+	c3b(["Bezier","Convert"], always, 'berings', 'create QuadPlacement')
+	c3bI(["Bezier","Convert"], always, 'berings', 'stretch and bend')
+	c3bG(["Bezier","Convert"], always, 'berings', 'polish G1')
+
+	c3bI(["Bezier","Diagnostics"],ondocument,'monitor','create a force monitor','/../icons/nurbs.svg',"runforce()")
+
+	c3b(["Bezier"], always, 'berings', 'fix Corner')
+	c3b(["Bezier"], always, 'berings', 'create Tangent Stripes')
 
 
 
@@ -655,7 +668,7 @@ if FreeCAD.GuiUp:
 
 	c2a(["Faces"],always,'filledface','filledface','createFilledFace','/../icons/nurbs.svg',"createFilledFace()")
 
-	c2a(["Faces"],always,'ZebraTool','zebratool','ZebraTool','/../icons/zebra.svg',"run()")
+#	c2a(["Faces"],always,'ZebraTool','zebratool','ZebraTool','/../icons/zebra.svg',"run()")
 	c2a(["Faces"],always,'Curves to Face','curves2face','Curves to Face','/../icons/upgrade.svg',"run()")
 	c2a(["Faces"],always,'Segment','segment','Cut a segment of a Face','/../icons/nurbs.svg',"runsegment()")
 	c2a(["Faces"],always,'FineSegment','segment','Cut a fine segment of a Face','/../icons/nurbs.svg',"runfinesegment()")
