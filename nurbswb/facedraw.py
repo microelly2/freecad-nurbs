@@ -347,6 +347,10 @@ def drawcurve(wire,face,facepos=FreeCAD.Vector()):
 	#pts=[p.Point for p in w.Vertexes]
 	pts=[p.Point- wpos for p in w.Vertexes]
 	
+#	tt=App.ActiveDocument.addObject("Part::Spline","tt")
+#	tt.Shape=Part.makePolygon(pts)
+
+
 	sf=t.Surface
 
 	bs=sf
@@ -914,6 +918,8 @@ def createMap(mode=''):
 
 		moa=nurbswb.isodraw.createMap(mode)
 		moa.faceObject=face
+	
+	return moa
 
 
 ## stop the facecdraw eventserver

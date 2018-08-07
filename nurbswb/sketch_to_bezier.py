@@ -16,38 +16,14 @@ import numpy as np
 import time
 import random
 
-class FeaturePython:
-	''' basic defs'''
-
-	def __init__(self, obj):
-		obj.Proxy = self
-		self.Object = obj
-
-	def attach(self, vobj):
-		self.Object = vobj.Object
-
-	def claimChildren(self):
-		return self.Object.Group
-
-	def __getstate__(self):
-		return None
-
-	def __setstate__(self, state):
-		return None
+import nurbswb.pyob
+from nurbswb.pyob import  FeaturePython,ViewProvider
+reload (nurbswb.pyob)
 
 
-class ViewProvider:
+
+class _VP(ViewProvider):
 	''' basic defs '''
-
-	def __init__(self, obj):
-		obj.Proxy = self
-		self.Object = obj
-
-	def __getstate__(self):
-		return None
-
-	def __setstate__(self, state):
-		return None
 
 
 	def setupContextMenu(self, obj, menu):
@@ -121,7 +97,7 @@ class BezierSketch(FeaturePython):
 		self.aa = None
 		obj.addProperty("App::PropertyInteger",'polescount',).polescount=12
 		obj.addProperty("App::PropertyBool",'init')
-		ViewProvider(obj.ViewObject)
+		_VP(obj.ViewObject)
 	##\endcond
 
 
@@ -291,7 +267,7 @@ class FollowerSketch(FeaturePython):
 		self.obj2 = obj
 		self.aa = None
 		obj.addProperty("App::PropertyBool",'init')
-		ViewProvider(obj.ViewObject)
+		_VP(obj.ViewObject)
 		self.timestamp=time.time()
 	##\endcond
 
@@ -383,7 +359,7 @@ class ArcSketch(FeaturePython):
 		obj.addProperty("App::PropertyLink",'source')
 		obj.addProperty("App::PropertyInteger",'countArcs').countArcs=2
 		
-		ViewProvider(obj.ViewObject)
+		_VP(obj.ViewObject)
 		self.timestamp=time.time()
 	##\endcond
 

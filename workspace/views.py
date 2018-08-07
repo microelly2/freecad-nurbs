@@ -77,6 +77,8 @@ class ViewProvider:
 				fp=obj.Object
 				title=fp.Label
 				v=Gui.createViewer(4,title)
+				for i in range(4):
+					v.getViewer(i).setEnabledNaviCube(False)
 				updatencontent(v,fp.objs,fp)
 				fp.Proxy.v=v
 
@@ -107,6 +109,8 @@ class ViewProviderH2:
 				fp=obj.Object
 				title=fp.Label
 				v=Gui.createViewer(4,title)
+				for i in range(4):
+					v.getViewer(i).setEnabledNaviCube(False)
 				resizeWindows(v,fp)
 				# updatencontenth2(v,fp.obja,fp.objb,fp.objs,fp)
 				fp.Proxy.v=v
@@ -317,6 +321,9 @@ def createquadview():
 	title=', '.join(labels)
 
 	v=Gui.createViewer(4,title)
+	for i in range(4):
+		v.getViewer(i).setEnabledNaviCube(False)
+
 
 	a=FreeCAD.ActiveDocument.addObject("Part::FeaturePython","MyQuadView")
 	QuadView(a,"QuadView for "+ title )
@@ -337,6 +344,9 @@ def updatencontent(viewer,objs,fp,clearSel=True,fit=True):
 	except:
 		title=fp.Label
 		viewer=Gui.createViewer(4,title)
+		for i in range(4):
+			viewer.getViewer(i).setEnabledNaviCube(False)
+
 		fp.Proxy.v=viewer
 
 	v=viewer
@@ -509,6 +519,9 @@ def updatencontenth2(viewer,obja,objb,objs,fp,clearSel=True,fit=True):
 	except:
 		title=fp.Label
 		viewer=Gui.createViewer(4,title)
+		for i in range(4):
+			viewer.getViewer(i).setEnabledNaviCube(False)
+
 		fp.Proxy.v=viewer
 
 	v=viewer
@@ -1273,6 +1286,9 @@ class ViewProviderDR:
 				fp=obj.Object
 				title=fp.Label
 				v=Gui.createViewer(2,title)
+				for i in range(2):
+					v.getViewer(i).setEnabledNaviCube(False)
+
 				setsizeDR(title)
 				
 				fp.Proxy.v=v
@@ -1314,6 +1330,9 @@ def createdarkroom():
 	title="Darkroom for "+obja.Label
 
 	v=Gui.createViewer(2,title)
+	for i in range(2):
+		v.getViewer(i).setEnabledNaviCube(False)
+
 	setsizeDR(title)
 
 

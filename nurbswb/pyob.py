@@ -37,6 +37,11 @@ class FeaturePython:
 	def __setstate__(self, state):
 		return None
 
+	def onBeforeChange(self, fp, prop):
+		pass
+
+	def onDocumentRestored(self, fp):
+		pass
 
 class ViewProvider:
 	''' basic defs '''
@@ -51,6 +56,9 @@ class ViewProvider:
 		else: ic= FreeCAD.ConfigGet("UserAppData") +'/Mod/' + icon 
 
 		obj.addProperty("App::PropertyString",'icon').icon=ic
+
+#	def onDelete(self, obj, subelements):
+#		return False
 
 	def __getstate__(self):
 		return None

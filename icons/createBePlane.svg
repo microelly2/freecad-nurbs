@@ -15,7 +15,7 @@
    id="svg3364"
    sodipodi:version="0.32"
    inkscape:version="0.48.4 r9939"
-   sodipodi:docname="createbeplane.svg"
+   sodipodi:docname="createBePlane.svg"
    inkscape:output_extension="org.inkscape.output.svg.inkscape"
    version="1.1">
   <defs
@@ -418,7 +418,7 @@
          inkscape:connector-curvature="0"
          sodipodi:nodetypes="cccccc" />
       <path
-         style="fill:#ff00ff;fill-opacity:1;stroke:#cf72c0;stroke-width:2.03668189;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
+         style="fill:#00ffff;fill-opacity:1;stroke:#cf72c0;stroke-width:2.03668189000000011;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
          d="M 7.0183409,20.508943 C 24.222955,17.196568 49.944598,25.498322 56.832968,8.1183409 l 0,35.8727921 C 36.51835,36.097978 21.84043,46.524095 7.0183409,56.481659 c 1.1279785,-12.087589 9.8827191,-24.828901 0,-35.972716 z"
          id="path3851-5"
          inkscape:connector-curvature="0"

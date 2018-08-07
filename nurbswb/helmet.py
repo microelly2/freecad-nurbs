@@ -23,22 +23,6 @@ from nurbswb.pyob import  FeaturePython,ViewProvider
 reload (nurbswb.pyob)
 
 
-class FeaturePython:
-	''' basic defs'''
-
-	def __init__(self, obj):
-		obj.Proxy = self
-		self.Object = obj
-
-	def attach(self, vobj):
-		self.Object = vobj.Object
-
-	def __getstate__(self):
-		return None
-
-	def __setstate__(self, state):
-		return None
-
 
 class _VPH(ViewProvider):
 	''' basic defs '''

@@ -128,11 +128,12 @@ class MyTestCmd2:
 	"""Opens a Qt dialog with all inserted unit tests"""
 	def Activated(self):
 		import QtUnitGui
+		import nurbswb.TestNurbsGui
+		reload(nurbswb.TestNurbsGui)
+		import nurbswb.TestNurbs
+		reload(nurbswb.TestNurbs)
 		QtUnitGui.addTest("nurbswb.TestNurbsGui")
 		QtUnitGui.addTest("nurbswb.TestNurbs")
-		QtUnitGui.addTest("nurbswb.TestMeinAll.Col1")
-		QtUnitGui.addTest("nurbswb.TestMeinAll.Col2")
-		QtUnitGui.addTest("TestMeinAll.Col2")
 
 	def GetResources(self):
 		return {'MenuText': 'Test-test...', 'ToolTip': 'Runs the self-test for the workbench'}
@@ -470,33 +471,33 @@ if FreeCAD.GuiUp:
 	beztools += [c3bI(["Bezier","Create"], always, 'berings', 'create BeTube')]
 	beztools += [c3bI(["Bezier","Create"], always, 'berings', 'create Helmet')]
 
-	c3b(["Bezier","Create"], always, 'berings', 'create Datum Plane')
-	c3b(["Bezier","Create"], always, 'berings', 'create Datum Line')
+#	c3b(["Bezier","Create"], always, 'berings', 'create Datum Plane')
+#	c3b(["Bezier","Create"], always, 'berings', 'create Datum Line')
 
 	c3bI(["Bezier","Assembly"], always, 'berings', 'create Triangle')
 	c3bI(["Bezier","Assembly"], always, 'berings', 'create Plane Tube Connector')
 	c3bI(["Bezier","Assembly"], always, 'berings', 'create Helmet Tube Connector')
 	
 	c3bI(["Bezier","Assembly"], always, 'berings', 'create Bering')
-	c3bG(["Bezier","Assembly"], always, 'berings', 'create Tangent Helpers')
+	c3bG(["Bezier","Assembly"], always, 'berings', 'create Tangent Helpers',"/../icons/alpha.svg")
 	c3bI(["Bezier","Assembly"], always, 'berings', 'create Beface')
 #	c3bG(["Bezier"], always, 'parameters', 'run')
 	c3bI(["Bezier","Assembly"], always, 'berings', 'create Product')
 	c3bI(["Bezier","Assembly"], always, 'berings', 'connect Faces')
 	c3bI(["Bezier","Assembly"], always, 'berings', 'create Seam')
-	c3bG(["Bezier","Assembly"], always, 'berings', 'create Gordon')
+	c3bI(["Bezier","Assembly"], always, 'berings', 'create Gordon')
 
 	c3b(["Bezier","Convert"], always, 'berings', 'BSpline To Bezier Curve')
 	c3b(["Bezier","Convert"], always, 'berings', 'BSpline To Bezier Surface')
 	c3b(["Bezier","Convert"], always, 'berings', 'Face To Bezier Surface')
-	c3bG(["Bezier","Convert"], always, 'berings', 'create Approx')
+	c3bG(["Bezier","Convert"], always, 'berings', 'create Approx',"/../icons/alpha.svg")
 
 
 	beztools += [c3bI(["Bezier"], always, 'berings', 'AA',tooltip="Eine Testfunktion")]
 	beztools += [c3bI(["Bezier"], always, 'berings', 'BB',tooltip="Eine andere Testfunktion")]
 
-	c3b(["Bezier"], always, 'berings', 'add Knot')
-	beztools += [c3b(["Bezier"], always, 'multiedit', 'multiEdit')]
+	c3bI(["Bezier"], always, 'berings', 'add Knot')
+	beztools += [c3bI(["Bezier"], always, 'multiedit', 'multiEdit')]
 
 #	old version Surface Editor
 #	c3b(["Bezier"], always, 'berings', 'Surface Editor')
@@ -505,17 +506,20 @@ if FreeCAD.GuiUp:
 
 	c3bI(["Bezier","Segments"], always, 'berings', 'Split Into Cells')
 	c3bI(["Bezier","Segments"], always, 'berings', 'create Cell')
-	c3bG(["Bezier","Segments"], always, 'berings', 'create Hole',"/../icons/alpha.svg")
-	c3bG(["Bezier","Segments"], always, 'berings', 'create Border')
+	c3bI(["Bezier","Segments"], always, 'berings', 'create Hole')
+	c3bG(["Bezier","Segments"], always, 'berings', 'create Border',"/../icons/alpha.svg")
 
-	c3b(["Bezier","Convert"], always, 'berings', 'create QuadPlacement')
+	c3bI(["Bezier","Convert"], always, 'berings', 'create QuadPlacement',"/../icons/alpha.svg")
 	c3bI(["Bezier","Convert"], always, 'berings', 'stretch and bend')
-	c3bG(["Bezier","Convert"], always, 'berings', 'polish G1')
+	c3bG(["Bezier","Convert"], always, 'berings', 'polish G1',"/../icons/alpha.svg")
 
 	c3bI(["Bezier","Diagnostics"],ondocument,'monitor','create a force monitor','/../icons/nurbs.svg',"runforce()")
 
-	c3b(["Bezier"], always, 'berings', 'fix Corner')
-	c3b(["Bezier"], always, 'berings', 'create Tangent Stripes')
+	c3bI(["Bezier","Specials"], always, 'berings', 'fix Corner')
+	c3bI(["Bezier","Specials"], always, 'berings', 'create Tangent Stripes')
+	
+	c3bI(["Bezier","Specials"], always, 'berings', 'glaetten')
+	c3bI(["Bezier","Specials"], always, 'berings', 'solid')
 
 
 

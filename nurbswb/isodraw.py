@@ -80,7 +80,7 @@ def createShape(obj):
 
 #	print "CreateShape for obj:",obj.Label
 
-	pointCount=obj.pointcount
+	#pointCount=obj.pointcount
 	#pointCount=50
 
 	[uv2x,uv2y,xy2u,xy2v]=[obj.mapobject.Proxy.uv2x,obj.mapobject.Proxy.uv2y,obj.mapobject.Proxy.xy2u,obj.mapobject.Proxy.xy2v]
@@ -114,7 +114,17 @@ def createShape(obj):
 
 	for i,w in enumerate(wires):
 		# print ("Wire ...",i,pointCount)
-		ptsaa=w.discretize(pointCount)
+		FreeCAD.w=w
+		for i,ee in enumerate(w.Edges):
+			ct=max(int(round(ee.Length/obj.pointdist)),2)
+			if i == 0:
+				ptsaa= ee.discretize(ct)
+			else:
+				pts=ee.discretize(ct)
+				if pts[-1]==ptsaa[-1]:
+					pts=pts[::-1]
+				ptsaa += pts[1:]
+
 		pts=[p-pos for p in ptsaa]
 		
 		pts2=[]
@@ -182,8 +192,12 @@ class Isodraw(PartFeature):
 		obj.addProperty("App::PropertyLink","mapobject","Details","configuration objekt for mapping")
 		obj.addProperty("App::PropertyBool","drawFace","Output","display subface cut by the wire projection")
 		obj.addProperty("App::PropertyBool","reverseFace","Output","display inner or outer subface")
-		obj.addProperty("App::PropertyInteger","pointcount","Details","count of points to discretize source wire")
-		obj.pointcount=100
+#		obj.addProperty("App::PropertyInteger","pointcount","Details","count of points to discretize source wire")
+#		
+#		obj.pointcount=100
+
+		obj.addProperty("App::PropertyInteger","pointdist","Details",)
+		obj.pointdist=1000
 
 		obj.addProperty("App::PropertyLink","backref","Workspace")
 
@@ -543,9 +557,10 @@ def createGrid(mapobj,upmode=False):
 	import numpy as np
 
 	sf=face.Surface
+	
 	if sf.__class__.__name__ == 'Cone':
 
-		alpha,beta,hmin,hmax = FreeCAD.face.ParameterRange
+		alpha,beta,hmin,hmax = face.ParameterRange
 
 		r2=sf.Radius
 		r1=(sf.Apex-sf.Center).Length
@@ -1566,6 +1581,7 @@ def map2Dto3D():
 		w.ViewObject.LineColor=color
 		App.activeDocument().recompute()
 
+	return f
 
 #------------------------
 
@@ -1691,7 +1707,11 @@ def getmap(mapobj,obj):
 
 
 	print "hack B-BB su sv aa bb"
+	print face
+	print obj.Label
 	print ("get map parametr Range ",face.ParameterRange)
+	print "BS CLASS_______!!_______________",bs.__class__.__name__
+	print "isodraw.py zele  1705"
 	
 	if bs.__class__.__name__=='Cylinder':
 		print "CYLINDER MODE!!"
@@ -1712,6 +1732,43 @@ def getmap(mapobj,obj):
 
 
 		return [m_uv2x,m_uv2y,m_xy2u,m_xy2v]
+
+	if bs.__class__.__name__=='Cone':
+		print "CONE MODE!!"
+
+		alpha,beta,hmin,hmax = face.ParameterRange
+
+
+		r2=bs.Radius
+		r1=(bs.Apex-bs.Center).Length
+
+		alpha=r2*np.pi/r1
+
+		su=21
+		sv=21
+
+
+		def m_uv2y(u,v):
+			u,v=v,u
+			return (r1+hmax*v/sv/1000)*np.cos((alpha)*u/su*np.pi)
+			return (r1+hmax*v/sv)*np.cos((alpha)*u/su*np.pi)/1000
+
+		def m_uv2x(u,v):
+			u,v=v,u
+			return (r1+hmax*v/sv/1000)*np.sin((alpha)*u/su*np.pi)
+			return (r1+hmax*v/sv)*np.sin((alpha)*u/su*np.pi)/1000
+
+		def m_xy2u(x,y):
+			return np.arctan2(x,y)/alpha*su/np.pi
+
+		def m_xy2v(x,y):
+			v=(FreeCAD.Vector(x,y,0).Length-r1)  /hmax*1000*sv
+			return v
+
+		return [m_uv2x,m_uv2y,m_xy2u,m_xy2v]
+
+
+
 
 
 #	su=face.ParameterRange[1]
