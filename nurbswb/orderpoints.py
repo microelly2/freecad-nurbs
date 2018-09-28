@@ -17,7 +17,9 @@ Gui=FreeCADGui
 import scipy as sp
 from scipy.signal import argrelextrema
 import numpy as np
-import matplotlib.pyplot as plt
+
+import Plot2 as plt
+
 from PySide import QtGui
 import sys,traceback,random
 
@@ -113,9 +115,13 @@ def orderdata(obj,inner=False,plotit=False,medianfil=0,cf=True):
 		mmaa=y2[f:-f]
 
 		if plotit:
-			plt.plot(kaps,radss, 'bx')
-			plt.plot(kaps,mmaa, 'r-')
-			plt.show()
+			import Plot2
+			Plot2.figureWindow("Win1")
+
+			Plot2.plot(kaps,radss, 'radss')
+			Plot2.plot(kaps,mmaa, 'mmaa')
+			Plot2.legend(True)
+			# plt.show()
 
 	else:
 
@@ -142,10 +148,17 @@ def orderdata(obj,inner=False,plotit=False,medianfil=0,cf=True):
 
 
 		if plotit:
-			plt.plot(kaps,radss, 'r-')
-			plt.plot(zaps,mm, 'bo-')
-			plt.plot(kaps,mmaa, 'b-')
-			plt.show()
+			import Plot2
+			Plot2.figureWindow("Win2")
+			Plot2.plot(kaps,radss, 'radss')
+			Plot2.plot(kaps,mm, 'mm')
+			Plot2.plot(kaps,mmaa, 'mmaa')
+			Plot2.legend(True)
+
+#			plt.plot(kaps,radss, 'r-')
+#			plt.plot(zaps,mm, 'bo-')
+#			plt.plot(kaps,mmaa, 'b-')
+#			plt.show()
 
 	y= np.cos(kaps)
 	x=np.sin(kaps)
@@ -200,6 +213,8 @@ def run():
 
 	inner=False
 	outer=False
+	inner=True
+	outer=True
 
 	for obj in Gui.Selection.getSelection():
 		if median:

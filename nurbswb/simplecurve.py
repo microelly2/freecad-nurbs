@@ -17,7 +17,7 @@ Gui=FreeCADGui
 
 from scipy.signal import argrelextrema
 import numpy as np
-import matplotlib.pyplot as plt
+#import matplotlib.pyplot as plt
 
 from PySide import QtGui
 import sys,traceback,random

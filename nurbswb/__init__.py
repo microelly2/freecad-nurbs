@@ -19,6 +19,8 @@
 #  Berings enthält die Methoden zum Umgang mit Bezier-Kurven und -Flächen
 
 
+## @package nurbswb.approximation
+# Methoden für Näherungslösungen für Kurven und Flächen
 
 ##\cond
 def sayErr():

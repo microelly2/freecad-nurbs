@@ -465,11 +465,17 @@ def onspread():
 if FreeCAD.GuiUp:
 
 	beztools=[]
-
+	beztools += [c3bI(["Faces"], always, 'tripod_2', 'create Tripod')]
+	beztools += [c3bI(["Points"], always, 'approximator', 'load Pointcloud from Image')]
+	beztools += [c3bI(["Points"], always, 'approximator', 'smooth Pointcloud')]
+	beztools += [c3bI(["Bezier"], always, 'leastsq', 'leastsq Bezier')]
+	beztools += [c3bI(["Bezier"], always, 'leastsq', 'leastsq Bezier Two Segments')]
+	beztools += [c3bI(["Bezier"], always, 'berings', 'create Sketch Circle')]
 
 	beztools += [c3bI(["Bezier","Create"], always, 'berings', 'create BePlane')]
 	beztools += [c3bI(["Bezier","Create"], always, 'berings', 'create BeTube')]
 	beztools += [c3bI(["Bezier","Create"], always, 'berings', 'create Helmet')]
+	
 
 #	c3b(["Bezier","Create"], always, 'berings', 'create Datum Plane')
 #	c3b(["Bezier","Create"], always, 'berings', 'create Datum Line')
@@ -478,7 +484,7 @@ if FreeCAD.GuiUp:
 	c3bI(["Bezier","Assembly"], always, 'berings', 'create Plane Tube Connector')
 	c3bI(["Bezier","Assembly"], always, 'berings', 'create Helmet Tube Connector')
 	
-	c3bI(["Bezier","Assembly"], always, 'berings', 'create Bering')
+	beztools += [c3bI(["Bezier","Assembly"], always, 'berings', 'create Bering')]
 	c3bG(["Bezier","Assembly"], always, 'berings', 'create Tangent Helpers',"/../icons/alpha.svg")
 	c3bI(["Bezier","Assembly"], always, 'berings', 'create Beface')
 #	c3bG(["Bezier"], always, 'parameters', 'run')
@@ -520,6 +526,8 @@ if FreeCAD.GuiUp:
 	
 	c3bI(["Bezier","Specials"], always, 'berings', 'glaetten')
 	c3bI(["Bezier","Specials"], always, 'berings', 'solid')
+	c3bI(["Bezier","Specials"], always, 'approximation', 'create Approximation')
+	c3bI(["Bezier","Specials"], always, 'approximation', 'create Poles for Test')
 
 
 

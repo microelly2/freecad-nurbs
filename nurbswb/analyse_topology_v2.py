@@ -16,7 +16,6 @@ Gui=FreeCADGui
 import Part,Points
 
 import networkx as nx
-import matplotlib.pyplot as plt
 import random
 import os 
 import nurbswb
@@ -144,12 +143,12 @@ def loadModel(s):
 		#g.node[n]['fdirs']=[]
 
 
-def displayMatplot():
-	# display in matplotlib
-	pos=nx.get_node_attributes(g,'pos')
-	nx.draw(g,pos)
-	plt.show()
-	# plt.savefig("/tmp/path.png")
+#def displayMatplot():
+#	# display in matplotlib
+#	pos=nx.get_node_attributes(g,'pos')
+#	nx.draw(g,pos)
+#	#p-l-t.show()
+#	# p-l-t.savefig("/tmp/path.png")
 
 
 def getkey(n):

@@ -68,12 +68,12 @@ def runtaubin(obj):
 	except:
 		return
 
-	print obj
-	print obj.Shape
+#	print obj
+#	print obj.Shape
 	if obj.discretizeCount == 0:
 		pts=[v.Point for v in obj.Wire.Shape.Vertexes]
 		#pts=obj.Wire.Points
-		print pts
+#		print pts
 		if len(pts)==2:
 			pts=obj.Wire.Shape.Edge1.discretize(obj.discretizeCount)
 	else:
@@ -105,7 +105,11 @@ def runtaubin(obj):
 	drawtracks(pts,pp,"Diff_for_"+str(obj.Name))
 
 	if obj.createBSpline:
-		obj.Shape=Part.BSplineCurve(pp).toShape()
+		if obj.closeBSpline:
+			qq=[(pp[0]+pp[-1])*0.5]+pp[1:-1]+[(pp[0]+pp[-1])*0.5]
+			obj.Shape=Part.BSplineCurve(qq).toShape()
+		else:
+			obj.Shape=Part.BSplineCurve(pp).toShape()
 	else:
 		obj.Shape=Part.makePolygon(pp)		
 
@@ -126,23 +130,31 @@ class Taub(PartFeature):
 	
 		obj.addProperty("App::PropertyLink","Wire")
 		obj.addProperty("App::PropertyBool","createBSpline","smooth")
+		obj.addProperty("App::PropertyBool","closeBSpline","smooth")
 		obj.addProperty("App::PropertyInteger","discretizeCount").discretizeCount=30
 		
 		
 	
 	def onChanged(self, obj, prop):
-			print "onchange",prop
-			if prop in ["pf","pf2",'count','start','end','createBSpline']:
+			print "onchange--",prop
+			if prop in ["pf","pf2",'count','discretizeCount','start','end','createBSpline']:
+				print "Aktualisierebn"
 				runtaubin(obj)
 
 
 
-def smoothWire():
-	a=FreeCAD.ActiveDocument.addObject("Part::FeaturePython","smooth")
+def smoothWire(sel=None,name=None):
+	if name == None:
+		name= "smooth"
+	a=FreeCAD.ActiveDocument.addObject("Part::FeaturePython",name)
 	Taub(a,"Smooth")
 	#a.Wire=App.ActiveDocument.DWire
-	try: a.Wire=Gui.Selection.getSelection()[0]
-	except: pass
+	if sel <>None:
+		a.Wire=sel
+	else:
+		try: a.Wire=Gui.Selection.getSelection()[0]
+		except: pass
+
 	ViewProvider(a.ViewObject)
 	a.ViewObject.LineColor=(1.,1.,0.)
 	a.ViewObject.PointColor=(0.5,0.,0.)
@@ -540,7 +552,7 @@ def drawtracks(ptsa,ptsb,name='ColorPath'):
 	ls=[]
 	n=FreeCAD.Vector()
 	for p,q in zip(ptsa,ptsb):
-		print q-p
+#		print q-p
 		ls += [p,p+(q-p)*20,p]
 
 	iv.Buffer=genbuffer(ls,8)

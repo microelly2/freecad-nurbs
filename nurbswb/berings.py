@@ -106,16 +106,63 @@ class Bering(FeaturePython):
 		obj.addProperty("App::PropertyLink","source")
 		obj.addProperty("App::PropertyInteger","start")
 		obj.addProperty("App::PropertyInteger","end")
+
+
+
+
+
 		obj.addProperty("App::PropertyFloat","scale").scale=1.0
 		obj.addProperty("App::PropertyBool","detach").detach
 		obj.addProperty("App::PropertyBool","cyclic")
 		obj.addProperty("App::PropertyBool","inverse")
 		obj.addProperty("App::PropertyFloatList","extraKnots") #.extraKnots=[0.2,0.4]
 		obj.addProperty("App::PropertyEnumeration","mode").mode=['curve','poles','compound']
+		obj.addProperty("App::PropertyBool","stripmode")
+		obj.addProperty("App::PropertyBool","stripsymmetric")
+		obj.addProperty("App::PropertyFloat","stripalpha").stripalpha=90
+
+		obj.addProperty("App::PropertyPlacement","prePlacement","pretangent")
+		obj.addProperty("App::PropertyVector","preScale","pretangent")
+		obj.addProperty("App::PropertyFloat","preHeight","pretangent")
+		
+
+		obj.addProperty("App::PropertyPlacement","postPlacement","posttangent")
+		obj.addProperty("App::PropertyVector","postScale","posttangent")
+		obj.addProperty("App::PropertyFloat","postHeight","pretangent")
+		
+
+		obj.addProperty("App::PropertyVector","vScale")
+
+
+		obj.preScale=FreeCAD.Vector(100,100,100)
+		obj.postScale=FreeCAD.Vector(100,100,100)
+		obj.vScale=FreeCAD.Vector(100,100,100)
+		obj.prePlacement.Base.z=-10
+		obj.postPlacement.Base.z=20
+		
+		obj.stripmode=True
+		obj.stripsymmetric=True
 
 ##\cond
-#	def onChanged(self, fp, prop):
-#		pass
+	def onChanged(self, fp, prop):
+		if prop=='detach' and fp.detach:
+			print "muss sketch erzeugen"
+			try:
+				pts=fp.source.Points
+				pm=fp.source.Placement
+				rot=pm.Rotation
+				pts=[rot.multVec(p) for p in pts]
+				fp.deleteAllGeometry()
+				for  i in range(len(pts)-1):
+					fp.addGeometry(Part.LineSegment(pts[i],pts[i+1]),False)
+				for  i in range(len(pts)-2):
+					fp.addConstraint(Sketcher.Constraint('Coincident',i,2,i+1,1)) 
+				for  i in range((len(pts)-4)/3):
+					fp.addConstraint(Sketcher.Constraint('Parallel',3*i+2,3*i+3)) 
+			except:
+				sayex("probleme beim detach")
+
+		pass
 
 
 	def execute(self,fp):
@@ -182,7 +229,57 @@ class Bering(FeaturePython):
 				pts=pts[::-1]
 
 		bc=Part.BSplineCurve()
+		
+		if fp.stripmode:
+			ptsq=[]
+			for p in pts[:-1]:
+				pp=FreeCAD.Placement()
+				p.x *= 0.01*fp.vScale.x
+				p.y *= 0.01*fp.vScale.y
+				p.z *= 0.01*fp.vScale.z
+				ptsq += [p]
+			pts=ptsq+[ptsq[0]]
+		
 		bc.buildFromPolesMultsKnots(pts, ms, range(len(ms)), False,3)
+#		ass=FreeCAD.ActiveDocument.addObject("Part::Feature","name")
+#		ass.Shape=Part.makePolygon(pts)#.toShape()
+
+		if fp.stripmode:
+			bcpre=Part.BSplineCurve()
+			ptspre=[]
+			for p in pts:
+				pp=FreeCAD.Placement()
+				pp.Base=p
+				ppa=fp.source.Placement.inverse().multiply(pp)
+				ppa.Base.x *= 0.01*fp.preScale.x
+				ppa.Base.y *= 0.01*fp.preScale.y
+				ppa.Base.z *= 0.01*fp.preScale.z
+				pp2=fp.source.Placement.multiply(fp.prePlacement.multiply(ppa))
+				ptspre += [pp2.Base]
+
+
+			bcpost=Part.BSplineCurve()
+			ptspost=[]
+			for p in pts:
+				pp=FreeCAD.Placement()
+				pp.Base=p
+				ppa=fp.source.Placement.inverse().multiply(pp)
+				ppa.Base.x *= 0.01*fp.postScale.x
+				ppa.Base.y *= 0.01*fp.postScale.y
+				ppa.Base.z *= 0.01*fp.postScale.z
+				pp2=fp.source.Placement.multiply(fp.postPlacement.multiply(ppa))
+				ptspost += [pp2.Base]
+
+
+			if fp.stripsymmetric:
+				for i,p in enumerate(pts):
+					d=(ptspost[i]-ptspre[i])*0.5
+					ptspost[i]=p+d
+					ptspre[i]=p-d
+
+			bcpre.buildFromPolesMultsKnots(ptspre, ms, range(len(ms)), False,3)
+			bcpost.buildFromPolesMultsKnots(ptspost, ms, range(len(ms)), False,3)
+
 
 		if 1 or not fp.detach: 
 			for i in fp.extraKnots:
@@ -199,7 +296,11 @@ class Bering(FeaturePython):
 			return
 
 		fp.Shape=bc.toShape()
-		
+
+		if fp.stripmode:
+			print "Stripmode------------"
+			fp.Shape=Part.Compound([bcpre.toShape(),bc.toShape(),bcpost.toShape()])
+
 		print "---------- create the inner geometry"
 		print " ignoriert -fehler m"
 		return
@@ -236,8 +337,18 @@ class Beface(FeaturePython):
 		obj.addProperty("App::PropertyLinkList","berings")
 		obj.addProperty("App::PropertyInteger","start")
 		obj.addProperty("App::PropertyInteger","end")
+
+
+		obj.addProperty("App::PropertyFloat","startu")
+		obj.addProperty("App::PropertyFloat","endu")
+		obj.addProperty("App::PropertyFloat","startv")
+		obj.addProperty("App::PropertyFloat","endv")
+
+
+		obj.addProperty("App::PropertyBool","closed")
 		obj.addProperty("App::PropertyBool","showStripes",'xyz diagnostic')
 		obj.addProperty("App::PropertyBool","generatedBackbone",'xyz diagnostic')
+		
 
 
 	def execute(self,fp):
@@ -259,8 +370,41 @@ class Beface(FeaturePython):
 			if ll==-1:ll=len(pps)
 			assert ll == len(pps)
 			ptsa += [pps]
+#--------------
 
-		poles=np.array(ptsa)
+		ptsa=[]
+		ll=-1
+		stripmode=False
+		for r in fp.berings:
+			if r.stripmode:
+				stripmode=True
+				print "strimode"
+				for rr in r.Shape.Edges:
+					print rr
+					pps=rr.Curve.getPoles()
+					FreeCAD.r=r
+					if ll==-1:ll=len(pps)
+					assert ll == len(pps)
+					ptsa += [pps]
+			else:
+				pps=r.Shape.Edge1.Curve.getPoles()
+				FreeCAD.r=r
+				if ll==-1:ll=len(pps)
+				assert ll == len(pps)
+				ptsa += [pps]
+
+		if stripmode:
+			if fp.closed:
+				ptsb=ptsa[1:]+ptsa[0:2]
+			else:
+				ptsb=ptsa[1:-1]#+ptsa[-1:]
+			poles=np.array(ptsb)
+
+
+
+#------------
+		else:
+			poles=np.array(ptsa)
 		print poles.shape
 
 		af=Part.BSplineSurface()
@@ -300,6 +444,8 @@ class Beface(FeaturePython):
 				False,False,db,3)
 
 
+
+
 		for i in range(1,len(ya)-1):
 			if ya[i]<3:
 				af.insertUKnot(i,3,0)
@@ -311,6 +457,7 @@ class Beface(FeaturePython):
 		if fp.showStripes:
 
 			wist=20 # width of the tangent stripes
+			wist=100
 
 			# create some extra objects for debugging
 
@@ -340,7 +487,7 @@ class Beface(FeaturePython):
 				if tt==None:
 					tt=App.ActiveDocument.addObject('Part::Spline',name)
 				tt.Shape=ag.toShape()
-				tt.ViewObject.ControlPoints = True
+				#tt.ViewObject.ControlPoints = True
 				tt.ViewObject.ShapeColor=(1.0,0.0,0.0)
 
 
@@ -368,7 +515,7 @@ class Beface(FeaturePython):
 					tt=App.ActiveDocument.addObject('Part::Spline',name)
 
 				tt.Shape=ag.toShape()
-				tt.ViewObject.ControlPoints = True
+				#tt.ViewObject.ControlPoints = True
 				tt.ViewObject.ShapeColor=(1.0,0.0,0.0)
 
 			for j in [a-2]:
@@ -394,7 +541,7 @@ class Beface(FeaturePython):
 				if tt==None:
 					tt=App.ActiveDocument.addObject('Part::Spline',name)
 				tt.Shape=ag.toShape()
-				tt.ViewObject.ControlPoints = True
+				#tt.ViewObject.ControlPoints = True
 				tt.ViewObject.ShapeColor=(1.0,0.0,0.0)
 
 			#create the meridians
@@ -424,7 +571,7 @@ class Beface(FeaturePython):
 				if tt==None:
 					tt=App.ActiveDocument.addObject('Part::Spline',name)
 				tt.Shape=ag.toShape()
-				tt.ViewObject.ControlPoints = True
+				#tt.ViewObject.ControlPoints = True
 				tt.ViewObject.ShapeColor=(.0,0.0,1.0)
 
 
@@ -449,7 +596,7 @@ class Beface(FeaturePython):
 				if tt==None:
 					tt=App.ActiveDocument.addObject('Part::Spline',name)
 				tt.Shape=ag.toShape()
-				tt.ViewObject.ControlPoints = True
+				#tt.ViewObject.ControlPoints = True
 				tt.ViewObject.ShapeColor=(.0,0.0,1.0)
 
 			for j in [0]:
@@ -473,7 +620,7 @@ class Beface(FeaturePython):
 				if tt==None:
 					tt=App.ActiveDocument.addObject('Part::Spline',name)
 				tt.Shape=ag.toShape()
-				tt.ViewObject.ControlPoints = True
+				#tt.ViewObject.ControlPoints = True
 				tt.ViewObject.ShapeColor=(.0,0.0,1.0)
 		##\endcond
 
@@ -489,10 +636,45 @@ class Beface(FeaturePython):
 			assert ll == len(pps)
 			ptsa += [pps]
 
-		poles=np.array(ptsa)
+		# zusammengesetzt
+		ptsa=[]
+		ll=-1
+		stripmode=False
+		for r in fp.berings:
+			if r.stripmode:
+				stripmode=True
+				print "strimode"
+				for rr in r.Shape.Edges:
+					print rr
+					pps=rr.Curve.getPoles()
+					FreeCAD.r=r
+					if ll==-1:ll=len(pps)
+					assert ll == len(pps)
+					ptsa += [pps]
+			else:
+				pps=r.Shape.Edge1.Curve.getPoles()
+				FreeCAD.r=r
+				if ll==-1:ll=len(pps)
+				assert ll == len(pps)
+				ptsa += [pps]
+
+		if stripmode:
+			if fp.closed:
+				ptsb=ptsa[1:]+ptsa[0:2]
+			else:
+				ptsb=ptsa[1:-1]#+ptsa[-1:]
+			poles=np.array(ptsb)
+
+		else:
+			if fp.closed:
+				poles=np.array(ptsa+[ptsa[0]])
+			else:
+				poles=np.array(ptsa)
 
 		af=Part.BSplineSurface()
 		(a,b,c)=poles.shape
+		print ("AA poles.shape a,b",a,b)
+
 
 		if not fp.generatedBackbone:
 			ecken=(a-1)/3
@@ -527,12 +709,48 @@ class Beface(FeaturePython):
 				range(len(ya)),range(len(yb)),
 				False,False,db,3)
 
+#		# geschlossen
+#		if fp.closed:
+#			print ya
+#			print (a,b,c)
+#			ya=[1,1,1,1,1]
+#			ya=[1]*(a+1)
+#
+#			af.buildFromPolesMultsKnots(poles, 
+#					ya,yb,
+#					range(len(ya)),range(len(yb)),
+#					True,False,db,3)
+
+		if fp.closed:
+			print ya
+			print (a,b,c)
+			ya=[4,3,3,4]
+			ya=[4]+[3]*((a-4)/3)+[4]
+			#ya=[1]*(a+1)
+
+			af.buildFromPolesMultsKnots(poles, 
+					ya,yb,
+					range(len(ya)),range(len(yb)),
+					False,False,db,3)
+
+
+
 		for i in range(1,len(ya)-1):
 			if ya[i]<3:
 				af.insertUKnot(i,3,0)
 
-		fp.Shape=af.toShape()
+		# hier feinteilung flaeche
+		if fp.endu>0 and fp.endv<>0:
+			af.segment(fp.startu,fp.endu,fp.startv,fp.endv)
+		# af.segment(0,5,1.5,2.5)
 
+		sh=af.toShape()
+		try:
+			fp.Shape=Part.Solid(Part.Shell([sh.Face1]))
+		except:
+			fp.Shape=af.toShape()
+
+		fp.Shape=Part.Solid(Part.Shell([sh.Face1]))
 
 
 ## erzeuge eine Bezierkurve auf der Basis einer Punktmenge
@@ -3772,6 +3990,54 @@ def gencircle(fp,n,h=300,radius=400,center=None):
 	return bb,ptsb
 
 
+def createSketchCircle():
+	'''create a circle bspline curve for sketcher'''
+
+	# kreis 100 mm
+	radius=25*2**0.5
+	c = 0.551915024494
+	#radius=fp.radius
+	vv=radius*c
+
+	ptsa = [
+		[radius,radius],
+		[radius-vv,radius+vv],
+		[-radius+vv,radius+vv],
+		[-radius,radius],
+		[-radius-vv,radius-vv],
+		[-radius-vv,-radius+vv],
+		[-radius,-radius],
+		[-radius+vv,-radius-vv],
+		[radius-vv,-radius-vv],
+		[radius,-radius],
+		[radius+vv,-radius+vv],
+		[radius+vv,radius-vv],
+	]
+
+	sk=App.ActiveDocument.addObject('Sketcher::SketchObject','Sketch')
+#	for i in range(11): 
+#		sk.addGeometry(Part.LineSegment(App.Vector(ptsa[i][0],ptsa[i][1],0),App.Vector(ptsa[i+1][0],ptsa[i+1][1],0)),False)
+
+	rr=FreeCAD.Rotation(FreeCAD.Vector(0,0,1),-45)
+	for i in range(11): 
+		sk.addGeometry(Part.LineSegment(rr.multVec(App.Vector(ptsa[i][0],ptsa[i][1],0)),
+				rr.multVec(App.Vector(ptsa[i+1][0],ptsa[i+1][1],0))),False)
+
+
+	for i in range(10):
+		sk.addConstraint(Sketcher.Constraint('Coincident',i,2,i+1,1)) 
+	for i in range(1,4):
+		sk.addConstraint(Sketcher.Constraint('Symmetric',3*i-2,2,3*i,2,3*i-1,2)) 
+	sk.addConstraint(Sketcher.Constraint('Symmetric',0,2,10,2,0,1)) 
+#	sk.addConstraint(Sketcher.Constraint('Distance',-1,1,0,1,radius))
+#	sk.addConstraint(Sketcher.Constraint('Distance',-1,1,3,1,radius))
+#	sk.addConstraint(Sketcher.Constraint('Distance',-1,1,6,1,radius))
+#	sk.addConstraint(Sketcher.Constraint('Distance',-1,1,9,1,radius))
+
+	sk.addConstraint(Sketcher.Constraint('Equal',1,4)) 
+	sk.addConstraint(Sketcher.Constraint('Equal',4,7)) 
+	sk.addConstraint(Sketcher.Constraint('Equal',1,10)) 
+
 
 def createEndface(pts,label,offset=0):
 	# abschlussfleche erzeugen oben
@@ -4855,42 +5121,30 @@ def glaetten():
 			setTitle: "Mode"
 			QtGui.QComboBox:
 				id: 'mode'
-				addItem: "none"
+				addItem: "all"
+				#addItem: "none"
 				addItem: "vertical"
 				addItem: "horizontal"
-				addItem: "all"
+				
 
 		HorizontalGroup:
 			setTitle: "Tangent Force v"
 			QtGui.QDial:
-				id: 'taa'
-				setFocusPolicy: QtCore.Qt.StrongFocus
-				valueChanged.connect: app.run
-				setMinimum: 1
-				setMaximum: 10
-
-			QtGui.QDial:
 				id: 'tbb'
 				setFocusPolicy: QtCore.Qt.StrongFocus
 				valueChanged.connect: app.run
-				setMinimum: 1
-				setMaximum: 10
-
-		HorizontalGroup:
-			setTitle: "Tangent Force h"
-			QtGui.QDial:
-				id: 'taa2'
-				setFocusPolicy: QtCore.Qt.StrongFocus
-				valueChanged.connect: app.run
-				setMinimum: 1
-				setMaximum: 10
+				setMinimum: 0
+				setValue: 10
+				setMaximum: 20
 
 			QtGui.QDial:
-				id: 'tbb2'
+				id: 'taa'
 				setFocusPolicy: QtCore.Qt.StrongFocus
 				valueChanged.connect: app.run
-				setMinimum: 1
-				setMaximum: 10
+				setMinimum: 0
+				setValue: 10
+				setMaximum: 20
+
 
 		HorizontalGroup:
 			setTitle: "Parameter v/h"
@@ -4911,7 +5165,7 @@ def glaetten():
 
 		QtGui.QPushButton:
 			setText: "Run Action"
-			clicked.connect: app.run
+			clicked.connect: app.runT
 
 		QtGui.QPushButton:
 			setText: "close"
@@ -4929,8 +5183,11 @@ def glaetten():
 			self.close()
 
 
-		def run(self):
 
+
+
+		def run(self):
+	
 			#modus='all'
 			modus='horizontal'
 			modus='vertical'
@@ -4944,8 +5201,6 @@ def glaetten():
 				ta=self.root.ids['taa'].value()
 				tb=self.root.ids['tbb'].value()
 
-				ta2=self.root.ids['taa2'].value()
-				tb2=self.root.ids['tbb2'].value()
 				
 			except: 
 				return
@@ -4985,6 +5240,7 @@ def glaetten():
 				return
 
 			if modus in ['all','vertical']:
+				pall=pall.swapaxes(0,1)
 				ff=fu
 
 				k1=(pall[2]-pall[3])
@@ -4999,15 +5255,16 @@ def glaetten():
 				kka=np.array(kka)
 
 
-				fa=2.0*ta/(ta+tb)
-				fb=2.0*tb/(ta+tb)
+				fa=2.0*tb/20
+				fb=2.0*(20-tb)/20
 				print ("ta tb",ta,tb,fa,fb)
 
 				pall[2]=pall[3]-ff*kka*fa
 				pall[4]=pall[3]+ff*kka*fb
+				pall=pall.swapaxes(0,1)
 
 			if modus in ['all','horizontal']:
-				pall=pall.swapaxes(0,1)
+				#pall=pall.swapaxes(0,1)
 
 				k1=(pall[2]-pall[3])
 				k2=(pall[4]-pall[3])
@@ -5021,16 +5278,15 @@ def glaetten():
 						kka += [FreeCAD.Vector()]
 				kka=np.array(kka)
 
+				fa2=2.0*ta/20
+				fb2=2.0*(20-ta)/20
 
-				fa2=2.0*ta2/(ta2+tb2)
-				fb2=2.0*tb2/(ta2+tb2)
-				
 
 				ff=fv
 				pall[2]=pall[3]-ff*kka*fa2
 				pall[4]=pall[3]+ff*kka*fb2
 
-				pall=pall.swapaxes(0,1)
+				#pall=pall.swapaxes(0,1)
 
 
 			if 0: # zeige gesamte flaeche
@@ -5063,7 +5319,10 @@ def glaetten():
 					#Part.show(af.toShape())
 					srs[i].Shape=af.toShape()
 
-
+		def runT(self):
+			FreeCAD.ActiveDocument.openTransaction("tatata")
+			self.run()
+			FreeCAD.ActiveDocument.commitTransaction()
 
 
 

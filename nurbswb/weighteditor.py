@@ -8,7 +8,7 @@
 #-------------------------------------------------
 import FreeCAD as App
 import FreeCADGui as Gui
-import matplotlib.colors as colors
+#import matplotlib.colors as colors
 
 import PySide
 from PySide import  QtGui,QtCore

@@ -597,7 +597,10 @@ class Miki(object):
 					if cn == 'int' or cn == 'float':
 						ex = "parent." + l[4] + "=" + str(v)
 					elif cn == 'str':
-						ex = "parent." + l[4] + "='" + v + "'"
+						if l[4].startswith("run"):
+							ex = "parent." + l[4] + "('" + v + "')"
+						else:
+							ex = "parent." + l[4] + "='" + v + "'"
 					elif cn=='Vector':
 							ex="parent."+l[4]+"(FreeCAD."+str(v)+")"
 					else:
@@ -649,7 +652,7 @@ class Miki(object):
 			print (cc)
 
 
-		if str(c.__class__).startswith("<type 'PySide.QtGui."):
+		if str(c.__class__).startswith("<type 'PySide.QtGui.") or  str(c.__class__).startswith("<class 'nurbswb.miki"):
 #			print "!!",c
 #			print "!!",p," -- ",p.__class__.__name__
 			if p.__class__.__name__ ==  '_MyTabWidget':
@@ -687,7 +690,7 @@ class Miki(object):
 						if c.startswith('__MAGIC_'):
 							run_magic(p,c)
 					except:
-						FreeCAD.Console.PrintError("\naddObject funktioniert nicht")
+						FreeCAD.Console.PrintError("\naddObject funktioniert nicht A")
 						FreeCAD.Console.PrintError([p, c])
 		except:
 				try:
@@ -697,7 +700,7 @@ class Miki(object):
 						if c.startswith('__MAGIC_'):
 							run_magic(p,c)
 					except:
-						FreeCAD.Console.PrintError("\naddObject funktioniert nicht")
+						FreeCAD.Console.PrintError("\naddObject funktioniert nicht B")
 						FreeCAD.Console.PrintError([p, c])
 
 
@@ -1031,6 +1034,60 @@ class MikiApp(object):
 		'''delete the widget'''
 		self.root.widget.deleteLater()
 		self.close2()
+
+
+# https://stackoverflow.com/questions/28282434/how-to-combine-opencv-with-pyqt-to-create-a-simple-gui
+
+class PicWidget(QtGui.QLabel):
+	'''the widget for the mikidialog'''
+
+	def __init__(self):
+
+		QtGui.QLabel.__init__(self)
+		self.sizeX=0
+		self.sizeY=0
+		self.label=None
+
+
+	def run_display(frame,pn):
+
+
+		import cv2
+		if frame.label == None:
+			label_Image = QtGui.QLabel(frame)
+			frame.label =label_Image
+		else:
+			label_Image = frame.label
+
+		label_Image.setAlignment(QtCore.Qt.AlignCenter)
+
+	#	size=250
+	#	im= np.zeros((size,size,3), np.uint8)
+	#	im = cv2.imread(pn,0)
+
+		im = cv2.imread(pn)
+
+		cc = im.shape[1]*im.shape[2]
+		im[10:20,10:20]=[140,240,140]
+		image_profile = QtGui.QImage(im.data, im.shape[1], im.shape[0], cc, QtGui.QImage.Format_RGB888)
+	#	image_profile = QtGui.QImage(image_path) #QImage object
+		if frame.sizeX<>0 and frame.sizeY<>0:
+			image_profile = image_profile.scaled(frame.sizeX,frame.sizeY, aspectRatioMode=QtCore.Qt.KeepAspectRatio, transformMode=QtCore.Qt.SmoothTransformation) # To scale image for example and keep its Aspect Ration    
+		label_Image.setPixmap(QtGui.QPixmap.fromImage(image_profile))
+		frame.setMinimumSize(PySide.QtCore.QSize( im.shape[1], im.shape[0]))
+		if frame.sizeX<>0 and frame.sizeY<>0:
+			frame.setMinimumSize(PySide.QtCore.QSize(frame.sizeX,frame.sizeY))
+		label_Image.setAlignment(QtCore.Qt.AlignCenter)
+		
+		return frame
+
+##use case
+#pn='/home/thomas/Bilder/bp_841.png'
+#frame= PicWidget()
+#frame.show_frame_in_display(pn)
+#frame.show()
+
+
 
 
 class Controller(MikiApp):

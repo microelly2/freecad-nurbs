@@ -324,7 +324,6 @@ def createAll(mode="all",obj=None,dimU=500,dimV=500,
 
 #	return
 
-	import time
 
 	if 0:
 		ta=time.time()
@@ -818,14 +817,12 @@ def  results(ptsa,ptsb):
 	print "Poles:",bc.NbPoles
 
 def runC():
-	import time
 	d=5
 	pts=init(d)
 	FreeCAD.pts=pts
 
 
 def runD():
-	import time
 	d=5
 	pts=FreeCAD.pts
 	ptsa=pts
