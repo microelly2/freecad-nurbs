@@ -203,6 +203,7 @@ class _Command2():
 
 	def Activated(self):
 
+		import re
 		ta=True
 		if ta:
 			FreeCAD.ActiveDocument.openTransaction(self.name)
