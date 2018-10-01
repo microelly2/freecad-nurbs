@@ -94,11 +94,15 @@ class Tripod(PartFeature):
 		PartFeature.__init__(self, obj)
 		self.Type="Tripod"
 		self.TypeId="Tripod"
-		obj.addProperty("App::PropertyLink","source","XYZ","Bezugskoerper")
-		obj.addProperty("App::PropertyInteger","faceNumber","XYZ","Nummer der Flaeche").faceNumber=0
-		obj.addProperty("App::PropertyFloat","u","XYZ","").u=50
-		obj.addProperty("App::PropertyFloat","v","XYZ","").v=50
-		obj.addProperty("App::PropertyBool","directionNormal","XYZ","Auf dem Fuss oder auf dem Kopf stehen").directionNormal=True
+		obj.addProperty("App::PropertyLink","source","Source","Bezugskoerper")
+		obj.addProperty("App::PropertyInteger","faceNumber","Source","Nummer der Flaeche").faceNumber=0
+		obj.addProperty("App::PropertyEnumeration","mode","Format","Darstellung als Dreibein oder Kruemmungskreise").mode="UV-Tripod","Curvature"
+		obj.addProperty("App::PropertyFloat","u","UV","u position un uv space").u=50
+		obj.addProperty("App::PropertyFloat","v","UV","v position in uv space").v=50
+		
+		obj.addProperty("App::PropertyFloat","scale","Format","Size of the tripod legs").scale=100
+		obj.addProperty("App::PropertyFloat","maxRadius","Format","maximum curvature circle").maxRadius=1000
+		obj.addProperty("App::PropertyBool","directionNormal","Format","Auf dem Fuss oder auf dem Kopf stehen").directionNormal=True
 		obj.ViewObject.LineColor=(1.0,0.0,1.0)
 
 	def onChanged(self, fp, prop):
@@ -121,15 +125,25 @@ class Tripod(PartFeature):
 #		u=fp.u/12*3.14/100
 #		v=fp.v/12*3.14/100
 
+		if fp.mode=="Curvature":
+			self.runmode2(fp,prop)
+			return
 
 
-		sf=fp.source.Shape.Faces[fp.faceNumber-1].Surface
+		f=fp.source.Shape.Faces[fp.faceNumber-1]
+		nf=f.toNurbs()
+
+		sf=nf.Face1.Surface
+
+		#sf=fp.source.Shape.Faces[fp.faceNumber-1].Surface
 
 		# point
 		vf=sf.value(u,v)
 
 		# tangents
 		t1,t2=sf.tangent(u,v)
+		t1 *= fp.scale
+		t2 *= fp.scale
 
 		l1=t1.add(vf)
 		#li1=Part.Line(vf,l1)
@@ -141,8 +155,11 @@ class Tripod(PartFeature):
 		li2=Part.makePolygon([vf,l2])
 
 		# normal
-		if fp.directionNormal: n=t1.cross(t2)
-		else: n=t2.cross(t1)
+		if fp.directionNormal: n=t1.cross(t2).normalize()
+		else: 
+			n=t2.cross(t1).normalize()
+
+		n *= fp.scale
 		l3=n.add(vf)
 		#li3=Part.Line(vf,l3)
 		li3=Part.makePolygon([vf,l3])
@@ -168,47 +185,100 @@ class Tripod(PartFeature):
 		kruemmung(sf,u,v)
 
 
-'''
-App.closeDocument("Unbenannt")
-App.newDocument("Unbenannt")
-App.setActiveDocument("Unbenannt")
-App.ActiveDocument=App.getDocument("Unbenannt")
-Gui.ActiveDocument=Gui.getDocument("Unbenannt")
- 
 
-App.ActiveDocument.addObject("Part::Sphere","Sphere")
-App.ActiveDocument.Sphere.ViewObject.ShapeColor = (0.00,1.00,0.00)
-App.ActiveDocument.Sphere.ViewObject.Transparency = 70
-App.ActiveDocument.addObject("Part::Cone","Cone")
-App.ActiveDocument.addObject("Part::Torus","Torus")
+	def runmode2(self, fp, prop):
 
-App.ActiveDocument.Sphere.ViewObject.hide()
-App.ActiveDocument.Torus.ViewObject.hide()
-App.activeDocument().recompute()
-'''
+		f=fp.source.Shape.Faces[fp.faceNumber-1]
+		nf=f.toNurbs()
+
+		ff=nf.Face1
+		ff.ParameterRange
+
+		sf=ff.Surface
+
+		u=0.01*fp.u
+		v=0.01*fp.v
+
+		p=sf.value(u,v)
+		[t1,t2]=sf.tangent(u,v)
+		sf.parameter(t1)
+		sf.parameter(t2)
+
+		c1,c2=sf.curvatureDirections(u,v)
+
+		cmax=sf.curvature(u,v,"Max")
+		cmin=sf.curvature(u,v,"Min")
+
+		if cmax <>0:
+			rmax=1.0/cmax
+		else:
+			rmax=0 
+
+		if cmin <>0:
+			rmin=1.0/cmin
+		else:
+			rmin=0
+
+		n=sf.normal(u,v)
+
+		if rmax>fp.maxRadius:
+			rmax=fp.maxRadius
+			cmax=0
+		if rmax<-fp.maxRadius:
+			rmax=-fp.maxRadius
+			cmax=0
+		if rmin>fp.maxRadius:
+			rmin=fp.maxRadius
+			cmin=0
+		if rmin<-fp.maxRadius:
+			rmin=-fp.maxRadius
+			cmin=0
+
+		m2=p+n*rmin 
+		m1=p+n*rmax 
+
+		pts=[p,m2,p,m1]
+		print (rmin,rmax)
+		comp=[]
+
+		try:
+			comp +=[Part.makePolygon([p,m2])]
+		except:
+			pass
+
+		try:
+			comp += [Part.makePolygon([p,m1])]
+		except:
+			pass
+
+		k=fp.maxRadius
+
+
+		if cmax==0:
+			c=Part.makePolygon([p-c1*k,p+c1*k])
+		else:	
+			c=Part.makeCircle(abs(rmax),m1,c2)
+
+		comp += [c]
+
+		if cmin==0:
+			c=Part.makePolygon([p-c2*k,p+c2*k])
+		else:	
+			c=Part.makeCircle(abs(rmin),m2,c1)
+
+		comp += [c]
+
+		print "done"
+		fp.Shape=Part.Compound(comp)
+		# fp.Shape=Part.Compound(comp[:1])
+
+
 
 def createTripod():
-	import Draft
-	#w=Draft.makeWire([],closed=False)
-#	w=App.ActiveDocument.addObject("Part::Feature","YYY")
-#	w.Shape=Part.Shape()
-
-#	w.ViewObject.LineColor=(1.0,0.0,0.0)
-#	w.ViewObject.LineWidth=10
-
-	'''
-	App.ActiveDocument.Tripod.Proxy.pts=[]
-	App.activeDocument().recompute()
-
-
-	'''
 
 	a=FreeCAD.ActiveDocument.addObject("Part::FeaturePython","Tripod")
 	Tripod(a)
-	a.ViewObject.LineWidth = 7
-	#a.source=App.ActiveDocument.Cone
-	#a.source=App.ActiveDocument.Ruled_Surface003
-	#a.source=App.ActiveDocument.Poles
+	a.ViewObject.LineWidth = 2
 	a.source=Gui.Selection.getSelection()[0]
 	ViewProvider(a.ViewObject)
-#	a.Proxy.w=w
+
