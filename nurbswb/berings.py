@@ -3,12 +3,10 @@
 #-------------------------------------------------
 #-- bezier objects
 #--
-#-- microelly 2018  0.1
+#-- microelly 2018  0.2
 #--
 #-- GNU Lesser General Public License (LGPL)
 #-------------------------------------------------
-
-
 '''
 
 
@@ -90,11 +88,9 @@ def copySketch(sketch,target):
 	App.activeDocument().recompute()
 
 ## Eine spezielle Bezier-Kurve, auf der alles aus dem Bering-Modul aufbaut
-#
 
 class _VPBering(ViewProvider): 
 	pass
-
 
 
 class Bering(FeaturePython):
@@ -103,35 +99,44 @@ class Bering(FeaturePython):
 	def __init__(self, obj):
 		FeaturePython.__init__(self, obj)
 		obj.addProperty("App::PropertyInteger","level")
-		obj.addProperty("App::PropertyLink","source")
-		obj.addProperty("App::PropertyInteger","start")
-		obj.addProperty("App::PropertyInteger","end")
+		obj.addProperty("App::PropertyLink","source","Source")
+		obj.addProperty("App::PropertyBool","detach","Source","do not use the source sketch but the inner geometry").detach
+
+		obj.addProperty("App::PropertyInteger","start","Geometry","starting knot for the displayed segment")
+		obj.addProperty("App::PropertyInteger","end","Geometry","ending knot for the displayed segment, 0 means all")
 
 
+		obj.addProperty("App::PropertyFloat","scale","Geometry",).scale=1.0
+		obj.addProperty("App::PropertyBool","cyclic","Geometry","should path be closed")
+		obj.addProperty("App::PropertyBool","inverse","Geometry","change direction of the path")
+		obj.addProperty("App::PropertyFloatList","extraKnots","Geometry","add extra knots to the spline") #.extraKnots=[0.2,0.4]
 
-
-
-		obj.addProperty("App::PropertyFloat","scale").scale=1.0
-		obj.addProperty("App::PropertyBool","detach").detach
-		obj.addProperty("App::PropertyBool","cyclic")
-		obj.addProperty("App::PropertyBool","inverse")
-		obj.addProperty("App::PropertyFloatList","extraKnots") #.extraKnots=[0.2,0.4]
 		obj.addProperty("App::PropertyEnumeration","mode").mode=['curve','poles','compound']
-		obj.addProperty("App::PropertyBool","stripmode")
-		obj.addProperty("App::PropertyBool","stripsymmetric")
-		obj.addProperty("App::PropertyFloat","stripalpha").stripalpha=90
+		obj.addProperty("App::PropertyBool","stripmode","Strip Mode","in stripmode two more tangent helper pathes are created")
+		obj.addProperty("App::PropertyBool","stripsymmetric","Strip Mode","to get a smooth surface on this rib when used in beface")
+		obj.addProperty("App::PropertyFloat","stripalpha","Strip Mode","Anschraegung fuer pre und post Height").stripalpha=90
+		obj.addProperty("App::PropertyBool","_showStripMode","Strip Mode")
+		obj._showStripMode=False
 
-		obj.addProperty("App::PropertyPlacement","prePlacement","pretangent")
-		obj.addProperty("App::PropertyVector","preScale","pretangent")
-		obj.addProperty("App::PropertyFloat","preHeight","pretangent")
-		
 
-		obj.addProperty("App::PropertyPlacement","postPlacement","posttangent")
-		obj.addProperty("App::PropertyVector","postScale","posttangent")
-		obj.addProperty("App::PropertyFloat","postHeight","pretangent")
-		
+		obj.addProperty("App::PropertyPlacement","prePlacement","Pretangent","relative position of the pretangent curve in stripmode")
+		obj.addProperty("App::PropertyVector","preScale","Pretangent","relative scale of the pretangent curve")
+		obj.addProperty("App::PropertyFloat","preHeight","Pretangent","fuer Anschraegung mit stripalpha")
+		obj.addProperty("App::PropertyBool","presymmetric","Pretangent")
+		obj.addProperty("App::PropertyBool","_showPretangent","Pretangent")
+		obj.addProperty("App::PropertyBool","flipPrePost","Pretangent")
 
-		obj.addProperty("App::PropertyVector","vScale")
+		obj._showPretangent=False
+
+		obj.addProperty("App::PropertyPlacement","postPlacement","Posttangent","relative position of the posttangent curve in stripmode")
+		obj.addProperty("App::PropertyVector","postScale","Posttangent","relative scale of the pretangent curve")
+		obj.addProperty("App::PropertyFloat","postHeight","Posttangent","fuer Anschraegung mit stripalpha")
+		obj.addProperty("App::PropertyBool","_showPosttangent","Posttangent")
+		obj.addProperty("App::PropertyBool","postsymmetric","Posttangent")
+
+		obj._showPosttangent=False
+
+		obj.addProperty("App::PropertyVector","vScale","Geometry","scaling factor in percent for the source point data")
 
 
 		obj.preScale=FreeCAD.Vector(100,100,100)
@@ -142,9 +147,14 @@ class Bering(FeaturePython):
 		
 		obj.stripmode=True
 		obj.stripsymmetric=True
+		obj._showaux=False
 
 ##\cond
 	def onChanged(self, fp, prop):
+		#try: super(Bering,self).onChanged(fp,prop)
+		#except: FeaturePython.onChanged(self,fp,prop)
+		self.showprops(fp,prop)
+
 		if prop=='detach' and fp.detach:
 			print "muss sketch erzeugen"
 			try:
@@ -162,7 +172,7 @@ class Bering(FeaturePython):
 			except:
 				sayex("probleme beim detach")
 
-		pass
+
 
 
 	def execute(self,fp):
@@ -197,8 +207,6 @@ class Bering(FeaturePython):
 				ptsa=fp.source.Shape.Curve.getPoles()
 			except:
 				ptsa=[v.Point*fp.scale for v in fp.source.Shape.Vertexes]
-
-		print len(ptsa)
 
 
 
@@ -270,6 +278,74 @@ class Bering(FeaturePython):
 				pp2=fp.source.Placement.multiply(fp.postPlacement.multiply(ppa))
 				ptspost += [pp2.Base]
 
+			# offset mode
+
+			if fp.preHeight<>0:
+				bcpre=Part.BSplineCurve()
+				ptspre=[]
+				for p in pts:
+					pp=FreeCAD.Placement()
+					pp.Base=p
+					u=bc.parameter(p)
+					t1=bc.tangent(u-0.01)[0]
+					t2=bc.tangent(u+0.01)[0]
+					t=(t1+t2).normalize()
+#					t=(t1+t2)*0.5
+					if (t1-t2).Length>0.5:
+						t=t1+t2
+					bb=FreeCAD.Vector(0,0,1).cross(t)
+					ppa=fp.source.Placement.inverse().multiply(pp)
+					ppa.Base += bb*fp.preHeight
+					ppa.Base.x *= 0.01*fp.preScale.x
+					ppa.Base.y *= 0.01*fp.preScale.y
+					ppa.Base.z *= 0.01*fp.preScale.z
+
+					pp2=fp.source.Placement.multiply(fp.prePlacement.multiply(ppa))
+					ptspre += [pp2.Base]
+
+			if fp.postHeight<>0:
+				bcpost=Part.BSplineCurve()
+				ptspost=[]
+				for p in pts:
+					pp=FreeCAD.Placement()
+					pp.Base=p
+					u=bc.parameter(p)
+					t1=bc.tangent(u-0.01)[0]
+					t2=bc.tangent(u+0.01)[0]
+					t=(t1+t2).normalize()
+#					t=(t1+t2)*0.5
+					if (t1-t2).Length>0.5:
+						t=t1+t2
+
+					bb=FreeCAD.Vector(0,0,1).cross(t)
+					ppa=fp.source.Placement.inverse().multiply(pp)
+					ppa.Base += bb*fp.postHeight
+					ppa.Base.x *= 0.01*fp.postScale.x
+					ppa.Base.y *= 0.01*fp.postScale.y
+					ppa.Base.z *= 0.01*fp.postScale.z
+
+					pp2=fp.source.Placement.multiply(fp.postPlacement.multiply(ppa))
+					ptspost += [pp2.Base]
+
+			if fp.postsymmetric:
+				for i in range(1,len(ptspost)-1):
+					if i%3 == 0:
+						a=ptspost[i-1]
+						b=ptspost[i+1]
+						p=ptspost[i]
+						ptspost[i-1]=p+(a-b)*0.5
+						ptspost[i+1]=p+(b-a)*0.5
+
+			if fp.presymmetric:
+				for i in range(1,len(ptspre)-1):
+					if i%3 == 0:
+						a=ptspre[i-1]
+						b=ptspre[i+1]
+						p=ptspre[i]
+						ptspre[i-1]=p+(a-b)*0.5
+						ptspre[i+1]=p+(b-a)*0.5
+
+
 
 			if fp.stripsymmetric:
 				for i,p in enumerate(pts):
@@ -277,37 +353,56 @@ class Bering(FeaturePython):
 					ptspost[i]=p+d
 					ptspre[i]=p-d
 
+
 			bcpre.buildFromPolesMultsKnots(ptspre, ms, range(len(ms)), False,3)
 			bcpost.buildFromPolesMultsKnots(ptspost, ms, range(len(ms)), False,3)
+
+		if fp.flipPrePost:
+			bcpre,bcpost=bcpost,bcpre
 
 
 		if 1 or not fp.detach: 
 			for i in fp.extraKnots:
-					print "knot ",i
-					bc.insertKnot(i,3)
+				print "knot ",i
+				bc.insertKnot(i,3)
 
 		if fp.mode == 'compound':
+			
 			comp=[Part.makePolygon(bc.getPoles()),bc.toShape()]
+			comp += [Part.Point(FreeCAD.Vector()).toShape()]
 			fp.Shape=Part.Compound(comp)
 			return
 
 		if fp.mode == 'poles':
 			fp.Shape=Part.makePolygon(bc.getPoles())
+			fp.Shape=Part.Compound([Part.makePolygon(bcpost.getPoles()),Part.makePolygon(bc.getPoles())])
 			return
 
 		fp.Shape=bc.toShape()
 
 		if fp.stripmode:
-			print "Stripmode------------"
-			fp.Shape=Part.Compound([bcpre.toShape(),bc.toShape(),bcpost.toShape()])
+#			print "stripmode Shape ..."
+			comp =[bcpre.toShape(),bc.toShape(),bcpost.toShape()]
+			comp += [Part.Point(FreeCAD.Vector()).toShape()]
+			
+			af=Part.BSplineSurface()
+			spoles=np.array([ptspre,pts,ptspost])
+			ya=[2,1,2]
+			yb=ms
+			af.buildFromPolesMultsKnots(spoles, 
+				ya,yb,
+				range(len(ya)),range(len(yb)),
+				False,False,1,3)
+			comp +=[af.toShape()]
+			fp.Shape=Part.Compound(comp)
 
-		print "---------- create the inner geometry"
-		print " ignoriert -fehler m"
-		return
-		try:
+#		print "---------- create the inner geometry"
+#		print " ignoriert -fehler m"
+#		return
+		#try:
+		if 1:
 			if not fp.detach:
 				pts=bc.getPoles()
-				print pts[0:4]
 				pm=fp.source.Placement
 				rot=pm.Rotation
 				pts=[rot.multVec(p) for p in pts]
@@ -316,10 +411,8 @@ class Bering(FeaturePython):
 					fp.addGeometry(Part.LineSegment(pts[i],pts[i+1]),False)
 				for  i in range(len(pts)-2):
 					fp.addConstraint(Sketcher.Constraint('Coincident',i,2,i+1,1)) 
-		except:
-			print "probleme mot sketch erstellung"
-			pass
-		print "fertig--------!"
+		#except:
+		#	print "probleme bei der sketch erstellung"
 ##\endcond
 
 
@@ -335,24 +428,45 @@ class Beface(FeaturePython):
 	def __init__(self, obj):
 		FeaturePython.__init__(self, obj)
 		obj.addProperty("App::PropertyLinkList","berings")
-		obj.addProperty("App::PropertyInteger","start")
-		obj.addProperty("App::PropertyInteger","end")
+
+		obj.addProperty("App::PropertyInteger","start","Display Segment")
+		obj.addProperty("App::PropertyInteger","end","Display Segment")
+		obj.addProperty("App::PropertyFloat","startu","Display Segment")
+		obj.addProperty("App::PropertyFloat","endu","Display Segment")
+		obj.addProperty("App::PropertyFloat","startv","Display Segment")
+		obj.addProperty("App::PropertyFloat","endv","Display Segment")
+		obj.addProperty("App::PropertyBool","_showDisplaySegment","Display Segment")
+		obj._showDisplaySegment=False
+
+		obj.addProperty("App::PropertyBool","closed","Closing")
+		obj.addProperty("App::PropertyBool","cutend","Closing")
+		obj.addProperty("App::PropertyBool","endPlanes","Closing")
+		obj.addProperty("App::PropertyBool","_showClosing","Closing")
+		obj._showClosing=False
+
+		obj.addProperty("App::PropertyBool","showStripes",'~aux')
+		obj.addProperty("App::PropertyBool","generatedBackbone",'~aux')
+		obj.addProperty("App::PropertyInteger","meridianWidth",'Stripes')
+		obj.meridianWidth=5
+		obj.addProperty("App::PropertyInteger","ribWidth",'Stripes')
+		obj.ribWidth=5
+		obj.addProperty("App::PropertyBool","_showStripes","Stripes")
+
+		#obj._showStripes=False
+		#obj._showaux=False
+		#obj.showStripes=True
 
 
-		obj.addProperty("App::PropertyFloat","startu")
-		obj.addProperty("App::PropertyFloat","endu")
-		obj.addProperty("App::PropertyFloat","startv")
-		obj.addProperty("App::PropertyFloat","endv")
-
-
-		obj.addProperty("App::PropertyBool","closed")
-		obj.addProperty("App::PropertyBool","showStripes",'xyz diagnostic')
-		obj.addProperty("App::PropertyBool","generatedBackbone",'xyz diagnostic')
-		
-
+	def onChanged(self,obj,prop):
+#		try:
+#			super(Beface,self).onChanged(obj,prop)
+#		except:
+#			FeaturePython.onChanged(self,obj,prop)
+		self.showprops(obj,prop)
 
 	def execute(self,fp):
 		'''show strips or surface'''
+
 
 		if fp.showStripes:
 			self.showstripes(fp)
@@ -378,9 +492,7 @@ class Beface(FeaturePython):
 		for r in fp.berings:
 			if r.stripmode:
 				stripmode=True
-				print "strimode"
-				for rr in r.Shape.Edges:
-					print rr
+				for rr in r.Shape.Edges[0:3]:
 					pps=rr.Curve.getPoles()
 					FreeCAD.r=r
 					if ll==-1:ll=len(pps)
@@ -458,6 +570,7 @@ class Beface(FeaturePython):
 
 			wist=20 # width of the tangent stripes
 			wist=100
+			wist=fp.ribWidth
 
 			# create some extra objects for debugging
 
@@ -495,9 +608,14 @@ class Beface(FeaturePython):
 				pp=poles[j:j+2]
 				ppy=[]
 
-				for (pa,pb) in pp.swapaxes(0,1):
+				ppz=pp.swapaxes(0,1)
+
+				for ipz,(pa,pb) in enumerate(ppz):
 					pa=FreeCAD.Vector(pa)
 					pb=FreeCAD.Vector(pb)
+					#if ipz==0:
+					#	ppy += [[pa,pa+(pb-pa).normalize()*wist]]
+					#else:
 					ppy += [[pa,pa+(pb-pa).normalize()*2*wist]]
 
 				pp=np.array(ppy).swapaxes(0,1)
@@ -522,9 +640,13 @@ class Beface(FeaturePython):
 				pp=poles[j:j+2]
 				ppy=[]
 
-				for (pa,pb) in pp.swapaxes(0,1):
+				ppz=pp.swapaxes(0,1)
+				for ipz,(pa,pb) in enumerate(ppz):
 					pa=FreeCAD.Vector(pa)
 					pb=FreeCAD.Vector(pb)
+					#if ipz==0:
+					#	ppy += [[pb+(pa-pb).normalize()*wist,pb]]
+					#else:
 					ppy += [[pb+(pa-pb).normalize()*2*wist,pb]]
 
 				pp=np.array(ppy).swapaxes(0,1)
@@ -545,6 +667,7 @@ class Beface(FeaturePython):
 				tt.ViewObject.ShapeColor=(1.0,0.0,0.0)
 
 			#create the meridians
+			wist=fp.meridianWidth
 			poles2=poles.swapaxes(0,1)
 
 			for jj in range((b-1)/3-1):
@@ -643,9 +766,7 @@ class Beface(FeaturePython):
 		for r in fp.berings:
 			if r.stripmode:
 				stripmode=True
-				print "strimode"
-				for rr in r.Shape.Edges:
-					print rr
+				for rr in r.Shape.Edges[0:3]:
 					pps=rr.Curve.getPoles()
 					FreeCAD.r=r
 					if ll==-1:ll=len(pps)
@@ -666,14 +787,25 @@ class Beface(FeaturePython):
 			poles=np.array(ptsb)
 
 		else:
+
+
+
 			if fp.closed:
 				poles=np.array(ptsa+[ptsa[0]])
 			else:
 				poles=np.array(ptsa)
 
+
+		if fp.cutend:
+			print "kante ..."
+			pa=poles[-4].copy()
+			pe=poles[-1].copy()
+			poles[-3]=pa+(pe-pa)*0.2
+			poles[-2]=pe+(pa-pe)*0.2
+
+
 		af=Part.BSplineSurface()
 		(a,b,c)=poles.shape
-		print ("AA poles.shape a,b",a,b)
 
 
 		if not fp.generatedBackbone:
@@ -686,7 +818,6 @@ class Beface(FeaturePython):
 			ya=[4]+[3]*(ecken-1)+[4]
 
 			(a,b,c)=poles.shape
-			print ("poles.shape a,b",a,b)
 
 			# die bezier variante
 			yb=fp.berings[0].Shape.Edge1.Curve.getMultiplicities()
@@ -734,6 +865,11 @@ class Beface(FeaturePython):
 					False,False,db,3)
 
 
+			af.buildFromPolesMultsKnots(poles, 
+					ya,yb,
+					range(len(ya)),range(len(yb)),
+					False,False,db,3)
+
 
 		for i in range(1,len(ya)-1):
 			if ya[i]<3:
@@ -745,12 +881,39 @@ class Beface(FeaturePython):
 		# af.segment(0,5,1.5,2.5)
 
 		sh=af.toShape()
+
+		# endflaechen
+		comp=[sh]
+		comp2=[sh.Face1]
+		if fp.endPlanes:
+			face=Part.Plane().toShape()
+			for ei in [0,-1]:
+				e=fp.berings[ei].Shape.Edge2
+				face.Placement=fp.berings[ei].Placement
+
+				#e.reverse()
+				splita = [(e,face)]
+				r=Part.makeSplitShape(face, splita)
+				for fs in r:
+					for f in fs:
+						print f.Area
+						comp += [f]
+						comp2 += [f]
+
+			print comp
+			fp.Shape=Part.Compound(comp)
+
+
+
+
 		try:
 			fp.Shape=Part.Solid(Part.Shell([sh.Face1]))
+			fp.Shape=Part.Solid(Part.Shell(comp2))
 		except:
+			print "Problem beim Erzeugen Solid"
 			fp.Shape=af.toShape()
 
-		fp.Shape=Part.Solid(Part.Shell([sh.Face1]))
+#		fp.Shape=Part.Solid(Part.Shell([sh.Face1]))
 
 
 ## erzeuge eine Bezierkurve auf der Basis einer Punktmenge
@@ -779,6 +942,7 @@ def genk(start,ende,scale,pos,source,name="BeringSketch",show=True):
 
 	if sk == None:
 		sk=App.ActiveDocument.addObject('Sketcher::SketchObjectPython',name)
+		#sk=App.ActiveDocument.addObject('Part::FeaturePython',name)
 		if not show: sk.ViewObject.hide()
 		Bering(sk)
 		_VPBering(sk.ViewObject)
@@ -885,12 +1049,14 @@ def AA():
 	sk.Shape=af.toShape()
 
 ## create a beface from  selected berings
-#
+
 
 def createBeface():
+	'''create a Bering Surface for a selected list of berings as ribs'''
 
 	sks=Gui.Selection.getSelection()
-	sf=App.ActiveDocument.addObject('Sketcher::SketchObjectPython','BeringFace')
+	#sf=App.ActiveDocument.addObject('Sketcher::SketchObjectPython','BeringFace')
+	sf=App.ActiveDocument.addObject('Part::FeaturePython','BeringFace')
 	Beface(sf)
 	sf.berings=sks
 	_VPBeface(sf.ViewObject)

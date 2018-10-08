@@ -465,6 +465,8 @@ def onspread():
 
 if FreeCAD.GuiUp:
 
+	[c3bI(["Bezier"], always, 'upgradeobjects', 'upgrade Object')]
+	[c3bI(["Bezier"], always, 'upgradeobjects', 'dump Object')]
 	beztools=[]
 	beztools += [c3bI(["Faces"], always, 'tripod_2', 'create Tripod')]
 	beztools += [c3bI(["Points"], always, 'approximator', 'load Pointcloud from Image')]
@@ -487,7 +489,7 @@ if FreeCAD.GuiUp:
 	
 	beztools += [c3bI(["Bezier","Assembly"], always, 'berings', 'create Bering')]
 	c3bG(["Bezier","Assembly"], always, 'berings', 'create Tangent Helpers',"/../icons/alpha.svg")
-	c3bI(["Bezier","Assembly"], always, 'berings', 'create Beface')
+	beztools += [c3bI(["Bezier","Assembly"], always, 'berings', 'create Beface')]
 #	c3bG(["Bezier"], always, 'parameters', 'run')
 	c3bI(["Bezier","Assembly"], always, 'berings', 'create Product')
 	c3bI(["Bezier","Assembly"], always, 'berings', 'connect Faces')

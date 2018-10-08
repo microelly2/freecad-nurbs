@@ -21,8 +21,9 @@ class FeaturePython:
 	def __init__(self, obj):
 		obj.Proxy = self
 		self.Object = obj
-		obj.addProperty("App::PropertyBool","_noExecute",'zzz')
-		obj.addProperty("App::PropertyBool","_debug",'zzz')
+		obj.addProperty("App::PropertyBool","_noExecute",'~aux')
+		obj.addProperty("App::PropertyBool","_debug",'~aux')
+		obj.addProperty("App::PropertyBool","_showaux",'~aux')
 
 
 	def attach(self, vobj):
@@ -37,10 +38,24 @@ class FeaturePython:
 	def __setstate__(self, state):
 		return None
 
+	def showprops(self,obj,prop):
+		if prop.startswith('_show'):
+			mode= 0 if getattr(obj,prop) else 2
+			for pn in obj.PropertiesList:
+				if obj.getGroupOfProperty(pn).replace(' ','')==prop[5:] and pn<>prop:
+					obj.setEditorMode(pn,mode)
+				if obj.getGroupOfProperty(pn).startswith('~') and obj.getGroupOfProperty(pn).replace(' ','')[1:]==prop[5:] and pn<>prop:
+					obj.setEditorMode(pn,mode)
+			return
+
+
 	def onBeforeChange(self, fp, prop):
 		pass
 
 	def onDocumentRestored(self, fp):
+		for pn in fp.PropertiesList:
+			if pn.startswith('_show'):
+				self.onChanged(fp,pn)
 		pass
 
 class ViewProvider:
