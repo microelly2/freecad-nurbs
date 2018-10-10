@@ -471,6 +471,8 @@ if FreeCAD.GuiUp:
 	beztools += [c3bI(["Faces"], always, 'tripod_2', 'create Tripod')]
 	beztools += [c3bI(["Points"], always, 'approximator', 'load Pointcloud from Image')]
 	beztools += [c3bI(["Points"], always, 'approximator', 'smooth Pointcloud')]
+	[c3bI(["Bezier"], always, 'approximator', 'approx2Segments')]
+	
 	beztools += [c3bI(["Bezier"], always, 'leastsq', 'leastsq Bezier')]
 	beztools += [c3bI(["Bezier"], always, 'leastsq', 'leastsq Bezier Two Segments')]
 	beztools += [c3bI(["Bezier"], always, 'berings', 'create Sketch Circle')]

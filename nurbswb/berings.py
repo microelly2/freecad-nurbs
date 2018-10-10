@@ -145,8 +145,9 @@ class Bering(FeaturePython):
 		obj.prePlacement.Base.z=-10
 		obj.postPlacement.Base.z=20
 		
-		obj.stripmode=True
-		obj.stripsymmetric=True
+		#obj.stripmode=True
+		#obj.stripsymmetric=True
+
 		obj._showaux=False
 
 ##\cond
@@ -246,7 +247,8 @@ class Bering(FeaturePython):
 				p.y *= 0.01*fp.vScale.y
 				p.z *= 0.01*fp.vScale.z
 				ptsq += [p]
-			pts=ptsq+[ptsq[0]]
+#			if len(ptsq)%3==0:
+#				pts=ptsq+[ptsq[0]]
 		
 		bc.buildFromPolesMultsKnots(pts, ms, range(len(ms)), False,3)
 #		ass=FreeCAD.ActiveDocument.addObject("Part::Feature","name")
@@ -946,6 +948,7 @@ def genk(start,ende,scale,pos,source,name="BeringSketch",show=True):
 		if not show: sk.ViewObject.hide()
 		Bering(sk)
 		_VPBering(sk.ViewObject)
+		sk.ViewObject.LineColor=(1.,0.,0.)
 
 	sk.source=source
 	sk.start=start
@@ -5501,17 +5504,8 @@ def glaetten():
 
 
 
-#---------------------------
-
-
-
-
-def BB():
-	glaetten()
-
-
-
 def solid():
+	'''create a shell and a solid for a selection'''
 
 	sls=[a.Shape for a in Gui.Selection.getSelection()]
 
@@ -5519,5 +5513,6 @@ def solid():
 	ssh=App.ActiveDocument.addObject('Part::Feature',"shell")
 	ssh.Shape=sh
 
+	sol=Part.makeSolid(sh)
 	ssh=App.ActiveDocument.addObject('Part::Feature',"solid")
-	ssh.Shape=Part.makeSolid(sh)
+	ssh.Shape=sol

@@ -19,8 +19,11 @@
 import FreeCAD
 import FreeCADGui
 
-from transportationwb.say import sayexc, say
-from transportationwb.say import  *
+#from transportationwb.say import sayexc, say
+#from transportationwb.say import  *
+
+from nurbswb.say import sayexc, say
+from nurbswb.say import  *
 
 from PySide import QtGui, QtCore
 
