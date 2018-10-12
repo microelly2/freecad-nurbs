@@ -471,7 +471,7 @@ if FreeCAD.GuiUp:
 	beztools += [c3bI(["Faces"], always, 'tripod_2', 'create Tripod')]
 	beztools += [c3bI(["Points"], always, 'approximator', 'load Pointcloud from Image')]
 	beztools += [c3bI(["Points"], always, 'approximator', 'smooth Pointcloud')]
-	[c3bI(["Bezier"], always, 'approximator', 'approx2Segments')]
+	[c3bI(["Bezier","Assembly"], always, 'approximator', 'minimum Length Bezier')]
 	
 	beztools += [c3bI(["Bezier"], always, 'leastsq', 'leastsq Bezier')]
 	beztools += [c3bI(["Bezier"], always, 'leastsq', 'leastsq Bezier Two Segments')]
@@ -480,7 +480,7 @@ if FreeCAD.GuiUp:
 	beztools += [c3bI(["Bezier","Create"], always, 'berings', 'create BePlane')]
 	beztools += [c3bI(["Bezier","Create"], always, 'berings', 'create BeTube')]
 	beztools += [c3bI(["Bezier","Create"], always, 'berings', 'create Helmet')]
-	
+
 
 #	c3b(["Bezier","Create"], always, 'berings', 'create Datum Plane')
 #	c3b(["Bezier","Create"], always, 'berings', 'create Datum Line')
