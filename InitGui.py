@@ -472,6 +472,8 @@ if FreeCAD.GuiUp:
 	beztools += [c3bI(["Points"], always, 'approximator', 'load Pointcloud from Image')]
 	beztools += [c3bI(["Points"], always, 'approximator', 'smooth Pointcloud')]
 	[c3bI(["Bezier","Assembly"], always, 'approximator', 'minimum Length Bezier')]
+
+	[c3bI(["Bezier","Assembly"], always, 'approximator', 'near constant Curvature Bezier')]
 	
 	beztools += [c3bI(["Bezier"], always, 'leastsq', 'leastsq Bezier')]
 	beztools += [c3bI(["Bezier"], always, 'leastsq', 'leastsq Bezier Two Segments')]

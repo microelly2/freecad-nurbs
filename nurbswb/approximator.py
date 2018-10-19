@@ -368,23 +368,38 @@ class Approx2seg(FeaturePython):
 
 	def __init__(self, obj):
 		FeaturePython.__init__(self, obj)
-		obj.addProperty("App::PropertyLink","path")
-		obj.addProperty("App::PropertyInteger","factor").factor=30
-		obj.addProperty("App::PropertyFloat","alphaStart")
-		obj.addProperty("App::PropertyFloat","alphaEnd")
-		obj.addProperty("App::PropertyFloat","tol").tol=0.1
+		obj.addProperty("App::PropertyLink","path","source")
+		obj.addProperty("App::PropertyInteger","factor","config").factor=30
+		obj.addProperty("App::PropertyFloat","alphaStart","config")#.alphaStart=-18
+		obj.addProperty("App::PropertyFloat","alphaEnd","config")
+		obj.addProperty("App::PropertyFloat","betaStart","config")#.alphaStart=-18
+		obj.addProperty("App::PropertyFloat","betaEnd","config")
+
+		
+		obj.addProperty("App::PropertyFloat","tol","approx").tol=0.1
 		obj.addProperty("App::PropertyBool","closed").closed=True
-		obj.addProperty("App::PropertyBool","useStart").useStart=True
-		obj.addProperty("App::PropertyBool","useEnd").useEnd=True
-		obj.addProperty("App::PropertyEnumeration","method")
-		obj.addProperty("App::PropertyEnumeration","tangentModel")
+		obj.addProperty("App::PropertyBool","useStart","config").useStart=True
+		obj.addProperty("App::PropertyBool","useEnd","config").useEnd=True
+		obj.addProperty("App::PropertyEnumeration","method","approx")
+		obj.addProperty("App::PropertyEnumeration","tangentModel","approx")
 		obj.addProperty("App::PropertyFloatList","factorList").factorList=[100.]*20
-		obj.addProperty("App::PropertyFloatList","alphaList")
-		obj.addProperty("App::PropertyInteger","start").start=0
-		obj.addProperty("App::PropertyInteger","end").end=0
-		
+		obj.addProperty("App::PropertyFloatList","alphaList","result")
+		obj.addProperty("App::PropertyInteger","start","source").start=0
+		obj.addProperty("App::PropertyInteger","end","source").end=0
+
+		obj.addProperty("App::PropertyEnumeration","mode","approx")
+		obj.mode=['minimal Lenght','Length','curvature']
+
+		obj.addProperty("App::PropertyFloat","length","result")
+
+#		obj.addProperty("App::PropertyFloat","_a")._a=10
+#		obj.addProperty("App::PropertyFloat","_b")._b=10
+#		obj.addProperty("App::PropertyFloat","_c")._c=10
+#		obj.addProperty("App::PropertyFloat","_d")._d=3
+
 		obj.tangentModel=['all equal','1/3 distance','circle']
-		
+		# obj.tangentModel='1/3 distance'
+
 		obj.method=[ 'Default',
 			'Nelder-Mead' ,
 			'Powell' ,
@@ -401,73 +416,16 @@ class Approx2seg(FeaturePython):
 #			'trust-exact',
 #			'trust-krylov',
 		]
+		obj.method='Nelder-Mead'
+		obj.closed=False
+		obj.factor=200
 
 	def execute(self,obj):
 		pass
 
 
-	def run2(self,fp,ptsa,f=0.5):
-		# variante zwei segmente
-
-		pts=ptsa
-		start=[pts[2].x,pts[2].y]
-
-		def ff(a,show=True):
-			#pts=App.ActiveDocument.DWire.Points
-			if a <> None:
-				pts[2]=FreeCAD.Vector(a[0],a[1])
-				pts[4]=2*pts[3]-pts[2]
-			bc=Part.BSplineCurve()
-			ms=[4,3,4]
-			bc.buildFromPolesMultsKnots(pts, ms, range(len(ms)), False,3)
-			if show:
-				fp.Shape=bc.toShape()
-				App.ActiveDocument.ActiveObject.Label="f = " + str(f)
-				print bc.length()- (pts[3]-pts[2]).Length*0.5
-			return bc.length()- (pts[3]-pts[2]).Length*f
-
-
-		#ff(None,True)
-		rc=minimize(ff,start)
-		print rc 
-		# print (f,ff(rc.x,True))
-
-	def run3(self,fp,ptsa,f=0.5):
-		# drei segmente
-
-		pts=ptsa
-		start=[pts[2].x,pts[2].y,pts[5].x,pts[5].y]
-
-		def ff(a,show=True):
-			#pts=App.ActiveDocument.DWire.Points
-			print len(pts)
-			if a <> None:
-				pts[2]=FreeCAD.Vector(a[0],a[1])
-				pts[4]=2*pts[3]-pts[2]
-				pts[5]=FreeCAD.Vector(a[2],a[3])
-				pts[7]=2*pts[6]-pts[5]
-
-			bc=Part.BSplineCurve()
-			ms=[4,3,3,4]
-			bc.buildFromPolesMultsKnots(pts, ms, range(len(ms)), False,3)
-			if show:
-				fp.Shape=bc.toShape()
-				App.ActiveDocument.ActiveObject.Label="f = " + str(f)
-				print bc.length()- (pts[3]-pts[2]).Length*0.5
-			return bc.length()- ((pts[3]-pts[2]).Length* (pts[6]-pts[5]).Length*f)**0.5
-#			return bc.length()- (pts[3]-pts[2]).Length*f - (pts[6]-pts[5]).Length*f
-			
-
-
-		#ff(None,True)
-		rc=minimize(ff,start,method=fp.method)
-		print rc 
-		# print (f,ff(rc.x,True))
-
-
 	def runTT(self,fp,ptsa,f=0.5):
-		# variante feste Tangenten
-		
+
 		if fp.start<>0 or fp.end<>0:
 			ptsa=ptsa[fp.start:fp.end]
 
@@ -475,69 +433,77 @@ class Approx2seg(FeaturePython):
 			ptsa += [ptsa[0]]
 
 		pts=ptsa
-		alphas=[0]*(len(ptsa)-2)
+		alphas=[1]*(len(ptsa))*2
+
 		for i in range(1,len(ptsa)-2):
 			v=ptsa[i+1]-ptsa[i-1]
 			alphas[i]=np.arctan2(v.y,v.x)
+		
+		fp.Proxy.loops=0
+		fp.Proxy.time=time.time()
 
 
 		def ff(alpha,show=True):
-			alphas=[0]*(len(ptsa))
-			alphas[1:-3]=alpha
+			'''function to minimize'''
+
+			la=len(ptsa)
+			alphas=[0]*(la)*2
+
+			alphas[0:2*la]=alpha[0:2*la]
 			alpha=alphas
+			fp.Proxy.loops += 1
 
 			if alpha <> None:
+
 				if fp.useStart:
 					alpha[0]=fp.alphaStart*np.pi/18.0
+
 				if fp.useEnd:
-					alpha[-1-2]=fp.alphaEnd*np.pi/18.0
+					alpha[la-1]=fp.alphaEnd*np.pi/18.0
 
 				if fp.closed:
-					alpha[-1-2]=alpha[0]
-#				print alpha
+					alpha[la-1]=alpha[0]
 
 				pts=[]
 				for i in range(0,len(ptsa)):
 					k=fp.factorList[i]*0.01*fp.factor
 					if i <> 0:
 						pts += [ ptsa[i]-FreeCAD.Vector(np.cos(alpha[i])*k,np.sin(alpha[i])*k) ]
-					pts += [ptsa[i] ]
+					pts += [ptsa[i]]
 					if i <>len(ptsa)-1:
 						pts += [ptsa[i]+FreeCAD.Vector(np.cos(alpha[i])*k,np.sin(alpha[i])*k)]
 
 				if fp.tangentModel=='1/3 distance':
 
 					pts=[]
-					k=0.01*fp.factor
-					k1=(ptsa[-1]-ptsa[0]).Length*k
+					kk=0.33 # 1/3 distance
+					k=fp.factorList[i]*0.01*fp.factor
+					k1=min((ptsa[-1]-ptsa[0]).Length*kk,k)
+
 					for i in range(0,len(ptsa)):
+						k=fp.factorList[i]*0.01*fp.factor
 						k2=k1
 						if i==len(ptsa)-1:
-							k1=(ptsa[0]-ptsa[i]).Length*k
+							k1=min((ptsa[0]-ptsa[i]).Length*kk,k)
 						else:
-							k1=(ptsa[i+1]-ptsa[i]).Length*k
-					#	k2=(ptsa[i-1]-ptsa[i]).Length*k
+							k1=min((ptsa[i+1]-ptsa[i]).Length*kk,k)
 
 						if i <> 0:
 							pts += [ ptsa[i]+FreeCAD.Vector(np.cos(alpha[i])*k2,np.sin(alpha[i])*k2) ]
-						pts += [ptsa[i] ]
+						pts += [ptsa[i]]
 						if i <>len(ptsa)-1:
 							pts += [ptsa[i]-FreeCAD.Vector(np.cos(alpha[i])*k1,np.sin(alpha[i])*k1)]
-					
-
 
 			bc=Part.BSplineCurve()
-			n=len(alphas)-4
+			n=la-2
 			ms=[4]+[3]*n+[4]
-
 
 			bc.buildFromPolesMultsKnots(pts, ms, range(len(ms)), False,3)
 			if show:
 				fp.Shape=bc.toShape()
 				if fp._showaux:
 					fp.Shape=Part.Compound([bc.toShape(),Part.makePolygon(pts)])
-			#	fp.Label="f = " + str(f)
-			# print bc.length()
+
 			return bc.length()
 
 
@@ -545,17 +511,138 @@ class Approx2seg(FeaturePython):
 			rc=minimize(ff,alphas,tol=1.)
 		else:
 			rc=minimize(ff,alphas,method=fp.method,tol=fp.tol)
-		print (rc.success,rc.message)
+
+		print (fp.method,rc.success,rc.message)
+		print "Length ",round(fp.Shape.Edge1.Length,1)
+		fp.length=fp.Shape.Edge1.Length
+		e=fp.Shape.Edge1
+		bc=fp.Shape.Edge1.Curve
+
+		size=bc.NbKnots
+		size=4.0
+		anz=10
+		cc=np.array([bc.curvature(size*u/anz)**2 for u in range(anz+1)])
+
+		print "Curvature ",round(cc.mean()*10**6,1)
 		fp.alphaList=list(rc.x)
-		# print rc.x 
 
 
+	def runTT3D(self,fp,ptsa,f=0.5):
+
+		if fp.start<>0 or fp.end<>0:
+			ptsa=ptsa[fp.start:fp.end]
+
+		if fp.closed:
+			ptsa += [ptsa[0]]
+
+		pts=ptsa
+		alphas=[1]*(len(ptsa))*2
+
+		for i in range(1,len(ptsa)-2):
+			v=ptsa[i+1]-ptsa[i-1]
+			alphas[i]=np.arctan2(v.y,v.x)
+		
+		fp.Proxy.loops=0
+		fp.Proxy.time=time.time()
+
+
+		def ff(alpha,show=True):
+			'''function to minimize'''
+
+			la=len(ptsa)
+			alphas=[0]*(la)*2
+			alphas=[1]*(la)*2
+
+			alphas[0:2*la]=alpha[0:2*la]
+			#alphas[0:la]=alpha[0:la]
+			
+			alpha=alphas
+			fp.Proxy.loops += 1
+
+			if alpha <> None:
+
+				if fp.useStart:
+					alpha[0]=fp.alphaStart*np.pi/18.0
+					alpha[la]=fp.betaStart*np.pi/18.0
+
+				if fp.useEnd:
+					alpha[la-1]=fp.alphaEnd*np.pi/18.0
+					alpha[2*la-1]=fp.betaEnd*np.pi/18.0
+
+				if fp.closed:
+					alpha[la-1]=alpha[0]
+					alpha[2*la-1]=alpha[la]
+
+				pts=[]
+				for i in range(0,len(ptsa)):
+					k=fp.factorList[i]*0.01*fp.factor
+					if i <> 0:
+						pts += [ ptsa[i]-FreeCAD.Vector(np.cos(alpha[la+i])*np.cos(alpha[i])*k,
+								np.cos(alpha[la+i])*np.sin(alpha[i])*k,np.sin(alpha[la+i])*k) ]
+					pts += [ptsa[i]]
+					if i <>len(ptsa)-1:
+						pts += [ ptsa[i]+FreeCAD.Vector(np.cos(alpha[la+i])*np.cos(alpha[i])*k,
+								np.cos(alpha[la+i])*np.sin(alpha[i])*k,np.sin(alpha[la+i])*k) ]
+
+				if fp.tangentModel=='1/3 distance':
+
+					pts=[]
+					kk=0.33 # 1/3 distance
+					k=fp.factorList[i]*0.01*fp.factor
+					k1=min((ptsa[-1]-ptsa[0]).Length*kk,k)
+
+					for i in range(0,len(ptsa)):
+						k=fp.factorList[i]*0.01*fp.factor
+						k2=k1
+						if i==len(ptsa)-1:
+							k1=min((ptsa[0]-ptsa[i]).Length*kk,k)
+						else:
+							k1=min((ptsa[i+1]-ptsa[i]).Length*kk,k)
+
+						if i <> 0:
+							pts += [ ptsa[i]+FreeCAD.Vector(np.cos(alpha[i])*k2,np.sin(alpha[i])*k2) ]
+						pts += [ptsa[i]]
+						if i <>len(ptsa)-1:
+							pts += [ptsa[i]-FreeCAD.Vector(np.cos(alpha[i])*k1,np.sin(alpha[i])*k1)]
+
+			bc=Part.BSplineCurve()
+			n=la-2
+			ms=[4]+[3]*n+[4]
+
+			bc.buildFromPolesMultsKnots(pts, ms, range(len(ms)), False,3)
+			if show:
+				fp.Shape=bc.toShape()
+				if fp._showaux:
+					fp.Shape=Part.Compound([bc.toShape(),Part.makePolygon(pts)])
+
+			return bc.length()
+
+
+		if fp.method=='Default':
+			rc=minimize(ff,alphas,tol=1.)
+		else:
+			rc=minimize(ff,alphas,method=fp.method,tol=fp.tol)
+
+		print (fp.method,rc.success,rc.message)
+		print "Length ",round(fp.Shape.Edge1.Length,1)
+		fp.length=fp.Shape.Edge1.Length
+		e=fp.Shape.Edge1
+		bc=fp.Shape.Edge1.Curve
+
+		size=bc.NbKnots
+		size=5.0
+		anz=1000
+		cc=np.array([bc.curvature(size*u/anz)**2 for u in range(anz+1)])
+
+		print "Curvature mean ",round(cc.mean()*10**6,1)
+		print "Curvature max ",round(cc.max()*10**6,1)
+		fp.alphaList=list(rc.x)
 
 
 	def onChanged(self,fp,prop):
 		if fp.Shape==None: return
-		if prop in ["factor",'method','alphaStart','alphaEnd','factorList','tangentModel']:
-			if fp.Shape == None:
+		if prop in ["factor",'method','alphaStart','alphaEnd','betaEnd','betaStart','factorList','tangentModel'] or prop.startswith('_'):
+			if fp.Shape == None or fp.path== None:
 				return
 
 			try:
@@ -563,7 +650,16 @@ class Approx2seg(FeaturePython):
 			except:
 				pts=[v.Point for v in fp.path.Shape.Vertexes]
 
-			self.runTT(fp,pts,fp.factor)
+			if 0:
+				pts=[FreeCAD.Vector(0,0,0),
+				FreeCAD.Vector(100,0,0),
+				FreeCAD.Vector(200,100,100),
+				FreeCAD.Vector(200,200,100),
+				FreeCAD.Vector(200,400,200),
+				]
+
+			#self.runTT(fp,pts,fp.factor)
+			self.runTT3D(fp,pts,fp.factor)
 
 	def execute(self,fp):
 		self.onChanged(fp,'method')
@@ -573,11 +669,169 @@ def minimumLengthBezier():
 
 	yy=App.ActiveDocument.addObject("Part::FeaturePython","MinLenBezier")
 	Approx2seg(yy)
+	
 	ViewProvider(yy.ViewObject)
 	yy.path=Gui.Selection.getSelection()[0]
 	yy.Proxy.onChanged(yy,"factor")
 	yy.ViewObject.LineColor=(1.0,0.3,0.0)
 
+'''
+if 1:
+	pts=[FreeCAD.Vector(0,0,0),
+			FreeCAD.Vector(300,0,0),
+			FreeCAD.Vector(500,200,300),
+			FreeCAD.Vector(500,400,500),
+			FreeCAD.Vector(500,400,800),
+			]
+	import Draft
+	Draft.makeWire(pts)
+'''
+
+
+
+class CCB(FeaturePython):
+
+	def __init__(self, obj):
+		FeaturePython.__init__(self, obj)
+		obj.addProperty("App::PropertyLink","path")
+#		obj.addProperty("App::PropertyInteger","factor").factor=30
+#		obj.addProperty("App::PropertyFloat","alphaStart").alphaStart=-18
+#		obj.addProperty("App::PropertyFloat","alphaEnd")
+		obj.addProperty("App::PropertyFloat","tol").tol=0.1
+#		obj.addProperty("App::PropertyBool","closed").closed=True
+#		obj.addProperty("App::PropertyBool","useStart").useStart=True
+#		obj.addProperty("App::PropertyBool","useEnd").useEnd=True
+		obj.addProperty("App::PropertyEnumeration","method")
+#		obj.addProperty("App::PropertyEnumeration","tangentModel")
+#		obj.addProperty("App::PropertyFloatList","factorList").factorList=[100.]*20
+		obj.addProperty("App::PropertyFloatList","alphaList")
+		obj.addProperty("App::PropertyInteger","start").start=0
+		obj.addProperty("App::PropertyInteger","end").end=0
+
+#		obj.addProperty("App::PropertyEnumeration","mode")
+#		obj.mode=['minimal Lenght','Length','curvature']
+		obj.addProperty("App::PropertyFloat","length","~calculated")
+		
+#		obj.addProperty("App::PropertyFloat","_a")._a=10
+#		obj.addProperty("App::PropertyFloat","_b")._b=10
+#		obj.addProperty("App::PropertyFloat","_c")._c=10
+#		obj.addProperty("App::PropertyFloat","_d")._d=3
+
+#		obj.addProperty("App::PropertyInteger","segment").segment=0
+#		obj.tangentModel=['all equal','1/3 distance','circle']
+		# obj.tangentModel='1/3 distance'
+		obj.method=[ 'Default',
+			'Nelder-Mead' ,
+			'Powell' ,
+			'CG' ,
+			'BFGS' ,
+#*			'Newton-CG',
+			'L-BFGS-B', 
+			'TNC',
+			'COBYLA',
+			'SLSQP',
+#			'trust-constr',
+#*			'dogleg',
+#			'trust-ncg',
+#			'trust-exact',
+#			'trust-krylov',
+		]
+		obj.method='Nelder-Mead'
+
+	def runArc(self,fp,ptsv):
+
+		ptsa=ptsv
+		fp.Proxy.loops=0
+		fp.Proxy.time=time.time()
+
+		def ff(alpha,show=True):
+
+			a=alpha[0]
+			b=alpha[1]
+			pts=[	ptsa[0],
+					ptsa[0]+(ptsa[1]-ptsa[0]).normalize()*(0.0001+abs(a)),
+					ptsa[3]+(ptsa[2]-ptsa[3]).normalize()*(0.0001+abs(b)),
+					ptsa[3]
+				]
+			fp.Proxy.loops += 1
+
+			bc=Part.BSplineCurve()
+			ms=[4]+[4]
+
+			bc.buildFromPolesMultsKnots(pts, ms, range(len(ms)), False,3)
+			if show:
+				fp.Shape=bc.toShape()
+			size=1.0
+			anz=1000
+			cc2=np.array([bc.curvature(size*u/anz) for u in range(anz+1)])
+			fp.Proxy.cc2=cc2
+
+			fp.alphaList=list(alpha)
+			rc=abs(cc2.max()-cc2.min())*bc.length()
+			# rc=abs(cc2.std())*bc.length()**(fp._a*0.1)
+			return rc *10**4
+
+		#main method
+
+		alphas=[0,0]
+		if fp.method=='Default':
+			rc=minimize(ff,alphas,tol=fp.tol)
+		else:
+			rc=minimize(ff,alphas,method=fp.method,tol=fp.tol)
+
+		print (fp.method,fp.Proxy.loops,rc.success,rc.message)
+		print (fp.Proxy.cc2.max(),fp.Proxy.cc2.min())
+		return fp.Shape
+
+
+
+	def onChanged(self,fp,prop):
+		if prop in ["factor",'method','alphaStart','alphaEnd','factorList','tangentModel','segment'] or prop.startswith('_'):
+			if fp.Shape == None or fp.path== None:
+				return
+
+			try: # Draft Wire oder Draft BSpline
+				pts=fp.path.Points
+			except:
+				pts=[v.Point for v in fp.path.Shape.Vertexes]
+
+
+			try: # wenn es eine kurve ist
+				pts=fp.path.Shape.Edge1.Curve.getPoles()
+			except:
+				pass
+
+			if fp.start<>0 or fp.end<>0:
+				pts=pts[3*fp.start:3*fp.end+1]
+
+			ll=len(pts)/3
+			shapes=[]
+			lenn=0.0
+			for li in range(ll):
+				ptsa=pts[li*3:li*3+4]
+				rc=self.runArc(fp,ptsa)
+				print ("runArc",li,rc)
+				shapes +=[rc]
+				lenn += rc.Length
+
+			fp.Shape=Part.Compound(shapes)
+			fp.length=lenn
+
+
+	def execute(self,fp):
+		self.onChanged(fp,'method')
+
+
+def nearconstantCurvatureBezier():
+	''' optimale kurve mit minimaler kruemmung aenderung'''
+
+	yy=App.ActiveDocument.addObject("Part::FeaturePython","nearConstantCurvatureBezier")
+	CCB(yy)
+	
+	ViewProvider(yy.ViewObject)
+	yy.path=Gui.Selection.getSelection()[0]
+	yy.Proxy.onChanged(yy,"factor")
+	yy.ViewObject.LineColor=(1.0,0.3,1.0)
 
 
 

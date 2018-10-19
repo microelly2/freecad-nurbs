@@ -146,7 +146,7 @@ def DockWidget(title=''):
 	'''create a dock widget in a gibes dock container window'''
 
 	t = QtGui.QLabel("my widget")
-	w = MikiDockWidget(t, "transport WB")
+	w = MikiDockWidget(t, "My Dock")
 
 	# w=QtGui.QWidget()
 # w.setStyleSheet("QWidget { font: bold 18px;color:brown;border-style:
@@ -791,8 +791,10 @@ class MikiDockWidget(QtGui.QDockWidget):
 #		self.toggle_title_widget(False)
 #		self.toggle_title_widget(True)
 #		self.topLevelChanged.connect(self.toggle_title_widget)
-		self.setTitleBarWidget(None)
-		#self.setTitleBarWidget(self.title_widget)
+		if 1:
+			self.setTitleBarWidget(None)
+		else:
+			self.setTitleBarWidget(self.title_widget)
 
 		self.setMinimumSize(200, 185)
 
@@ -969,6 +971,7 @@ def getdockwindowMgr2(dockwindow, winname="FreeCAD"):
 	d3=dockwindow
 	if 1:
 		winname = "OTTO"
+		winname = "FreeCAD"
 		w = getMainWindowByName(winname)
 
 		w.addDockWidget(QtCore.Qt.LeftDockWidgetArea, d3)
