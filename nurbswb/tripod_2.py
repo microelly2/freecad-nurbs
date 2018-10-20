@@ -40,13 +40,13 @@ class ViewProvider:
 
 
 class Tripod(PartFeature):
-	def __init__(self, obj,uc=5,vc=5):
+	def __init__(self, obj):
 		PartFeature.__init__(self, obj)
 		self.Type="Tripod"
 		self.TypeId="Tripod"
 		obj.addProperty("App::PropertyLink","source","Source","Bezugskoerper")
 		obj.addProperty("App::PropertyInteger","faceNumber","Source","Nummer der Flaeche").faceNumber=0
-		obj.addProperty("App::PropertyEnumeration","mode","Format","Darstellung als Dreibein oder Kruemmungskreise").mode="UV-Tripod","Curvature"
+		obj.addProperty("App::PropertyEnumeration","mode","Format","Darstellung als Dreibein oder Kruemmungskreise").mode=["UV-Tripod","Curvature","Sketch"]
 		obj.addProperty("App::PropertyFloat","u","UV","u position un uv space").u=50
 		obj.addProperty("App::PropertyFloat","v","UV","v position in uv space").v=50
 		
@@ -58,6 +58,8 @@ class Tripod(PartFeature):
 	def onChanged(self, fp, prop):
 		''' recompute the shape, compute and print the curvature '''
 		if prop=="Shape": return
+		if prop=="Placement": return
+		#print "on change ",prop
 
 		try: fp.u, fp.v, fp.directionNormal,fp.Shape,fp.source,fp.faceNumber
 		except: return
@@ -75,23 +77,74 @@ class Tripod(PartFeature):
 #		u=fp.u/12*3.14/100
 #		v=fp.v/12*3.14/100
 
-		if fp.mode=="Curvature":
+		if fp.mode=="Curvature2":
 			self.runmode2(fp,prop)
 			return
 
+		wiremode = len(fp.source.Shape.Faces)==0
 
-		f=fp.source.Shape.Faces[fp.faceNumber-1]
-		nf=f.toNurbs()
+		if wiremode:
+			w=App.ActiveDocument.BSpline.Shape.Edges[0]
+			nn=w.toNurbs().Edges[0]
 
-		sf=nf.Face1.Surface
+			(mi,ma)=nn.ParameterRange
+			u=mi+(ma-mi)*fp.u*0.01
+			vf=nn.valueAt(u)
+			t1=nn.tangentAt(u)
+			t2=nn.normalAt(u)
 
-		#sf=fp.source.Shape.Faces[fp.faceNumber-1].Surface
+		else:
+			f=fp.source.Shape.Faces[fp.faceNumber-1]
+			nf=f.toNurbs()
 
-		# point
-		vf=sf.value(u,v)
+			sf=nf.Face1.Surface
 
-		# tangents
-		t1,t2=sf.tangent(u,v)
+			#sf=fp.source.Shape.Faces[fp.faceNumber-1].Surface
+
+			# point
+			vf=sf.value(u,v)
+
+			# tangents
+			t1,t2=sf.tangent(u,v)
+			#-------------------------
+
+
+		#------------------------
+
+			t1=t1.normalize()
+			t2=t2.normalize()
+		if fp.directionNormal: 
+			n=t1.cross(t2).normalize()
+		else: 
+			n=t2.cross(t1).normalize()
+
+		n=n.normalize()
+
+		r=FreeCAD.Rotation(t1,t2,n)
+		print "Rotation A",r.toEuler()
+
+		if wiremode:
+			print "Wiremode"
+			r=FreeCAD.Rotation(n,t1,t2)
+			r=FreeCAD.Rotation(t2,n,t1)
+		else:
+			r=FreeCAD.Rotation(t1,t2,n)
+		
+		print "Rotation",r.toEuler()
+		pm=FreeCAD.Placement(vf,r)
+		#pm=FreeCAD.Placement()
+		#pm.Rotation=r
+		if fp.mode=='Sketch':
+			if len(fp.Geometry)==0:
+				fp.addGeometry(Part.Circle(App.Vector(0,0,0),App.Vector(0,0,1),100.),False)
+				fp.addGeometry(Part.LineSegment(App.Vector(0,0,0),App.Vector(300.,0,0)),False)
+				fp.addGeometry(Part.LineSegment(App.Vector(0.,0,0),App.Vector(0,200,0)),False)
+				fp.recompute()
+			fp.Placement=pm
+			return
+
+
+
 		t1 *= fp.scale
 		t2 *= fp.scale
 
@@ -119,6 +172,15 @@ class Tripod(PartFeature):
 		comp=Part.Compound([lu for lu in lins])
 		fp.Shape=comp
 		
+		#-------------------
+		# the placement
+		#vf=sf.value(u,v)
+#		print vf
+		#[t1,t2]=sf.tangent(u,v)
+#		print t1,t2
+		#n=t2.cross(t1).normalize()
+
+		#---------------------
 		if 0:
 			try:
 				
@@ -226,8 +288,39 @@ class Tripod(PartFeature):
 def createTripod():
 
 	a=FreeCAD.ActiveDocument.addObject("Part::FeaturePython","Tripod")
+
 	Tripod(a)
 	a.ViewObject.LineWidth = 2
 	a.source=Gui.Selection.getSelection()[0]
 	ViewProvider(a.ViewObject)
 
+def createTripodSketch(): #sketcher
+
+	#a=FreeCAD.ActiveDocument.addObject("Part::FeaturePython","Tripod")
+	a=FreeCAD.ActiveDocument.addObject("Sketcher::SketchObjectPython","TripodSketch")
+	#Tripod(a,mode='Sketch')
+	Tripod(a)
+	a.mode="Sketch"
+	a.ViewObject.LineWidth = 2
+	a.source=Gui.Selection.getSelection()[0]
+	ViewProvider(a.ViewObject)
+
+
+def createTripod(): # for wire
+
+	a=FreeCAD.ActiveDocument.addObject("Part::FeaturePython","Tripod")
+
+	Tripod(a)
+	a.ViewObject.LineWidth = 2
+	a.source=Gui.Selection.getSelection()[0]
+	ViewProvider(a.ViewObject)
+
+
+
+def createSweep():
+	sw=FreeCAD.ActiveDocument.addObject('Part::Sweep','Sweep')
+	sw.Spine=(Gui.Selection.getSelection()[-1],["Edge1"])
+	sw.Sections=Gui.Selection.getSelection()[0:-1]
+	App.activeDocument().recompute()
+
+# createSweep()

@@ -469,6 +469,8 @@ if FreeCAD.GuiUp:
 	[c3bI(["Bezier"], always, 'upgradeobjects', 'dump Object')]
 	beztools=[]
 	beztools += [c3bI(["Faces"], always, 'tripod_2', 'create Tripod')]
+	beztools += [c3bI(["Faces"], always, 'tripod_2', 'create Tripod Sketch')]
+	beztools += [c3bI(["Faces"], always, 'tripod_2', 'create Sweep')]
 	beztools += [c3bI(["Points"], always, 'approximator', 'load Pointcloud from Image')]
 	beztools += [c3bI(["Points"], always, 'approximator', 'smooth Pointcloud')]
 	[c3bI(["Bezier","Assembly"], always, 'approximator', 'minimum Length Bezier')]
