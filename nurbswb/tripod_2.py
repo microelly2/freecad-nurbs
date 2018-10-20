@@ -84,7 +84,7 @@ class Tripod(PartFeature):
 		wiremode = len(fp.source.Shape.Faces)==0
 
 		if wiremode:
-			w=App.ActiveDocument.BSpline.Shape.Edges[0]
+			w=fp.source.Shape.Edges[0]
 			nn=w.toNurbs().Edges[0]
 
 			(mi,ma)=nn.ParameterRange
@@ -136,9 +136,10 @@ class Tripod(PartFeature):
 		#pm.Rotation=r
 		if fp.mode=='Sketch':
 			if len(fp.Geometry)==0:
-				fp.addGeometry(Part.Circle(App.Vector(0,0,0),App.Vector(0,0,1),100.),False)
-				fp.addGeometry(Part.LineSegment(App.Vector(0,0,0),App.Vector(300.,0,0)),False)
-				fp.addGeometry(Part.LineSegment(App.Vector(0.,0,0),App.Vector(0,200,0)),False)
+				dist=fp.source.Shape.BoundBox.DiagonalLength*0.05
+				fp.addGeometry(Part.Circle(App.Vector(0,0,0),App.Vector(0,0,1),dist),False)
+				fp.addGeometry(Part.LineSegment(App.Vector(0,0,0),App.Vector(dist*3.,0,0)),False)
+				fp.addGeometry(Part.LineSegment(App.Vector(0.,0,0),App.Vector(0,dist*2,0)),False)
 				fp.recompute()
 			fp.Placement=pm
 			return
