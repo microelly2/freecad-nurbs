@@ -375,6 +375,7 @@ class Approx2seg(FeaturePython):
 		obj.addProperty("App::PropertyFloat","betaStart","config")#.alphaStart=-18
 		obj.addProperty("App::PropertyFloat","betaEnd","config")
 
+		obj.addProperty("App::PropertyBool","reuseAlphas")
 		
 		obj.addProperty("App::PropertyFloat","tol","approx").tol=0.1
 		obj.addProperty("App::PropertyBool","closed").closed=True
@@ -392,7 +393,7 @@ class Approx2seg(FeaturePython):
 
 		obj.addProperty("App::PropertyFloat","length","result")
 
-#		obj.addProperty("App::PropertyFloat","_a")._a=10
+		obj.addProperty("App::PropertyFloat","_a")._a=10
 #		obj.addProperty("App::PropertyFloat","_b")._b=10
 #		obj.addProperty("App::PropertyFloat","_c")._c=10
 #		obj.addProperty("App::PropertyFloat","_d")._d=3
@@ -418,7 +419,12 @@ class Approx2seg(FeaturePython):
 		]
 		obj.method='Nelder-Mead'
 		obj.closed=False
-		obj.factor=200
+		obj.factor=10
+		obj.alphaStart=0
+		obj.alphaEnd=0
+		obj.tangentModel='1/3 distance'
+		obj._debug=True
+		self.restored=False
 
 	def execute(self,obj):
 		pass
@@ -441,6 +447,9 @@ class Approx2seg(FeaturePython):
 		
 		fp.Proxy.loops=0
 		fp.Proxy.time=time.time()
+		
+		if fp.reuseAlphas:
+			alphas=fp.alphaList
 
 
 		def ff(alpha,show=True):
@@ -537,10 +546,18 @@ class Approx2seg(FeaturePython):
 
 		pts=ptsa
 		alphas=[1]*(len(ptsa))*2
+		alphasKK=[1]*(len(ptsa))*2
 
 		for i in range(1,len(ptsa)-2):
 			v=ptsa[i+1]-ptsa[i-1]
 			alphas[i]=np.arctan2(v.y,v.x)
+#			print i
+#			print ptsa[i+1]
+#			print ptsa[i-1]
+#			print v
+#			print (i,alphas[i]*180/np.pi)
+			#alphas[i]=np.pi*0.5
+			alphasKK[i]=-np.arctan2(-v.y,v.x)
 		
 		fp.Proxy.loops=0
 		fp.Proxy.time=time.time()
@@ -557,7 +574,13 @@ class Approx2seg(FeaturePython):
 			#alphas[0:la]=alpha[0:la]
 			
 			alpha=alphas
+#			for i in range(1,len(ptsa)-2):
+#				if abs(alphas[i]-alphasKK[i])>0.5*np.pi:
+#
+#					alphas[i] -= 0.5*np.pi
+
 			fp.Proxy.loops += 1
+			
 
 			if alpha <> None:
 
@@ -573,9 +596,11 @@ class Approx2seg(FeaturePython):
 					alpha[la-1]=alpha[0]
 					alpha[2*la-1]=alpha[la]
 
+
 				pts=[]
 				for i in range(0,len(ptsa)):
 					k=fp.factorList[i]*0.01*fp.factor
+					#k=30
 					if i <> 0:
 						pts += [ ptsa[i]-FreeCAD.Vector(np.cos(alpha[la+i])*np.cos(alpha[i])*k,
 								np.cos(alpha[la+i])*np.sin(alpha[i])*k,np.sin(alpha[la+i])*k) ]
@@ -600,10 +625,19 @@ class Approx2seg(FeaturePython):
 							k1=min((ptsa[i+1]-ptsa[i]).Length*kk,k)
 
 						if i <> 0:
-							pts += [ ptsa[i]+FreeCAD.Vector(np.cos(alpha[i])*k2,np.sin(alpha[i])*k2) ]
+#							pts += [ ptsa[i]+FreeCAD.Vector(np.cos(alpha[i])*k2,np.sin(alpha[i])*k2) ]
+							pts += [ ptsa[i]-FreeCAD.Vector(np.cos(alpha[la+i])*np.cos(alpha[i])*k2,
+								np.cos(alpha[la+i])*np.sin(alpha[i])*k2,np.sin(alpha[la+i])*k2) ]
+
 						pts += [ptsa[i]]
 						if i <>len(ptsa)-1:
-							pts += [ptsa[i]-FreeCAD.Vector(np.cos(alpha[i])*k1,np.sin(alpha[i])*k1)]
+#							pts += [ptsa[i]-FreeCAD.Vector(np.cos(alpha[i])*k1,np.sin(alpha[i])*k1)]
+							pts += [ ptsa[i]+FreeCAD.Vector(np.cos(alpha[la+i])*np.cos(alpha[i])*k1,
+								np.cos(alpha[la+i])*np.sin(alpha[i])*k1,np.sin(alpha[la+i])*k1) ]
+
+
+
+
 
 			bc=Part.BSplineCurve()
 			n=la-2
@@ -615,15 +649,29 @@ class Approx2seg(FeaturePython):
 				if fp._showaux:
 					fp.Shape=Part.Compound([bc.toShape(),Part.makePolygon(pts)])
 
-			return bc.length()
+				#print fp.Proxy.loops," ",
+				if fp._debug:
+					Gui.updateGui()
+			err=sum([abs(a+b) for a,b in zip(alphas,alphasKK)])
+			
+#			print "alphas.........", fp.Proxy.loops
+#			for a,b in zip(alphasKK,alphas)[0:la]:
+#				print (a-b)
+#
+#			if fp.Proxy.loops >2: return 0
 
+			return bc.length()# +err*1000
+
+#		ff(alphas)
+#		print "Reine Daten"
+#		return
 
 		if fp.method=='Default':
 			rc=minimize(ff,alphas,tol=1.)
 		else:
 			rc=minimize(ff,alphas,method=fp.method,tol=fp.tol)
 
-		print (fp.method,rc.success,rc.message)
+		print (fp.method,rc.success,rc.message,fp.Proxy.loops)
 		print "Length ",round(fp.Shape.Edge1.Length,1)
 		fp.length=fp.Shape.Edge1.Length
 		e=fp.Shape.Edge1
@@ -634,17 +682,21 @@ class Approx2seg(FeaturePython):
 		anz=1000
 		cc=np.array([bc.curvature(size*u/anz)**2 for u in range(anz+1)])
 
-		print "Curvature mean ",round(cc.mean()*10**6,1)
+		print "!Curvature mean ",round(cc.mean()*10**6,1)
 		print "Curvature max ",round(cc.max()*10**6,1)
 		fp.alphaList=list(rc.x)
 
 
 	def onChanged(self,fp,prop):
-		if fp.Shape==None: return
+		try: self.restored
+		except: return
+		if fp._noExecute: return
+
+#		if fp.Shape==None: return
 		if prop in ["factor",'method','alphaStart','alphaEnd','betaEnd','betaStart','factorList','tangentModel'] or prop.startswith('_'):
+			print "onchanged ..",prop
 			if fp.Shape == None or fp.path== None:
 				return
-
 			try:
 				pts=fp.path.Points
 			except:
@@ -662,6 +714,8 @@ class Approx2seg(FeaturePython):
 			self.runTT3D(fp,pts,fp.factor)
 
 	def execute(self,fp):
+		print "execute -----"
+		if fp._noExecute: return
 		self.onChanged(fp,'method')
 
 def minimumLengthBezier():
@@ -672,8 +726,8 @@ def minimumLengthBezier():
 	
 	ViewProvider(yy.ViewObject)
 	yy.path=Gui.Selection.getSelection()[0]
-	yy.Proxy.onChanged(yy,"factor")
-	yy.ViewObject.LineColor=(1.0,0.3,0.0)
+#	yy.Proxy.onChanged(yy,"factor")
+	yy.ViewObject.LineColor=(.3,1.,0.0)
 
 '''
 if 1:
@@ -712,7 +766,7 @@ class CCB(FeaturePython):
 #		obj.mode=['minimal Lenght','Length','curvature']
 		obj.addProperty("App::PropertyFloat","length","~calculated")
 		
-#		obj.addProperty("App::PropertyFloat","_a")._a=10
+		obj.addProperty("App::PropertyFloat","_a")._a=10
 #		obj.addProperty("App::PropertyFloat","_b")._b=10
 #		obj.addProperty("App::PropertyFloat","_c")._c=10
 #		obj.addProperty("App::PropertyFloat","_d")._d=3
@@ -737,6 +791,8 @@ class CCB(FeaturePython):
 #			'trust-krylov',
 		]
 		obj.method='Nelder-Mead'
+		obj._debug=True
+		self.restored=False
 
 	def runArc(self,fp,ptsv):
 
@@ -761,14 +817,23 @@ class CCB(FeaturePython):
 			bc.buildFromPolesMultsKnots(pts, ms, range(len(ms)), False,3)
 			if show:
 				fp.Shape=bc.toShape()
+
+			if fp._debug:
+				Gui.updateGui()
+
 			size=1.0
 			anz=1000
 			cc2=np.array([bc.curvature(size*u/anz) for u in range(anz+1)])
 			fp.Proxy.cc2=cc2
 
 			fp.alphaList=list(alpha)
-			rc=abs(cc2.max()-cc2.min())*bc.length()
-			# rc=abs(cc2.std())*bc.length()**(fp._a*0.1)
+#			rc=abs(cc2.max()-cc2.min())*bc.length()**(fp._a*00.1)
+			#rc=abs(cc2.max()-cc2.min())*cc2.mean()**(fp._a*0.1*np.pi)
+			rc=abs(cc2.max()-cc2.min())*cc2.mean()**np.pi
+#			print abs(cc2.max()-cc2.min())
+#			print rc
+#			print
+			#rc=abs(cc2.std())*bc.length()**(fp._a*0.1)
 			return rc *10**4
 
 		#main method
@@ -781,12 +846,19 @@ class CCB(FeaturePython):
 
 		print (fp.method,fp.Proxy.loops,rc.success,rc.message)
 		print (fp.Proxy.cc2.max(),fp.Proxy.cc2.min())
+		
+		#-
+		ff(fp.alphaList)
 		return fp.Shape
 
 
 
 	def onChanged(self,fp,prop):
-		if prop in ["factor",'method','alphaStart','alphaEnd','factorList','tangentModel','segment'] or prop.startswith('_'):
+		try: self.restored
+		except: return
+		if fp._noExecute: return
+
+		if prop in ["_execute","factor",'method','alphaStart','alphaEnd','factorList','tangentModel','segment'] or prop.startswith('_'):
 			if fp.Shape == None or fp.path== None:
 				return
 
@@ -814,12 +886,29 @@ class CCB(FeaturePython):
 				shapes +=[rc]
 				lenn += rc.Length
 
-			fp.Shape=Part.Compound(shapes)
+			poles=[]
+			for i,s in enumerate(shapes):
+				if i==0: poles= s.Edge1.Curve.getPoles()
+				else:
+					poles += s.Edge1.Curve.getPoles()[1:4]
+
+			#fp.Shape=Part.Compound(shapes)
+			fp.Shape=Part.makePolygon(poles)
+	
+			abc=Part.BSplineCurve()
+			ms=[4]+[3]*i+[4]
+
+			abc.buildFromPolesMultsKnots(poles, ms, range(len(ms)), False,3)
+
+			fp.Shape=abc.toShape()
+
+			
 			fp.length=lenn
 
 
 	def execute(self,fp):
-		self.onChanged(fp,'method')
+		if fp._noExecute: return
+		self.onChanged(fp,"_execute")
 
 
 def nearconstantCurvatureBezier():
@@ -830,7 +919,7 @@ def nearconstantCurvatureBezier():
 	
 	ViewProvider(yy.ViewObject)
 	yy.path=Gui.Selection.getSelection()[0]
-	yy.Proxy.onChanged(yy,"factor")
+#	yy.Proxy.onChanged(yy,"factor")
 	yy.ViewObject.LineColor=(1.0,0.3,1.0)
 
 

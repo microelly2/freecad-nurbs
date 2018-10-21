@@ -27,6 +27,7 @@ class FeaturePython:
 
 
 	def attach(self, vobj):
+		print "attached"
 		self.Object = vobj.Object
 
 	def claimChildren(self):
@@ -53,10 +54,12 @@ class FeaturePython:
 		pass
 
 	def onDocumentRestored(self, fp):
+		print "Docu restored"
 		for pn in fp.PropertiesList:
 			if pn.startswith('_show'):
 				self.onChanged(fp,pn)
 		pass
+		self.restored=True
 
 class ViewProvider:
 	''' basic defs '''
