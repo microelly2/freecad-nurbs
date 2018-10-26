@@ -467,12 +467,20 @@ if FreeCAD.GuiUp:
 
 	[c3bI(["Bezier"], always, 'upgradeobjects', 'upgrade Object')]
 	[c3bI(["Bezier"], always, 'upgradeobjects', 'dump Object')]
+	[c3bI(["Bezier"], always, 'approximator', 'activate Execution')]
+	[c3bI(["Bezier"], always, 'approximator', 'deactivate Execution')]
+	[c3bI(["Bezier"], always, 'approximator', 'A')]
+	[c3bI(["Bezier"], always, 'approximator', 'B')]
+	[c3bG(["Bezier"], always, 'approximator', 'create MyMin A')]
+	 
 	beztools=[]
 	beztools += [c3bI(["Faces"], always, 'tripod_2', 'create Tripod')]
 	beztools += [c3bI(["Faces"], always, 'tripod_2', 'create Tripod Sketch')]
 	beztools += [c3bI(["Faces"], always, 'tripod_2', 'create Sweep')]
-	beztools += [c3bI(["Points"], always, 'approximator', 'load Pointcloud from Image')]
-	beztools += [c3bI(["Points"], always, 'approximator', 'smooth Pointcloud')]
+	beztools += [c3bI(["Faces"], always, 'tripod_2', 'create Loft')]
+	beztools += [c3bI(["Faces"], always, 'tripod_2', 'create Compound')]
+	beztools += [c3bG(["Points"], always, 'approximator', 'load Pointcloud from Image')]
+	beztools += [c3bG(["Points"], always, 'approximator', 'smooth Pointcloud')]
 	beztools += [c3bI(["Bezier"], always, 'berings', 'create Sketch Circle')]
 
 	beztools += [c3bI(["Bezier","Create"], always, 'berings', 'create BePlane')]
@@ -494,7 +502,7 @@ if FreeCAD.GuiUp:
 	c3bI(["Bezier","Assembly"], always, 'berings', 'create Product')
 	c3bI(["Bezier","Assembly"], always, 'berings', 'connect Faces')
 	c3bI(["Bezier","Assembly"], always, 'berings', 'create Seam')
-	c3bI(["Bezier","Assembly"], always, 'berings', 'create Gordon')
+	c3bG(["Bezier","Assembly"], always, 'berings', 'create Gordon')
 
 	c3b(["Bezier","Convert"], always, 'berings', 'BSpline To Bezier Curve')
 	c3b(["Bezier","Convert"], always, 'berings', 'BSpline To Bezier Surface')
@@ -527,8 +535,8 @@ if FreeCAD.GuiUp:
 	c3bI(["Bezier","Specials"], always, 'berings', 'fix Corner')
 	c3bI(["Bezier","Specials"], always, 'berings', 'create Tangent Stripes')
 
-	[c3bI(["Bezier","Specials"], always, 'approximator', 'minimum Length Bezier')]
-	[c3bI(["Bezier","Specials"], always, 'approximator', 'near constant Curvature Bezier')]
+	[c3bG(["Bezier","Specials"], always, 'approximator', 'minimum Length Bezier')]
+	[c3bG(["Bezier","Specials"], always, 'approximator', 'near constant Curvature Bezier')]
 
 	beztools += [c3bI(["Bezier","Specials"], always, 'leastsq', 'leastsq Bezier')]
 	beztools += [c3bI(["Bezier","Specials"], always, 'leastsq', 'leastsq Bezier Two Segments')]

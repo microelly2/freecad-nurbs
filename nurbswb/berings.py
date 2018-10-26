@@ -4740,7 +4740,7 @@ MainWindow:
 ##\endcond
 
 
-def createGordonGUI():
+def _createGordonGUI():
 	'''variant ohne dialog'''
 	name="Gordon"
 	tt=App.ActiveDocument.getObject(name)

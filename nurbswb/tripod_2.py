@@ -324,4 +324,15 @@ def createSweep():
 	sw.Sections=Gui.Selection.getSelection()[0:-1]
 	App.activeDocument().recompute()
 
+
+def createLoft():
+	sw=FreeCAD.ActiveDocument.addObject('Part::Loft','Loft')
+	sw.Sections=Gui.Selection.getSelection()
+	App.activeDocument().recompute()
+
+def createCompound():
+	sw=FreeCAD.ActiveDocument.addObject("Part::Compound","Compound001")
+	sw.Links=Gui.Selection.getSelection()
+	App.activeDocument().recompute()
+
 # createSweep()

@@ -206,6 +206,8 @@ def run(model='shoeAdam', point_cloud='shoe_last_scanned',showpoints=True,showxy
 		# if i<>5 : continue
 		alpha=twister[i][1]
 		beta=twister[i][2]
+		alpha=0
+		beta=0
 
 		pla=FreeCAD.Placement(FreeCAD.Vector(b),FreeCAD.Rotation(FreeCAD.Vector(0,0,1),-beta).multiply(FreeCAD.Rotation(FreeCAD.Vector(0,1,0),alpha-90)))
 		pcl=FreeCAD.ActiveDocument.shoe_last_scanned.Points.Points
