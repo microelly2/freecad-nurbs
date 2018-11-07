@@ -350,7 +350,7 @@ def _loadPointcloudfromImageGUI():
 class MinLengthBezier(FeaturePython):
 	''' gegeben 7 Punkte Spline, finde optimale Kurve durch Mittelpunkt, durch Endpunkt und Endtangenten'''
 
-	def __init__(self, obj):
+	def __init__(self, obj,mode='minimal Lenght',method='Default'):
 		FeaturePython.__init__(self, obj)
 		obj.addProperty("App::PropertyLink","path","source")
 		obj.addProperty("App::PropertyFloat","factor","config")#.factor=30
@@ -376,7 +376,7 @@ class MinLengthBezier(FeaturePython):
 		obj.addProperty("App::PropertyInteger","Wire","source").Wire=-1
 
 		obj.addProperty("App::PropertyEnumeration","mode","approx")
-		obj.mode=['minimal Lenght','Length','curvature','myMinA']
+		obj.mode=['minimal Lenght','Length','curvature','myMinA','myMinSoft']
 		
 
 		obj.addProperty("App::PropertyFloat","length","result")
@@ -408,7 +408,7 @@ class MinLengthBezier(FeaturePython):
 		]
 
 		obj.method='Nelder-Mead'
-		# obj.method='simple'
+		obj.method='simple'
 		obj.closed=False
 		#obj.factor=10
 		obj.alphaStart=0
@@ -416,7 +416,8 @@ class MinLengthBezier(FeaturePython):
 		obj.tangentModel='1/3 distance'
 		obj._debug=True
 
-		obj.mode='myMinA'
+		obj.mode=mode
+		obj.method=method
 
 		self.restored=False
 		self.executed=False
@@ -433,7 +434,7 @@ class MinLengthBezier(FeaturePython):
 		alphas=[1]*(len(ptsa))*2
 		alphasKK=[1]*(len(ptsa))*2
 
-		for i in range(1,len(ptsa)-2):
+		for i in range(1,len(ptsa)-1):
 			v=ptsa[i+1]-ptsa[i-1]
 			alphas[i]=np.arctan2(v.y,v.x)
 
@@ -533,6 +534,7 @@ class MinLengthBezier(FeaturePython):
 							pts += [ ptsa[i]+FreeCAD.Vector(np.cos(alpha[la+i])*np.cos(alpha[i])*k,
 									np.cos(alpha[la+i])*np.sin(alpha[i])*k,np.sin(alpha[la+i])*k) ]
 
+#			print alpha
 			bc=Part.BSplineCurve()
 			n=la-2
 			ms=[4]+[3]*n+[4]
@@ -581,19 +583,198 @@ class MinLengthBezier(FeaturePython):
 		
 		print ("Radius",round(1/cc.mean(),1),round(1/cc.max(),1),round(1/cc.min(),1))
 
+#----------------------------
+
+	def runMyMinSoft_SIMPLE(self,fp,ptsa,f=0.5):
+
+		# Tangenten
+		ta=ptsa[1]-ptsa[0]
+		tb=ptsa[4]-ptsa[3]
+		tc=ptsa[5]-ptsa[6]
+		alphas=[1.,-1.,0.,1.,1.]
+
+		fp.Proxy.loops=0
+		fp.Proxy.time=time.time()
+
+#		# diagramm
+#		if 1: # in midi-bereich
+#			import Plot
+#			Plot.figure("directions of tangents")
+#		else: # eigenes fenster
+#			import Plot2 as Plot
+#			Plot.figureWindow("Smooth Filter for Points")
+
+#		t=range(len(ptsa)*2)
+#		Plot.plot(t, alphas ,'points')
+#		Plot.plot( t, alphas, 'filter2')
+#		Plot.legend(True)
+#		Plot.grid(True)
+
+
+
+		def minSoft(alpha,show=True):
+			'''function to minimize'''
+
+			if fp._a==0:
+				alpha[0]=1
+			if fp._a==1:
+				alpha[4]=1
+			if fp._a==2:
+				alpha[0]=0.8
+				alpha[4]=0.8
+			if fp._a==3:
+				alpha[0]=1.
+				alpha[4]=1.
+
+
+			ptsb=[ptsa[0],
+				ptsa[0]+ta*alpha[0],
+				ptsa[3]+tb*alpha[1],
+				ptsa[3]+tb*alpha[2],
+				ptsa[3]+tb*alpha[3],
+				ptsa[6]+tc*alpha[4],
+				ptsa[6]
+			]
+
+			nn=30
+			fp.Proxy.loops += 1
+			a=len(ptsa)
+			af=Part.BSplineCurve()
+			ya=[4]+[1]*3 +[4]
+			af.buildFromPolesMultsKnots(ptsb,ya,range(len(ya)),False,3)
+			pp=af.discretize(nn)
+
+			#vorgabe
+			bc=Part.BSplineCurve()
+			ms=[4]+[3]+[4]
+			bc.buildFromPolesMultsKnots(ptsa, ms, range(len(ms)), False,3)
+			pp2=bc.discretize(nn)
+			
+			dd=sum([(p-p2).Length**2 for p,p2 in zip(pp,pp2)])
+			fp.Shape=af.toShape()
+
+			if fp.Proxy.loops %20 ==0: Gui.updateGui()
+#			print ("ergebnis", dd,fp.Proxy.loops)
+			return dd
+
+		# main method 
+
+		rc=minimize(minSoft,alphas,method=fp.method,tol=fp.tol)
+		print (fp.method,rc.success,rc.message,fp.Proxy.loops)
+		print rc.fun
+		fp.alphaList=list(rc.x)
+
+
+	def runMyMinSoft(self,fp,ptsa,f=0.5):
+
+		# Tangenten
+		#print "ptsa",ptsa
+		zz=(len(ptsa)-4)/3
+		#assert(zz==2)
+		tangs=[ptsa[1]-ptsa[0]]
+		for z in range(zz):
+			tangs +=  [ ptsa[3*z+2]-ptsa[3*z+3]]
+		tangs +=[ptsa[-2]-ptsa[-1]]
+		alphas=[1.]
+		for z in range(zz):
+			alphas += [1,0,-1]
+		alphas += [1.]
+
+		fp.Proxy.loops=0
+		fp.Proxy.time=time.time()
+
+#		# diagramm
+#		if 1: # in midi-bereich
+#			import Plot
+#			Plot.figure("directions of tangents")
+#		else: # eigenes fenster
+#			import Plot2 as Plot
+#			Plot.figureWindow("Smooth Filter for Points")
+
+#		t=range(len(ptsa)*2)
+#		Plot.plot(t, alphas ,'points')
+#		Plot.plot( t, alphas, 'filter2')
+#		Plot.legend(True)
+#		Plot.grid(True)
+
+
+
+		def minSoft(alpha,show=True):
+			'''function to minimize'''
+
+			ptsb=[ptsa[0],
+				ptsa[0]+tangs[0]*alpha[0],
+				]
+			for z in range(zz):
+				ptsb += [
+				ptsa[3*z+3]+tangs[z+1]*alpha[3*z+1],
+				ptsa[3*z+3]+tangs[z+1]*alpha[3*z+2],
+				ptsa[3*z+3]+tangs[z+1]*alpha[3*z+3],
+				]
+
+			ptsb += [
+				ptsa[-1]+tangs[-1]*alpha[-1],
+				ptsa[-1]
+			]
+
+			nn=30
+			fp.Proxy.loops += 1
+			a=len(ptsa)
+			af=Part.BSplineCurve()
+			ya=[4]+[1]*3*zz +[4]
+			af.buildFromPolesMultsKnots(ptsb,ya,range(len(ya)),False,3)
+			pp=af.discretize(nn)
+
+			#vorgabe
+			#print ("MyMin Soft",zz)
+			bc=Part.BSplineCurve()
+			ms=[4]+[3]*zz+[4]
+			bc.buildFromPolesMultsKnots(ptsa, ms, range(len(ms)), False,3)
+			pp2=bc.discretize(nn)
+			
+			dd=sum([(p-p2).Length**2 for p,p2 in zip(pp,pp2)])
+			fp.Shape=af.toShape()
+
+#			kk=1000
+#			dd2=0
+#			for z in range(zz):
+#				dd += (bc.value(bc.parameter(ptsa[3*z]))-ptsa[3*z]).Length**2*kk
+#				dd2 += (bc.value(bc.parameter(ptsa[3*z]))-ptsa[3*z]).Length**2*kk
+
+
+			if fp.Proxy.loops %20 ==0: 
+				Gui.updateGui()
+#				print ("ergebnis", dd2,fp.Proxy.loops)
+			return (dd/nn)**0.5
+
+		# main method 
+
+		rc=minimize(minSoft,alphas,method=fp.method,tol=fp.tol)
+		print (fp.method,rc.success,rc.message,fp.Proxy.loops)
+		print rc.fun
+		fp.alphaList=list(rc.x)
+		minSoft(rc.x)
+
+
+
+
+#--------ende run min soft----------------------
 
 	def addExtraKnots(self,fp):
 
+		xtras=[]
 		bc=fp.Shape.Edge1.Curve
 		for i in fp.extraKnots:
 				print "extra knot ",i
 				bc.insertKnot(i,3)
+				pt=bc.value(i)
+				xtras += [Part.makeSphere(1,pt)]
 
 		af=Part.BSplineCurve()
 		poles=bc.getPoles()
 		ya=bc.getMultiplicities()
 		af.buildFromPolesMultsKnots(poles,ya,range(len(ya)),False,3)
-		fp.Shape=af.toShape()
+		fp.Shape=Part.Compound([af.toShape()]+xtras)
 
 	def onChanged(self,fp,prop):
 
@@ -610,8 +791,14 @@ class MinLengthBezier(FeaturePython):
 				pts=fp.path.Points
 			except:
 				pts=[v.Point for v in fp.path.Shape.Vertexes]
-			
-			
+
+			#wenn Kurve, dann nehme Poles
+			try: # wenn es eine kurve ist
+				pts=fp.path.Shape.Edge1.Curve.getPoles()
+			except:
+				pass
+
+
 			if fp.Wire> -1:
 				pts=[v.Point for v in fp.path.Shape.Wires[fp.Wire].Vertexes]
 			
@@ -623,6 +810,11 @@ class MinLengthBezier(FeaturePython):
 
 			if fp.mode=='myMinA':
 				runMyMinA(fp,pts)
+			elif fp.mode=='myMinSoft' :
+				if prop =="factor":
+					return
+				else:
+					self.runMyMinSoft(fp,pts)
 			else:
 				self.runMinLength(fp,pts,fp.factor)
 
@@ -646,7 +838,7 @@ def _minimumLengthBezierGUI():
 
 	for s in Gui.Selection.getSelection():
 		yy=App.ActiveDocument.addObject("Part::FeaturePython","MinLenBezier")
-		MinLengthBezier(yy)
+		MinLengthBezier(yy,mode='minimal Lenght')
 		ViewProvider(yy.ViewObject)
 
 		yy.path=s
@@ -657,25 +849,39 @@ def _minimumLengthBezierGUI():
 		yy.factor=50
 
 		yy.ViewObject.LineColor=(.3,1.,0.0)
+		yy.ViewObject.ShapeColor=(1.,0.,0.)
 
 
 def _createMyMinAGUI():
 	''' myMinA-Object erzeugen'''
 
-	s=App.ActiveDocument.addObject('Sketcher::SketchObject','Sketch_forMyMinA')
-	s.addGeometry(Part.LineSegment(App.Vector(-20,0,0),App.Vector(-10,10,0)),False)
-	s.addGeometry(Part.LineSegment(App.Vector(-10,10,0),App.Vector(10,10,0)),False)
-	s.addConstraint(Sketcher.Constraint('Coincident',0,2,1,1)) 
-	s.addGeometry(Part.LineSegment(App.Vector(10,10,0),App.Vector(20,-10,0)),False)
-	s.addConstraint(Sketcher.Constraint('Coincident',1,2,2,1)) 
-	App.ActiveDocument.recompute()
-	
-	yy=App.ActiveDocument.addObject("Part::FeaturePython","MyMinA")
-	MinLengthBezier(yy)
-	ViewProvider(yy.ViewObject)
-	yy.path=s
-	yy.ViewObject.LineColor=(.3,1.,0.0)
+	ss=Gui.Selection.getSelection()
+	if len(ss)==0:
+		s=App.ActiveDocument.addObject('Sketcher::SketchObject','Sketch_forMyMinA')
+		s.addGeometry(Part.LineSegment(App.Vector(-20,0,0),App.Vector(-10,10,0)),False)
+		s.addGeometry(Part.LineSegment(App.Vector(-10,10,0),App.Vector(10,10,0)),False)
+		s.addConstraint(Sketcher.Constraint('Coincident',0,2,1,1)) 
+		s.addGeometry(Part.LineSegment(App.Vector(10,10,0),App.Vector(20,-10,0)),False)
+		s.addConstraint(Sketcher.Constraint('Coincident',1,2,2,1)) 
+		App.ActiveDocument.recompute()
+		ss=[s]
 
+	for s in ss:
+		yy=App.ActiveDocument.addObject("Part::FeaturePython","MyMinA")
+		MinLengthBezier(yy,mode='myMinA',method='Nelder-Mead')
+		ViewProvider(yy.ViewObject)
+		yy.path=s
+		yy.ViewObject.LineColor=(.3,1.,0.0)
+
+def _createMyMinSoftGUI():
+	''' myMinSoft-Object erzeugen'''
+
+	for s in Gui.Selection.getSelection():
+		yy=App.ActiveDocument.addObject("Part::FeaturePython","MyMinSoft")
+		MinLengthBezier(yy,mode='myMinSoft',method='Nelder-Mead')
+		ViewProvider(yy.ViewObject)
+		yy.path=s 
+		yy.ViewObject.LineColor=(.3,1.,0.0)
 
 
 
@@ -943,6 +1149,7 @@ def myMinA(pts):
 	ptra=np.array(ptr)
 	mm=np.min(ptra[:,2])
 	mins=np.where(ptra[:,2] <= mm + 0.0)
+#	print mins
 
 	#for (ix,iy) in zip(mins[0],mins[1]):
 	#	if iy==2:
@@ -954,6 +1161,7 @@ def myMinA(pts):
 	ix=mins[0][0]
 
 	iar,ibr,_= ptra[ix]
+#	print ("!",iar,ibr)
 	a1=a*iar+b*(1-iar)
 	b1=c*ibr+b*(1-ibr)
 	pts=[a,a1,b1,c]
@@ -964,12 +1172,21 @@ def myMinA(pts):
 	return pts
 
 
+
 def runMyMinA(fp, pts):
 
-		
+
 #	for s in Gui.Selection.getSelection():
 #		pts=[v.Point for v in s.Shape.Wires[0].Vertexes]
 		s=fp
+
+		if fp.start<>0 or fp.end<>0:
+			pts=pts[fp.start:fp.end]
+
+		if fp.closed:
+			pts += [pts[0]]
+
+
 
 		label=s.Label+"_curve"
 
@@ -994,8 +1211,8 @@ def runMyMinA(fp, pts):
 
 		def makeSimpleCurve(pts):
 			
-#			print "makeSimpleCurve"
-#			print pts
+			print "makeSimpleCurve"
+			print pts
 
 			pr=[]
 			#print len(pts)
@@ -1019,11 +1236,12 @@ def runMyMinA(fp, pts):
 			ya=[4]+[3]*((a-4)/3)+[4]
 			af.buildFromPolesMultsKnots(pr,ya,range(len(ya)),False,3)
 			if debug:
+				
 				Part.show(af.toShape())
 			# Draft.makeWire(pr)
 			return pr
 
-		def makeLineCurve(pts,mode='' ):
+		def makeLineCurve(pts,mode='',fp=None):
 			
 #			print ("Make Line",mode)
 #			print pts
@@ -1033,9 +1251,33 @@ def runMyMinA(fp, pts):
 				k=(pts[1]-pts[0]).Length *ff
 				pr=[pts[0],pts[0]+(pts[1]-pts[0]).normalize()*k,pts[1]+(pts[0]-pts[2]).normalize()*k,pts[1]]
 
+				# tangente fix
+
+				if fp.useStart:
+					ast=fp.alphaStart*np.pi/18.0
+					bs=fp.betaStart*np.pi/18.0
+					tg=-FreeCAD.Vector(np.cos(bs)*np.cos(ast),np.cos(bs)*np.sin(ast),np.sin(bs))
+					pr=[pts[0],pts[0]+tg*k,pts[1]+(pts[0]-pts[2]).normalize()*k,pts[1]]
+
+				if fp.useEnd:
+					ae=fp.alphaEnd*np.pi/18.0
+					be=fp.betaEnd*np.pi/18.0
+
+
+
+
+
 			elif mode=='end':
 				k=(pts[1]-pts[2]).Length *ff
-				pr=[pts[1],pts[1]+(pts[2]-pts[0]).normalize()*k,pts[2]+(pts[1]-pts[2]).normalize()*k,pts[2]]
+				pr=[pts[1],pts[1]+(pts[2]-pts[0]).normalize()*k,pts[2]+(pts[1]-pts[2]).normalize()*k,
+				pts[2]]
+
+				if fp.useEnd:
+					ast=fp.alphaEnd*np.pi/18.0
+					bs=fp.betaEnd*np.pi/18.0
+					tg=FreeCAD.Vector(np.cos(bs)*np.cos(ast),np.cos(bs)*np.sin(ast),np.sin(bs))
+					pr=[pts[1],pts[1]+(pts[2]-pts[0]).normalize()*k,pts[2]+tg*k,pts[2]]
+
 
 			else:
 				k=(pts[2]-pts[1]).Length *ff
@@ -1068,7 +1310,7 @@ def runMyMinA(fp, pts):
 		anfang=0
 
 		pr=[]
-		rc=makeLineCurve(pts[0:3],mode='start')
+		rc=makeLineCurve(pts[0:3],mode='start',fp=fp)
 		pr += rc
 
 		j=1
@@ -1109,7 +1351,7 @@ def runMyMinA(fp, pts):
 
 		rc=makeSimpleCurve(pts[anfang:j+2])
 		pr += rc[1:]
-		rc=makeLineCurve(pts[-3:],mode='end')
+		rc=makeLineCurve(pts[-3:],mode='end',fp=fp)
 		pr += rc[1:]
 
 
@@ -1122,41 +1364,335 @@ def runMyMinA(fp, pts):
 
 
 
+class PolesFrame(FeaturePython):
+
+	def __init__(self, obj):
+		FeaturePython.__init__(self, obj)
+		obj.addProperty("App::PropertyLinkList","ribs")
+		obj.ribs=[]
+
+	def onChanged(self,fp,prop):
+
+		if prop<>'ribs':  return
+#		try: self.restored
+#		except: return
+
+#		try: fp.Shape 
+#		except: return
+		fp.Shape=Part.Shape()
+
+		if fp._noExecute: return
+
+		ss=fp.ribs
+
+		ptsa=[]
+		lmin=10**3
+		
+		for rc,s in enumerate(ss):
+
+			pols=s.Shape.Edge1.Curve.getPoles()
+			lmin=min(len(pols),lmin)
+			print ("Rippe",rc,s.Label,len(pols))
+			ptsa += [pols]
+
+		cols=[]
+		for i in range(lmin):
+			if i%3==0:
+				pts=[]
+				for pols in ptsa:
+					pts += [pols[i]]
+				cols += [Part.makePolygon(pts)]
+
+		fp.Shape=Part.Compound(cols)
+
+
+
+	def execute(self,obj):
+		print "execute"
+		self.onChanged(obj,"ribs")
+		pass
+
+
+
+def _createBezierPolesFramefromribsGUI():
+	'''create a poles grid for a list of bezier curves'''
+
+	yy=App.ActiveDocument.addObject("Part::FeaturePython","PolesFrame")
+	ViewProvider(yy.ViewObject)
+	PolesFrame(yy)
+	yy.ribs=Gui.Selection.getSelection()
+
+
 
 
 
 #---------------------
-def A():
+
+def swapCurves(sel=None,mode='polygons',extraknots=None):
 	''' polefeld in andrere richtung aufziehen'''
+
+	if sel==None:
+		sel=Gui.Selection.getSelection()
 	polar=[]
-	for s in Gui.Selection.getSelection():
-		polar +=[s.Shape.Edge1.Curve.getPoles()]
+	xtras=[]
+	print ("Control points ...")
+	for isx,s in enumerate(sel):
+		if extraknots==None:
+			pols=s.Shape.Edge1.Curve.getPoles()
+			xtras += [s.Shape.Edge1]
+		else:
+			cc=s.Shape.Edge1.Curve
+			xtras += [s.Shape.Edge1]
+			for i in extraknots[isx]:
+#				print "!extra knot ",i
+				cc.insertKnot(i,3)
+				pt=cc.value(i)
+				xtras += [Part.makeSphere(1,pt)]
+			pols=cc.getPoles()
+
+		print (isx,str(s.Label),(len(pols)-4)/3+2)
+		polar += [pols]
+
 	polar=np.array(polar).swapaxes(0,1)
+	if mode == 'polar':
+		return polar,xtras
 	for pts in polar:
 		ptsa=[FreeCAD.Vector(p[0],p[1],p[2])  for p in pts]
 		Part.show(Part.makePolygon(ptsa))
 
 
 
-def B():
+def curvestoFace(polsarr=None,mode="Bezier Face"):
 	'''flaeche aus polefeld selbst berechenn'''
-	polsarr=[]
-	cc=Gui.Selection.getSelection()[0]
-	for l in cc .Links:
-		pols=l.Shape.Edge1.Curve.getPoles()
-		polsarr += [pols]
-	
+
+	if polsarr==None:
+		polsarr=[]
+		cc=Gui.Selection.getSelection()[0]
+		try:
+			for l in cc.Links:
+				pols=l.Shape.Edge1.Curve.getPoles()
+				polsarr += [pols]
+		except:
+			for l in Gui.Selection.getSelection():
+				pols=l.Shape.Edge1.Curve.getPoles()
+				polsarr += [pols]
+
 	poles=np.array(polsarr)
-	print poles.shape
-	b,a,_=poles.shape
+	print "curves to shape ",poles.shape
+	try:
+		b,a,_=poles.shape
+	except:
+		print "Probleme mit Punktematrix- Segemente nicht leich lang -- Abbruch"
+		return
+
+#	a,b=b,a
 	af=Part.BSplineSurface()
-	ya=[4]+[3]*((a-4)/3)+[4]
-	yb=[4]+[3]*((b-4)/3)+[4]
+	
+	# bezier
+	if mode=="Bezier Face" or  mode=="Both":
+		ya=[4]+[3]*((a-4)/3)+[4]
+		yb=[4]+[3]*((b-4)/3)+[4]
+	else:
+		ya=[4]+[1]*((a-4))+[4]
+		yb=[4]+[1]*((b-4))+[4]
+
 	db=3
-	print ya
-	print yb
+#	print (a,ya)
+#	print (b,yb)
 	af.buildFromPolesMultsKnots(poles, 
 				yb,ya,
 				range(len(yb)),range(len(ya)),
 				False,False,db,3)
-	Part.show(af.toShape())
+	#Part.show(af.toShape())
+	return af
+
+
+def A():
+	import nurbswb
+	import nurbswb.berings
+	reload(nurbswb.berings)
+	rc=nurbswb.berings.createBering()
+	for obj in rc:
+		obj.stripmode = True
+
+
+def B():
+	for l in Gui.Selection.getSelection():
+	#	pols=l.Shape.Edge1.Curve.getPoles()
+		pols=[v.Point for v in l.Shape.Wires[0].Vertexes]
+		
+		polsn=[pols[0]]
+		kf= 30
+		for i,p in enumerate(pols[1:-1]):
+			t=(pols[i+2]-pols[i]).normalize()*kf
+			if i==0:
+				polsn += [p-t]
+			polsn += [p-t,p,p+t]
+
+		polsn += [p+t,pols[-1]]
+#		Part.show(Part.makePolygon(polsn))
+#		print polsn
+	
+		bc=Part.BSplineCurve()
+		n=(len(polsn)-4)/3
+		ms=[4]+[3]*n+[4]
+
+		bc.buildFromPolesMultsKnots(polsn, ms, range(len(ms)), False,3)
+		Part.show(bc.toShape())
+
+
+
+
+#
+# wenn knoten fehlen, wo sollen sie hinkommen
+#
+
+import numpy as np
+
+def extraKnots():
+	''' zurodnung extra knoten '''
+
+	#-----zuordnung
+	i1=[0,1,2,4,5]
+	i2=[0,1,2,3,4]
+	#---------
+
+	c1=App.ActiveDocument.MyMinA.Shape.Edge1.Curve
+	k1sa=np.array(c1.getKnots())
+	l1sa=np.array([c1.length(0,k) for k in k1s])
+	k1m=k1sa.max()
+	k1s = k1sa/ k1m
+	l1s = l1sa/l1sa.max()
+
+	c2=App.ActiveDocument.MyMinA001.Shape.Edge1.Curve
+	k2sa=np.array(c2.getKnots())
+	l2sa=np.array([c2.length(0,k) for k in k2s])
+	k2m=k2sa.max()
+	k2s = k2sa/k2m
+	l2s = l2sa/l2sa.max()
+
+	if 0:
+		if 0: # in midi-bereich
+			import Plot
+			Plot.figure("Smooth Filter for Points")
+		else: # eigenes fenster
+			import Plot2 as Plot
+			Plot.figureWindow("Smooth Filter for Points")
+
+
+		Plot.plot(k1s, l1s ,'A')
+		Plot.plot(k2s, l2s ,'B')
+		# Plot.plot( t, y, 'filter')
+		Plot.legend(True)
+		Plot.grid(True)
+		diagram=True
+
+
+	x1=[l1s[i] for i in i1]
+	x2=[l2s[i] for i in i2]
+
+	rc1=np.interp(l1s, x1, x2)
+	rck1=np.interp(rc1,l2s,k2s)
+
+	# Knoten auf kurve 2
+	kkk=rck1*k2m
+
+	for k in  kkk:
+		if k not in k2sa:
+			print k
+
+
+
+class Ribface(FeaturePython):
+
+	def __init__(self, obj):
+		FeaturePython.__init__(self, obj)
+		obj.addProperty("App::PropertyLinkList","ribs")
+		obj.addProperty("App::PropertyStringList","extraKnots")
+		obj.extraKnots=["1.2 1.6 1.8","","1.4 1.8","1.4 1.8","","","",""]
+		obj.addProperty("App::PropertyEnumeration","shapeMode").shapeMode=["PolesFrame","Bezier Face","BSpline","Both"]
+		obj.addProperty("App::PropertyFloat","factor").factor=10
+
+	def execute(self,obj):
+
+
+		ss=obj.ribs
+		extraknots=[]
+		for kk in obj.extraKnots:
+			extraknots += [[float(k) for k in kk.split()]]
+
+		if len(ss)>len(extraknots):
+			extraknots += []*(len(ss)-len(extraknots))
+
+		#print ("extraknots", extraknots)
+
+		#swap
+		polars,xtras=swapCurves(ss,mode='polar',extraknots=extraknots)
+	#	print pols
+	#	print pols[0][0]
+	#	print FreeCAD.Vector(pols[0][0])
+		polesarrN=[]
+		for polsA in polars:
+		#	for pts in polar:
+		#		ptsa=[FreeCAD.Vector(p[0],p[1],p[2])  for p in pts]
+			pols=[FreeCAD.Vector(p) for p in polsA]
+
+			polsn=[pols[0]]
+			kf= obj.factor
+			for i,p in enumerate(pols[1:-1]):
+				l1=(pols[i+1]-pols[i]).Length
+				l2=(pols[i+1]-pols[i+2]).Length
+				t=(pols[i+2]-pols[i]).normalize()*kf
+				t1=(pols[i+2]-pols[i]).normalize()*kf*0.01*l1
+				t2=(pols[i+2]-pols[i]).normalize()*kf*0.01*l2
+				if i==0:
+					polsn += [p-t1]
+				polsn += [p-t1,p,p+t2]
+
+			polsn += [p+t,pols[-1]]
+		#		Part.show(Part.makePolygon(polsn))
+		#		print polsn
+
+			bc=Part.BSplineCurve()
+			n=(len(polsn)-4)/3
+			ms=[4]+[3]*n+[4]
+
+			bc.buildFromPolesMultsKnots(polsn, ms, range(len(ms)), False,3)
+		#	Part.show(bc.toShape())
+			polesarrN += [polsn]
+
+		#print polesarrN
+		af=curvestoFace(polsarr=polesarrN,mode=obj.shapeMode)
+		
+		obj.Shape=af.toShape()
+
+		ptsa=polesarrN
+		if obj.shapeMode=="Both":
+			cols = [af.toShape()]
+		else:
+			cols=[]
+
+		cols += xtras
+		for i,pts in enumerate(polesarrN):
+			if i%3==0:
+				cols += [Part.makePolygon(pts)]
+
+		if obj.shapeMode=="PolesFrame" or  obj.shapeMode=="Both" :
+			obj.Shape=Part.Compound(cols)
+
+
+
+
+
+def RibstoFace():
+	''' swap, umformen in bezier,m flaeche machen'''
+
+	yy=App.ActiveDocument.addObject("Part::FeaturePython","RibFace")
+	Ribface(yy)
+	yy.ribs=Gui.Selection.getSelection()
+	ViewProvider(yy.ViewObject)
+	yy.ViewObject.ShapeColor=(.6,.6,1.)
+
+
+
+

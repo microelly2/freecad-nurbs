@@ -471,8 +471,15 @@ if FreeCAD.GuiUp:
 	[c3bI(["Bezier"], always, 'approximator', 'deactivate Execution')]
 	[c3bI(["Bezier"], always, 'approximator', 'A')]
 	[c3bI(["Bezier"], always, 'approximator', 'B')]
+	[c3bI(["Bezier"], always, 'approximator', 'Ribs to Face')]
+	[c3bI(["Bezier"], always, 'approximator', 'swap Curves')]
+	[c3bI(["Bezier"], always, 'approximator', 'curves to Face')]
+
+	
 	[c3bG(["Bezier"], always, 'approximator', 'create MyMin A')]
-	 
+	[c3bG(["Bezier"], always, 'approximator', 'create MyMin Soft')]
+	[c3bG(["Bezier"], always, 'approximator', 'create BezierPoles Frame from ribs')]
+
 	beztools=[]
 	beztools += [c3bI(["Faces"], always, 'tripod_2', 'create Tripod')]
 	beztools += [c3bI(["Faces"], always, 'tripod_2', 'create Tripod Sketch')]

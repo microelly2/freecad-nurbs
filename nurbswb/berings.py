@@ -1018,9 +1018,11 @@ def genB():
 def createBering():
 	'''create Bering Sketches for selected objects'''
 
+	rc=[]
 	for source in Gui.Selection.getSelection():
-		genk(0,0,1,FreeCAD.Vector(),source)
+		rc +=  [genk(0,0,1,FreeCAD.Vector(),source)]
 
+	return rc
 
 def AA():
 	obj=App.ActiveDocument.jj2

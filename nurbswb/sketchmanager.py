@@ -290,7 +290,7 @@ class _ViewProvider(nurbswb.pyob.ViewProvider):
 		print ("my method B Starter")
 		# test starting an extra dialog
 		FreeCAD.d=dialog(self)
-		#FreeCAD.d.show()
+		FreeCAD.d.show()
 		FreeCAD.activeDocument().recompute()
 
 	def methodC(self,obj):
