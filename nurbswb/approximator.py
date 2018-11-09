@@ -1436,6 +1436,7 @@ def swapCurves(sel=None,mode='polygons',extraknots=None):
 	polar=[]
 	xtras=[]
 	print ("Control points ...")
+	eps=0
 	for isx,s in enumerate(sel):
 		if extraknots==None:
 			pols=s.Shape.Edge1.Curve.getPoles()
@@ -1450,7 +1451,7 @@ def swapCurves(sel=None,mode='polygons',extraknots=None):
 				xtras += [Part.makeSphere(1,pt)]
 			pols=cc.getPoles()
 
-		print (isx,str(s.Label),(len(pols)-4)/3+2)
+		print (isx,str(s.Label),(len(pols)-4)/3+2,(len(pols)-4)/3+2-len(extraknots[isx]))
 		polar += [pols]
 
 	polar=np.array(polar).swapaxes(0,1)
@@ -1508,7 +1509,6 @@ def curvestoFace(polsarr=None,mode="Bezier Face"):
 
 
 def A():
-	import nurbswb
 	import nurbswb.berings
 	reload(nurbswb.berings)
 	rc=nurbswb.berings.createBering()
@@ -1545,9 +1545,8 @@ def B():
 
 #
 # wenn knoten fehlen, wo sollen sie hinkommen
+# experimentell #+#
 #
-
-import numpy as np
 
 def extraKnots():
 	''' zurodnung extra knoten '''
@@ -1609,14 +1608,12 @@ class Ribface(FeaturePython):
 		FeaturePython.__init__(self, obj)
 		obj.addProperty("App::PropertyLinkList","ribs")
 		obj.addProperty("App::PropertyStringList","extraKnots")
-		obj.extraKnots=["1.2 1.6 1.8","","1.4 1.8","1.4 1.8","","","",""]
+		obj.extraKnots=["1.2 1.6 1.8","1.5 2.5","1.4 1.8","1.4 1.8","","","",""]
 		obj.addProperty("App::PropertyEnumeration","shapeMode").shapeMode=["PolesFrame","Bezier Face","BSpline","Both"]
 		obj.addProperty("App::PropertyFloat","factor").factor=10
 
 	def execute(self,obj):
-
-
-		ss=obj.ribs
+ 		ss=obj.ribs
 		extraknots=[]
 		for kk in obj.extraKnots:
 			extraknots += [[float(k) for k in kk.split()]]
@@ -1650,23 +1647,18 @@ class Ribface(FeaturePython):
 				polsn += [p-t1,p,p+t2]
 
 			polsn += [p+t,pols[-1]]
-		#		Part.show(Part.makePolygon(polsn))
-		#		print polsn
 
 			bc=Part.BSplineCurve()
 			n=(len(polsn)-4)/3
 			ms=[4]+[3]*n+[4]
-
 			bc.buildFromPolesMultsKnots(polsn, ms, range(len(ms)), False,3)
 		#	Part.show(bc.toShape())
+
 			polesarrN += [polsn]
 
-		#print polesarrN
 		af=curvestoFace(polsarr=polesarrN,mode=obj.shapeMode)
-		
 		obj.Shape=af.toShape()
 
-		ptsa=polesarrN
 		if obj.shapeMode=="Both":
 			cols = [af.toShape()]
 		else:

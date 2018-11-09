@@ -49,6 +49,14 @@ class FeaturePython:
 					obj.setEditorMode(pn,mode)
 			return
 
+	def myOnChanged(self, fp, prop):
+		pass
+
+	def onChanged(self, fp, prop):
+		try: a=fp._noExecute
+		except: return
+		if not fp._noExecute:
+			self.myOnChanged(fp,prop)
 
 	def onBeforeChange(self, fp, prop):
 		pass
@@ -61,12 +69,23 @@ class FeaturePython:
 		pass
 		self.restored=True
 
+
+	def myExecute(self,fp):
+		pass
+
+	def execute(self,fp):
+		try: a=fp._noExecute
+		except: return
+		if not fp._noExecute:
+			self.myExecute(fp)
+
 class ViewProvider:
 	''' basic defs '''
 
 	def __init__(self, obj,icon=None):
 		obj.Proxy = self
-		self.Object = obj
+		self.Object = obj.Object
+		self.ViewObject = obj
 		self.icon=icon
 		if icon==None:
 			icon= 'freecad-nurbs/icons/BB.svg'
@@ -90,12 +109,10 @@ class ViewProvider:
 
 
 	def getIcon(self):
-		try: return self.Object.ViewObject.icon
-		except: return self.Object.Object.ViewObject.icon
+		return self.Object.ViewObject.icon
 
 	def claimChildren(self):
-		try: s=self.Object.Object
-		except: s=self.Object
+		s=self.Object
 		rc=[]
 		for prop in  s.PropertiesList:
 			if s.getTypeIdOfProperty(prop) in ['App::PropertyLink']:
@@ -108,6 +125,23 @@ class ViewProvider:
 					rc += v
 		return rc
 
+	def recompute(self):
+		obj=self.Object
+		print "Recompute ",obj.Label
+		obj.Proxy.myOnChanged(obj,"_recompute_")
+
+	def setupContextMenu(self, obj, menu):
+#		self.createDialog()
+
+		action = menu.addAction("Recompute ...")
+		action.triggered.connect(self.recompute)
+
+
+	def setEdit(self,vobj,mode=0):
+		#self.createDialog()
+		self.edit()
+		#FreeCAD.ActiveDocument.recompute()
+		return True
 
 
 

@@ -471,6 +471,7 @@ if FreeCAD.GuiUp:
 	[c3bI(["Bezier"], always, 'approximator', 'deactivate Execution')]
 	[c3bI(["Bezier"], always, 'approximator', 'A')]
 	[c3bI(["Bezier"], always, 'approximator', 'B')]
+	[c3bI(["Bezier"], always, 'morpher', 'create Morpher')]
 	[c3bI(["Bezier"], always, 'approximator', 'Ribs to Face')]
 	[c3bI(["Bezier"], always, 'approximator', 'swap Curves')]
 	[c3bI(["Bezier"], always, 'approximator', 'curves to Face')]
