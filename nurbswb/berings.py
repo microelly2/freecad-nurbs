@@ -62,8 +62,8 @@ def checkcurve(curve):
 ##\cond
 
 import nurbswb.pyob
-from nurbswb.pyob import  FeaturePython,ViewProvider
 reload (nurbswb.pyob)
+from nurbswb.pyob import  FeaturePython,ViewProvider
 
 ##\endcond
 
@@ -158,6 +158,9 @@ class Bering(FeaturePython):
 
 		if prop=='detach' and fp.detach:
 			print "muss sketch erzeugen"
+			# nix machen, ist schon da
+			return
+			
 			try:
 				pts=fp.source.Points
 				pm=fp.source.Placement
@@ -178,6 +181,8 @@ class Bering(FeaturePython):
 
 	def execute(self,fp):
 
+		pms=fp.source.Placement
+		pm=fp.Placement
 		if fp.cyclic:
 			# make a cyclic bezier chain from the points of the source polygon
 
@@ -237,6 +242,18 @@ class Bering(FeaturePython):
 		if fp.inverse:
 				pts=pts[::-1]
 
+		if not fp.detach:
+			# punkte zuruecktransformieren
+			
+			ptsback=[]
+			pmi=pms.inverse()
+
+			for p in pts:
+				pb=pmi.multVec(p)
+				ptsback += [pb]
+
+			pts=ptsback
+		##
 		bc=Part.BSplineCurve()
 		
 		if fp.stripmode:
@@ -407,7 +424,7 @@ class Bering(FeaturePython):
 				pts=bc.getPoles()
 				pm=fp.source.Placement
 				rot=pm.Rotation
-				pts=[rot.multVec(p) for p in pts]
+
 				fp.deleteAllGeometry()
 				for  i in range(len(pts)-1):
 					fp.addGeometry(Part.LineSegment(pts[i],pts[i+1]),False)
@@ -415,8 +432,10 @@ class Bering(FeaturePython):
 					fp.addConstraint(Sketcher.Constraint('Coincident',i,2,i+1,1)) 
 		#except:
 		#	print "probleme bei der sketch erstellung"
+		
+		fp.Placement=pm
+		
 ##\endcond
-
 
 class _VPBeface(ViewProvider): 
 	pass
@@ -4457,7 +4476,7 @@ class GordonFace(FeaturePython):
 		obj.addProperty("App::PropertyLinkList","ribs")
 		obj.addProperty("App::PropertyLinkList","meridians")
 		obj.addProperty("App::PropertyLink","grid")
-		obj.addProperty("App::PropertyInteger","uCount").uCount=3
+		obj.addProperty("App::PropertyInteger","uCount").uCount=2
 		obj.addProperty("App::PropertyInteger","vCount").vCount=3
 		obj.addProperty("App::PropertyInteger","uWeight").uWeight=10
 		obj.addProperty("App::PropertyInteger","vWeight").vWeight=10
@@ -4492,18 +4511,22 @@ def createGordon(obj,scale=5.0):
 		suc=obj.uCount-1
 		svc=obj.vCount-1
 		try: 
-			print obj.grid.Links
+			for l in obj.grid.Links:
+				print l.Label
+			1/0
 			polsu=np.array([a.Shape.Edge1.Curve.getPoles() for a in obj.grid.Links[0:suc+1]])
 			polsv=np.array([a.Shape.Edge1.Curve.getPoles() for a in obj.grid.Links[suc+1:suc+svc+2]])
 
 		except:
+			print "Berechne selbst die dimensionen des Feldes"
 			a=obj.grid
 			lenedges=[len(e.Curve.getPoles()) for e in a.Shape.Edges]
-			print lenedges
+			print ("Length edges",lenedges)
 			vcc=(lenedges[0]+2)/3
 			ucc=(lenedges[-1]+2)/3
-			print (ucc,vcc,len(lenedges))
+			print ("dimension array",ucc,vcc,len(lenedges))
 			assert ucc+vcc==len(lenedges)
+			
 			obj.uCount=ucc
 			obj.vCount=vcc
 			suc=obj.uCount-1
@@ -4511,42 +4534,45 @@ def createGordon(obj,scale=5.0):
 
 			polsu=np.array([a.Shape.Edges[i].Curve.getPoles() for i in range(0,suc+1)])
 			polsv=np.array([a.Shape.Edges[i].Curve.getPoles() for i in range(suc+1,suc+svc+2)])
+			print "snapes"
+			print polsu.shape
+			print polsv.shape
 
+			#diagnose lage der kurven zueinander
+			print
+			print FreeCAD.Vector(polsu[-1,0])
+			print FreeCAD.Vector(polsu[0,0])
+			print FreeCAD.Vector(polsv[-1,0])
+			print FreeCAD.Vector(polsv[0,0])
+
+			dista=1.
+			if (FreeCAD.Vector(polsu[0,0])-FreeCAD.Vector(polsv[0,0])).Length<dista:
+				print "flip u"
+				polsu=polsu[::-1]
+
+			if (FreeCAD.Vector(polsu[-1,0])-FreeCAD.Vector(polsv[-1,0])).Length<dista:
+				print "flip v"
+				polsv=polsv[::-1]
+
+			if (FreeCAD.Vector(polsu[0,0])-FreeCAD.Vector(polsv[-1,0])).Length<dista:
+				print "flip both"
+				polsv=polsv[::-1]
+				polsu=polsu[::-1]
+
+			assert (FreeCAD.Vector(polsu[-1,0]) - FreeCAD.Vector(polsv[0,0])).Length<dista
 			assert polsu.shape==(ucc,lenedges[0],3)
 			assert polsv.shape==(vcc,lenedges[-1],3)
 
-
-	print "shapes u v "
-	print polsu.shape
-	print polsv.shape
-
-#	suc=3
-#	svc=2
-
-
-	#return
-
-#	return
-	if 0: # mein beispiel
-		es=App.ActiveDocument.BeGrid.Shape.Edges
-
-		poles=[]
-		for e in es:
-			poles += [e.Curve.getPoles()]
-
-
-		#anzahl segmente
-		suc=3 # 
-		svc=3
-
-		polsu=np.array(poles[0:suc+1])
-		polsv=np.array(poles[suc+1:suc+svc+2])
+	print ("shapes polsu polsv ",polsu.shape,polsv.shape)
 
 
 	def blender(c,t):
 		if abs(c-t)>=1.: rc=0
 		else:
 			rc=(1-min(abs(c-t),1))**0.7
+			rc=(1-min(abs(c-t),1))
+#			rc=abs((t-c-1)*(t-c+1))
+#			rc=abs((t-c-1)*(t-c+1))**0.7
 #		print ("blender c,t",c,t,rc)
 		return rc
 
@@ -4575,15 +4601,14 @@ def createGordon(obj,scale=5.0):
 	if 10:
 		for ui,u in enumerate(uli):
 			for vi,v in enumerate(vli):
-				print ("ui,vi",ui,vi)
+#				print ("ui,vi",ui,vi)
 				for i in range(suc+1):
 					for j in range(svc+1):
-						print ("i,j,blender",i,j,blender(j,v),blender(i,u))
+#						print ("i,j,blender",i,j,blender(j,v),blender(i,u))
 	#					s3tt[ui,vi] += (polsu[i][3*j]*obj.uWeight+polsv[j][3*i]*obj.vWeight)*blender(i,u)/blender(i,i)*blender(j,v)/blender(j,j)/(obj.uWeight+obj.vWeight)
 	#					print s3tt[ui,vi]
 	#					print polsu[i][3*j]
 						s3tt[ui,vi] += (polsu[i][3*j])*blender(i,u)/blender(i,i)*blender(j,v)/blender(j,j)
-
 
 
 
@@ -4613,6 +4638,22 @@ def createGordon(obj,scale=5.0):
 			mu,mv,range(suc+1),range(svc+1),
 			False,False,3,3)
 
+	# swap
+	ag.buildFromPolesMultsKnots(np.array(ptsarr[::-1]).swapaxes(0,1), 
+			mv,mu,range(svc+1),range(suc+1),
+			False,False,3,3)
+
+#	ag.buildFromPolesMultsKnots(np.array(ptsarr[::-1][::-1]), 
+#			mu,mv,range(suc+1),range(svc+1),
+#			False,False,3,3)
+
+
+
+#	ag.buildFromPolesMultsKnots(np.array(ptsarr), 
+#			mu,mv,range(suc+1),range(svc+1),
+#			False,False,3,3)
+
+
 	name="gordonU"
 	tt=App.ActiveDocument.getObject(name)
 	if tt==None:
@@ -4623,11 +4664,8 @@ def createGordon(obj,scale=5.0):
 	
 	for vi,v in enumerate(vli):
 		pts=np.zeros((3*suc+1)*3).reshape(1,3*suc+1,3)
-		print ("shapes",suc,svc)
-		print pts.shape
-		print polsv.shape
 		for i in range(svc+1):
-			pts += [polsv[i]*blender(i,v)/blender(i,i)]
+			pts += [polsv[i]*(blender(i,v)/blender(i,i))]
 		ptsa=[FreeCAD.Vector(p) for p in pts[0]]
 		ptsarr2 += [ptsa]
 
@@ -4663,8 +4701,10 @@ def createGordon(obj,scale=5.0):
 
 	ptsarr3=(np.array(ptsarr)*2*obj.uWeight/(obj.uWeight+obj.vWeight) +np.array(ptsarr2).swapaxes(0,1)*2*obj.vWeight/(obj.uWeight+obj.vWeight)-s3tt)
 
+#	ptsarr3=(np.array(ptsarr)*2*obj.uWeight/(obj.uWeight+obj.vWeight) +np.array(ptsarr2).swapaxes(0,1)*2*obj.vWeight/(obj.uWeight+obj.vWeight))
+
+
 	# RANDER ..
-	print  "raaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
 	ptsarr3[0]=polsu[-1]
 	ptsarr3[-1]=polsu[0]
 
@@ -4777,7 +4817,7 @@ def _createGordonGUI():
 			
 
 	ViewProvider(tt.ViewObject)
-	createGordon(tt)
+	#createGordon(tt)
 	#tt.Shape=shape
 	
 	App.activeDocument().recompute()
@@ -5518,3 +5558,95 @@ def solid():
 	sol=Part.makeSolid(sh)
 	ssh=App.ActiveDocument.addObject('Part::Feature',"solid")
 	ssh.Shape=sol
+
+
+def AA ():
+	pass
+
+def flattenthewire():
+	'''flatten a curve to prepare for sketcher work'''
+	 
+	print "curve/wire to planar wire"
+	obj=App.ActiveDocument.CurveMorpher
+	for e in obj.Shape.Edges:#[1:2]:
+		#e=App.ActiveDocument.CurveMorpher.Shape.Edge7
+		c=e.Curve
+		poles=c.getPoles()
+		a=poles[0]
+		b=poles[-1]
+		da=(b-a).normalize()
+		nms=[(p-a).cross(da).normalize() for p in poles[1:-1]]
+		nm=FreeCAD.Vector()
+		for n in nms:
+			nm += n
+		db=nm.normalize()
+		## abweichung
+		s=0
+		for n in nms:
+			s += abs(1-db.dot(n))
+		print ("Non planarity",round(s/len(nms)*1000))
+		###
+		
+		dc=da.cross(db).normalize()
+		pts2=[]
+		pts3=[]
+		for p in poles:
+			p1 = p-a
+#			print (p1.dot(da),p1.dot(dc),p1.dot(db))
+			p2= da*p1.dot(da)+dc*p1.dot(dc) + a
+			p3= FreeCAD.Vector(p1.dot(da),p1.dot(dc))
+			pts2 += [p2]
+			pts3 += [p3]
+
+		
+		pol=Part.makePolygon(pts3)
+		tt=App.ActiveDocument.addObject('Part::Feature',"Flat_Wire_"+ obj.Name)
+		tt.ViewObject.LineColor=(.1,.6,.6)
+		
+		tt.Shape=Part.makeCircle(30)
+		tt.Shape=pol
+
+		db=da.cross(dc)
+#		print "vectoren"
+#		print (da.x,da.y,da.z)
+#		print (db.x,db.y,db.z)
+#		print (dc.x,dc.y,dc.z)
+#		Draft.makeWire([a,b,a,a+100*db,a,a+50*dc])
+#		db=-db
+		m=FreeCAD.Matrix(da.x,da.y,da.z,0.,
+			db.x,db.z,db.y,0.,
+			dc.x,dc.z,dc.y,0.,
+			0.,0.,0.,1.)
+
+		m=FreeCAD.Matrix(
+			da.x,da.y,da.z,0.,
+			db.x,db.y,db.z,0.,
+			dc.x,dc.y,dc.z,0.,
+			0.,0.,0.,1.)
+
+		#db=-db
+		db,dc=dc,db
+		m=FreeCAD.Matrix(
+			da.x,db.x,dc.x,0.,
+			da.y,db.y,dc.y,0.,
+			da.z,db.z,dc.z,0.,
+			0.,0.,0.,1.)
+
+
+		pl = FreeCAD.Placement(m)
+
+		m.move((a.x,a.y,a.z))
+		pl = FreeCAD.Placement(m)
+#		print pl.Rotation.toEuler()
+		tt.Placement=pl
+
+
+def BB():
+
+	a=Gui.Selection.getSelection()[0]
+	for v in a.Shape.Vertexes:
+		print v.Point
+
+	print 
+	print a.Placement.Base
+	print a.Placement.Rotation.toEuler()

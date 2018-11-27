@@ -1688,3 +1688,28 @@ def RibstoFace():
 
 
 
+
+#
+#  tools fuer verfeinern von flaechen ...
+#
+
+def findrib():
+	# finde punkt auf kurve mit gegebenem x und mache dorhin einen pol 
+	a=App.activeDocument().BeringSketch.Shape.Edge1.Curve
+
+
+	x=3
+	v=FreeCAD.Vector(x,0)
+
+	for i in range(50):
+		m=a.parameter(v)
+		pp=a.value(m)
+		v=FreeCAD.Vector(x,pp.y)
+		print (i,v,(pp-v).Length)
+		if (pp-v).Length<0.001:
+			break
+
+
+	a.insertKnot(m,3)
+	Part.show(Part.Point(pp).toShape())
+	Part.show(a.toShape())

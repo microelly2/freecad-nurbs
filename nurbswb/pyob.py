@@ -11,6 +11,8 @@ import FreeCADGui
 App = FreeCAD
 Gui = FreeCADGui
 
+import PySide
+
 import Part
 import numpy as np
 
@@ -136,14 +138,35 @@ class ViewProvider:
 		action = menu.addAction("Recompute ...")
 		action.triggered.connect(self.recompute)
 
+#	def edit(self):
+#		print "noimp"
+
 
 	def setEdit(self,vobj,mode=0):
 		#self.createDialog()
-		self.edit()
+		print "huhu"
+		try:
+			print "huhu 32"
+			self.edit()
+#			print "ha 2"
+		except:
+			pass
+
 		#FreeCAD.ActiveDocument.recompute()
+#		print "hah"
+#		print vobj
+#		FreeCAD.v=vobj
 		return True
 
+	def run_later(self):
+		self.ViewObject.show()
 
+	def setEdit(self,vobj,mode=0):
+		#self.createDialog()
+		PySide.QtCore.QTimer.singleShot(100, self.run_later)
+		raise Exception("Exception-Hack to start Editor")
+#		return False
+#		return True
 
 
 

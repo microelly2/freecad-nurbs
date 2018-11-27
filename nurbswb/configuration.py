@@ -23,11 +23,11 @@ class MyWidget(QtGui.QLineEdit):
 		self.textChanged.connect(self.ttChanged)
 
 	def ttChanged(self,arg):
-		print "!!", self
-		print self.path
-		print "testprocessor"
-		print arg
-		print self.text()
+		print ("!!", self)
+		print (self.path)
+		print ("testprocessor")
+		print (arg)
+		print (self.text())
 		
 	def loadA(self):
 		group = App.ParamGet("User parameter:"+self.path)

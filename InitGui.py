@@ -156,7 +156,7 @@ class _Command2():
 
 	def __init__(self, lib=None, name=None, icon=None, command=None, modul='nurbswb',tooltip='No Tooltip'):
 
-		print ("!! command 2:",icon,modul,lib,command,tooltip)
+		# print ("!! command 2:",icon,modul,lib,command,tooltip)
 
 		if lib == None:
 			lmod = modul
@@ -233,7 +233,7 @@ class _Command():
 
 	def __init__(self,lib=None,name=None,icon='/../icons/nurbs.svg',command=None,modul='nurbswb'):
 
-		print ("!! command:",icon,modul,lib,command)
+		# print ("!! command:",icon,modul,lib,command)
 		if lib==None: lmod=modul
 		else: lmod=modul+'.'+lib
 		if command==None: command=lmod+".run()"
@@ -472,6 +472,9 @@ if FreeCAD.GuiUp:
 	[c3bI(["Bezier"], always, 'approximator', 'A')]
 	[c3bI(["Bezier"], always, 'approximator', 'B')]
 	[c3bI(["Bezier"], always, 'morpher', 'create Morpher')]
+	[c3bI(["Bezier"], always, 'morpher', 'curve morphed Face')]
+	[c3bI(["Bezier"], always, 'berings', 'flatten the wire')]
+
 	[c3bI(["Bezier"], always, 'approximator', 'Ribs to Face')]
 	[c3bI(["Bezier"], always, 'approximator', 'swap Curves')]
 	[c3bI(["Bezier"], always, 'approximator', 'curves to Face')]
@@ -496,8 +499,8 @@ if FreeCAD.GuiUp:
 	beztools += [c3bI(["Bezier","Create"], always, 'berings', 'create Helmet')]
 
 
-#	c3b(["Bezier","Create"], always, 'berings', 'create Datum Plane')
-#	c3b(["Bezier","Create"], always, 'berings', 'create Datum Line')
+	c3b(["Bezier","Create"], always, 'berings', 'create Datum Plane')
+	c3b(["Bezier","Create"], always, 'berings', 'create Datum Line')
 
 	c3bI(["Bezier","Assembly"], always, 'berings', 'create Triangle')
 	c3bI(["Bezier","Assembly"], always, 'berings', 'create Plane Tube Connector')
@@ -905,9 +908,9 @@ static char * nurbs_xpm[] = {
 			self.appendToolbar("Points Workspaces and Views", cmds4 )
 			self.appendToolbar("Geodesic Patch Tests", cmds5 )
 
-			print "create toolbars-------------------------"
+#			print ("create toolbars-------------------------")
 			for t in self.toolbars:
-				print t
+#				print (t)
 				self.appendToolbar(t[0], t[1])
 
 
