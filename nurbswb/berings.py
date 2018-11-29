@@ -385,6 +385,11 @@ class Bering(FeaturePython):
 				print "knot ",i
 				bc.insertKnot(i,3)
 
+			bc2=Part.BSplineCurve()
+			ms=bc.getMultiplicities()
+			bc2.buildFromPolesMultsKnots(bc.getPoles(), ms, range(len(ms)), False,3)
+			bc=bc2
+
 		if fp.mode == 'compound':
 			
 			comp=[Part.makePolygon(bc.getPoles()),bc.toShape()]

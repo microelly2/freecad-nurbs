@@ -133,6 +133,7 @@ class CurveMorpher(FeaturePython):
 		obj.addProperty("App::PropertyLink","E","borders")
 		obj.addProperty("App::PropertyBool","_showborders","borders")
 		obj.addProperty("App::PropertyFloat","factorForce","config").factorForce=0
+		obj.addProperty("App::PropertyFloat","factor2Force","config").factor2Force=0
 		obj.addProperty("App::PropertyInteger","count","config").count=9
 		obj.addProperty("App::PropertyBool","curvesNS")
 		obj.addProperty("App::PropertyBool","curvesWE")
@@ -150,9 +151,12 @@ class CurveMorpher(FeaturePython):
 		obj.addProperty("App::PropertyFloat","curveAPosition","special").curveAPosition=50
 		obj.addProperty("App::PropertyFloat","curveBPosition","special").curveBPosition=50
 		obj.curvesNS=1
-		obj.curvesWE=0
+		obj.curvesWE=1
 		obj.faceWE=0
 		obj.curveOnlyA=0
+		obj.flipB=1
+		obj.flipAA=1
+		obj.flipAB=1
 
 		obj.addProperty("App::PropertyBool","_showspecial","special")
 		obj._showspecial=False
@@ -162,7 +166,6 @@ class CurveMorpher(FeaturePython):
 
 	def myOnChanged(self,obj,prop):
 
-		# print "change morpehr prop",prop
 		if prop in ["Shape"]:
 			return
 
@@ -175,65 +178,62 @@ class CurveMorpher(FeaturePython):
 		except:
 			return
 
-#		self.showprops(obj,prop)
-
 		compsA=[]
 
-		if 0:
-			ca=App.ActiveDocument.BeringSketch.Shape.Curve
-			cb=App.ActiveDocument.BeringSketch002.Shape.Curve
-			cc=App.ActiveDocument.BeringSketch003.Shape.Curve
-			cd=App.ActiveDocument.BeringSketch005.Shape.Curve
-		else:
-#			a,b,c,d=Gui.Selection.getSelection()
-			a=obj.S
-			b=obj.N
-			c=obj.W
-			d=obj.E
-			ca=a.Shape.Curve
-			cb=b.Shape.Curve
-			cc=c.Shape.Curve
-			cd=d.Shape.Curve
+		a=obj.S
+		b=obj.N
+		c=obj.W
+		d=obj.E
+		ca=a.Shape.Curve
+		cb=b.Shape.Curve
+		cc=c.Shape.Curve
+		cd=d.Shape.Curve
 
 		anz=obj.count
 
-		flip=0
-		if flip:
-			ca,cb,cc,cd=cc,cd,ca,cb
+#		flip=0
+#		if flip:
+#			ca,cb,cc,cd=cc,cd,ca,cb
 
-		import Draft
-		def getmorph(A,B,ptsa,ptsb,u=0.5,ff=1.):
+		def getmorph(A,B,ptsa,ptsb,u=0.5,ff=1.,helper=0,h2faktor=1):
 
 			ptsa=np.array(ptsa)
 			ptsb=np.array(ptsb)
 			assert ptsa.shape == ptsb.shape	
 			l=ptsa.shape[0]
-			pts=u*ptsa+(ff-u)*ptsb
-			pts *= 1.0/ff
+			pts=u*ptsa+(1-u)*ptsb
 			AA=pts[0].copy()
 			BB=pts[-1].copy()
 			ptsA=pts.copy()
-		#	Draft.makeWire([FreeCAD.Vector(AA),FreeCAD.Vector(BB)])
-		#	Draft.makeWire([FreeCAD.Vector(A),FreeCAD.Vector(B)])
-		#	Draft.makeWire([FreeCAD.Vector(A),FreeCAD.Vector(AA)])
-		#	Draft.makeWire([FreeCAD.Vector(B),FreeCAD.Vector(BB)])
-		#	A,B=B,A
-		#	Draft.makeWire([FreeCAD.Vector(p) for p in pts])
+			if helper:
+				tname="helper"
+				tt=App.ActiveDocument.getObject(tname)
+				if tt==None:
+					tt=App.ActiveDocument.addObject('Part::Spline',tname)
+				compsa=[]
+				compsa +=[Part.makePolygon([FreeCAD.Vector(p) for p in pts])]
+				compsa +=[Part.makePolygon([FreeCAD.Vector(AA),FreeCAD.Vector(BB)])]
+
 			h=(obj.factorForce+10)*0.1
+			h2=-(obj.factor2Force)*0.1*h2faktor
+
 			for il in range(l):
+					D=(B*il+A*(l-1-il))/(l-1)
 					fa=((l-il-1.)/(l-1))**h if il!=l-1 else 0
 					fb=((il+0.)/(l-1))**h if il!=0 else 0
 					pts[il] -= (fa*(AA-A)  +fb*(BB-B))
+					if il!=l-1 and il !=0:
+						E=pts[il]-D
+						pts[il]=E*(1-h2)+D
+
+			if helper:
+				compsa +=[Part.makePolygon([FreeCAD.Vector(p) for p in pts])]
+				tt.Shape=Part.Compound(compsa)
 
 			return pts
 
-		flipA=False
-		flipB=True
-		#flipA=True
-		flipB=False
 		flipA=obj.flipAA
 		flipB=obj.flipAB
-
 
 		if obj.curveOnlyA:
 			Arange=[0.01*obj.curveAPosition*anz]
@@ -241,15 +241,12 @@ class CurveMorpher(FeaturePython):
 			Arange=range(anz+1)
 
 		for V in Arange:
-			#break
 
 			v=V/(anz+0.0)
 			u=1-v
 
 			ptsa=np.array(ca.getPoles())
 			ptsb=np.array(cb.getPoles())
-		#	ptsb=ptsb[::-1]
-
 
 			if flipA:
 				A=np.array(cc.value(1-v))
@@ -263,16 +260,13 @@ class CurveMorpher(FeaturePython):
 			if obj.flipA:
 				A,B=B,A
 
-			pts=getmorph(A,B,ptsa,ptsb,u,)
+			pts=getmorph(A,B,ptsa,ptsb,u,h2faktor=v*u)
 
 			bc=Part.BSplineCurve()
 			bc.buildFromPolesMultsKnots(pts,ca.getMultiplicities(),ca.getKnots(),False,3)
 			compsA += [bc.toShape()]
 
 		ca,cb,cc,cd=cc,cd,ca,cb
-
-		flipA=False
-		flipB=False
 
 		compsB=[]
 
@@ -284,49 +278,36 @@ class CurveMorpher(FeaturePython):
 		flipA=obj.flipBA
 		flipB=obj.flipBB
 
-
-		for V in Brange:
-			#break
+		
+		for iV,V in enumerate(Brange):
+			if not (obj.curvesWE or obj.faceWE):
+				break
 
 			ff=cc.getKnots()[-1]
-			ff=2.
+
 			v=ff*V/(anz+0.0)
-			u=ff-v
+			u=1-V/(anz+0.0)
 
 			ptsa=np.array(ca.getPoles())
 			ptsb=np.array(cb.getPoles())
 
-		#	ptsb=ptsb[::-1]
-		#	ptsa=ptsa[::-1]
-
-
 			if flipA:
-				A=np.array(cc.value(1-v))
+				A=np.array(cc.value(ff-v))
 			else:
 				A=np.array(cc.value(v))
 			if flipB:
-				B=np.array(cd.value(1-v))	
+				B=np.array(cd.value(ff-v))	
 			else:
 				B=np.array(cd.value(v))	
 
-			#Draft.makeWire([FreeCAD.Vector(A),FreeCAD.Vector(B)])
-
 			if obj.flipB:
 				A,B=B,A
-			pts=getmorph(A,B,ptsa,ptsb,u,ff)
+
+			pts=getmorph(A,B,ptsa,ptsb,u,ff,h2faktor=v*u)
 
 			bc=Part.BSplineCurve()
 			bc.buildFromPolesMultsKnots(pts,ca.getMultiplicities(),ca.getKnots(),False,3)
-			#Part.show(bc.toShape())
 			compsB += [bc.toShape()]
-			#App.ActiveDocument.ActiveObject.ViewObject.LineColor=(1.,0.,1.)
-
-
-		#makeLoft(li
-		if not obj.curveOnlyA:
-			la=Part.makeLoft(compsA)
-		if not obj.curveOnlyB:
-			lb=Part.makeLoft(compsB)
 
 		comps=[]
 		if obj.curvesNS:
@@ -334,23 +315,20 @@ class CurveMorpher(FeaturePython):
 		if obj.curvesWE:
 			comps  += compsB
 		if obj.faceNS:
+			la=Part.makeLoft(compsA)
 			comps += [la]
 		if obj.faceWE or len(comps)==0:
+			lb=Part.makeLoft(compsB)
 			comps += [lb]
 
-
 		obj.Shape=Part.Compound(comps)
-
-
-
-
 
 
 
 	def myExecute(self,obj):
 		if not obj._noExecute:
 			self.onChanged(obj,"__execute__")
-		print obj.Label," executed"
+		#print obj.Label," executed"
 
 def curvemorphedFace():
 	'''create a face by morphing boder curves'''

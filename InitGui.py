@@ -576,6 +576,7 @@ if FreeCAD.GuiUp:
 	c2b(["SMOOTH"],onselection1,0,'smooth','smooth Mesh','/../icons/draw.svg')
 
 	c2b(["SMOOTH"],onselection1,0,'smooth','split Mesh','/../icons/draw.svg')
+	c2b(["SMOOTH"],onselection2,0,'smooth','slice Mesh by Sketch','/../icons/draw.svg')
 	c2b(["SMOOTH"],onselection2,0,'smooth','distance Curves','/../icons/draw.svg')
 	c2b(["SMOOTH"],onselection2,0,'smooth','draw Path','/../icons/draw.svg')
 	c2b(["Sketchertools"],ondocument,0,'sketch_to_bezier','create Bezier Sketch','/../icons/draw.svg')

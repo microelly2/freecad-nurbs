@@ -1212,7 +1212,7 @@ def runMyMinA(fp, pts):
 		def makeSimpleCurve(pts):
 			
 			print "makeSimpleCurve"
-			print pts
+#			print pts
 
 			pr=[]
 			#print len(pts)
@@ -1222,7 +1222,13 @@ def runMyMinA(fp, pts):
 				return []
 			for i in range(len(pts)-3):
 		#		print i
-				sp=schnittpunkt([pts[i+1],pts[i+1]+pts[i]-pts[i+2],pts[i+2],pts[i+2]+pts[i+3]-pts[i+1]])
+				try:
+					sp=schnittpunkt([pts[i+1],pts[i+1]+pts[i]-pts[i+2],pts[i+2],pts[i+2]+pts[i+3]-pts[i+1]])
+				except:
+					print ("Problem Schnittpuinkt",i)
+					for pui in [pts[i+1],pts[i+1]+pts[i]-pts[i+2],pts[i+2],pts[i+2]+pts[i+3]-pts[i+1]]:
+						print pui
+					sp=pts[i+1]
 				k=0.9
 				k=0.5
 				pr += myMinA([pts[i+1],sp,pts[i+2]])[0:3]
