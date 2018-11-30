@@ -134,6 +134,7 @@ class CurveMorpher(FeaturePython):
 		obj.addProperty("App::PropertyBool","_showborders","borders")
 		obj.addProperty("App::PropertyFloat","factorForce","config").factorForce=0
 		obj.addProperty("App::PropertyFloat","factor2Force","config").factor2Force=0
+		obj.addProperty("App::PropertyVector","pull","config").pull=FreeCAD.Vector(0,0,0)  
 		obj.addProperty("App::PropertyInteger","count","config").count=9
 		obj.addProperty("App::PropertyBool","curvesNS")
 		obj.addProperty("App::PropertyBool","curvesWE")
@@ -150,6 +151,7 @@ class CurveMorpher(FeaturePython):
 		obj.addProperty("App::PropertyBool","curveOnlyA","special")
 		obj.addProperty("App::PropertyFloat","curveAPosition","special").curveAPosition=50
 		obj.addProperty("App::PropertyFloat","curveBPosition","special").curveBPosition=50
+		
 		obj.curvesNS=1
 		obj.curvesWE=1
 		obj.faceWE=0
@@ -174,7 +176,7 @@ class CurveMorpher(FeaturePython):
 		try:
 			obj.factorForce,obj.curvesNS,obj.curvesWE,obj.faceNS,obj.faceWE
 			obj.N.Shape,obj.S.Shape,obj.W.Shape,obj.E.Shape
-			obj.curveAPosition,obj.curveBPosition
+			obj.curveAPosition,obj.curveBPosition,obj.pull
 		except:
 			return
 
@@ -216,6 +218,7 @@ class CurveMorpher(FeaturePython):
 
 			h=(obj.factorForce+10)*0.1
 			h2=-(obj.factor2Force)*0.1*h2faktor
+			up=obj.pull*10
 
 			for il in range(l):
 					D=(B*il+A*(l-1-il))/(l-1)
@@ -225,10 +228,21 @@ class CurveMorpher(FeaturePython):
 					if il!=l-1 and il !=0:
 						E=pts[il]-D
 						pts[il]=E*(1-h2)+D
+					pts[il] += up * il*(l-il-1)/l**2 * h2faktor
 
 			if helper:
 				compsa +=[Part.makePolygon([FreeCAD.Vector(p) for p in pts])]
 				tt.Shape=Part.Compound(compsa)
+
+			# glaetten
+			anz=(len(pts)-4)/2
+			for i in range(anz):
+				k=3*i+3
+				p1=pts[k-1]
+				p2=pts[k+1]
+				p=pts[k]
+				p1,p2= p +(p1-p2)/2,p +(p2-p1)/2
+				pts[k-1],pts[k+1]=p1,p2
 
 			return pts
 
@@ -244,16 +258,20 @@ class CurveMorpher(FeaturePython):
 
 			v=V/(anz+0.0)
 			u=1-v
+			ff=cc.getKnots()[-1]
+
+			v=ff*V/(anz+0.0)
+			u=1-V/(anz+0.0)
 
 			ptsa=np.array(ca.getPoles())
 			ptsb=np.array(cb.getPoles())
 
 			if flipA:
-				A=np.array(cc.value(1-v))
+				A=np.array(cc.value(ff-v))
 			else:
 				A=np.array(cc.value(v))
 			if flipB:
-				B=np.array(cd.value(1-v))	
+				B=np.array(cd.value(ff-v))	
 			else:
 				B=np.array(cd.value(v))	
 
@@ -337,6 +355,7 @@ def curvemorphedFace():
 	[yy.N,yy.S,yy.W,yy.E]=Gui.Selection.getSelection()
 	ViewProvider(yy.ViewObject)
 	yy.ViewObject.ShapeColor=(.6,.6,1.)
+	yy.ViewObject.LineColor=(.0,.6,0.)
 	return yy
 
 

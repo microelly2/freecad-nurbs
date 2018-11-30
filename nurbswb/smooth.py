@@ -461,101 +461,46 @@ def splitMesh():
 #--------------------------------
 # schicht aus mesh schneiden - von splitmesh vereinfacht
 
+# https://autrimncpa.wordpress.com/bhairavi/
+
 def sliceMeshbySketch():
 
 
 	[s,sk]=Gui.Selection.getSelection()
+	if s.TypeId != 'Mesh::Feature':
+		s,sk=sk,s
+
 	try:
 		DatumPlane=sk.Support[0][0]
 	except:
 		DatumPlane=sk
 
-	merc=601
-	merc=61
-
 
 
 	import Mesh
-	Gui.activateWorkbench("MeshWorkbench")
-	import MeshPartGui, FreeCADGui
-	Gui.activateWorkbench("NurbsWorkbench")
-
-	plane=App.ActiveDocument.addObject("Part::Plane","Plane")
-
-	ptsa=[]
-	ribs=[]
-
-	plane.Placement=DatumPlane.Placement
-
-	Gui.Selection.clearSelection()
-	Gui.Selection.addSelection(plane)
-	Gui.Selection.addSelection(s)
-	FreeCADGui.runCommand('MeshPart_SectionByPlane')
-
-	pp=plane.Placement.inverse()
-
-	rc=App.ActiveDocument.ActiveObject
-	rc.ViewObject.LineColor=(0.3,0.3,1.0)
-	rc.ViewObject.LineWidth=6
-	
-	Gui.updateGui()
-	pts=rc.Shape.Wires[0].discretize(merc)
-	rc.ViewObject.hide()
-	if len(pts)==0:
-		pts=rc.Shape.discretize(merc)
-
-	import numpy as np
-	ribs2=[]
-
-	ptsa=np.array(ptsa)
-	print ptsa
-
-	ptsb=[]
-	ribs=[]
-
-	p0=FreeCAD.Vector()
-	p1=p0
-	zmax=0
 	import Draft
 
-	if 1:
-		print "makeWore"
-		ij=0
-		mj=10**10
-		xmi=10**10
-		pps=[FreeCAD.Vector(p) for p in pts]
-		for i,p in enumerate(pps):
-			if p.x<xmi:
-				ij=i
-				xmi=p.x
-				p1=p
-		pps2=pps[ij:] +pps[:ij]
+	pma=DatumPlane.Placement.copy()
+	ddB=pma.Rotation.multVec(FreeCAD.Vector(0,0,50))
+	ddA=pma.Base
+	mesh=s.Mesh
 
-		if (pps2[1].z-pps2[0].z)<=0:
-			pps2.reverse()
-
-		p1=pps2[1]
-		ptsb += [pps2]
-		n=s.Name+"_rib"
-		f=App.ActiveDocument.getObject(n)
-		if f == None:
-			f=App.ActiveDocument.addObject("Part::Feature",n)
-		f.Shape=Part.makePolygon(pps2+[pps2[0]])
-		#rcc=Draft.makeWire(pps2)
-
-		pos=pts[0][1]
+	cs = mesh.crossSections([(ddA,ddB)],0.01)
+	ptsW=[FreeCAD.Vector(p) for p in cs[0][0]]
+	print len(ptsW)
+	import Draft
+	pol=Part.makePolygon(ptsW)
+	ptsW=pol.discretize(20)
+	
+	rcc=Draft.makeWire(ptsW)
 
 	if 0:
 		import sketch_to_bezier
 		reload (sketch_to_bezier)
 		sk=sketch_to_bezier.createBezierSketch(name="Arc",source=rcc)
-		sk.Placement=pm
-		ribs +=[sk]
 
 	s.ViewObject.hide()
 	DatumPlane.ViewObject.hide()
-	App.ActiveDocument.removeObject(rc.Name)
-	App.ActiveDocument.removeObject(plane.Name)
 
 
 
