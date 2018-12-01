@@ -465,14 +465,17 @@ def onspread():
 
 if FreeCAD.GuiUp:
 
+	beztools=[]
+
 	[c3bI(["Bezier"], always, 'upgradeobjects', 'upgrade Object')]
 	[c3bI(["Bezier"], always, 'upgradeobjects', 'dump Object')]
 	[c3bI(["Bezier"], always, 'approximator', 'activate Execution')]
 	[c3bI(["Bezier"], always, 'approximator', 'deactivate Execution')]
 	[c3bI(["Bezier"], always, 'approximator', 'A')]
 	[c3bI(["Bezier"], always, 'approximator', 'B')]
-	[c3bI(["Bezier"], always, 'morpher', 'create Morpher')]
-	[c3bI(["Bezier"], always, 'morpher', 'curve morphed Face')]
+	beztools += [c3bI(["Bezier","Assembly"], always, 'morpher', 'create Morpher',tooltip='morph two Bezier faces')]
+	beztools += [c3bI(["Bezier","Assembly"], always, 'morpher', 'curve morphed Face',
+			tooltip='create a surface by 4 border curves')]
 	[c3bI(["Bezier"], always, 'berings', 'flatten the wire')]
 
 	[c3bI(["Bezier"], always, 'approximator', 'Ribs to Face')]
@@ -484,13 +487,17 @@ if FreeCAD.GuiUp:
 	[c3bG(["Bezier"], always, 'approximator', 'create MyMin Soft')]
 	[c3bG(["Bezier"], always, 'approximator', 'create BezierPoles Frame from ribs')]
 
-	beztools=[]
-	beztools += [c3bI(["Faces"], always, 'tripod_2', 'create Tripod')]
-	beztools += [c3bI(["Faces"], always, 'tripod_2', 'create Tripod Sketch')]
-	beztools += [c3bI(["Faces"], always, 'tripod_2', 'create Sweep')]
-	beztools += [c3bI(["Faces"], always, 'tripod_2', 'create Loft')]
-	beztools += [c3bI(["Faces"], always, 'tripod_2', 'create Compound')]
+	
+	beztools += [c3bI(["Faces"], always, 'tripod_2', 'create Tripod',
+			tooltip='create a tripod onto the selected face' )]
+	beztools += [c3bI(["Faces"], always, 'tripod_2', 'create Tripod Sketch',
+			tooltip='create a tripod with a sketch onto the selected face' )]
+	beztools += [c3bI(["Faces"], always, 'tripod_2', 'create Sweep',tooltip='create a Sweep of the selected ribs')]
+	beztools += [c3bI(["Faces"], always, 'tripod_2', 'create Loft',tooltip='create a Loft of the selected ribs')]
+	beztools += [c3bI(["Faces"], always, 'tripod_2', 'create Compound',tooltip='create a compound of the selection')]
 	beztools += [c3bG(["Points"], always, 'approximator', 'load Pointcloud from Image')]
+	beztools += [c3bG(["Points"], always, 'approximator', 'load Cylinderface from Image')]
+	
 	beztools += [c3bG(["Points"], always, 'approximator', 'smooth Pointcloud')]
 	beztools += [c3bI(["Bezier"], always, 'berings', 'create Sketch Circle')]
 

@@ -347,6 +347,103 @@ def _loadPointcloudfromImageGUI():
 	ViewProvider(yy.ViewObject)
 
 
+#------------------------ Image auf Nurbs abbilden
+
+class ImagePoints2(FeaturePython):
+
+	def __init__(self, obj):
+		FeaturePython.__init__(self, obj)
+		obj.addProperty("App::PropertyFile","image")
+		obj.addProperty("App::PropertyFloat","R").R=100
+		obj.addProperty("App::PropertyFloat","h").h=0.01
+		obj.addProperty("App::PropertyIntegerList","params").params=[1,1,1,1]
+
+	def execute(self,obj):
+
+		#face = misc.imread(obj.image)
+		
+		
+		if obj.image != '':
+			import PIL
+			img=PIL.Image.open(obj.image)
+			im_arr = np.fromstring(img.tobytes(), dtype=np.uint8)
+			print im_arr.shape
+			print img.size
+			zd=im_arr.shape[0]/img.size[0]/img.size[1]
+			#print img.bands
+			im_arr = im_arr.reshape(img.size[1], img.size[0], zd)         
+			face=im_arr
+		else:
+			face=np.ones(20*20*3).reshape(20,20,3)
+
+		(uc,vc,_)=face.shape
+		print face.shape
+
+		#face=face[-10:,-10:]
+		(uc,vc,_)=face.shape
+		print face.shape
+
+		if 0:
+			poles=[]
+			for u in range(uc):
+				pts=[]
+				for v in range(vc):
+						pts += [FreeCAD.Vector(v,u,0.01*sum(face[u,v]))]
+				poles += [pts]
+
+		else:
+			R=100
+			h=0.01
+			poles=[]
+			for u in range(uc):
+				pts=[]
+				for v in range(vc):
+						ss=sum(face[u,v])
+						ss=face[u,v,0]*obj.params[0]+face[u,v,1]*obj.params[1]+face[u,v,2]*obj.params[2]
+						pts += [FreeCAD.Vector((R+h*ss)*np.cos(v*np.pi*0.5/vc),
+								-(R+h*ss)*np.sin(v*np.pi*0.5/vc),-R*u/uc*np.pi*0.4)]
+				poles += [pts]
+
+		bc=Part.BSplineSurface()
+
+		ya=[4]+[1]*(uc-4)+[4]
+		yb=[4]+[1]*(vc-4)+[4]
+		print poles[3][3]
+
+		bc.buildFromPolesMultsKnots(poles, 
+				ya,yb,
+				range(len(ya)),range(len(yb)),
+				False,False,3,3)
+
+		obj.Shape=bc.toShape()
+
+
+def _loadCylinderfacefromImageGUI():
+	''' bild datei laden'''
+
+	#fn='/home/thomas/Downloads/Profil-Punktewolke3D.png'
+	#fn='/home/thomas/.FreeCAD/Mod/freecad-nurbs/testdata/2364.png'
+	
+	yy=App.ActiveDocument.addObject("Part::FeaturePython","ImageSurface")
+	ImagePoints2(yy)
+	# yy.image=fn
+	ViewProvider(yy.ViewObject)
+
+
+
+
+
+
+
+
+
+
+
+
+
+#-----------------------------------------
+
+
 class MinLengthBezier(FeaturePython):
 	''' gegeben 7 Punkte Spline, finde optimale Kurve durch Mittelpunkt, durch Endpunkt und Endtangenten'''
 
