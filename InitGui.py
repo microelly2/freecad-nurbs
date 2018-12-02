@@ -497,6 +497,7 @@ if FreeCAD.GuiUp:
 	beztools += [c3bI(["Faces"], always, 'tripod_2', 'create Compound',tooltip='create a compound of the selection')]
 	beztools += [c3bG(["Points"], always, 'approximator', 'load Pointcloud from Image')]
 	beztools += [c3bG(["Points"], always, 'approximator', 'load Cylinderface from Image')]
+	beztools += [c3bG(["Points"], always, 'approximator', 'Bump Face from Image')]
 	
 	beztools += [c3bG(["Points"], always, 'approximator', 'smooth Pointcloud')]
 	beztools += [c3bI(["Bezier"], always, 'berings', 'create Sketch Circle')]
