@@ -351,18 +351,22 @@ def _loadPointcloudfromImageGUI():
 
 class ImagePoints2(FeaturePython):
 
-	def __init__(self, obj):
+	def __init__(self, obj,mode='generic'):
 		FeaturePython.__init__(self, obj)
 		obj.addProperty("App::PropertyFile","image")
 		obj.addProperty("App::PropertyFloat","R").R=100
 		obj.addProperty("App::PropertyFloat","h").h=0.01
-		obj.addProperty("App::PropertyFloat","factor").factor=10.
-		obj.addProperty("App::PropertyFloatList","params").params=[1.,1.,1.,1.,100.]
+		obj.addProperty("App::PropertyFloat","factor").factor=100.
+		obj.addProperty("App::PropertyFloatList","params").params=[1.,1.,1.,1.,0.]
 		obj.addProperty("App::PropertyEnumeration","mode")
+
+		obj.addProperty("App::PropertyInteger","degree").degree=3
 		obj.mode=['generic','cylinder','face']
-		obj.addProperty("App::PropertyLink","source")
-		obj.addProperty("App::PropertyInteger","faceNumber")
-		# obj.source=App.ActiveDocument.CurveMorpher
+		obj.mode=mode
+		obj.setEditorMode("mode", 2)
+		if mode=='face':
+			obj.addProperty("App::PropertyLink","source")
+			obj.addProperty("App::PropertyInteger","faceNumber")
 
 
 	def execute(self,obj):
@@ -413,66 +417,130 @@ class ImagePoints2(FeaturePython):
 			ff=obj.source.Shape.Faces[obj.faceNumber].toNurbs()
 			bs=ff.Face1.Surface.copy()
 			bs.increaseDegree(3,3)
+			print ("upuesl", bs.getUKnots())
+			print ("vpuesl", bs.getVKnots())
 #			print bs
-			scu=uc
-			scv=vc
+			# mit rand
+			
+			mitrand=1
+			
+			if mitrand:
+				scu=uc
+				scv=vc
+			else:
+				#phne rand
+				scu=uc
+				scv=vc
+
 
 			print "grundfigur start"
 			poles=np.array(bs.getPoles())
 			print poles.shape
 
 
+
 			c=bs.uIso(0)
+			c=bs.vIso(0)
+
 			l=int(round(c.length()/10)-1)
 			l=c.length()
 
-			ups=[0]
-			for i in range(1,scu):
-				p=c.parameterAtDistance(l/scu*i)
-				
-				try:
-					bs.insertUKnot(p,1,0)
-					ups += [p]
-				except:
-					pass
-			ups += [c.parameterAtDistance(l)]
+			if mitrand:
+				ups=[0]
+				for i in range(1,scu):
+					p=c.parameterAtDistance(l/scu*i)
+					
+					try:
+						bs.insertUKnot(p,1,0)
+						ups += [p]
+					except:
+						print ("fehler",i,p)
+						pass
+				ups += [c.parameterAtDistance(l)]
+			else:
+				ups=[]
+				for i in range(scu):
+					p=c.parameterAtDistance(l/scu*i)
+					print ("parametr uu",i,p)
+					try:
+						bs.insertUKnot(p,1,0)
+						ups += [p]
+					except:
+						pass
+
 
 #			print ("ups",ups)
-			print 
-#			print bs.getUKnots()
+			print "---------------"
+			print "len bs knots" ,len(bs.getUKnots())
 			print
 			yinterp = np.interp(bs.getUKnots(), ups, range(len(ups)))
-			print yinterp
+#			print yinterp
 			print
+
 
 
 			c=bs.vIso(0)
+			c=bs.uIso(0)
+
 			l=int(round(c.length()/10)-1)
 			l=c.length()
-			vps=[0]
-#			print bs.getVKnots()
-			for i in range(1,scv):
-				p=c.parameterAtDistance(l/scv*i)
-				try:
-					bs.insertVKnot(p,1,0)
-					vps += [p]
-				except:
-					pass
+			#print c.getKnots(),"------------"
+			mm=c.getKnots()[-1]
 
-			vps += [c.parameterAtDistance(l)]
+			if mitrand:
+				vps=[0]
+	#			print bs.getVKnots()
+				
+				for i in range(1,scv):
+					p=c.parameterAtDistance(l/scv*i)
+					try:
+						bs.insertVKnot(p,1,0)
+						vps += [p]
+					except:
+						pass
+
+				vps += [c.parameterAtDistance(l)]
+
+			else:
+				vps=[]
+				for i in range(scv):
+					p=c.parameterAtDistance(l/scv*i)
+					
+					try:
+						bs.insertVKnot(p,1,0)
+						vps += [p]
+					except:
+						pass
+					if vps[-1]!=p: 
+						
+						vps += [p]
+
+
 
 			poles=np.array(bs.getPoles())
+			
+			
+			
+			#-------------------------------------
 			print "Figur shape",poles.shape
+			print ("upuesl", bs.getUKnots())
+			print ("vpuesl", bs.getVKnots())
+
 			poles2=poles.copy()
 
 			#Part.show(bs.toShape())
 
 			
+
 			uc,vc,_=poles.shape
 			
+
 			uc2,vc2=scu,scv
 			print "Grundfigur", poles2.shape
+			
 			print ("uc2,vc2",uc2,vc2)
+			print len(vps)
+#			print vps
 
 #			for u in range(2,uc2-2):
 #				for v in range(2,vc2-2):
@@ -485,53 +553,131 @@ class ImagePoints2(FeaturePython):
 #			adds=np.zeros(len(ups)*len(vps)*3)
 #			adds=adds.reshape(len(ups),len(vps),3)
 
-			ssab=[]
-			for u in range(uc2):
-				ssa=[0]
-				for v in range(vc2):
-					ssa += [(face[u,v,0]*obj.params[0]+face[u,v,1]*obj.params[1]+face[u,v,2]*obj.params[2])*obj.params[3]+obj.params[4]]
-				#ssa +=[0]
-#				print len(ups)
-#				print len(ssa)
-				yinterp = np.interp(bs.getUKnots(), ups, ssa)
-#				print u
-#				print yinterp
-				ssab += [yinterp]
-			print "erstes shape"
-			print np.array(ssab).shape
-			print len(bs.getUKnots())
-#			print bs.getUKnots()
-			print len(bs.getVKnots())
-#			print bs.getVKnots()
+			if mitrand:
+				ssab=[]
+				print ("!##",face.shape,uc2,vc2)
+				for u in range(uc2-1):
+					ssa=[0]
+					for v in range(vc2-1):
+						ssa += [(face[u,v,0]*obj.params[0]+face[u,v,1]*obj.params[1]+face[u,v,2]*obj.params[2])*obj.params[3]+obj.params[4]]
+					ssa +=[0]
+					print len(ups[:-1])
+					print len(ups)
+					print len(ssa)
+					print "huhu"
+					yinterp = np.interp(bs.getUKnots(), ups, ssa)
+	#				print u
+	#				print yinterp
+					ssab += [yinterp]
+	#			print "erstes shape"
+	#			print np.array(ssab).shape
+	#			print len(bs.getUKnots())
+	#			print bs.getUKnots()
+	#			print len(bs.getVKnots())
+	#			print bs.getVKnots()
 
-			ssab=np.array(ssab).swapaxes(0,1)
-			print "--------------"
-			ssba=[[0]*len(bs.getVKnots())]
-			#vps += [0]
-			
-			for ui,u in enumerate(bs.getUKnots()):
-				ssa=[0]
-#				print len(vps[:-1])
-#				print len(ssab[ui])
-				yinterp = np.interp(bs.getVKnots(), vps[:-1], ssab[ui])
-#				print u
-#				print yinterp
-				ssba += [yinterp]
+				ssab=np.array(ssab).swapaxes(0,1)
+				print "ssab.shape ",ssab.shape
+				print "--------------"
+				ssba=[[0]*len(bs.getVKnots())]
+				#vps += [0]
+		
+				
+				for ui,u in enumerate(bs.getUKnots()):
+					ssa=[0]
+					print "-------------"
+					print len(vps[:-1])
+					print len(ssab[ui])
+					yinterp = np.interp(bs.getVKnots(), vps[:-2], ssab[ui])
+	#				print u
+	#				print yinterp
+					ssba += [yinterp]
 
-			ssba += [[0]*len(bs.getVKnots())]
-			print "zweites shape"
-			print np.array(ssba).shape
-			print "u ",len(bs.getUKnots())
-			print "v ", len(bs.getVKnots())
-			
-			ssba=np.array(ssba)
+				ssba += [[0]*len(bs.getVKnots())]
+				print "zweites shape"
+				print np.array(ssba).shape
+	#			print "u ",len(bs.getUKnots())
+	#			print "v ", len(bs.getVKnots())
+				
+				ssba=np.array(ssba)
 
-			print poles2.shape
-			for u in range(len(bs.getUKnots())):
-				for v in range(len(bs.getVKnots())):
-					[ui,vi]=bs.parameter(FreeCAD.Vector(poles[u+1,v+1]))
-					n=bs.normal(ui,vi)
-					poles2[u+1,v+1] +=  0.001*obj.factor*(ssba[u,v])*n
+				print "Zielarray poles2 shape ", poles2.shape
+				print ("belegugn",len(bs.getUKnots()),len(bs.getVKnots()))
+
+				for u in range(len(bs.getUKnots())):
+					for v in range(len(bs.getVKnots())):
+						[ui,vi]=bs.parameter(FreeCAD.Vector(poles[u+1,v+1]))
+						n=bs.normal(ui,vi)
+						poles2[u+1,v+1] +=  0.001*obj.factor*(ssba[u,v])*n
+
+			else:
+
+				ssab=[]
+				print ("!##",face.shape,uc2,vc2)
+				for u in range(uc2):
+					ssa=[]
+					for v in range(vc2):
+						ssa += [(face[u,v,0]*obj.params[0]+face[u,v,1]*obj.params[1]+face[u,v,2]*obj.params[2])*obj.params[3]+obj.params[4]]
+					#ssa +=[0]
+	#				print len(ups)
+	#				print len(ssa)
+#					print
+#					print bs.getUKnots()
+#					print
+#					print ups
+#					print 
+#					print ssa
+#					if u==4: return
+					yinterp = np.interp(bs.getUKnots(), ups, ssa)
+	#				print u
+	#				print yinterp
+					ssab += [yinterp]
+				print "erstes shape"
+	#			print np.array(ssab).shape
+				print len(bs.getUKnots())
+	#			print bs.getUKnots()
+				print len(bs.getVKnots())
+	#			print bs.getVKnots()
+
+				ssab=np.array(ssab).swapaxes(0,1)
+				print "ssab.shape ",ssab.shape
+	#			print "--------------"
+				ssba=[]
+				#vps += [0]
+		
+				
+				for ui,u in enumerate(bs.getUKnots()):
+					ssa=[0]
+#					print ("-------gg------",ui,u)
+#					print (len(vps),len(ups))
+#					print len(ssab[ui])
+#					print bs.getVKnots()
+#					print vps
+#					print ssab[ui]
+#					if ui==1: return
+					yinterp = np.interp(bs.getVKnots(), vps, ssab[ui])
+	#				print u
+	#				print yinterp
+					ssba += [yinterp]
+
+#				ssba += [[0]*len(bs.getVKnots())]
+				print "zweites shape"
+				print np.array(ssba).shape
+	#			print "u ",len(bs.getUKnots())
+	#			print "v ", len(bs.getVKnots())
+				
+				ssba=np.array(ssba)
+
+				print "Zielarray poles2 shape ", poles2.shape
+				print ("belegugn",len(bs.getUKnots()),len(bs.getVKnots()))
+
+				for u in range(len(bs.getUKnots())):
+					for v in range(len(bs.getVKnots())):
+						[ui,vi]=bs.parameter(FreeCAD.Vector(poles[u+1,v+1]))
+						n=bs.normal(ui,vi)
+						poles2[u,v] +=100
+						#poles2[u,v] +=  0.001*obj.factor*(ssba[u,v])*n
+				
 
 			#return
 			um=bs.getUMultiplicities()
@@ -542,28 +688,29 @@ class ImagePoints2(FeaturePython):
 			poles=poles2
 #			return
 
+		degree=obj.degree
 
+		if degree==0:
+			comps=[]
+			for pols in [poles,poles.swapaxes(0,1)]:
+				for ps in pols:
+					comps += [Part.makePolygon([FreeCAD.Vector(p) for p in ps])]
+			obj.Shape=Part.Compound(comps)
 
+		else:
+			bc=Part.BSplineSurface()
+			ya=[degree+1]+[1]*(uc-degree-1)+[degree+1]
+			yb=[degree+1]+[1]*(vc-degree-1)+[degree+1]
 
-		bc=Part.BSplineSurface()
+			bc.buildFromPolesMultsKnots(poles, 
+				ya,yb,range(len(ya)),range(len(yb)),
+				False,False,degree,degree)
 
-		ya=[4]+[1]*(uc-4)+[4]
-		yb=[4]+[1]*(vc-4)+[4]
-
-		bc.buildFromPolesMultsKnots(poles, 
-				ya,yb,
-				range(len(ya)),range(len(yb)),
-				False,False,3,3)
-
-		obj.Shape=bc.toShape()
+			obj.Shape=bc.toShape()
 
 
 def _loadCylinderfacefromImageGUI():
-	''' bild datei laden'''
 
-	#fn='/home/thomas/Downloads/Profil-Punktewolke3D.png'
-	
-	
 	yy=App.ActiveDocument.addObject("Part::FeaturePython","ImageSurface")
 	ImagePoints2(yy)
 	yy.mode='cylinder'
@@ -573,17 +720,14 @@ def _loadCylinderfacefromImageGUI():
 
 
 def _BumpFacefromImageGUI():
-	''' bild datei laden'''
 
-	#fn='/home/thomas/Downloads/Profil-Punktewolke3D.png'
-	
-	
+	dirlib = os.path.dirname(nurbswb.__file__)
+	fn= dirlib+ "/../testdata/profil_for_bump.png"
+	fn="/home/thomas/Schreibtisch/profil_for_bump.png"
+
 	yy=App.ActiveDocument.addObject("Part::FeaturePython","ImageSurface")
-	ImagePoints2(yy)
-	yy.mode='face'
+	ImagePoints2(yy,mode='face')
 	yy.source=Gui.Selection.getSelection()[0]
-	
-	fn='/home/thomas/Schreibtisch/profil_for_bump.png'
 	yy.image=fn
 	ViewProvider(yy.ViewObject)
 
@@ -1744,7 +1888,7 @@ def curvestoFace(polsarr=None,mode="Bezier Face"):
 	except:
 		print "Probleme mit Punktematrix- Segemente nicht leich lang -- Abbruch"
 		return
-
+	print "huhuhu"
 #	a,b=b,a
 	af=Part.BSplineSurface()
 	
@@ -1764,6 +1908,7 @@ def curvestoFace(polsarr=None,mode="Bezier Face"):
 				range(len(yb)),range(len(ya)),
 				False,False,db,3)
 	#Part.show(af.toShape())
+	print af
 	return af
 
 

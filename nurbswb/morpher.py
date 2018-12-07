@@ -131,11 +131,13 @@ class CurveMorpher(FeaturePython):
 		obj.addProperty("App::PropertyLink","S","borders")
 		obj.addProperty("App::PropertyLink","W","borders")
 		obj.addProperty("App::PropertyLink","E","borders")
+		obj.addProperty("App::PropertyLink","border","borders")
 		obj.addProperty("App::PropertyBool","_showborders","borders")
 		obj.addProperty("App::PropertyFloat","factorForce","config").factorForce=0
 		obj.addProperty("App::PropertyFloat","factor2Force","config").factor2Force=0
 		obj.addProperty("App::PropertyVector","pull","config").pull=FreeCAD.Vector(0,0,0)  
 		obj.addProperty("App::PropertyInteger","count","config").count=9
+		obj.addProperty("App::PropertyInteger","degree","config").degree=3
 		obj.addProperty("App::PropertyBool","curvesNS")
 		obj.addProperty("App::PropertyBool","curvesWE")
 		obj.addProperty("App::PropertyBool","faceNS")
@@ -192,6 +194,8 @@ class CurveMorpher(FeaturePython):
 		cd=d.Shape.Curve
 
 		anz=obj.count
+
+		ff=App
 
 #		flip=0
 #		if flip:
@@ -340,8 +344,92 @@ class CurveMorpher(FeaturePython):
 			comps += [lb]
 
 		obj.Shape=Part.Compound(comps)
+#----------------------
+
+	def myOnChangedBorder(self,obj,prop):
+
+		if prop in ["Shape"]:
+			return
+
+		self.showprops(obj,prop)
+
+#		try:
+#			obj.factorForce,obj.curvesNS,obj.curvesWE,obj.faceNS,obj.faceWE
+#			obj.N.Shape,obj.S.Shape,obj.W.Shape,obj.E.Shape
+#			obj.curveAPosition,obj.curveBPosition,obj.pull
+#		except:
+#			return
+
+		#faden in 4 teile zerlegen und dann daraus flaeche machen
+
+		#sh=App.ActiveDocument.Sketch006.Shape
+		sh=obj.border.Shape
+
+		w=sh.Wires[0]
+		pts=[v.Point for v in w.Vertexes]
+		print len(pts)
 
 
+		# pts[0]=pts[-1]=(pts[0]+pts[-1])*0.5
+		a=pts[0:4]
+		b=pts[3:7]
+		c=pts[6:10]
+		d=pts[9:12]+[pts[0]]
+#		for ps in [a,b,c,d]:
+#			Part.show(Part.makePolygon(ps))
+
+		import numpy  as np
+
+		ptsarr=np.zeros(4*4*3).reshape(4,4,3)
+		ptsarr[0]=a
+
+		ptsarr[-1]=c[::-1]
+		#ptsarr[-1]=c
+		ptsarr=ptsarr.swapaxes(0,1)
+
+		print ptsarr[0,0]
+		print d[-1]
+		ptsarr[0]=d[::-1]
+		print ptsarr[-1,0]
+		print b[0]
+
+		ptsarr[-1]=b
+
+
+		ptsarr[1,1:3]=(2*ptsarr[0,1:3]+ptsarr[3,1:3])/3
+		ptsarr[2,1:3]=(ptsarr[0,1:3]+2*ptsarr[3,1:3])/3
+
+		if 0:
+			for ps in ptsarr:
+				Part.show(Part.makePolygon([FreeCAD.Vector(p) for p in ps]))
+
+			ptsarr=ptsarr.swapaxes(0,1)
+
+			for ps in ptsarr:
+				Part.show(Part.makePolygon([FreeCAD.Vector(p) for p in ps]))
+
+		ptsarr[1:3,1:3] += obj.pull
+
+		bs=Part.BSplineSurface()
+
+		if obj.degree==1:
+			bs.buildFromPolesMultsKnots(ptsarr,[2,1,1,2],[2,1,1,2],[0,1,2,3],[0,1,2,3],False,False,1,1)
+
+		if obj.degree==2:
+			bs.buildFromPolesMultsKnots(ptsarr,[3,1,3],[3,1,3],[0,1,2],[0,1,2],False,False,2,2)
+
+		if obj.degree==3:
+			bs.buildFromPolesMultsKnots(ptsarr,[4,4],[4,4],[0,1],[0,1],False,False,3,3)
+
+		obj.Shape=bs.toShape()
+		return
+
+	def myOnChanged(self,obj,prop):
+		if obj.border == None:
+			self.myOnChanged(obj,prop)
+		else:
+			self.myOnChangedBorder(obj,prop)
+#----------------------
 
 	def myExecute(self,obj):
 		if not obj._noExecute:
@@ -352,7 +440,12 @@ def curvemorphedFace():
 	'''create a face by morphing boder curves'''
 	yy=App.ActiveDocument.addObject("Part::FeaturePython","CurveMorpher")
 	CurveMorpher(yy)
-	[yy.N,yy.S,yy.W,yy.E]=Gui.Selection.getSelection()
+
+	curves=Gui.Selection.getSelection()
+	if len(curves)==4:
+		[yy.N,yy.S,yy.W,yy.E]=curves
+	else:
+		yy.border=curves[0]
 	ViewProvider(yy.ViewObject)
 	yy.ViewObject.ShapeColor=(.6,.6,1.)
 	yy.ViewObject.LineColor=(.0,.6,0.)

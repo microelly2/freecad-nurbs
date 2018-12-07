@@ -471,8 +471,8 @@ if FreeCAD.GuiUp:
 	[c3bI(["Bezier"], always, 'upgradeobjects', 'dump Object')]
 	[c3bI(["Bezier"], always, 'approximator', 'activate Execution')]
 	[c3bI(["Bezier"], always, 'approximator', 'deactivate Execution')]
-	[c3bI(["Bezier"], always, 'approximator', 'A')]
-	[c3bI(["Bezier"], always, 'approximator', 'B')]
+#	[c3bI(["Bezier"], always, 'approximator', 'A')]
+#	[c3bI(["Bezier"], always, 'approximator', 'B')]
 	beztools += [c3bI(["Bezier","Assembly"], always, 'morpher', 'create Morpher',tooltip='morph two Bezier faces')]
 	beztools += [c3bI(["Bezier","Assembly"], always, 'morpher', 'curve morphed Face',
 			tooltip='create a surface by 4 border curves')]
@@ -495,12 +495,12 @@ if FreeCAD.GuiUp:
 	beztools += [c3bI(["Faces"], always, 'tripod_2', 'create Sweep',tooltip='create a Sweep of the selected ribs')]
 	beztools += [c3bI(["Faces"], always, 'tripod_2', 'create Loft',tooltip='create a Loft of the selected ribs')]
 	beztools += [c3bI(["Faces"], always, 'tripod_2', 'create Compound',tooltip='create a compound of the selection')]
-	beztools += [c3bG(["Points"], always, 'approximator', 'load Pointcloud from Image')]
-	beztools += [c3bG(["Points"], always, 'approximator', 'load Cylinderface from Image')]
-	beztools += [c3bG(["Points"], always, 'approximator', 'Bump Face from Image')]
+	[c3bG(["Points"], always, 'approximator', 'load Pointcloud from Image')]
+	[c3bG(["Points"], always, 'approximator', 'load Cylinderface from Image')]
+	beztools += [c3bG(["Points"], always, 'approximator', 'Bump Face from Image',icon=None)]
 	
-	beztools += [c3bG(["Points"], always, 'approximator', 'smooth Pointcloud')]
-	beztools += [c3bI(["Bezier"], always, 'berings', 'create Sketch Circle')]
+	[c3bG(["Points"], always, 'approximator', 'smooth Pointcloud')]
+	[c3bI(["Bezier"], always, 'berings', 'create Sketch Circle')]
 
 	beztools += [c3bI(["Bezier","Create"], always, 'berings', 'create BePlane')]
 	beztools += [c3bI(["Bezier","Create"], always, 'berings', 'create BeTube')]
@@ -529,11 +529,11 @@ if FreeCAD.GuiUp:
 	c3bG(["Bezier","Convert"], always, 'berings', 'create Approx',"/../icons/alpha.svg")
 
 
-	beztools += [c3bI(["Bezier"], always, 'berings', 'AA',tooltip="Eine Testfunktion")]
-	beztools += [c3bI(["Bezier"], always, 'berings', 'BB',tooltip="Eine andere Testfunktion")]
+#	beztools += [c3bI(["Bezier"], always, 'berings', 'AA',tooltip="Eine Testfunktion")]
+#	beztools += [c3bI(["Bezier"], always, 'berings', 'BB',tooltip="Eine andere Testfunktion")]
 
 	c3bI(["Bezier"], always, 'berings', 'add Knot')
-	beztools += [c3bI(["Bezier"], always, 'multiedit', 'multiEdit')]
+	[c3bI(["Bezier"], always, 'multiedit', 'multiEdit')]
 
 #	old version Surface Editor
 #	c3b(["Bezier"], always, 'berings', 'Surface Editor')
@@ -557,8 +557,8 @@ if FreeCAD.GuiUp:
 	[c3bG(["Bezier","Specials"], always, 'approximator', 'minimum Length Bezier')]
 	[c3bG(["Bezier","Specials"], always, 'approximator', 'near constant Curvature Bezier')]
 
-	beztools += [c3bI(["Bezier","Specials"], always, 'leastsq', 'leastsq Bezier')]
-	beztools += [c3bI(["Bezier","Specials"], always, 'leastsq', 'leastsq Bezier Two Segments')]
+	[c3bI(["Bezier","Specials"], always, 'leastsq', 'leastsq Bezier')]
+	[c3bI(["Bezier","Specials"], always, 'leastsq', 'leastsq Bezier Two Segments')]
 
 
 	c3bI(["Bezier","Specials"], always, 'berings', 'glaetten')
@@ -724,7 +724,7 @@ if FreeCAD.GuiUp:
 	c2a(["Faces"],always,'FineSegment','segment','Cut a fine segment of a Face','/../icons/nurbs.svg',"runfinesegment()")
 	c2a(["Faces"],always,'NurbsTrafo','segment','Transform a Face','/../icons/nurbs.svg',"runnurbstrafo()")
 	c2a(["Faces"],always,'Tangent','tangentsurface','create a tangent Face','/../icons/tangentsurface.svg',"runtangentsurface()")
-	c2a(["Faces"],always,'Seam','tangentsurface','create a Seam','/../icons/seam.svg',"runseam()")
+	c2a(["Faces"],always,'Seam','tangentsurface','create a Seam','/../icons/createSeam.svg',"runseam()")
 	c2a(["Faces"],always,'Grid generator','uvgrid_generator','create a uv-grid for a Face','/../icons/nurbs.svg',"run()")
 
 
@@ -896,9 +896,11 @@ static char * nurbs_xpm[] = {
 		cmds= ['ZebraTool','ParametricComb','GeomInfo','Nurbs_DraftBSpline Editor',
 		'Nurbs_Create Shoe','Nurbs_Create Sole','Nurbs_Sole Change Model',
 		'Nurbs_scanbackbonecut','Nurbs_createsketchspline','Nurbs_Curves to Face', 'Nurbs_facedraw',
-		'Nurbs_createcloverleaf',
+
 		'Part_Cone', 'Part_Cylinder','Draft_Move','Draft_Rotate','Draft_Point','Draft_ToggleGrid',
-		'My_Test2','Nurbs_toggleSketch','Sketcher_NewSketch','Nurbs_facedraws','Nurbs_patcha','Nurbs_patchb','Nurbs_folda']
+		'My_Test2','Sketcher_NewSketch',
+		#'Nurbs_facedraws','Nurbs_patcha','Nurbs_patchb','Nurbs_folda'
+		]
 
 		cmds2=['Nurbs_facedraw','Nurbs_patcha','Nurbs_patchb','Nurbs_folda']
 		

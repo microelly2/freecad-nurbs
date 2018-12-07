@@ -363,25 +363,23 @@ class Seam(PartFeature):
 		obj.addProperty("App::PropertyBool","sourceSwap","Base")
 		obj.addProperty("App::PropertyBool","sourceFlip","Base")
 		obj.addProperty("App::PropertyBool","fillCorner","Base")
+		obj.addProperty("App::PropertyBool","linear","Base")
 #		obj.addProperty("App::PropertyInteger","tCount","Base").tCount=30
 #		obj.addProperty("App::PropertyInteger","index","Base").index=0
+#		obj.addProperty("App::PropertyVector","V","Base").V.z=1
+#		obj.addProperty("App::PropertyFloat","P","Base").P=1.8
+		obj.addProperty("App::PropertyLink","endPlane","Base")
 		obj.addProperty("App::PropertyInteger","factorA","Base").factorA=10
 		obj.addProperty("App::PropertyInteger","factorB","Base").factorB=10
 		obj.addProperty("App::PropertyInteger","factorC","Base").factorC=10
 		obj.addProperty("App::PropertyEnumeration","displayShape","Base").displayShape=["Seam","OutSeam","InSeam","Curve"]
-
-		
-#		obj.addProperty("App::PropertyVectorList","tl","Base")
-#		obj.removeProperty("tl")
+		obj.linear=True
+		obj.displayShape="OutSeam"
 		ViewProvider(obj.ViewObject)
-		obj.PropertiesList
-#		for i in range(30):
-#			n="t"+str(i)
-#			obj.addProperty("App::PropertyVector",n,"Base")
-#			setattr(obj,n,FreeCAD.Vector(-2,0,0.6))
+
 
 	def onChanged(self, obj, prop):
-		if prop in ['factorA','factorB','factorC','displayShape','sourceFlip','sourceSwap']:
+		if prop in ['factorA','factorB','factorC','displayShape','sourceFlip','sourceSwap','linear','V','P']:
 			self.execute(obj)
 		if prop in ["vmin","vmax","umin","umax","source"]:
 			pass
@@ -389,33 +387,23 @@ class Seam(PartFeature):
 	def execute(proxy,obj):
 		print("execute ")
 		if obj.source<>None:
+			try:
+				sf=obj.source.Shape.Face1.Surface
+				sf.getPoles
+			except:
+				print "konvertiere zu nurbs"
+				ff=obj.source.Shape.Face1.toNurbs()
+				sf=ff.Face1.Surface
+
+			weights=sf.getWeights()
+
+			sf=sf.copy()
+
 			if obj.sourceSwap:
-				poles=np.array(obj.source.Shape.Face1.Surface.getPoles()).swapaxes(0,1)
+				poles=np.array(sf.getPoles()).swapaxes(0,1)
 			else:
-				poles=np.array(obj.source.Shape.Face1.Surface.getPoles())
+				poles=np.array(sf.getPoles())
 
-#			for i,p in enumerate(poles[0]):
-#				v=poles[0][i]-poles[1][i]
-#				setattr(obj,"t"+str(i),FreeCAD.Vector(v)*5)
-
-			sf=obj.source.Shape.Face1.Surface
-#			index=obj.index
-#			for i,p in enumerate(poles[index]):
-#				(u,v)=sf.parameter(FreeCAD.Vector(tuple(p)))
-#				(t1,t2)=sf.tangent(u,v)
-#				print (u,v,t1)
-#				setattr(obj,"t"+str(i),FreeCAD.Vector(t1))
-
-			print "seam execute ..."
-			print sf.getUKnots()
-			print sf.getVKnots()
-			poles=np.array(poles)
-			print poles.shape
-			
-#			uks=sf.getUKnots()
-#			sf.segment(uks[0],uks[1],0,1)
-#			
-#			print poles[0:1]
 			if obj.sourceFlip:
 				poles=np.flipud(poles)
 
@@ -426,6 +414,22 @@ class Seam(PartFeature):
 				poles[0]+(poles[1]-poles[0])*obj.factorA*0.1,
 				poles[0]+(poles[1]-poles[0])*obj.factorB*0.1+(poles[2]-poles[1])*obj.factorC*0.1
 			])
+
+			if obj.linear:
+
+				if obj.endPlane == None:
+					A,B=obj.factorA,obj.factorB
+				else:
+					A,B=1,1000
+
+				spols=np.array([
+					poles[0],
+					poles[0]+(poles[1]-poles[0])*A*0.1*-1,
+					poles[0]+(poles[1]-poles[0])*A*0.1*-2,
+					poles[0]+(poles[1]-poles[0])*B*0.1*-4
+				])
+
+
 
 			if obj.fillCorner:
 				# border add
@@ -450,7 +454,9 @@ class Seam(PartFeature):
 				closed=sf.isUClosed()
 			else:
 				closed=sf.isVClosed()
-			bs=machFlaeche(spols,ku=None,closed=closed)
+
+			bs=machFlaeche(spols,ku=None,closed=closed,weights=weights[0])
+			# bs=machFlaeche(spols,ku=None,closed=closed)
 
 			if closed:
 				if obj.displayShape=="OutSeam":
@@ -461,20 +467,44 @@ class Seam(PartFeature):
 					uks=bs.getUKnots()
 					vks=bs.getVKnots()
 					bs.segment(uks[-2],uks[-1],vks[0],vks[-1])
+
 				if obj.displayShape=="Curve":
 					bs=bs.uIso(0.5)
 
 			else:
 				if obj.displayShape=="OutSeam":
-					uks=bs.getUKnots()
-					bs.segment(uks[0],uks[1],0,1)
+					if not obj.linear:
+						uks=bs.getUKnots()
+						bs.segment(uks[0],uks[1],0,1)
+
 				if obj.displayShape=="InSeam":
 					uks=bs.getUKnots()
 					bs.segment(uks[-2],uks[-1],0,1)
 				if obj.displayShape=="Curve":
 					bs=bs.uIso(0.5)
 
+			if obj.endPlane != None:
+				shape=bs.toShape()
+				wires=[]
+				
+				pl=obj.endPlane
+				V=pl.Placement.Rotation.multVec(FreeCAD.Vector(0,0,1)).normalize()
+				P=V.dot(pl.Placement.Base)
+				ends=[]
+				anz=spols.shape[1]
+				for i in shape.slice(V,P):
+					ends=i.discretize(anz)
+
+				if len(ends) >=2:
+
+					spols2=np.array([spols[0],spols[1],spols[2],ends])
+
+				bs=machFlaeche(spols2,ku=None,closed=closed,weights=weights[0])
+
 			obj.Shape=bs.toShape()
+
+
+
 
 def createTangentFace():
 	b=FreeCAD.activeDocument().addObject("Part::FeaturePython","MyTangentFace")
@@ -727,6 +757,9 @@ def runseam():
 	s=FreeCAD.activeDocument().addObject("Part::FeaturePython","SeamW")
 	Seam(s)
 	s.source=source
+	try:
+		s.endPlane=Gui.Selection.getSelection()[1]
+	except: pass
 
 
 def runtangentsurface():
@@ -736,19 +769,19 @@ def runtangentsurface():
 		source=Gui.Selection.getSelection()[0]
 	b=FreeCAD.activeDocument().addObject("Part::FeaturePython","MyTangentialFace")
 	TangentFace(b)
-	b.westSeam=App.ActiveDocument.SeamW007
-	b.eastSeam=App.ActiveDocument.SeamW006
-	b.nordSeam=App.ActiveDocument.SeamW005
-	b.southSeam=App.ActiveDocument.SeamW008
+#	b.westSeam=App.ActiveDocument.SeamW007
+#	b.eastSeam=App.ActiveDocument.SeamW006
+#	b.nordSeam=App.ActiveDocument.SeamW005
+#	b.southSeam=App.ActiveDocument.SeamW008
 	b.source=source
 
 
 
 
 import FreeCAD,Part
-def machFlaeche(psta,ku=None,closed=False):
-		print "mqachflaeche koko"
+def machFlaeche(psta,ku=None,closed=False,weights=None):
 		NbVPoles,NbUPoles,_t1 =psta.shape
+#		print psta.shape
 
 		degree=3
 
@@ -756,21 +789,25 @@ def machFlaeche(psta,ku=None,closed=False):
 
 		kv=[1.0/(NbVPoles-3)*i for i in range(NbVPoles-2)]
 		if ku==None: ku=[1.0/(NbUPoles-3)*i for i in range(NbUPoles-2)]
-		mv=[4] +[1]*(NbVPoles-4) +[4]
-		mu=[4]+[1]*(NbUPoles-4)+[4]
-
 
 		mv=[4] +[1]*(NbVPoles-4) +[4]
 		mu=[4]+[1]*(NbUPoles-4)+[4]
 
 		if closed:
 			ku=[1.0/(NbUPoles+1)*i for i in range(NbUPoles+1)]
-		if closed:
-		 mu=[1]*(NbUPoles+1)
+			mu=[1]*(NbUPoles+1)
+
+		mu=[4,3,4]
+		ku=[0,1,2]
+
+
 
 		bs=Part.BSplineSurface()
-		bs.buildFromPolesMultsKnots(ps, mv, mu, kv, ku,  False,closed ,degree,degree)
-
+		if weights != None:
+			wew=[weights]*4
+			bs.buildFromPolesMultsKnots(ps, mv, mu, kv, ku,  False,closed ,degree,degree,wew)
+		else:
+			bs.buildFromPolesMultsKnots(ps, mv, mu, kv, ku,  False,closed ,degree,degree)
 
 		return bs
 
