@@ -372,7 +372,7 @@ class Seam(PartFeature):
 		obj.addProperty("App::PropertyInteger","factorA","Base").factorA=10
 		obj.addProperty("App::PropertyInteger","factorB","Base").factorB=10
 		obj.addProperty("App::PropertyInteger","factorC","Base").factorC=10
-		obj.addProperty("App::PropertyEnumeration","displayShape","Base").displayShape=["Seam","OutSeam","InSeam","Curve"]
+		obj.addProperty("App::PropertyEnumeration","displayShape","Base").displayShape=["Seam","OutSeam","InSeam","Curve","Tangent1","Tangent2"]
 		obj.linear=True
 		obj.displayShape="OutSeam"
 		ViewProvider(obj.ViewObject)
@@ -422,13 +422,36 @@ class Seam(PartFeature):
 				else:
 					A,B=1,1000
 
-				spols=np.array([
-					poles[0],
-					poles[0]+(poles[1]-poles[0])*A*0.1*-1,
-					poles[0]+(poles[1]-poles[0])*A*0.1*-2,
-					poles[0]+(poles[1]-poles[0])*B*0.1*-4
-				])
+				if obj.displayShape=="OutSeam" or obj.displayShape in ["Curve","Tangent1","Tangent2"]:
+					spols=np.array([
+						poles[0],
+						poles[0]+(poles[1]-poles[0])*A*0.1*-1,
+						poles[0]+(poles[1]-poles[0])*A*0.1*-2,
+						poles[0]+(poles[1]-poles[0])*B*0.1*-4
+					])
+					wew=[weights[0]]*4
 
+				if obj.displayShape=="InSeam":
+
+					spols=np.array([
+						poles[0],
+						poles[0]+(poles[1]-poles[0])*A*0.1*1,
+						poles[0]+(poles[1]-poles[0])*A*0.1*2,
+						poles[0]+(poles[1]-poles[0])*B*0.1*4
+					])
+					wew=weights[0:4]
+
+				if obj.displayShape=="Seam":
+					spols=np.array([
+						poles[0]+(poles[1]-poles[0])*B*0.1*4,
+						poles[0]+(poles[1]-poles[0])*A*0.1*1,
+						poles[0]+(poles[1]-poles[0])*A*0.1*2,
+						poles[0],
+						poles[0]+(poles[1]-poles[0])*A*0.1*-1,
+						poles[0]+(poles[1]-poles[0])*A*0.1*-2,
+						poles[0]+(poles[1]-poles[0])*B*0.1*-4
+					])
+					wew=weights[0:4][::-1]+[weights[0]]*3
 
 
 			if obj.fillCorner:
@@ -454,9 +477,8 @@ class Seam(PartFeature):
 				closed=sf.isUClosed()
 			else:
 				closed=sf.isVClosed()
-
-			bs=machFlaeche(spols,ku=None,closed=closed,weights=weights[0])
-			# bs=machFlaeche(spols,ku=None,closed=closed)
+			bs=machFlaeche(spols,ku=None,closed=closed,weights=wew)
+			#bs=machFlaeche(spols,ku=None,closed=closed)
 
 			if closed:
 				if obj.displayShape=="OutSeam":
@@ -476,30 +498,36 @@ class Seam(PartFeature):
 					if not obj.linear:
 						uks=bs.getUKnots()
 						bs.segment(uks[0],uks[1],0,1)
-
 				if obj.displayShape=="InSeam":
-					uks=bs.getUKnots()
-					bs.segment(uks[-2],uks[-1],0,1)
+					if not obj.linear:
+						uks=bs.getUKnots()
+						bs.segment(uks[-2],uks[-1],0,1)
 				if obj.displayShape=="Curve":
-					bs=bs.uIso(0.5)
+					if not obj.linear:
+						bs=bs.uIso(0.5)
+					else:
+						bs=bs.uIso(0.)
+				if obj.displayShape=="Tangent1":
+					bs=bs.vIso(0.)
+				if obj.displayShape=="Tangent2":
+					bs=bs.vIso(bs.getVKnots()[-1])
 
 			if obj.endPlane != None:
+
 				shape=bs.toShape()
-				wires=[]
-				
 				pl=obj.endPlane
+
 				V=pl.Placement.Rotation.multVec(FreeCAD.Vector(0,0,1)).normalize()
 				P=V.dot(pl.Placement.Base)
 				ends=[]
 				anz=spols.shape[1]
+
 				for i in shape.slice(V,P):
 					ends=i.discretize(anz)
 
 				if len(ends) >=2:
-
 					spols2=np.array([spols[0],spols[1],spols[2],ends])
-
-				bs=machFlaeche(spols2,ku=None,closed=closed,weights=weights[0])
+					bs=machFlaeche(spols2,ku=None,closed=closed,weights=weights[0])
 
 			obj.Shape=bs.toShape()
 
@@ -511,16 +539,7 @@ def createTangentFace():
 	bn=FilledFace(b)
 
 
-
-
-#	seam=FreeCAD.activeDocument().addObject("Part::FeaturePython","Seam")
-#	Seam(seam)
-
-
-
 if __name__=='__main__':
-
-
 
 
 	#create the test faces
@@ -804,7 +823,7 @@ def machFlaeche(psta,ku=None,closed=False,weights=None):
 
 		bs=Part.BSplineSurface()
 		if weights != None:
-			wew=[weights]*4
+			wew=weights
 			bs.buildFromPolesMultsKnots(ps, mv, mu, kv, ku,  False,closed ,degree,degree,wew)
 		else:
 			bs.buildFromPolesMultsKnots(ps, mv, mu, kv, ku,  False,closed ,degree,degree)
