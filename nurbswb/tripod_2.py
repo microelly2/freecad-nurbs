@@ -54,6 +54,8 @@ class Tripod(PartFeature):
 		obj.addProperty("App::PropertyFloat","maxRadius","Format","maximum curvature circle").maxRadius=1000
 		obj.addProperty("App::PropertyBool","directionNormal","Format","Auf dem Fuss oder auf dem Kopf stehen").directionNormal=True
 		obj.ViewObject.LineColor=(1.0,0.0,1.0)
+		obj.addProperty("App::PropertyBool","wireMode")
+		obj.addProperty("App::PropertyBool","binormalMode")
 
 	def onChanged(self, fp, prop):
 		''' recompute the shape, compute and print the curvature '''
@@ -82,9 +84,11 @@ class Tripod(PartFeature):
 			return
 
 		wiremode = len(fp.source.Shape.Faces)==0
+		if fp.wireMode:
+			wiremode=True
 
 		if wiremode:
-			w=fp.source.Shape.Edges[0]
+			w=fp.source.Shape.Edges[fp.faceNumber-1]
 			nn=w.toNurbs().Edges[0]
 
 			(mi,ma)=nn.ParameterRange
@@ -92,6 +96,8 @@ class Tripod(PartFeature):
 			vf=nn.valueAt(u)
 			t1=nn.tangentAt(u)
 			t2=nn.normalAt(u)
+			if fp.binormalMode:
+				t2=t1.cross(t2)
 
 		else:
 			f=fp.source.Shape.Faces[fp.faceNumber-1]
@@ -127,6 +133,8 @@ class Tripod(PartFeature):
 			print "Wiremode"
 			r=FreeCAD.Rotation(n,t1,t2)
 			r=FreeCAD.Rotation(t2,n,t1)
+			#hack binormal
+			r=FreeCAD.Rotation(n,t1,t2)
 		else:
 			r=FreeCAD.Rotation(t1,t2,n)
 		
@@ -140,6 +148,8 @@ class Tripod(PartFeature):
 				fp.addGeometry(Part.Circle(App.Vector(0,0,0),App.Vector(0,0,1),dist),False)
 				fp.addGeometry(Part.LineSegment(App.Vector(0,0,0),App.Vector(dist*3.,0,0)),False)
 				fp.addGeometry(Part.LineSegment(App.Vector(0.,0,0),App.Vector(0,dist*2,0)),False)
+				fp.addGeometry(Part.LineSegment(App.Vector(0,0,0),App.Vector(-dist*3.,0,0)),False)
+				fp.addGeometry(Part.LineSegment(App.Vector(0.,0,0),App.Vector(0,-dist*2,0)),False)
 				fp.recompute()
 			fp.Placement=pm
 			return
