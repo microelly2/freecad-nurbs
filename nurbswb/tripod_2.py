@@ -66,6 +66,8 @@ class Tripod(PartFeature):
 		try: fp.u, fp.v, fp.directionNormal,fp.Shape,fp.source,fp.faceNumber
 		except: return
 		if fp.source==None: return
+		
+#		print "change",prop
 
 		u=fp.u/12*3.14
 		v=fp.v/12*3.14
@@ -84,6 +86,8 @@ class Tripod(PartFeature):
 			return
 
 		wiremode = len(fp.source.Shape.Faces)==0
+		wiremode=False
+		
 		if fp.wireMode:
 			wiremode=True
 
@@ -95,7 +99,12 @@ class Tripod(PartFeature):
 			u=mi+(ma-mi)*fp.u*0.01
 			vf=nn.valueAt(u)
 			t1=nn.tangentAt(u)
-			t2=nn.normalAt(u)
+			try:
+				t2=nn.normalAt(u)
+			except:
+				print "Problem ERstellung Normale"
+				t2=FreeCAD.Vector(t1.y,t1.z,t1.x)
+				t2=t1.cross(t2)
 			if fp.binormalMode:
 				t2=t1.cross(t2)
 
@@ -104,11 +113,16 @@ class Tripod(PartFeature):
 			nf=f.toNurbs()
 
 			sf=nf.Face1.Surface
+#			print "Range",nf.Face1.ParameterRange
+			[umi,uma,vmi,vma]=nf.Face1.ParameterRange
 
 			#sf=fp.source.Shape.Faces[fp.faceNumber-1].Surface
+			u=umi+u*(uma-umi)
+			v=vmi+v*(vma-vmi)
 
 			# point
 			vf=sf.value(u,v)
+#			print ("u,v,vf",u,v,vf)
 
 			# tangents
 			t1,t2=sf.tangent(u,v)
@@ -116,7 +130,6 @@ class Tripod(PartFeature):
 
 
 		#------------------------
-
 			t1=t1.normalize()
 			t2=t2.normalize()
 		if fp.directionNormal: 
@@ -127,10 +140,10 @@ class Tripod(PartFeature):
 		n=n.normalize()
 
 		r=FreeCAD.Rotation(t1,t2,n)
-		print "Rotation A",r.toEuler()
+#		print "Rotation A",r.toEuler()
 
 		if wiremode:
-			print "Wiremode"
+#			print "Wiremode"
 			r=FreeCAD.Rotation(n,t1,t2)
 			r=FreeCAD.Rotation(t2,n,t1)
 			#hack binormal
@@ -138,7 +151,7 @@ class Tripod(PartFeature):
 		else:
 			r=FreeCAD.Rotation(t1,t2,n)
 		
-		print "Rotation",r.toEuler()
+		#print "Rotation",r.toEuler()
 		pm=FreeCAD.Placement(vf,r)
 		#pm=FreeCAD.Placement()
 		#pm.Rotation=r
@@ -161,7 +174,7 @@ class Tripod(PartFeature):
 
 		l1=t1.add(vf)
 		#li1=Part.Line(vf,l1)
-		print vf
+#		print vf
 		
 		li1=Part.makePolygon([vf,l1])
 		l2=t2.add(vf)
@@ -306,25 +319,52 @@ def createTripod():
 	ViewProvider(a.ViewObject)
 
 def createTripodSketch(): #sketcher
+	'''creae a tripod sketch'''
 
-	#a=FreeCAD.ActiveDocument.addObject("Part::FeaturePython","Tripod")
-	a=FreeCAD.ActiveDocument.addObject("Sketcher::SketchObjectPython","TripodSketch")
-	#Tripod(a,mode='Sketch')
-	Tripod(a)
-	a.mode="Sketch"
-	a.ViewObject.LineWidth = 2
-	a.source=Gui.Selection.getSelection()[0]
-	ViewProvider(a.ViewObject)
+	ss=Gui.Selection.getSelectionEx()
+	if len(ss) != 0:
+		for s in ss:
+			s.Object
+			subs=s.SubElementNames
+			for sub in subs:
+
+				if sub.startswith('Edge'):
+					nr=sub[4:]
+					print( s.Object.Name, sub, int(nr))
+					a=FreeCAD.ActiveDocument.addObject("Sketcher::SketchObjectPython","TripodSketch")
+					#Tripod(a,mode='Sketch')
+					Tripod(a)
+					a.mode="Sketch"
+					a.ViewObject.LineWidth = 1
+					a.faceNumber=int(nr)
+					a.wireMode=True
+					a.source=s.Object
+					ViewProvider(a.ViewObject)
+
+				if sub.startswith('Face'):
+					nr=sub[4:]
+					print( s.Object.Name, sub, int(nr))
+					a=FreeCAD.ActiveDocument.addObject("Sketcher::SketchObjectPython","TripodSketch")
+					#Tripod(a,mode='Sketch')
+					Tripod(a)
+					a.mode="Sketch"
+					a.ViewObject.LineWidth = 1
+					a.faceNumber=int(nr)
+					# a.wireMode=True
+					a.source=s.Object
+					ViewProvider(a.ViewObject)
 
 
-def createTripod(): # for wire
 
-	a=FreeCAD.ActiveDocument.addObject("Part::FeaturePython","Tripod")
-
-	Tripod(a)
-	a.ViewObject.LineWidth = 2
-	a.source=Gui.Selection.getSelection()[0]
-	ViewProvider(a.ViewObject)
+	else:
+		#a=FreeCAD.ActiveDocument.addObject("Part::FeaturePython","Tripod")
+		a=FreeCAD.ActiveDocument.addObject("Sketcher::SketchObjectPython","TripodSketch")
+		#Tripod(a,mode='Sketch')
+		Tripod(a)
+		a.mode="Sketch"
+		a.ViewObject.LineWidth = 2
+		a.source=Gui.Selection.getSelection()[0]
+		ViewProvider(a.ViewObject)
 
 
 
@@ -346,3 +386,38 @@ def createCompound():
 	App.activeDocument().recompute()
 
 # createSweep()
+
+
+
+'''
+# Analyse Raender eines lochs
+pts=[]
+for s in Gui.Selection.getSelectionEx():
+
+	for so in s.SubObjects:
+		nn=so.toNurbs()
+		print nn.Edge1.ParameterRange
+		[ui,ua]=nn.Edge1.ParameterRange
+		c=nn.Edge1.Curve
+		c.segment(ui,ua)
+		Part.show(c.toShape())
+		App.ActiveDocument.ActiveObject.Shape.Vertexes[1].Tolerance = 1e-5
+		App.ActiveDocument.ActiveObject.Shape.Vertexes[0].Tolerance = 1e-5
+
+		for v in nn.Vertexes:
+			print v.Point
+			pts +=[v.Point]
+		print
+
+'''
+
+
+'''
+
+fs=App.ActiveDocument.Thickness.Shape.Faces
+print len(fs)
+fs += App.ActiveDocument.Surface001.Shape.Faces
+print len(fs)
+Part.show(Part.makeShell(fs))
+
+'''
