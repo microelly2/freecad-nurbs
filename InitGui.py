@@ -529,9 +529,19 @@ if FreeCAD.GuiUp:
 	c3bG(["Bezier","Convert"], always, 'berings', 'create Approx',"/../icons/alpha.svg")
 
 
-	#beztools += [c3bI(["Bezier"], always, 'approximator', 'AA',tooltip="Eine Testfunktion")]
-	beztools += [c3bI(["Points"], always, 'points_to_face', 'Points to Cone',tooltip="P1,N1,P2,P3,P4",icon=None)]
+	beztools += [c3bI(["Bezier"], always, 'points_to_face', 'AA',tooltip="Eine Testfunktion")]
+#	beztools += [c3bI(["Points"], always, 'points_to_face', 'Points to Cone',tooltip="P1,N1,P2,P3,P4",icon=None)]
 	beztools += [c3bI(["Bezier"], always, 'geodesic2', 'BB',tooltip="Eine andere Testfunktion")]
+#	beztools += [c3bI(["Points"], always, 'points_to_face', 'Points to Cone',tooltip="P1,N1,P2,P3,P4",icon=None)]
+	beztools += [c3bI(["Points"], always, 'points_to_face', 'Points to Cone PN P P P',tooltip="P1,N1,P2,P3,P4",icon=None)]
+	beztools += [c3bI(["Points"], always, 'points_to_face', 'Points to Cone PN PN ',tooltip="P1,N1,P2,N2",icon=None)]
+
+	beztools += [c3bI(["Points"], always, 'points_to_face', 'Points to Cylinder PN P P',tooltip="P1,N1,P2,P3",icon=None)]
+
+	beztools += [c3bI(["Points"], always, 'points_to_face', 'Points to Cylinder 5P',tooltip="P1,P2,P3,p4,p%",icon=None)]
+	beztools += [c3bI(["Points"], always, 'points_to_face', 'Points to Sphere 4P',tooltip="P1,P2,P3,p4",icon=None)]
+	beztools += [c3bI(["Points"], always, 'points_to_face', 'Points to Sphere PN P',tooltip="P1,N1,P2",icon=None)]
+
 
 	beztools += [c3bI(["Curves","Geodesic"], always, 'geodesic2', 'create a Path',
 		tooltip="create a connection between two points of a Face",icon=None)]
