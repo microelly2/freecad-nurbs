@@ -466,6 +466,10 @@ def onspread():
 if FreeCAD.GuiUp:
 
 	beztools=[]
+	_beztools=[]
+	
+	current=[]
+	_current=[]
 
 	[c3bI(["Bezier"], always, 'upgradeobjects', 'upgrade Object')]
 	[c3bI(["Bezier"], always, 'upgradeobjects', 'dump Object')]
@@ -530,17 +534,43 @@ if FreeCAD.GuiUp:
 
 
 	beztools += [c3bI(["Bezier"], always, 'points_to_face', 'AA',tooltip="Eine Testfunktion")]
+	current += [c3bI(["Bezier"], always, 'points_to_face', 'Reconstruct Sphere',tooltip="Subselection to Sphere",icon=None)]
+	current += [c3bI(["Bezier"], always, 'points_to_face', 'Reconstruct Cylinder',tooltip="Subselection to Cylinder",icon=None)]
+	current += [c3bI(["Bezier"], always, 'points_to_face', 'optimize Cylinder',icon=None)]
+
+
+	current += [c3bI(["Bezier"], always, 'points_to_face', 'Reconstruct Plane',tooltip="Subselection to Plane",icon=None)]
+	current += [c3bI(["Bezier"], onselection1, 'points_to_face', 'noisy mesh',tooltip="add noise to a mesh",icon=None)]
+
+	current += [c3bI(["Bezier"], onselection, 'merge_faces', 'merge 2 Faces',icon=None)]
+	current += [c3bI(["Bezier"], onselection, 'merge_faces', 'merge 2 Faces B',icon=None)]
+
+	current += [c3bI(["Bezier"], always, 'minimumsurface', 'test minimal surface',icon=None)]
+
+	current += [c3bI(["Pattern"], onselection, 'pattern_v2', 'create Array',icon=None)]
+	current += [c3bI(["Pattern"], onselection, 'pattern_v2', 'split Edges',icon=None)]
+	current += [c3bI(["Pattern"], onselection, 'pattern_v2', 'remove Edges',icon=None)]
+	current += [c3bI(["Pattern"], onselection, 'pattern_v2', 'create Single Pattern',icon=None)]
+	current += [c3bI(["Pattern"], onselection, 'pattern_v2', 'create Pattern',icon=None)]
+
+
+
 #	beztools += [c3bI(["Points"], always, 'points_to_face', 'Points to Cone',tooltip="P1,N1,P2,P3,P4",icon=None)]
 	beztools += [c3bI(["Bezier"], always, 'geodesic2', 'BB',tooltip="Eine andere Testfunktion")]
 #	beztools += [c3bI(["Points"], always, 'points_to_face', 'Points to Cone',tooltip="P1,N1,P2,P3,P4",icon=None)]
-	beztools += [c3bI(["Points"], always, 'points_to_face', 'Points to Cone PN P P P',tooltip="P1,N1,P2,P3,P4",icon=None)]
-	beztools += [c3bI(["Points"], always, 'points_to_face', 'Points to Cone PN PN ',tooltip="P1,N1,P2,N2",icon=None)]
+	_beztools += [c3bI(["Points"], always, 'points_to_face', 'Points to Cone PN P P P',tooltip="P1,N1,P2,P3,P4",icon=None)]
+	_beztools += [c3bI(["Points"], always, 'points_to_face', 'Points to Cone PN PN ',tooltip="P1,N1,P2,N2",icon=None)]
 
-	beztools += [c3bI(["Points"], always, 'points_to_face', 'Points to Cylinder PN P P',tooltip="P1,N1,P2,P3",icon=None)]
+	_beztools += [c3bI(["Points"], always, 'points_to_face', 'Points to Cylinder PN P P',tooltip="P1,N1,P2,P3",icon=None)]
 
 	beztools += [c3bI(["Points"], always, 'points_to_face', 'Points to Cylinder 5P',tooltip="P1,P2,P3,p4,p%",icon=None)]
-	beztools += [c3bI(["Points"], always, 'points_to_face', 'Points to Sphere 4P',tooltip="P1,P2,P3,p4",icon=None)]
-	beztools += [c3bI(["Points"], always, 'points_to_face', 'Points to Sphere PN P',tooltip="P1,N1,P2",icon=None)]
+	_beztools += [c3bI(["Points"], always, 'points_to_face', 'Points to Sphere 4P',tooltip="P1,P2,P3,p4",icon=None)]
+	_beztools += [c3bI(["Points"], always, 'points_to_face', 'Points to Sphere PN P',tooltip="P1,N1,P2",icon=None)]
+
+	_beztools += [c3bI(["Points"], always, 'perspective_trafos', 'createPerspectiveTrafo',tooltip="perspektiische Tranformation 3D einer Flaeche",icon=None)]
+
+	_beztools += [c3bI(["Points"], always, 'concave_hull', 'create concave hull 2D',tooltip="alpha shape fuer eine point cloud",icon=None)]
+
 
 
 	beztools += [c3bI(["Curves","Geodesic"], always, 'geodesic2', 'create a Path',
@@ -844,7 +874,8 @@ if FreeCAD.GuiUp:
 
 
 	toolbars = [
-				['Bezier Tools', beztools]
+				['Bezier Tools', beztools],
+				['My current Work', current]
 			]
 
 
