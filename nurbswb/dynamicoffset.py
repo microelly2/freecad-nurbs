@@ -23,7 +23,7 @@ import scipy.interpolate
 # for the floatlist obj.datalist
 #
 # in debugmode the calculated shape contains wires for both curves and 
-# connecting lines beween corresponding points on all curves
+# connecting lines between corresponding points on all curves
 
 
 

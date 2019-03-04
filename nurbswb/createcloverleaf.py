@@ -118,7 +118,7 @@ def run():
 	sk.addConstraint(Sketcher.Constraint('Coincident',13,3,ld,1))
 
 
-	print ("curve lenght",sk.Shape.Edge1.Length)
+	print ("curve length",sk.Shape.Edge1.Length)
 
 
 

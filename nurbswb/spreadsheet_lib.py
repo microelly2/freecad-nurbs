@@ -51,7 +51,7 @@ def getSpreadsheet(label='Spreadsheet'):
 	return createSpreadsheet(label)
 
 def gendata(spreadsheet,spheremode=False):
-		# fill sheat
+		# fill sheet
 		ss=spreadsheet
 
 		NbUPoles=13

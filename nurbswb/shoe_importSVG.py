@@ -1139,7 +1139,7 @@ class svgHandler(xml.sax.ContentHandler):
 										cx = argsplit[1]
 										cy = argsplit[2]
 										m.move(Vector(cx,-cy,0))
-								m.rotateZ(math.radians(-angle)) #mirroring one axis equals changing the direction of rotaion
+								m.rotateZ(math.radians(-angle)) #mirroring one axis equals changing the direction of rotation
 								if len(argsplit) >= 3:
 										m.move(Vector(-cx,cy,0))
 						elif transformation == 'skewX':
@@ -1376,7 +1376,7 @@ class ViewProvider:
 		action.triggered.connect(lambda:self.updatesvg(obj.Object))
 		action = menu.addAction("Start Observer")
 		action.triggered.connect(lambda:self.runtimer(obj.Object))
-		action = menu.addAction("Stopp Observer")
+		action = menu.addAction("Stop Observer")
 		action.triggered.connect(lambda:self.stoptimer(obj.Object))
 
 

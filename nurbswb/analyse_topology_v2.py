@@ -38,7 +38,7 @@ def rf(v):
 
 
 def createFaceMidPointmodel(a):
-	'''create an extented model with facepoints'''
+	'''create an extended model with facepoints'''
 
 	fs=a.Shape.Faces
 
@@ -300,9 +300,9 @@ def berechneKeyLevel(i=1):
 
 
 def werteausLevel(i=1):
-	''' which points have uniqe keys at level i'''
+	''' which points have unique keys at level i'''
 
-	# count the key occurences
+	# count the key occurrences
 	kp={}
 	for n in g.nodes():
 		if g.node[n]['quality']==0:
@@ -348,7 +348,7 @@ def zeigeQ(i):
 
 
 def run():
-	'''run anlysis for one selected object'''
+	'''run analysis for one selected object'''
 	s=Gui.Selection.getSelection()
 	model=s[0]
 	runAna(model)
@@ -426,7 +426,7 @@ def runAna(model,silent=False):
 	#hack
 	#return
 
-	#calculate ans display top quality nodes
+	#calculate and display top quality nodes
 	if 1:
 		ns=[]
 		for n in g.nodes():

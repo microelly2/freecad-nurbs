@@ -126,7 +126,7 @@ def runA(model=None):
 	ss.set("A24","  length")
 	ss.set("A25","  left/right")
 	ss.set("A26","  height")
-	ss.set("A9","Hight A")
+	ss.set("A9","Height A")
 	ss.set("A10","Length")
 	ss.set("A14","Width right")
 	ss.set("A15","Width left")

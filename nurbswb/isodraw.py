@@ -246,7 +246,7 @@ class Brezel(PartFeature):
 		obj.addProperty("App::PropertyBool","reverseWire2","Source")
 		obj.addProperty("App::PropertyBool","reverseWire3","Source")
 		obj.addProperty("App::PropertyBool","reverseWire4","Source")
-		#obj.addProperty("App::PropertyLink","mapobject","Details","configuration objekt for mapping")
+		#obj.addProperty("App::PropertyLink","mapobject","Details","configuration object for mapping")
 		#obj.addProperty("App::PropertyBool","drawFace","Output","display subface cut by the wire projection")
 		#obj.addProperty("App::PropertyBool","reverseFace","Output","display inner or outer subface")
 		#obj.addProperty("App::PropertyInteger","pointcount","Details","count of points to discretize source wire")
@@ -483,7 +483,7 @@ class Map(PartFeature):
 
 
 	def execute(proxy,obj):
-		'''get the mapping of the obj.face, create the 2D and 3D grid for teh mapping'''
+		'''get the mapping of the obj.face, create the 2D and 3D grid for the mapping'''
 
 		[uv2x,uv2y,xy2u,xy2v]=getmap(obj,obj.faceObject)
 		proxy.uv2x=uv2x
@@ -1709,7 +1709,7 @@ def getmap(mapobj,obj):
 	print "hack B-BB su sv aa bb"
 	print face
 	print obj.Label
-	print ("get map parametr Range ",face.ParameterRange)
+	print ("get map parameter Range ",face.ParameterRange)
 	print "BS CLASS_______!!_______________",bs.__class__.__name__
 	print "isodraw.py zele  1705"
 	

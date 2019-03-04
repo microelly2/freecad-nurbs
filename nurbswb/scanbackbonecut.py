@@ -175,7 +175,7 @@ def displayCut(label,pl,pts,showpoints=True,showwire=False,showxypoints=False,sh
 #  - the folder **clones2** contains clones of the sketcher ribs on their right position
 #
 # @param model - name of the shoe model
-# @param point_cloud - name of the pount cloud document
+# @param point_cloud - name of the point cloud document
 # @param showpoints - display the point sets
 # @param showxywire - create a wire which approximates the point set as mapping in the xy-plane
 # @param showxypoints - display the mapping of the point sets into the xy-plane

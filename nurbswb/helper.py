@@ -8,7 +8,7 @@ from say import *
 import nurbswb.pyob
 
 
-## The Helper can display a Poles Gird, iso-Curve Grid or single isocurves as parametric Part::FeaturePython objects
+## The Helper can display a Poles Grid, iso-Curve Grid or single isocurves as parametric Part::FeaturePython objects
  
 
 class Helper(nurbswb.pyob.FeaturePython):

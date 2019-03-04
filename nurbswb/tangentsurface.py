@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #-------------------------------------------------
-#-- create a parametric tanget surface
+#-- create a parametric tangent surface
 #--
 #-- microelly 2017 v 0.1
 #--

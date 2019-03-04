@@ -24,7 +24,7 @@ def dropcopy(w):
 	FreeCAD.ActiveDocument.addObject('Part::Feature','Copy_of_'+c.Label+"_at_"+str(w.ha.value())).Shape=c.Shape
 	FreeCAD.ActiveDocument.recompute()
 
-## put the object c  on the curve bc in relative postion  v
+## put the object c  on the curve bc in relative position  v
 # @param bc bspline curve
 # @param c part
 # @param v float between 0 and 1 

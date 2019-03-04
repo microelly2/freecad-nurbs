@@ -290,10 +290,10 @@ class FeedbackSketch(FeaturePython):
 					if valwar == val_cgi:
 						if debug: print "nix zu aendern"
 						continue
-					try: 
+					try:
 						changed[gets]
 						#if valwar == val_cgi:
-						if debug: print "stopp change"
+						if debug: print "stop change"
 						changed[gets]=2
 					except:
 						changed[gets]=0

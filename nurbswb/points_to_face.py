@@ -307,7 +307,7 @@ class PointFace(FeaturePython):
 			return
 
 
-		try: # start not befor the last prop is created
+		try: # start not before the last prop is created
 			obj.axis
 		except:
 			return
@@ -1091,7 +1091,7 @@ def run_cylinder5p(pts=None,display=True,pointsize=10,maxradius=100000):
 		for p in [p_1,p_2,p_3,p_4,p_5]:
 			print (p)
 
-	#    if ((abs(p_3(1)) < THRESHOLD) && (abs(p_3(0)) > THRESHOLD) ){ // p_1 p_2 p_3 are alligned so infinite or no cylinder
+	#    if ((abs(p_3(1)) < THRESHOLD) && (abs(p_3(0)) > THRESHOLD) ){ // p_1 p_2 p_3 are aligned so infinite or no cylinder
 	#
 	 #       return;
 	  #  }        

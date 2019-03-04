@@ -566,7 +566,7 @@ class MyApp(object):
 		''' setDataToNurbs for update '''
 		if not force:
 			try:
-				# dont setDataToNurbs during a locked transaction
+				# don't setDataToNurbs during a locked transaction
 				if self.lock: return
 			except: pass
 		print "setDataToNurbs2"
@@ -581,7 +581,7 @@ class MyApp(object):
 	def updateRelative(self):
 		''' setDataToNurbs for update '''
 		try:
-			# dont setDataToNurbs during a locked transaction
+			# don't setDataToNurbs during a locked transaction
 			if self.lock: return
 		except: pass
 		print "setDataToNurbs2"

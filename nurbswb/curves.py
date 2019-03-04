@@ -41,7 +41,7 @@ class _ViewProvider(nurbswb.pyob.ViewProvider):
 
 ##\endcond
 
-## Two Offset curves for a Bspline definded by a Sketcher interpolation polygon
+## Two Offset curves for a Bspline defined by a Sketcher interpolation polygon
 
 class OffsetSpline(nurbswb.pyob.FeaturePython):
 	'''Sketch Object with Python''' 
@@ -238,7 +238,7 @@ class Star(nurbswb.pyob.FeaturePython):
 
 
 	def myExecute(proxy,obj):
-		''' positon to parent'''
+		''' position to parent'''
 
 		print ("myExecute",time.time())
 

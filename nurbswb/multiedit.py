@@ -1235,8 +1235,8 @@ def SurfaceEditor():
 	class EditorApp(MikiApp):
 
 		def resetDialog(self):
-			'''set all parameters fo the dialog to default values'''
-			
+			'''set all parameters of the dialog to default values'''
+
 			for idx in  'udial','vdial','ndial','scale','xdial','ydial','zdial','xrot','yrot','zrot':
 				if self.root.ids[idx].value()<>0:
 					self.root.ids[idx].setValue(0)
@@ -1296,7 +1296,7 @@ def SurfaceEditor():
 #			print "ux:",self.root.ids['ux'].text()
 
 		def textprocessor3(self):
-			'''command line execution after presse enter in the command line '''
+			'''command line execution after pressing enter in the command line '''
 			print "TEXTPROZESSOR 3"
 			print "ux:",self.root.ids['ux'].text()
 			# anylize the text

@@ -28,7 +28,7 @@ def getComboView(mw):
 
 def ComboViewShowWidget(widget,tabMode=False):
 
-	# stopp to default
+	# stop to default
 	if not tabMode:
 		widget.show()
 		return
