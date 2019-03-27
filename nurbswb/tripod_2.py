@@ -13,6 +13,8 @@ Gui=FreeCADGui
 App=FreeCAD
 import Part
 
+from nurbswb.say import say
+
 class PartFeature:
 	''' base class for part feature '''
 	def __init__(self, obj):
@@ -45,8 +47,11 @@ class Tripod(PartFeature):
 		self.Type="Tripod"
 		self.TypeId="Tripod"
 		obj.addProperty("App::PropertyLink","source","Source","Bezugskoerper")
+		obj.addProperty("App::PropertyLinkSub","ref","Source","Bezugskoerper")
+
 		obj.addProperty("App::PropertyInteger","faceNumber","Source","Nummer der Flaeche").faceNumber=0
-		obj.addProperty("App::PropertyEnumeration","mode","Format","Darstellung als Dreibein oder Kruemmungskreise").mode=["UV-Tripod","Curvature","Sketch"]
+		obj.addProperty("App::PropertyEnumeration","mode","Format","Darstellung als Dreibein oder Kruemmungskreise").mode=["UV-Tripod","Curvature","Sketch","RefPoint","Circles1","Circles2","RefPointSketch"]
+		obj.addProperty("App::PropertyEnumeration","modeRef","Format").modeRef=["normal","vertical"]
 		obj.addProperty("App::PropertyFloat","u","UV","u position un uv space").u=50
 		obj.addProperty("App::PropertyFloat","v","UV","v position in uv space").v=50
 		
@@ -66,6 +71,8 @@ class Tripod(PartFeature):
 		try: fp.u, fp.v, fp.directionNormal,fp.Shape,fp.source,fp.faceNumber
 		except: return
 		if fp.source==None: return
+		if prop in ['u','v'] and fp.mode in ["RefPoint","RefPointSketch","Circles1","Circles2"]: return
+		if prop in "Geometry": return
 		
 #		print "change",prop
 
@@ -80,6 +87,7 @@ class Tripod(PartFeature):
 
 #		u=fp.u/12*3.14/100
 #		v=fp.v/12*3.14/100
+
 
 		if fp.mode=="Curvature2":
 			self.runmode2(fp,prop)
@@ -102,45 +110,46 @@ class Tripod(PartFeature):
 			try:
 				t2=nn.normalAt(u)
 			except:
-				print "Problem ERstellung Normale"
+				print "Problem Erstellung Normale"
 				t2=FreeCAD.Vector(t1.y,t1.z,t1.x)
 				t2=t1.cross(t2)
 			if fp.binormalMode:
 				t2=t1.cross(t2)
 
 		else:
+
+			if fp.mode in ["RefPoint","Circles1","Circles2","RefPointSketch"]:
+				self.runmode3(fp)
+				if fp.mode in ["Circles1","Circles2"]:
+					return
+
+			u=0.01*fp.u
+			v=0.01*fp.v
+
 			f=fp.source.Shape.Faces[fp.faceNumber-1]
 			nf=f.toNurbs()
 
 			sf=nf.Face1.Surface
-#			print "Range",nf.Face1.ParameterRange
 			[umi,uma,vmi,vma]=nf.Face1.ParameterRange
 
-			#sf=fp.source.Shape.Faces[fp.faceNumber-1].Surface
 			u=umi+u*(uma-umi)
 			v=vmi+v*(vma-vmi)
 
 			# point
 			vf=sf.value(u,v)
-#			print ("u,v,vf",u,v,vf)
 
 			# tangents
 			t1,t2=sf.tangent(u,v)
-			#-------------------------
-
-
-		#------------------------
 			t1=t1.normalize()
 			t2=t2.normalize()
+
 		if fp.directionNormal: 
 			n=t1.cross(t2).normalize()
 		else: 
 			n=t2.cross(t1).normalize()
 
 		n=n.normalize()
-
 		r=FreeCAD.Rotation(t1,t2,n)
-#		print "Rotation A",r.toEuler()
 
 		if wiremode:
 #			print "Wiremode"
@@ -155,7 +164,7 @@ class Tripod(PartFeature):
 		pm=FreeCAD.Placement(vf,r)
 		#pm=FreeCAD.Placement()
 		#pm.Rotation=r
-		if fp.mode=='Sketch':
+		if fp.mode=='Sketch' or fp.mode=="RefPointSketch":
 			if len(fp.Geometry)==0:
 				dist=fp.source.Shape.BoundBox.DiagonalLength*0.05
 				fp.addGeometry(Part.Circle(App.Vector(0,0,0),App.Vector(0,0,1),dist),False)
@@ -163,9 +172,10 @@ class Tripod(PartFeature):
 				fp.addGeometry(Part.LineSegment(App.Vector(0.,0,0),App.Vector(0,dist*2,0)),False)
 				fp.addGeometry(Part.LineSegment(App.Vector(0,0,0),App.Vector(-dist*3.,0,0)),False)
 				fp.addGeometry(Part.LineSegment(App.Vector(0.,0,0),App.Vector(0,-dist*2,0)),False)
-				fp.recompute()
 			fp.Placement=pm
+			fp.recompute()
 			return
+
 
 
 
@@ -308,15 +318,115 @@ class Tripod(PartFeature):
 		# fp.Shape=Part.Compound(comp[:1])
 
 
+	def runmode3(self,fp):
+
+		fn=fp.source.Shape.Faces[fp.faceNumber-1]
+		sf=fn.toNurbs().Face1.Surface
+
+		if fp.ref == None: return
+
+		(sob,subo)=fp.ref
+
+		if len(subo)==1:
+			subobj=getattr(sob.Shape,subo[0])
+			try:
+				p=subobj.CenterOfMass
+			except:
+				p=subobj.Point
+		else:
+			p=sob.Shape.CenterOfMass
+
+
+
+		if fp.modeRef=='vertical':
+
+			line=App.ActiveDocument.addObject("Part::Line","_tmp_Line")
+			line.X1,line.Y1,line.Z1=p.x,p.y,10**4
+			line.X2,line.Y2,line.Z2=p.x,p.y,-10**4
+
+			a2=App.ActiveDocument.BePlane.Shape
+			a3=line.Shape.section(a2.Face1)
+			p2=a3.Vertexes[0].Point
+			App.ActiveDocument.removeObject(line.Name)
+
+		else:
+			p2=sf.value(*sf.parameter(p))
+
+		l=(p2-p).Length
+		col=[]
+
+		if fp.mode=="Circles1":
+			for i in range(10):
+				aa=Part.Sphere()
+				aa.Radius=l+(i)*0.2*100
+				a2=aa.toShape()
+				a2.Placement.Base=p
+				a3=fn.section(a2.Face1)
+				col += [a3]
+
+		if fp.mode=="Circles2":
+
+			aa=App.ActiveDocument.addObject("Part::Cylinder","Cylinder")
+
+			for i in range(10):	
+				aa.Height=10000
+				aa.Radius=0.2*i*100
+				aa.Placement.Base=p
+				aa.Placement.Rotation=FreeCAD.Rotation(FreeCAD.Vector(0,0,1),p2-p)
+				fc=aa.Shape.Face1
+				a3=fn.section(fc)
+				col += [a3]
+
+			App.ActiveDocument.removeObject(aa.Name)
+
+		if len(col)==0:
+			fp.Shape=Part.Point().toShape()
+		else:
+			fp.Shape=Part.Compound(col)
+
+		(u,v) = sf.parameter(p2)
+		[umi,uma,vmi,vma]=fn.toNurbs().Face1.ParameterRange
+		fp.u=(u-umi)/(uma-umi)*fp.scale
+		fp.v=(v-vmi)/(vma-vmi)*fp.scale
+
+
+
+
+	def execute(self,fp):
+
+		if fp.mode=="Sketch":
+			fp.recompute()
+
+		self.onChanged(fp,"_execute_")
+
+
+#-----------------
+#----------------------------------------
+
+
+
 
 def createTripod():
 
-	a=FreeCAD.ActiveDocument.addObject("Part::FeaturePython","Tripod")
+	if len(Gui.Selection.getSelectionEx())==2:
+		a=FreeCAD.ActiveDocument.addObject("Sketcher::SketchObjectPython","TripodRefPoint")
+	else:
+		a=FreeCAD.ActiveDocument.addObject("Part::FeaturePython","Tripod")
 
 	Tripod(a)
 	a.ViewObject.LineWidth = 2
 	a.source=Gui.Selection.getSelection()[0]
 	ViewProvider(a.ViewObject)
+	if len(Gui.Selection.getSelectionEx())==2:
+		a.source=Gui.Selection.getSelectionEx()[0].Object
+		try:
+			ss=Gui.Selection.getSelectionEx()[1].SubElementNames[0]
+		except:
+			ss=[]
+		a.ref=(Gui.Selection.getSelectionEx()[1].Object,ss)
+		a.mode="RefPoint"
+		a.modeRef="vertical"
+
 
 def createTripodSketch(): #sketcher
 	'''creae a tripod sketch'''
@@ -355,7 +465,6 @@ def createTripodSketch(): #sketcher
 					ViewProvider(a.ViewObject)
 
 
-
 	else:
 		#a=FreeCAD.ActiveDocument.addObject("Part::FeaturePython","Tripod")
 		a=FreeCAD.ActiveDocument.addObject("Sketcher::SketchObjectPython","TripodSketch")
@@ -365,6 +474,8 @@ def createTripodSketch(): #sketcher
 		a.ViewObject.LineWidth = 2
 		a.source=Gui.Selection.getSelection()[0]
 		ViewProvider(a.ViewObject)
+
+
 
 
 
