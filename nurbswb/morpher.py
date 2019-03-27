@@ -1,7 +1,6 @@
 import numpy as np
 import random
 
-
 import nurbswb
 from nurbswb.pyob import  FeaturePython,ViewProvider
 from nurbswb.say import *
@@ -168,7 +167,7 @@ class CurveMorpher(FeaturePython):
 		obj._showaux=False
 		obj._showborders=False
 
-	def myOnChanged(self,obj,prop):
+	def myOnChangedA(self,obj,prop):
 
 		if prop in ["Shape"]:
 			return
@@ -351,6 +350,7 @@ class CurveMorpher(FeaturePython):
 		if prop in ["Shape"]:
 			return
 
+		
 		self.showprops(obj,prop)
 
 #		try:
@@ -367,7 +367,7 @@ class CurveMorpher(FeaturePython):
 
 		w=sh.Wires[0]
 		pts=[v.Point for v in w.Vertexes]
-		print len(pts)
+#		print len(pts)
 
 
 		# pts[0]=pts[-1]=(pts[0]+pts[-1])*0.5
@@ -387,11 +387,11 @@ class CurveMorpher(FeaturePython):
 		#ptsarr[-1]=c
 		ptsarr=ptsarr.swapaxes(0,1)
 
-		print ptsarr[0,0]
-		print d[-1]
+#		print ptsarr[0,0]
+#		print d[-1]
 		ptsarr[0]=d[::-1]
-		print ptsarr[-1,0]
-		print b[0]
+#		print ptsarr[-1,0]
+#		print b[0]
 
 		ptsarr[-1]=b
 
@@ -425,13 +425,15 @@ class CurveMorpher(FeaturePython):
 		return
 
 	def myOnChanged(self,obj,prop):
+#		print prop
 		if obj.border == None:
-			self.myOnChanged(obj,prop)
+			self.myOnChangedA(obj,prop)
 		else:
 			self.myOnChangedBorder(obj,prop)
 #----------------------
 
 	def myExecute(self,obj):
+		#return
 		if not obj._noExecute:
 			self.onChanged(obj,"__execute__")
 		#print obj.Label," executed"

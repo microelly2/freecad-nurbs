@@ -327,34 +327,6 @@ class TangentFace(PartFeature):
 			self.execute(obj)
 
 
-#----------------
-
-
-def XmachFlaeche(psta,ku=None):
-		NbVPoles,NbUPoles,_t1 =psta.shape
-
-		degree=3
-
-		ps=[[FreeCAD.Vector(psta[v,u,0],psta[v,u,1],psta[v,u,2]) for u in range(NbUPoles)] for v in range(NbVPoles)]
-
-		kv=[1.0/(NbVPoles-3)*i for i in range(NbVPoles-2)]
-		if ku==None: ku=[1.0/(NbUPoles-3)*i for i in range(NbUPoles-2)]
-		mv=[4] +[1]*(NbVPoles-4) +[4]
-		mu=[4]+[1]*(NbUPoles-4)+[4]
-
-		bs=Part.BSplineSurface()
-		bs.buildFromPolesMultsKnots(ps, mv, mu, kv, ku, False, False ,degree,degree)
-
-		return bs
-
-
-
-
-
-
-
-#------------------
-
 class Seam(PartFeature):
 	def __init__(self, obj):
 		PartFeature.__init__(self, obj)
@@ -364,6 +336,8 @@ class Seam(PartFeature):
 		obj.addProperty("App::PropertyBool","sourceFlip","Base")
 		obj.addProperty("App::PropertyBool","fillCorner","Base")
 		obj.addProperty("App::PropertyBool","linear","Base")
+		obj.addProperty("App::PropertyBool","reversecut","Base")
+		
 #		obj.addProperty("App::PropertyInteger","tCount","Base").tCount=30
 #		obj.addProperty("App::PropertyInteger","index","Base").index=0
 #		obj.addProperty("App::PropertyVector","V","Base").V.z=1
@@ -385,8 +359,9 @@ class Seam(PartFeature):
 			pass
 
 	def execute(proxy,obj):
-		print("execute ")
+
 		if obj.source<>None:
+			print("execute ")
 			try:
 				sf=obj.source.Shape.Face1.Surface
 				sf.getPoles
@@ -477,7 +452,7 @@ class Seam(PartFeature):
 				closed=sf.isUClosed()
 			else:
 				closed=sf.isVClosed()
-			bs=machFlaeche(spols,ku=None,closed=closed,weights=wew)
+			bs=machFlaeche(spols,ku=None,closed=closed,bs=sf,swap=obj.sourceSwap)
 			#bs=machFlaeche(spols,ku=None,closed=closed)
 
 			if closed:
@@ -524,10 +499,12 @@ class Seam(PartFeature):
 
 				for i in shape.slice(V,P):
 					ends=i.discretize(anz)
+					if obj.reversecut:
+						ends=ends[::-1]
 
 				if len(ends) >=2:
 					spols2=np.array([spols[0],spols[1],spols[2],ends])
-					bs=machFlaeche(spols2,ku=None,closed=closed,weights=weights[0])
+					bs=machFlaeche(spols2,ku=None,closed=closed,bs=sf,swap=obj.sourceSwap)
 
 			obj.Shape=bs.toShape()
 
@@ -798,37 +775,69 @@ def runtangentsurface():
 
 
 import FreeCAD,Part
-def machFlaeche(psta,ku=None,closed=False,weights=None):
+def machFlaeche(psta,ku=None,closed=False,bs=None,swap=False):
 		NbVPoles,NbUPoles,_t1 =psta.shape
 #		print psta.shape
 
 		degree=3
+		degree=3
+
+		if 0:
+			print "bs-dump: v"
+			print bs.VDegree
+			print bs.getVMultiplicities()
+			print bs.getVKnots()
+			print bs.getWeights()[0:4][0:4]
+			print bs.getPoles()[0:2][0:2]
+			print np.array(bs.getPoles()).shape
 
 		ps=[[FreeCAD.Vector(psta[v,u,0],psta[v,u,1],psta[v,u,2]) for u in range(NbUPoles)] for v in range(NbVPoles)]
 
 		kv=[1.0/(NbVPoles-3)*i for i in range(NbVPoles-2)]
 		if ku==None: ku=[1.0/(NbUPoles-3)*i for i in range(NbUPoles-2)]
 
-		mv=[4] +[1]*(NbVPoles-4) +[4]
-		mu=[4]+[1]*(NbUPoles-4)+[4]
+#		mv=[4] +[1]*(NbVPoles-4) +[4]
+#		mv=[vdegree+1] +[1]*(NbVPoles-vdegree-1) +[vdegree+1]
+#		mv=[4,3,3,4]
+#		mv=[4,1,1,1,1,1,1,4]
+#		mv=[5,3,2,5]
+#		print mv
+#		print sum(mv)
+#		print "--------------"
+#		kv=range(len(mv))
+
+		mu=[4,4]
+#		mu=[4]+[1]*(NbUPoles-4)+[4]
+		ku=range(len(mu))
+
 
 		if closed:
 			ku=[1.0/(NbUPoles+1)*i for i in range(NbUPoles+1)]
 			mu=[1]*(NbUPoles+1)
 
-		mu=[4,3,4]
-		ku=[0,1,2]
-
-
-
-		bs=Part.BSplineSurface()
-		if weights != None:
-			wew=weights
-			bs.buildFromPolesMultsKnots(ps, mv, mu, kv, ku,  False,closed ,degree,degree,wew)
+		
+		if bs == None:
+			pass
 		else:
-			bs.buildFromPolesMultsKnots(ps, mv, mu, kv, ku,  False,closed ,degree,degree)
+			ps=np.array(ps).swapaxes(0,1)
+			if swap:
+				vdegree=bs.UDegree
+				mv= bs.getUMultiplicities()
+				kv= bs.getUKnots()
+				wew= np.array(bs.getWeights()).swapaxes(0,1)
+				wew=[wew[0],wew[1],wew[2],wew[3]]
+			else:
+				vdegree=bs.VDegree
+				mv= bs.getVMultiplicities()
+				kv= bs.getVKnots()
+				wew= bs.getWeights()[0:4]
 
-		return bs
+		bs2=Part.BSplineSurface()
+		if wew != None:
+			bs2.buildFromPolesMultsKnots(ps, mv, mu, kv, ku,  False,closed ,vdegree,degree,wew)
+		else:
+			bs2.buildFromPolesMultsKnots(ps, mv, mu, kv, ku,  False,closed ,vdegree,degree)
+		return bs2
 
 
 
@@ -912,3 +921,12 @@ def createShapeV2(obj):
 '''
 
 
+
+
+'''
+surface wb erzeugen flaeche
+
+App.ActiveDocument.addObject("Surface::Extend","Surface002")
+App.ActiveDocument.Surface002.Face = (App.ActiveDocument.Fillet001,["Face3"])
+
+'''

@@ -533,7 +533,10 @@ if FreeCAD.GuiUp:
 	c3bG(["Bezier","Convert"], always, 'berings', 'create Approx',"/../icons/alpha.svg")
 
 
-	beztools += [c3bI(["Bezier"], always, 'points_to_face', 'AA',tooltip="Eine Testfunktion")]
+	current += [c3bI(["Bezier"], always, 'points_to_wires', 'AA',tooltip="Eine Testfunktion")]
+	
+
+
 	current += [c3bI(["Bezier"], always, 'points_to_face', 'Reconstruct Sphere',tooltip="Subselection to Sphere",icon=None)]
 	current += [c3bI(["Bezier"], always, 'points_to_face', 'Reconstruct Cylinder',tooltip="Subselection to Cylinder",icon=None)]
 	current += [c3bI(["Bezier"], always, 'points_to_face', 'optimize Cylinder',icon=None)]
@@ -547,12 +550,13 @@ if FreeCAD.GuiUp:
 
 	current += [c3bI(["Bezier"], always, 'minimumsurface', 'test minimal surface',icon=None)]
 
-	current += [c3bI(["Pattern"], onselection, 'pattern_v2', 'create Array',icon=None)]
-	current += [c3bI(["Pattern"], onselection, 'pattern_v2', 'split Edges',icon=None)]
+#	current += [c3bI(["Pattern"], onselection, 'pattern_v2', 'create Array',icon=None)]
+#	current += [c3bI(["Pattern"], onselection, 'pattern_v2', 'split Edges',icon=None)]
 	current += [c3bI(["Pattern"], onselection, 'pattern_v2', 'remove Edges',icon=None)]
-	current += [c3bI(["Pattern"], onselection, 'pattern_v2', 'create Single Pattern',icon=None)]
-	current += [c3bI(["Pattern"], onselection, 'pattern_v2', 'create Pattern',icon=None)]
-
+#	current += [c3bI(["Pattern"], onselection, 'pattern_v2', 'create Single Pattern',icon=None)]
+#	current += [c3bI(["Pattern"], onselection, 'pattern_v2', 'create Pattern',icon=None)]
+	current += [c3bI(["Pattern"], onselection, 'pattern_v2', 'pattern V3',icon=None)]
+	current += [c3bI(["Pattern"], always, 'pattern_v2', 'pattern all tests',icon=None)]
 
 
 #	beztools += [c3bI(["Points"], always, 'points_to_face', 'Points to Cone',tooltip="P1,N1,P2,P3,P4",icon=None)]

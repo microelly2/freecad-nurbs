@@ -2117,3 +2117,535 @@ def findrib():
 	a.insertKnot(m,3)
 	Part.show(Part.Point(pp).toShape())
 	Part.show(a.toShape())
+
+
+#################################################################
+def usage(msg=""):
+	if msg!="": msg= "\n"+msg+"\n"
+	errorDialog("Fehler in "+ inspect.stack()[1][1].split('/')[-1]+" line:"+str(inspect.stack()[1][2])+
+		"\n"+eval(inspect.stack()[1][3]+".__doc__") +msg)
+	FreeCAD.Console.PrintError("Error"+str(inspect.stack()[1][1:4])+msg)
+#################################################################
+
+
+def AA():
+	'''Erzeuge zu drei hart kodierten Laengen und Winkeln 
+eine Abwicklung. Idee ist eine Flaeche zu erzeugen, die 
+man auf eine Freiformfläche aufkleben ann.
+	'''
+
+
+	doc=App.newDocument("Unnamed")
+	App.ActiveDocument=doc
+	Gui.ActiveDocument=doc
+#	try: App.ActiveDocument.Cone
+#	except:
+#		usage("geht nur, wenn ein Kegel da ist")
+
+	grp=FreeCAD.ActiveDocument.addObject("App::DocumentObjectGroup","Defaut")
+	oba=FreeCAD.ActiveDocument.addObject("Part::Feature","A")
+	obb=FreeCAD.ActiveDocument.addObject("Part::Feature","B")
+	obc=FreeCAD.ActiveDocument.addObject("Part::Feature","C")
+
+	VX=FreeCAD.Vector(1,0,0)
+	VZ=FreeCAD.Vector(0,0,1)
+
+
+	if 0:
+		lens=FreeCAD.lens
+		arcs=FreeCAD.arcs
+	else:
+		print ("verwende fest kodierte werte")
+		arcs=[90,90,90]
+		lens=[100.,100.,100.]
+
+
+	arcs=[arcs[2],arcs[1],arcs[0]]
+
+	[a,c,b]=lens
+	jj= (-c**2+a**2+b**2)/(2*a*b)
+	alpha=np.arccos(jj)
+	y=b*np.sin(alpha)
+	x=b*np.cos(alpha)
+	pts=[FreeCAD.Vector(),FreeCAD.Vector(lens[0],0),FreeCAD.Vector(x,y)]
+	Draft.makeWire(pts,closed=True)
+
+	tts=[170,-40,pts[1].x,pts[1].y]
+	tts=[170,-40,pts[1].x,pts[1].y,pts[2].x,pts[2].y]
+
+	def minFun(tts): 
+			tf=100
+			tf=min(lens)/3
+
+			minf=0
+
+			p0=pts[0]
+			p1=p0+VX*tf
+			p3=FreeCAD.Vector(tts[2],tts[3])
+			p2=p3+FreeCAD.Rotation(VZ,tts[0]).multVec(VX)*tf
+			bc=Part.BSplineCurve()
+			bc.buildFromPolesMultsKnots([p0,p1,p2,p3],[4,4],[0,1],False,3)
+			minf += (bc.length()-lens[0])**2
+			oba.Shape=bc.toShape()
+
+			p4=p3+FreeCAD.Rotation(VZ,tts[0]-arcs[0]).multVec(VX)*tf
+			p6=FreeCAD.Vector(tts[4],tts[5])
+			p5=p6+FreeCAD.Rotation(VZ,tts[1]).multVec(VX)*tf
+			bc.buildFromPolesMultsKnots([p3,p4,p5,p6],[4,4],[0,1],False,3)
+			minf += (bc.length()-lens[1])**2
+			obb.Shape=bc.toShape()
+
+			p7=p6+FreeCAD.Rotation(VZ,tts[1]-arcs[2]).multVec(VX)*tf
+			p8=p0+FreeCAD.Rotation(VZ,arcs[1]).multVec(VX)*tf
+			bc.buildFromPolesMultsKnots([p6,p7,p8,p0],[4,4],[0,1],False,3)
+			minf += (bc.length()-lens[2])**2
+			obc.Shape=bc.toShape()
+
+			Gui.updateGui()
+			return minf
+
+	methods=[ 
+		'Nelder-Mead' ,
+		'Powell' ,
+		'CG' ,
+		'BFGS' ,
+		'L-BFGS-B', 
+		'TNC',
+		'COBYLA',
+		'SLSQP',
+	]
+
+	rc=minimize(minFun,tts,tol=3)
+	for ob in [oba,obb,obc]: grp.addObject(ob)
+	_=Part.makeFilledFace(Part.__sortEdges__([oba.Shape.Edge1, obb.Shape.Edge1, obc.Shape.Edge1, ]))
+	try: 
+		_.check()
+		f=App.ActiveDocument.addObject('Part::Feature','Face')
+		f.Shape=_
+		grp.addObject(f)
+		if rc.success:
+			print (round(rc.fun),round(f.Shape.Area),np.round(rc.x,1))
+	except: 
+			for ob in [oba,obb,obc]: App.ActiveDocument.removeObject(ob.Name)
+			App.ActiveDocument.removeObject(grp.Name)
+
+	for m in methods:
+		grp=FreeCAD.ActiveDocument.addObject("App::DocumentObjectGroup",m)
+		oba=FreeCAD.ActiveDocument.addObject("Part::Feature","A"+m)
+		obb=FreeCAD.ActiveDocument.addObject("Part::Feature","B"+m)
+		obc=FreeCAD.ActiveDocument.addObject("Part::Feature","C"+m)
+		for ob in [oba,obb,obc]: grp.addObject(ob)
+		rc=minimize(minFun,tts,method=m,tol=10.0)
+
+		try: 
+			_=Part.makeFilledFace(Part.__sortEdges__([oba.Shape.Edge1, obb.Shape.Edge1, obc.Shape.Edge1, ]))
+			_.check()
+			f=App.ActiveDocument.addObject('Part::Feature','Face')
+			f.Shape=_
+			grp.addObject(f)
+			if rc.success:
+				print (round(rc.fun),round(f.Shape.Area),m,np.round(rc.x,1))
+			print ("diff lens",[round(e.Length-l,1) for e,l in zip(f.Shape.Edges,lens)])
+		except: 
+			for ob in [oba,obb,obc]: App.ActiveDocument.removeObject(ob.Name)
+			App.ActiveDocument.removeObject(grp.Name)
+
+		#break
+	print "FERTIG"
+
+
+
+def AA():
+	'''kegel durch punkte finden'''
+	
+	
+	pts=[v.Point for v in App.ActiveDocument.Wedge001.Shape.Vertexes]
+	params=[0.]*6
+	params=[5,21,5,np.pi/2,0,0.1]
+	# params=[5,20,5,-1,0,0.3]
+	paramsA=[21,0.1]
+
+	def minFun(paramsB,show=False):
+		
+		if 0:
+		#	print "paramsb",paramsB
+			#params[0]=5
+			params[1]=paramsB[0]
+			#params[1]=25
+			#params[2]=5
+
+			params[3]=np.pi/2
+			params[4]=0
+
+		params=paramsB
+		
+		#params[5]=0.4
+		S=FreeCAD.Vector(params[0:3])
+		R=FreeCAD.Vector(
+			np.cos(params[3])*np.cos(params[4]),
+			np.sin(params[3])*np.cos(params[4]),
+			np.sin(params[4]))
+		#alpha=params[5]
+		alpha=paramsB[1]
+		
+#		print ("S",S)
+#		print ("R",R) 
+		fval=0.
+		ptsa=[]
+		#fval += (S-FreeCAD.Vector(5,20,5)).Length**2*100
+		lx=[0,1,4,5]
+		lx=[2,3,6,7]
+		#lx=range(8)
+		#lx=[0]
+		#lx=[0,1,2]
+		for pi in lx:
+		#for pi in :
+			p=pts[pi]
+#			print ("!",pi,p)
+			a=(p-S).dot(R)
+			n=(p-S).cross(R)
+			n2=n.cross(R).normalize()
+			r2a=n2*np.sin(alpha)
+			r2=R*np.cos(alpha)+r2a
+#			print "r2 ",r2
+			if 10:
+				# print "r2",r2
+				#print("lens",alpha, (p-S).dot(r2),(p-S).Length)
+				#print (abs((p-S).dot(r2))-(p-S).Length)**2
+#				print("l-",alpha, (p-S).dot(r2))
+				
+				ptsa += [S,p,S+(p-S).dot(r2)*r2,p,S]
+			#fval += (abs((p-S).dot(r2))-(p-S).Length)**2
+			
+			a=r2*(p-S).dot(r2)-(p-S)
+			b=r2*(p-S).dot(r2)+(p-S)
+			ab= a if a.Length<b.Length else b
+			
+#			if pi==0:
+#				print ab.Length
+#				print r2*(p-S).dot(r2)
+#				print p-S
+			fval += ((ab.Length) **2) * 10**5
+
+#		print ("fval",fval,"alp",alpha,"S:",S)
+#		print (fval,paramsB)
+			
+		#	v2=n2*np.tan(alpha)*a+R*a
+		#	if show: print a
+			#fval +=((S+R*a-p).Length - a*np.tan(alpha))**2
+			#fval += ((S+R*a-p).Length - v2.Length)**2
+			#fval +=(p-S-v2).Length**2
+		if show:
+				#print (a,(S+R*a-p).Length,a*np.tan(alpha))
+#				print (S+R*a-p).Length #- a*np.tan(alpha)
+				pass
+		
+#		if show:
+#			print "fval", fval
+#			Draft.makeWire(ptsa)
+
+
+		#print (fval," ",paramsB)
+		return fval
+
+
+
+
+	methods=[ 
+		'Nelder-Mead' ,
+		'Powell' ,
+		'CG' ,
+		'BFGS' ,
+		'L-BFGS-B', 
+		'TNC',
+		'COBYLA',
+		'SLSQP',
+	]
+
+
+
+	for alpha in range(275,276):
+		break
+		params[5]=0.001*alpha
+		minFun(params,True)
+		print
+#	return
+
+	# bounds fuer 4,5,7
+	methods=[methods[i] for i in [5]]
+
+	print "auswertung------------"
+	for m in methods:
+		minv=10**10
+		for a in range(10,30):
+#			print
+			for b in [0.271,0.274,0.275,0.276,0.278,0.279]:
+				paramsA=[a,b]
+				params[1]=a
+				params[5]=b
+				#print ("!!",a,b, paramsA)
+				#rc=minimize(minFun,params,method=m,tol=.1,bounds=[(5,5),(24,30),(5,5),(0,2),(0,2),(0,2)])
+				#rc=minimize(minFun,paramsA,method=m,tol=.01,bounds=[(20,30),(0.1,0.3)])
+				#rc=minimize(minFun,paramsA,method=m,tol=.0001)
+				rc=minimize(minFun,params,method=m,tol=.0001,bounds=[(0,10),(20,30),(0,15),(0,2),(0,2),(0,2)])
+				if rc.success:
+#					print ("-----------",round(rc.fun,8),rc.x,a,b)
+					if minv>rc.fun:
+						print "*"
+						minv=rc.fun
+						result=rc.x
+#				else:
+#					print (m,rc.success,rc.message)
+
+		#print ("minv ",minv, result)
+
+		if 1: 
+
+			params2=params
+			params2[1]=result[0]
+			params2[5]=result[1]
+			
+			params2=result
+			
+			S=FreeCAD.Vector(params2[0:3])
+			R=FreeCAD.Vector(
+					np.cos(params2[3])*np.cos(params2[4]),
+					np.sin(params2[3])*np.cos(params2[4]),
+					np.sin(params2[4]))
+			
+			R *= -1
+			t=S.cross(R).normalize()
+			t2=t.cross(R).normalize()
+			k=40
+			T=S+R*k+t*k*np.tan(params[5])
+			T2=S+R*k+t2*k*np.tan(params[5])
+			T3=S+R*k-t*k*np.tan(params[5])
+			T4=S+R*k-t2*k*np.tan(params[5])
+			TT=S+R*2*k
+			
+			w=Draft.makeWire([S,T,S,T2,S,T3,S,T4,S,TT])
+			print ("minv ",minv, result, str(w.Label))
+			print
+
+			#minFun(rc.x,True)
+
+
+
+
+#
+# version 2
+#
+
+def AA():
+	'''kegel durch punkte finden'''
+	
+	
+	pts=[v.Point for v in App.ActiveDocument.Wedge001.Shape.Vertexes]
+	params=[0.]*6
+	params=[5,25,5,np.pi/2,0]
+	params=[5,25,5,np.pi/2,0]
+	# params=[5,20,5,-1,0,0.3]
+	paramsA=[21,0.1]
+	bb=[0.,0.]
+
+	def minFun(paramsB,show=False):
+		
+		if 0:
+		#	print "paramsb",paramsB
+			params[0]=5
+#			params[1]=paramsB[0]
+			params[1]=25
+			params[2]=5
+
+#			params[3]=np.pi/2
+#			params[4]=0
+			pass
+
+		params[3:5]=paramsB
+		
+		#params[5]=0.4
+		S=FreeCAD.Vector(params[0:3])
+		R=FreeCAD.Vector(
+			np.cos(params[3])*np.cos(params[4]),
+			np.sin(params[3])*np.cos(params[4]),
+			np.sin(params[4]))
+
+#		print ("S",S)
+#		print ("R",R) 
+		fval=0.
+		ptsa=[]
+
+		lx=[0,1,4,5]
+		#lx=[2,3,6,7]
+		lx=range(8)
+		#lx=[0]
+		#lx=[0,1,2]
+
+		aas=[]
+		for pi in lx:
+			p=pts[pi]
+#			print ("!",pi,p)
+			a=abs((p-S).normalize().dot(R))
+			aas += [a]
+
+
+		fval=np.std(aas)*10**5
+		bb[0]=np.mean(aas)
+		#print bb
+		#fval += ((ab.Length) **2) * 10**5
+
+		# print aas;
+#		print ("fval",fval,[round(d,4) for d in paramsB])#,S,R)
+		return fval
+
+
+
+
+	methods=[ 
+		'Nelder-Mead' ,
+		'Powell' ,
+		'CG' ,
+		'BFGS' ,
+		'L-BFGS-B', 
+		'TNC',
+		'COBYLA',
+		'SLSQP',
+	]
+
+
+
+	for alpha in range(275,276):
+		break
+		minFun(params,True)
+		print
+#	return
+
+	# bounds fuer 4,5,7
+	methods=[methods[i] for i in [1]]
+
+	print "auswertung------------"
+	
+	for m in methods:
+		minv=10**10
+		for x in range(3,8):
+			for z in range (3,8):
+				for p in range(0,10):
+					params[1]=20+p
+					params[0]=x
+					params[2]=z
+					for a in [4]:
+			#			print
+						for b in [7]:
+							paramsA=[(a-10)*0.1*np.pi/2,0.1*(b-10)]
+							#params[1]=25
+							#params[0]=b
+
+							
+							#rc=minimize(minFun,paramsA,method=m,tol=.0001,bounds=[(5,5),(25,25),(5,5),(-2,2),(-2,2)])
+							rc=minimize(minFun,paramsA,method=m,tol=.1) 
+							if rc.success:
+			#					print ("-----------",round(rc.fun,8),rc.x,a,b)
+								if minv>rc.fun:
+									print "*"
+									minv=rc.fun
+									result=rc.x
+									pos=[x,z,p]
+									print ("!minv ",round(minv*10**5,2), [round(r,3) for r in result],a,b,p)
+									print "pos ",pos
+							else:
+								print (m,rc.success,rc.message)
+						if  minv< 0.1:
+							print ("!minv ",minv, [round(r,3) for r in result],a,b,p)
+							print (bb,round(minv*10**5,2),x,z,p)
+							print "pos ",pos
+								
+							
+							params2=params
+							params2[3:5]=result
+
+							S=FreeCAD.Vector(params2[0:3])
+							R=FreeCAD.Vector(
+									np.cos(params2[3])*np.cos(params2[4]),
+									np.sin(params2[3])*np.cos(params2[4]),
+									np.sin(params2[4]))
+							
+							R *= -1
+							t=S.cross(R).normalize()
+							t2=t.cross(R).normalize()
+							k=30
+							alpha=np.arccos(bb[0])
+							T=S+R*k+t*k*np.tan(alpha)
+							T2=S+R*k+t2*k*np.tan(alpha)
+							T3=S+R*k-t*k*np.tan(alpha)
+							T4=S+R*k-t2*k*np.tan(alpha)
+							TT=S+R*2*k
+							
+			#				print S
+			#				print R 
+							w=Draft.makeWire([S,TT])
+							w=Draft.makeWire([S,T,S,T2,S,T3,S,T4,S,TT])
+			#				print ("minv ",minv, result, str(w.Label))
+							print
+							return
+
+
+		return
+
+def huhu():	
+		
+	if 0:
+		minv=10**10
+		for a in range(10,30):
+#			print
+			for b in [0.271,0.274,0.275,0.276,0.278,0.279]:
+				paramsA=[a,b]
+				params[1]=a
+				params[5]=b
+				#print ("!!",a,b, paramsA)
+				#rc=minimize(minFun,params,method=m,tol=.1,bounds=[(5,5),(24,30),(5,5),(0,2),(0,2),(0,2)])
+				#rc=minimize(minFun,paramsA,method=m,tol=.01,bounds=[(20,30),(0.1,0.3)])
+				#rc=minimize(minFun,paramsA,method=m,tol=.0001)
+				rc=minimize(minFun,params,method=m,tol=.0001,bounds=[(0,10),(20,30),(0,15),(0,2),(0,2),(0,2)])
+				if rc.success:
+#					print ("-----------",round(rc.fun,8),rc.x,a,b)
+					if minv>rc.fun:
+						print "*"
+						minv=rc.fun
+						result=rc.x
+#				else:
+#					print (m,rc.success,rc.message)
+
+		#print ("minv ",minv, result)
+
+		if 1: 
+
+			params2=params
+			params2[1]=result[0]
+			params2[5]=result[1]
+			
+			params2=result
+			
+			S=FreeCAD.Vector(params2[0:3])
+			R=FreeCAD.Vector(
+					np.cos(params2[3])*np.cos(params2[4]),
+					np.sin(params2[3])*np.cos(params2[4]),
+					np.sin(params2[4]))
+			
+			R *= -1
+			t=S.cross(R).normalize()
+			t2=t.cross(R).normalize()
+			k=40
+			T=S+R*k+t*k*np.tan(params[5])
+			T2=S+R*k+t2*k*np.tan(params[5])
+			T3=S+R*k-t*k*np.tan(params[5])
+			T4=S+R*k-t2*k*np.tan(params[5])
+			TT=S+R*2*k
+			
+			w=Draft.makeWire([S,T,S,T2,S,T3,S,T4,S,TT])
+			print ("minv ",minv, result, str(w.Label))
+			print
+
+			#minFun(rc.x,True)
+
+
+

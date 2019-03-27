@@ -1,5 +1,10 @@
+import random,time
 import numpy as np
-import random
+import scipy.linalg.lapack as sp
+from numpy.linalg import inv
+
+import matplotlib.mlab as mlab
+import matplotlib.pyplot as plt
 
 
 import nurbswb
@@ -7,35 +12,15 @@ from nurbswb.pyob import  FeaturePython,ViewProvider
 from nurbswb.say import *
 reload (nurbswb.pyob)
 
-#-------------------------
-
-import numpy as np
 from FreeCAD import Vector
 import Draft
-import scipy.linalg.lapack as sp
-from numpy.linalg import inv
 
-
-def power(a,b):
-	return a**b
-
-
-def crossProduct(a,b):
-	return a.cross(b)
-
-def dotProduct(a,b):
-	return a.dot(b)
-
-def sign(x):
-	return 1. if x>=0 else -1.
-
-def sqrt(a):
-	return a**0.5
-
-
+from nurbswb.tools import power,crossProduct,dotProduct,sign,sqrt,groupit
+reload(nurbswb.tools)
 
 
 def drawConeA(name,i,bounds,apex,axis,alpha,trafo,pts):
+	'''draw a Cone with helper points '''
 
 	trafo=trafo.inverse()
 	v=FreeCAD.Vector(0,0,1)
@@ -138,7 +123,7 @@ def drawConeA(name,i,bounds,apex,axis,alpha,trafo,pts):
 	yy.purgeTouched()
 
 
-def drawCone(apex,axis,alpha,h,trafo,pts):
+def drawConeB(apex,axis,alpha,h,trafo,pts):
 
 	trafo=trafo.inverse()
 	axis=axis.normalize()
@@ -178,48 +163,8 @@ def drawCone(apex,axis,alpha,h,trafo,pts):
 
 	return rc, mima
 
-'''
-def normalize():
-	# koerper aufrichten und wieder zurueckstellen
 
-	#s=App.ActiveDocument.Wedge.Shape
-
-	p1=s.Vertex6.Point
-	p2=s.Vertex8.Point
-
-	v=FreeCAD.Vector(0,0,1)
-	r=FreeCAD.Rotation(p2-p1,v)
-
-	App.ActiveDocument.Wedge001.Placement.Rotation=r
-	App.ActiveDocument.Wedge001.Placement.Base=p1
-
-def rollback():
-
-	s=App.ActiveDocument.Wedge.Shape
-
-	p1=s.Vertex6.Point
-	p2=s.Vertex8.Point
-
-	v=FreeCAD.Vector(0,0,1)
-	r=FreeCAD.Rotation(p2-p1,v)
-
-	sa=App.ActiveDocument.Wedge001.Shape
-
-	p1a=sa.Vertex6.Point
-	p2a=sa.Vertex8.Point
-	print p1a-p2a
-
-	rr=App.ActiveDocument.Wedge001.Placement.Rotation
-	r.invert()
-
-	App.ActiveDocument.Wedge001.Placement.Rotation=r.multiply(rr)
-	App.ActiveDocument.Wedge001.Placement.Base -= p1
-'''
-
-
-
-
-def run_pnppp(name,trafo,displaynumber,displayFaces,p_1,p_2,p_3,p_4):
+def run_conepnppp(name,trafo,displaynumber,displayFaces,p_1,p_2,p_3,p_4):
 
 	N=6
 	A_eigen =np.array([  
@@ -306,7 +251,7 @@ def run_pnppp(name,trafo,displaynumber,displayFaces,p_1,p_2,p_3,p_4):
 			alpha=np.pi/2-r0
 			print ("alpha ",alpha*180/np.pi)
 
-			[a,bounds]=	drawCone(apex,axis,alpha,h,trafo,[p_4,p_1,p_2,p_3])
+			[a,bounds]=	drawConeB(apex,axis,alpha,h,trafo,[p_4,p_1,p_2,p_3])
 			cols += [a]
 
 			if displayFaces:
@@ -316,6 +261,7 @@ def run_pnppp(name,trafo,displaynumber,displayFaces,p_1,p_2,p_3,p_4):
 
 
 class PointFace(FeaturePython):
+	'''a face reconstructed by some points and normales'''
 
 	def __init__(self, obj):
 		FeaturePython.__init__(self, obj)
@@ -348,21 +294,11 @@ class PointFace(FeaturePython):
 		obj.addProperty("App::PropertyEnumeration","target")
 		obj.target=['Cone','Shpere','Cylinder','Torus','Plane']
 
-
 		obj.addProperty("App::PropertyVector","apex",'~aux').apex=FreeCAD.Vector(30,30,30)
 		obj.addProperty("App::PropertyVector","axis",'~aux').axis=FreeCAD.Vector(10,0,0)
+
 		obj.setEditorMode('apex',2)
 		obj.setEditorMode('axis',2)
-
-# experiments with attributes
-		obj.addProperty("App::PropertyString", "TA", "Base", "Type of the solver", 0, True,True)
-		obj.addProperty("App::PropertyString", "TB0", "Base", "Type of the solver", 0,)
-		obj.addProperty("App::PropertyString", "TB1", "Base", "Type of the solver", 1,)#ro
-		obj.addProperty("App::PropertyString", "TB2", "Base", "Type of the solver", 2,)# was bring tdas
-		obj.addProperty("App::PropertyString", "TB4", "Base", "Type of the solver", 4,)#hidden
-		obj.addProperty("App::PropertyString", "TB8", "Base", "Type of the solver", 8)# no impact recompute
-
-
 
 
 	def myOnChanged(self,obj,prop):
@@ -498,14 +434,14 @@ class PointFace(FeaturePython):
 		name=obj.Name
 
 		if obj.pattern=='pnppp':
-			rc=run_pnppp(name,trafo,obj.number,obj.displayFaces,*pts_norm)
+			rc=run_conepnppp(name,trafo,obj.number,obj.displayFaces,*pts_norm)
 
 		elif obj.pattern=='pnpn':
 
 			[p_1,p_2]=pts_norm[0:2]
 			[n_1,n_2]=dirs_norm[0:2]
 
-			rc=run_pnpn(p_1,n_1,p_2,n_2,name,trafo,obj.number,obj.displayFaces)
+			rc=run_conepnpn(p_1,n_1,p_2,n_2,name,trafo,obj.number,obj.displayFaces)
 
 		elif obj.pattern=='pnpnpnpn':
 
@@ -515,14 +451,6 @@ class PointFace(FeaturePython):
 			rc=run_4pn(p_1,n_1,p_2,n_2,p_3,n_3,p_4,n_4,name,trafo,obj.number,obj.displayFaces)
 
 		obj.Shape= Part.Compound(rc +cmps)
-
-		return
-
-		print ("config debug info")
-		for i,p in enumerate(sp):
-			print ("Point",i,p)
-		for i,p in enumerate(dirs[:1]):
-			print ("Direction",i,p)
 
 
 	def myExecute(self,obj):
@@ -634,7 +562,7 @@ def PointstoBezierPNPNPNPN():
 
 
 
-def	run_pnpn(p_1,n_1,p_2,n_2,name='PNPN_Test',trafo=None,displaynumber=0,displayFaces=True):
+def	run_conepnpn(p_1,n_1,p_2,n_2,name='PNPN_Test',trafo=None,displaynumber=0,displayFaces=True):
 	'''2 points p1,p2 with normals n1,n2'''
 
 	THRESHOLD=0.1
@@ -684,7 +612,7 @@ def	run_pnpn(p_1,n_1,p_2,n_2,name='PNPN_Test',trafo=None,displaynumber=0,display
 		pts=[p_1,p_2]
 		#trafo=FreeCAD.Placement()
 
-		[a,bounds]=	drawCone(apex,axis,alpha,h,trafo,pts)
+		[a,bounds]=	drawConeB(apex,axis,alpha,h,trafo,pts)
 		cols += [a]
 		if displayFaces:
 			drawConeA(name,0,bounds,apex,axis,alpha,trafo,pts) # kegelflaeche zeigen 
@@ -731,7 +659,7 @@ def	run_pnpn(p_1,n_1,p_2,n_2,name='PNPN_Test',trafo=None,displaynumber=0,display
 		pts=[p_1,p_2]
 		#trafo=FreeCAD.Placement()
 
-		[a,bounds]=	drawCone(apex,axis,alpha,h,trafo,pts)
+		[a,bounds]=	drawConeB(apex,axis,alpha,h,trafo,pts)
 		cols += [a]
 		if displayFaces:
 			drawConeA(name,1,bounds,apex,axis,alpha,trafo,pts) # kegelflaeche zeigen 
@@ -739,7 +667,7 @@ def	run_pnpn(p_1,n_1,p_2,n_2,name='PNPN_Test',trafo=None,displaynumber=0,display
 	return cols
 
 
-def run4pn(p_1,n_1,p_2,n_2,p_3,n_3,p_4,n_4,name,trafo,number,displayFaces):
+def run_bspline4pn(p_1,n_1,p_2,n_2,p_3,n_3,p_4,n_4,name,trafo,number,displayFaces):
 	
 	bs=Part.BSplineSurface()
 	t1=(p_2-p_1).normalize()
@@ -762,7 +690,7 @@ def run4pn(p_1,n_1,p_2,n_2,p_3,n_3,p_4,n_4,name,trafo,number,displayFaces):
 
 
 
-def run_cylinder(): 
+def run_cylinderpnpp(): 
 	
 	p_1=FreeCAD.Vector()
 	p_2=FreeCAD.Vector(100,0,100)
@@ -964,7 +892,7 @@ def PointstoCylinderPNPP():
 	'''create a cylinder by point,normal, point2, poimnt3'''
 
 
-	run_cylinder()
+	run_cylinderpnpp()
 	raise Exception("muss noch eingebettet werden")
 
 
@@ -1002,13 +930,16 @@ def PointstoCylinderPNPP():
 	return yy
 
 
-def run_sphere4P():
+def run_sphere4p(pts=None,display=0):
 
 	# tesdaten hard  coded 
-	p1=FreeCAD.Vector(0,-50,0)
-	p2=FreeCAD.Vector(0,140,0)
-	p3=FreeCAD.Vector(70,0,0)
-	p4=FreeCAD.Vector(0,0,60)
+	if pts ==None:
+		p1=FreeCAD.Vector(0,-50,0)
+		p2=FreeCAD.Vector(0,140,0)
+		p3=FreeCAD.Vector(70,0,0)
+		p4=FreeCAD.Vector(0,0,60)
+	else:
+		[p1,p2,p3,p4]=pts
 
 
 #    // Test if 2 points are equals
@@ -1031,12 +962,29 @@ def run_sphere4P():
 			center[i] += AI[i,j]*b[j]
 	radius = (p1-center).Length;  
 
-	Part.show(Part.makeSphere(radius,center))
-	Part.show(Part.Compound([Part.makeSphere(5,p) for p in [p1,p2,p3,p4]]))
-	App.ActiveDocument.ActiveObject.ViewObject.ShapeColor=(1.,0.,0.)
+	auxshapes=[]
+	if display>0:
+		auxshapes += [Part.makeSphere(radius,center)]
+		auxshapes += [Part.makeSphere(display,p) for p in [p1,p2,p3,p4]]
+
+	return  (center,radius,auxshapes)
+
+def run_plane3p(pts,display=0):
+	
+	[p1,p2,p3]=pts
+	print "run plan 3p"
+	n=(p1-p2).cross(p1-p3).normalize()
+	c=p1.dot(n)
+	c2=p2.dot(n)
+	center=c*n
+	aux=Part.makeCircle(10,p1,n)
+	print (c,c2) 
+	print center
+	print n
+	return (center,n,aux)
 
 
-def run_spherePNP(): # pn p 
+def run_spherepnp(): # pn p 
 #   // Test if the Normal is not 0 0 0
  #   if ((abs(N(0))<THRESHOLD) && (abs(N(1))<THRESHOLD) && (abs(N(2))<THRESHOLD)){
   #      std::cerr<< "Normal is undefined"<< endl;
@@ -1071,22 +1019,77 @@ def run_spherePNP(): # pn p
 	Part.show(Part.Compound([Part.makeSphere(5,p) for p in [p1,p2]]))
 	App.ActiveDocument.ActiveObject.ViewObject.ShapeColor=(1.,0.,0.)
 
-def run_cyl5p():
+def run_cylinder5p(pts=None,display=True,pointsize=10,maxradius=100000):
 
 	THRESHOLD = 0.001
+	debug=False
+
+	if pts == None:
+		p1=FreeCAD.Vector(100,0,0)
+		p2=FreeCAD.Vector(100,70,20)
+		p3=FreeCAD.Vector(-100,100,0)
+
+		p4=p2+FreeCAD.Vector(0,0,200)
+		p5=p3+FreeCAD.Vector(0,0,200)
+	else:
+		[p1,p2,p3,p4,p5]=pts
+
+	nx = (p2-p1).normalize();
+	ny = ((p3-p1)-(p3-p1).dot(nx)*nx).normalize();
+	nz = nx.cross(ny).normalize();
+
+	trafo=FreeCAD.Rotation(
+			nx.x,nx.y,nx.z,
+			ny.x,ny.y,ny.z,
+			nz.x,nz.y,nz.z,
+		)
+
+	ps=[]
+	for p in [p1,p2,p3,p4,p5]:
+		t=trafo.multVec(p-p1)
+		ps += [t]
+
+	[p_1,p_2,p_3,p_4,p_5]=ps
 
 
-	# Five Points ##############################
-	p_1=FreeCAD.Vector(0,0,0)
-	p_2=FreeCAD.Vector(100,0,0)
-	p_3=FreeCAD.Vector(50,50,0)
-	p_4=FreeCAD.Vector(0,0,50)
-	p_5=FreeCAD.Vector(100,0,51)
+	if 0:
+		# Five Points ##############################
+		p_1=FreeCAD.Vector(0,0,0)
+		p_2=FreeCAD.Vector(100,0,0)
+		p_3=FreeCAD.Vector(0,100,0)
+		p_4=FreeCAD.Vector(0,0,100)
+		p_5=FreeCAD.Vector(100,0,100) # eine loesung falsch
+		
+		p_5=FreeCAD.Vector(100,100,100) # 5 fehler
+		p_5=FreeCAD.Vector(0,100,100) # 3 fehler
+		p_4,p_5=p_5,p_4
+
+		p_4=FreeCAD.Vector(100,0,100)
+		p_5=FreeCAD.Vector(100,100,100)
+		p_4,p_5=p_5,p_4
 
 
-	print "Points ..."
-	for p in [p_1,p_2,p_3,p_4,p_5]:
-		print p
+		p_1=FreeCAD.Vector(0,0,0)
+		p_2=FreeCAD.Vector(100,0,0)
+		p_3=FreeCAD.Vector(-100,100,0)
+
+		p_4=p_2+FreeCAD.Vector(0,0,200)
+		p_5=p_3+FreeCAD.Vector(0,0,200)
+		
+		p_4=p_2+FreeCAD.Vector(0,0,200)
+		p_5=p_3+FreeCAD.Vector(0,10,200)
+
+		p_4=p_2+FreeCAD.Vector(20,0,200)
+		p_5=p_3+FreeCAD.Vector(0,10,200)
+
+
+	trafo.invert()
+
+
+	if debug:
+		print ("Points ...")
+		for p in [p_1,p_2,p_3,p_4,p_5]:
+			print (p)
 
 	#    if ((abs(p_3(1)) < THRESHOLD) && (abs(p_3(0)) > THRESHOLD) ){ // p_1 p_2 p_3 are alligned so infinite or no cylinder
 	#
@@ -1161,35 +1164,53 @@ def run_cyl5p():
 
 	[alphar,alphai,beta,vi,vr,work,info] =sp.dggev(A,B,compute_vl=1,compute_vr=1,lwork=16*N    )
 
-	vr2=vr.reshape(N*N)
+	# vr2=vr.reshape(N*N)
+	vr2=vr.swapaxes(0,1).reshape(N*N)
+
+	if debug:
+		print ("VR")
+		print (np.round(vr,5))
+
 	myList=[]
 	cols=[]
 	anz=0
 
+	if debug:
+		print ("beta")
+		print (beta)
+		print ("alphar")
+		print (alphar)
+		print ("alphai")
+		print (alphai)
+	
 	cyls=[]
+	cylsrc=[]
 	# Generating the cones correspondinng to the real non-infinite eigenvalues
 	for i in range(N):
-		if(beta[i]!=0 and alphai[i]==0):
-			print 
-			print ("solution",i)
-			print ("beta ",beta[i])
-			print ("alphar[i]",alphar[i])
-			axis = FreeCAD.Vector(vr2[N-2+i*N]/vr2[N-1+i*N],alphar[i]/beta[i],1).normalize();
-			# axis = FreeCAD.Vector(vr2[N-1+i*N]/vr2[N-2+i*N],1.0/(alphar[i]/beta[i]),1).normalize();
-			print ("axis",axis)
+#		if(beta[i]!=0 and alphai[i]==0):
+		if(alphai[i]==0):
+			if debug:
+				print ("")
+				print ("SSolution",i)
+				print ("beta ",beta[i])
+				print ("alphar[i]",alphar[i])
+				print ("vr2",vr2[N-2+i*N],vr2[N-1+i*N])
 
-			a = p_1 - dotProduct(p_1,axis)*axis;
-			b = p_2 - dotProduct(p_2,axis)*axis;
-			c = p_3 - dotProduct(p_3,axis)*axis;
+			_ty=alphar[i]/beta[i]
+			_t=vr2[N-2+i*N]/vr2[N-1+i*N]
+
+			if beta[i]==0:
+				_ty=100000
+
+			if np.isnan(_t) or np.isinf(_t):
+				print ("_t is nan------------------")
+				_t=100000
+
+			axis = FreeCAD.Vector(_t,_ty,1).normalize();
+
 			a = p_1 - p_1.dot(axis)*axis;
 			b = p_2 - p_2.dot(axis)*axis;
 			c = p_3 - p_3.dot(axis)*axis;
-
-			print "a,b,c"
-			print a
-			print b
-			print c
-			print 
 
 			la = (b-c).Length;
 			lb = (c-a).Length;
@@ -1197,16 +1218,13 @@ def run_cyl5p():
 			sa = .5*(-la*la + lb*lb + lc*lc);
 			sb = .5*( la*la - lb*lb + lc*lc);
 			sc = .5*( la*la + lb*lb - lc*lc);
-			print "sa,sb,sc"
-			print sa
-			print sb
-			print sc
-			print
-
 
 			center_bar = FreeCAD.Vector(la*la*sa,lb*lb*sb,lc*lc*sc);
+#			print "center bar"
+#			print center_bar
 
 			center_bar = center_bar / (center_bar[0]+center_bar[1]+center_bar[2]);
+#			print center_bar
 			center = center_bar[0]*a + center_bar[1]*b + center_bar[2]*c;
 
 			r0 = ((la*la*lb*lb*lc*lc)/ (4*power((crossProduct(b-a,c-a).Length),2)))**0.5;
@@ -1214,53 +1232,1426 @@ def run_cyl5p():
 			l1=min(dotProduct(p_1-center,axis),min(dotProduct(p_2-center,axis),min(dotProduct(p_3-center,axis),min(dotProduct(p_4-center,axis),dotProduct(p_5-center,axis)))));
 			l2=max(dotProduct(p_1-center,axis),max(dotProduct(p_2-center,axis),max(dotProduct(p_3-center,axis),max(dotProduct(p_4-center,axis),dotProduct(p_5-center,axis)))));
 
+			if debug:
+				print ("center",center)
+				print ("axis",axis)
+				print ("r0",r0)
+
+				print (l1,l2)
+
+			if maxradius != 0 and r0> maxradius:
+				print ("Fehler radius zu gross",round(r0,1),round(maxradius,1))
+				continue
+
+			cylsrc += [[trafo.multVec(center)+p1,trafo.multVec(axis),r0,l1,l2,i]]
+			cyls += [[center,axis,r0,l1,l2,i]]
+
+
+	aux=[]
+	if display:
+		if debug:
+			print ()
+			print ("create 3D objects---------------------------------------------")
+		for cyl in  cyls:
+				if cyl[2]>500:
+#					print "radius zu gross"
+					continue
+				if np.isnan(cyl[3]):
+					print ("nan abbruch")
+					continue
+				if debug:
+					print ("center ",cyl[0])
+					print ("axis",cyl[1])
+					print ("radius",cyl[2])
+					print cyl[3]
+					print cyl[4]
+					print
+				comps=[]
+				comps += [Part.makeCylinder(cyl[2],200,cyl[0],cyl[1])]
+				comps += [Part.makeCylinder(cyl[2],200,cyl[0],-cyl[1])]
+				comps += [Part.makePolygon([cyl[0]-cyl[1]*200,cyl[0]+cyl[1]*200])]
+				if 0:
+					Part.show(Part.Compound(comps))
+					App.ActiveDocument.ActiveObject.ViewObject.Transparency=60
+					App.ActiveDocument.ActiveObject.Label="Solution "+str(cyl[5])
+					App.ActiveDocument.ActiveObject.Placement=FreeCAD.Placement(p1,trafo)
+				else:
+					auxr=Part.Compound(comps)
+					auxr.Placement=FreeCAD.Placement(p1,trafo)
+					aux += [auxr]
+
+	if pointsize != 0:
+		Part.show(Part.Compound([Part.makeSphere(pointsize,p) for ik,p in enumerate([p_1,p_2,p_3,p_4,p_5])]))
+		App.ActiveDocument.ActiveObject.Placement=FreeCAD.Placement(p1,trafo)
+		App.ActiveDocument.ActiveObject.ViewObject.ShapeColor=(1.,0.,0.)
+
+
+	return (cylsrc,aux)
+
+
+
+def run_cone6p():
+	raise Exception("# geht noch nicht c++ quelle auch nicht.")
+
+	p_1=FreeCAD.Vector(0,0,0)
+	p_2=FreeCAD.Vector(10,0,0) #x<>0
+	p_3=FreeCAD.Vector(0,10,0) #y<>0
+	p_4=FreeCAD.Vector(0,0,20) #z<>0
+	p_5=FreeCAD.Vector(25,0,20) #z<>0
+	p_6=FreeCAD.Vector(0,25,20) 
+
+
+	N = 12;
+
+
+
+	A =np.array([
+			0,  0,  0,  0,  0,  0,  0,  0,  -p_2[0]*p_3[1]*(-p_3[1]*p_4[1]+power(p_4[1],2)+power(p_4[2],2)),
+												-power(p_2[0],2)*p_3[1]*p_4[2]+2*p_2[0]*p_4[0]*p_3[1]*p_4[2],
+													-power(p_2[0],2)*p_3[0]*p_4[1]+power(p_2[0],2)*p_4[0]*p_3[1]+p_2[0]*power(p_3[0],2)*p_4[1]-p_2[0]*power(p_4[0],2)*p_3[1]+p_2[0]*power(p_3[1],2)*p_4[1]-p_2[0]*p_3[1]*power(p_4[1],2),
+														0,
+			0,  0,  0,  0,  0,  0,  0,  0,  0,  -p_2[0]*p_3[1]*(-p_3[1]*p_4[1]+power(p_4[1],2)+power(p_4[2],2)),
+													-power(p_2[0],2)*p_3[1]*p_4[2]+2*p_2[0]*p_4[0]*p_3[1]*p_4[2],
+														-power(p_2[0],2)*p_3[0]*p_4[1]+power(p_2[0],2)*p_4[0]*p_3[1]+p_2[0]*power(p_3[0],2)*p_4[1]-p_2[0]*power(p_4[0],2)*p_3[1]+p_2[0]*power(p_3[1],2)*p_4[1]-p_2[0]*p_3[1]*power(p_4[1],2),
+			0,  0,  0,  0,  0,  0,  0,  0,  power(p_3[1],2)*p_4[1]*p_5[2]-power(p_3[1],2)*p_5[1]*p_4[2]-p_3[1]*power(p_4[1],2)*p_5[2]+p_3[1]*power(p_5[1],2)*p_4[2]-p_3[1]*power(p_4[2],2)*p_5[2]+p_3[1]*p_4[2]*power(p_5[2],2),
+												2*p_4[0]*p_3[1]*p_4[2]*p_5[2]-2*p_5[0]*p_3[1]*p_4[2]*p_5[2],
+													-p_2[0]*p_3[0]*p_4[1]*p_5[2]+p_2[0]*p_3[0]*p_5[1]*p_4[2]+p_2[0]*p_4[0]*p_3[1]*p_5[2]-p_2[0]*p_5[0]*p_3[1]*p_4[2]+power(p_3[0],2)*p_4[1]*p_5[2]-power(p_3[0],2)*p_5[1]*p_4[2]-power(p_4[0],2)*p_3[1]*p_5[2]+power(p_5[0],2)*p_3[1]*p_4[2]+power(p_3[1],2)*p_4[1]*p_5[2]-power(p_3[1],2)*p_5[1]*p_4[2]-p_3[1]*power(p_4[1],2)*p_5[2]+p_3[1]*power(p_5[1],2)*p_4[2],
+														0,
+			0,  0,  0,  0,  0,  0,  0,  0,  0,  power(p_3[1],2)*p_4[1]*p_5[2]-power(p_3[1],2)*p_5[1]*p_4[2]-p_3[1]*power(p_4[1],2)*p_5[2]+p_3[1]*power(p_5[1],2)*p_4[2]-p_3[1]*power(p_4[2],2)*p_5[2]+p_3[1]*p_4[2]*power(p_5[2],2),
+													2*p_4[0]*p_3[1]*p_4[2]*p_5[2]-2*p_5[0]*p_3[1]*p_4[2]*p_5[2],
+														-p_2[0]*p_3[0]*p_4[1]*p_5[2]+p_2[0]*p_3[0]*p_5[1]*p_4[2]+p_2[0]*p_4[0]*p_3[1]*p_5[2]-p_2[0]*p_5[0]*p_3[1]*p_4[2]+power(p_3[0],2)*p_4[1]*p_5[2]-power(p_3[0],2)*p_5[1]*p_4[2]-power(p_4[0],2)*p_3[1]*p_5[2]+power(p_5[0],2)*p_3[1]*p_4[2]+power(p_3[1],2)*p_4[1]*p_5[2]-power(p_3[1],2)*p_5[1]*p_4[2]-p_3[1]*power(p_4[1],2)*p_5[2]+p_3[1]*power(p_5[1],2)*p_4[2],
+			1,  0,  0,  0,  0,  0,  0,  0,  -p_4[2]*power(p_3[1],2)*p_2[0],
+												-2*p_2[0]*p_3[0]*p_3[1]*p_4[1]+2*p_2[0]*p_4[0]*p_3[1]*p_4[1],
+													power(p_2[0],2)*p_3[0]*p_4[2]-p_2[0]*power(p_3[0],2)*p_4[2]-p_4[2]*power(p_3[1],2)*p_2[0]+2*p_2[0]*p_3[1]*p_4[1]*p_4[2],
+														0,
+			0,  1,  0,  0,  0,  0,  0,  0,  0,  -p_4[2]*power(p_3[1],2)*p_2[0],
+													-2*p_2[0]*p_3[0]*p_3[1]*p_4[1]+2*p_2[0]*p_4[0]*p_3[1]*p_4[1],
+														power(p_2[0],2)*p_3[0]*p_4[2]-p_2[0]*power(p_3[0],2)*p_4[2]-p_4[2]*power(p_3[1],2)*p_2[0]+2*p_2[0]*p_3[1]*p_4[1]*p_4[2],
+			0,  0,  1,  0,  0,  0,  0,  0,  0,  -2*p_3[0]*p_3[1]*p_4[1]*p_5[2]+2*p_3[0]*p_3[1]*p_5[1]*p_4[2]+2*p_4[0]*p_3[1]*p_4[1]*p_5[2]-2*p_5[0]*p_3[1]*p_5[1]*p_4[2],
+													2*p_3[1]*p_4[1]*p_4[2]*p_5[2]-2*p_3[1]*p_5[1]*p_4[2]*p_5[2],
+														0,
+			0,  0,  0,  1,  0,  0,  0,  0,  0,  0,  -2*p_3[0]*p_3[1]*p_4[1]*p_5[2]+2*p_3[0]*p_3[1]*p_5[1]*p_4[2]+2*p_4[0]*p_3[1]*p_4[1]*p_5[2]-2*p_5[0]*p_3[1]*p_5[1]*p_4[2],
+														2*p_3[1]*p_4[1]*p_4[2]*p_5[2]-2*p_3[1]*p_5[1]*p_4[2]*p_5[2],
+			0,  0,  0,  0,  1,  0,  0,  0,  0,  -power(p_2[0],2)*p_3[1]*p_4[2]+2*p_2[0]*p_3[0]*p_3[1]*p_4[2],
+													-power(p_2[0],2)*p_3[0]*p_4[1]+power(p_2[0],2)*p_4[0]*p_3[1]+p_2[0]*power(p_3[0],2)*p_4[1]-p_2[0]*power(p_4[0],2)*p_3[1]-p_2[0]*p_3[1]*power(p_4[2],2),
+														0,
+			0,  0,  0,  0,  0,  1,  0,  0,  0,  0,  -power(p_2[0],2)*p_3[1]*p_4[2]+2*p_2[0]*p_3[0]*p_3[1]*p_4[2],
+														-power(p_2[0],2)*p_3[0]*p_4[1]+power(p_2[0],2)*p_4[0]*p_3[1]+p_2[0]*power(p_3[0],2)*p_4[1]-p_2[0]*power(p_4[0],2)*p_3[1]-p_2[0]*p_3[1]*power(p_4[2],2),
+			0,  0,  0,  0,  0,  0,  1,  0,  0,  0,  -p_2[0]*p_3[0]*p_4[1]*p_5[2]+p_2[0]*p_3[0]*p_5[1]*p_4[2]+p_2[0]*p_4[0]*p_3[1]*p_5[2]-p_2[0]*p_5[0]*p_3[1]*p_4[2]+power(p_3[0],2)*p_4[1]*p_5[2]-power(p_3[0],2)*p_5[1]*p_4[2]-power(p_4[0],2)*p_3[1]*p_5[2]+power(p_5[0],2)*p_3[1]*p_4[2]-p_3[1]*power(p_4[2],2)*p_5[2]+p_3[1]*p_4[2]*power(p_5[2],2),
+														0,
+			0,  0,  0,  0,  0,  0,  0,  1,  0,  0,  0,  -p_2[0]*p_3[0]*p_4[1]*p_5[2]+p_2[0]*p_3[0]*p_5[1]*p_4[2]+p_2[0]*p_4[0]*p_3[1]*p_5[2]-p_2[0]*p_5[0]*p_3[1]*p_4[2]+power(p_3[0],2)*p_4[1]*p_5[2]-power(p_3[0],2)*p_5[1]*p_4[2]-power(p_4[0],2)*p_3[1]*p_5[2]+power(p_5[0],2)*p_3[1]*p_4[2]-p_3[1]*power(p_4[2],2)*p_5[2]+p_3[1]*p_4[2]*power(p_5[2],2)
+			]).reshape(N,N)
+
+	B =np.array([
+			1,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
+			0,  1,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
+			0,  0,  1,  0,  0,  0,  0,  0,  0,  0,  0,  0,
+			0,  0,  0,  1,  0,  0,  0,  0,  0,  0,  0,  0,
+			0,  0,  0,  0,  1,  0,  0,  0,  0,  0,  0,  0,
+			0,  0,  0,  0,  0,  1,  0,  0,  0,  0,  0,  0,
+			0,  0,  0,  0,  0,  0,  1,  0,  0,  0,  0,  0,
+			0,  0,  0,  0,  0,  0,  0,  1,  0,  0,  0,  0,
+			0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  -power(p_2[0],2)*p_3[0]*p_4[2]+p_2[0]*power(p_3[0],2)*p_4[2],
+														0,
+			0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  -power(p_2[0],2)*p_3[0]*p_4[2]+p_2[0]*power(p_3[0],2)*p_4[2],
+			0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
+			0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0 ]).reshape(N,N)
+
+
+	[alphar,alphai,beta,vi,vr,work,info] =sp.dggev(A,B,compute_vl=1,compute_vr=1,lwork=16*N    )
+
+	# vr2=vr.reshape(N*N)
+	vr2=vr.swapaxes(0,1).reshape(N*N)
+
+	print "VR"
+	print np.round(vr,5)
+
+	myList=[]
+	cols=[]
+	anz=0
+
+#-----------------------------------------------------------------
+
+	cyls=[]
+	cylsrc=[]
+	# Generating the cones correspondinng to the real non-infinite eigenvalues
+	for i in range(N):
+#		if(beta[i]!=0 and alphai[i]==0):
+		if(alphai[i]==0):
+			print 
+			print ("SSolution",i)
+			print ("beta ",beta[i])
+			print ("alphar[i]",alphar[i])
+			print ("vr2",vr2[N-2+i*N],vr2[N-1+i*N])
+			_ty=alphar[i]/beta[i]
+			_t=vr2[N-2+i*N]/vr2[N-1+i*N]
+
+			print "Vektor komponenten"
+			print _t
+			print alphar[i]/beta[i]
+
+			if beta[i]==0:
+				_ty=100000
+
+			if np.isnan(_t) or np.isinf(_t):
+				print "_t is nan------------------"
+				_t=100000
+
+			axis = FreeCAD.Vector(_t,_ty,1).normalize();
+
+			# axis = FreeCAD.Vector(vr2[N-1+i*N]/vr2[N-2+i*N],1.0/(alphar[i]/beta[i]),1).normalize();
+			print ("axis",axis)
+
+
+			a = p_1 - p_1.dot(axis)*axis;
+			b = p_2 - p_2.dot(axis)*axis;
+			c = p_3 - p_3.dot(axis)*axis;
+
+
+			la = (b-c).Length;
+			lb = (c-a).Length;
+			lc = (a-b).Length;
+			sa = .5*(-la*la + lb*lb + lc*lc);
+			sb = .5*( la*la - lb*lb + lc*lc);
+			sc = .5*( la*la + lb*lb - lc*lc);
+
+
+			center_bar = FreeCAD.Vector(la*la*sa,lb*lb*sb,lc*lc*sc);
+			print "center bar"
+			print center_bar
+
+			center_bar = center_bar / (center_bar[0]+center_bar[1]+center_bar[2]);
+			print center_bar
+			center = center_bar[0]*a + center_bar[1]*b + center_bar[2]*c;
+
+			r0 = ((la*la*lb*lb*lc*lc)/ (4*power((crossProduct(b-a,c-a).Length),2)))**0.5;
+
+			l1=min(dotProduct(p_1-center,axis),min(dotProduct(p_2-center,axis),min(dotProduct(p_3-center,axis),min(dotProduct(p_4-center,axis),dotProduct(p_5-center,axis)))));
+			l2=max(dotProduct(p_1-center,axis),max(dotProduct(p_2-center,axis),max(dotProduct(p_3-center,axis),max(dotProduct(p_4-center,axis),dotProduct(p_5-center,axis)))));
+
+#			double l1=min(dotProduct(p_1-center,axis),min(dotProduct(p_2-center,axis),min(dotProduct(p_3-center,axis),min(dotProduct(p_4-center,axis),dotProduct(p_5-center,axis)))));
+#			double l2=max(dotProduct(p_1-center,axis),max(dotProduct(p_2-center,axis),max(dotProduct(p_3-center,axis),max(dotProduct(p_4-center,axis),dotProduct(p_5-center,axis)))));
+
+#			this->list.push_back(Cone(p1+Rotation*center,Rotation*axis,r0,l1,l2));
+
+
+
 			print ("center",center)
 #			print ("axis",axis)
 			print ("r0",r0)
 			print (l1,l2)
-			cyls += [[center,axis,r0,l1,l2]]
-
-	print 
-	print "create 3D objects---------------------------------------------"
-	for cyl in  cyls:
-			if np.isnan(cyl[3]):
-				print "nan abbruch"
+			if r0> 10000:
+				print "Fehler radius zu gross"
 				continue
-			if 10:
-				print ("center ",cyl[0])
-				print ("axis",cyl[1])
-				print ("radius",cyl[2])
-				print cyl[3]
-				print cyl[4]
-				print
-			comps=[]
-			comps += [Part.makeCylinder(cyl[2],200,cyl[0],cyl[1])]
-			comps += [Part.makeCylinder(cyl[2],200,cyl[0],-cyl[1])]
-			comps += [Part.makePolygon([cyl[0]-cyl[1]*200,cyl[0]+cyl[1]*200])]
-
-			Part.show(Part.Compound(comps))
-			App.ActiveDocument.ActiveObject.ViewObject.Transparency=60
-
-	Part.show(Part.Compound([Part.makeSphere(1+ik,p) for ik,p in enumerate([p_1,p_2,p_3,p_4,p_5])]))
-	App.ActiveDocument.ActiveObject.ViewObject.ShapeColor=(1.,0.,0.)
+			#cylsrc += [[trafo.multVec(center)+p1,trafo.multVec(axis),r0,l1,l2,i]]
+			cyls += [[center,axis,r0,l1,l2,i]]
 
 
+#------------------------------------------------------------------
+
+			for c in cyls:
+				print np.round(center,2),np.round(axis,2)
+
+
+
+
+
+#--------- massendaten auswerten
+
+def discoverSpheres():
+	''' sphere mittelwert aus punktemenge finden'''
+
+	a=time.time()
+
+	pts= App.ActiveDocument.Mesh.Mesh.Topology[0]
+
+	loops=1000
+	l=len(pts)
+	
+	res=[]
+	for i in range(loops):
+#		print i
+		sel=[pts[random.randint(0,l-1)]+FreeCAD.Vector(0.5-random.random(),10*(0.5-random.random()),0.5-random.random()) for j in range(4)]
+		res += [nurbswb.points_to_face.run_sphere4p(sel,display=False) ]
+
+
+
+	res=np.array(res).swapaxes(0,1)
+
+
+	print np.sum(res[0])/loops
+	print np.mean(res[1])
+	print np.std(res[1])
+	print time.time()-a
+
+# findSphere()
 
 
 
 def PointstoCylinder5P ():
 	'''5 Punkte zu cylinder'''
 
-	run_cyl5p()
+	(cylsrc,aux)=run_cylinder5p()
+	Part.show(Part.Compound(aux))
 
 
 def PointstoSpherePNP ():
-	run_spherePNP()
+	run_spherepnp()
 
 def PointstoSphere4P ():
-	run_sphere4P()
+	run_sphere4p()
+
+
+
+
+
+
+#def AA():
+#	'''5 Punkte zu cylinder'''
+#	PointstoCylinder5P ()
+
+#---------------------------
+
+
+class ReconstructFace(FeaturePython):
+
+
+	def __init__(self, obj):
+		FeaturePython.__init__(self, obj)
+
+		obj.addProperty("App::PropertyLink", "A", "AX", "X", 8)# no impact recompute
+		obj.addProperty("App::PropertyLink", "B", "AX", "X", 8)# no impact recompute
+
+		obj.addProperty("App::PropertyLink","Source")
+		obj.addProperty("App::PropertyLinkSubList","SourceFaces")
+
+		obj.addProperty("App::PropertyInteger","number").number=0
+#		obj.addProperty("App::PropertyBool","displayPoints").displayPoints=1
+#		obj.addProperty("App::PropertyBool","displayFaces").displayFaces=1
+		obj.addProperty("App::PropertyEnumeration","mode")
+		obj.mode=['Cone','Sphere','Cylinder','Torus','Plane']
+
+#		obj.addProperty("App::PropertyEnumeration","pattern")
+#		obj.pattern=['pnpn','pnppp','pnpnpnpn']
+
+		obj.addProperty("App::PropertyFloat","tol").tol=0.01
+		obj.tol=1
+		obj.addProperty("App::PropertyEnumeration","displayMode")
+		obj.displayMode=['leftover','found','borders','aux']
+		
+
+
+#		obj.addProperty("App::PropertyVector","apex",'~aux').apex=FreeCAD.Vector(30,30,30)
+
+#		obj.setEditorMode('axis',2)
+
+
+
+
+
+	def myOnChanged(self,obj,prop):
+
+		if prop in ["Shape","Label","A","B","_noExecute"]:
+			return
+
+
+		try: # start not befor the last prop is created
+			obj.displayMode
+		except:
+			return
+
+		if obj.mode=='Cylinder' and prop=='number':
+			print ("Select precomputed Face",obj.number)
+			optimizeCylinder(obj,False)
+			return
+
+
+
+		# print "changed ",prop
+		if obj.mode=='Cylinder':
+			findCylinder(obj)
+			optimizeCylinder(obj)
+
+
+		elif obj.mode == 'Sphere':
+			findSphere(obj)
+
+
+	def myExecute(self,obj):
+		print "start onchange init"
+		self.onChanged(obj,"_init_")
+		print obj.Label," executed"
+
+def splitShapeCylinder(shape,center,axis,r0,tol=0.01):
+#	print "splitshape --------------------------------------------"
+	syes=[]
+	sno=[]
+	edges={}
+	for f in shape.Faces:
+		ok=True
+#		print f
+		for v in f.Vertexes:
+			p=v.Point
+			dd=abs((p-center).cross(axis).Length-r0)
+			if dd >tol:
+				ok=False
+				sno += [f]
+				break
+		if ok:
+			syes += [f]
+
+	for f in syes:
+		for e in f.Edges:
+			ps=[e.Vertexes[0].Point,e.CenterOfMass,e.Vertexes[-1].Point]
+			tt=np.array(ps).reshape(9)
+			if 1:
+				#dd=abs((ps[0]-center).Length-radius)
+				#dd2=abs((ps[-1]-center).Length-radius)
+				dd=abs((ps[0]-center).cross(axis).Length-r0)
+				dd2=abs((ps[-1]-center).cross(axis).Length-r0)
+
+				if dd <tol and dd2 < tol:
+					try:
+						edges[tuple(tt)] +=1 
+					except:
+						edges[tuple(tt)] =1 
+
+
+
+#	print "Edges--------------",len(edges)
+#	for e in edges:
+#		print edges[e]
+#		if edges[e] == 1:
+#			print "border",e
+
+
+
+	# delete islands
+	syes2=[]
+
+	for f in syes:
+#		print "!!",f
+		fok=False
+		for e in f.Edges:
+#			print e
+			ps=[e.Vertexes[0].Point,e.CenterOfMass,e.Vertexes[-1].Point]
+			tt=np.array(ps).reshape(9)
+			try:
+				if edges[tuple(tt)]!=1:
+					fok=True
+			except:
+				print "--------------------------------outside A"
+				pass
+		if fok:
+			syes2+=[f]
+		else:
+			print ("--------------------------ISLAND-B",f)
+			sno += [f]
+
+
+	#print"compare face normals-----------------------------------------"
+	found=0
+	syes3=[]
+	for f in syes2:
+	#	print "Face ",f
+		[a,b,c]=f.Vertexes
+		t=(a.Point-b.Point).cross(a.Point-c.Point).normalize()
+		ff=0
+		for v in f.Vertexes:
+			t1=((v.Point-center).cross(axis)).normalize().cross(axis).normalize()
+	#		print t.dot(t1)
+			if abs(t.dot(t1))>0.5:
+				ff+=1
+	#	print ff
+		if ff==3:
+			found +=1
+			syes3 += [f]
+		else:
+			sno += [f]
+	print ("face normal reduction found",found,len(syes2))
+
+	return (syes3,sno)
+
+
+
+
+def splitShapeSphere(shape,center,radius,tol=0.01):
+
+	syes=[]
+	sno=[]
+	for f in shape.Faces:
+		ok=True
+		for v in f.Vertexes:
+			p=v.Point
+			dd=abs((p-center).Length-radius)
+			#print dd
+			if dd > tol:
+				ok=False
+				sno += [f]
+				break
+		if ok:
+			syes += [f]
+
+	return (syes,sno)
+
+def splitShapePlane(shape,center,normal,tol=0.01):
+
+	syes=[]
+	sno=[]
+	for f in shape.Faces:
+		ok=True
+		for v in f.Vertexes:
+			p=v.Point
+			dd=abs((p-center).dot(normal))
+			if dd >tol:
+				ok=False
+				sno += [f]
+				break
+		if ok:
+			syes += [f]
+
+	return (syes,sno)
+
+print "HUHU"
+
+def borderPlane(shape,center,normal,tol=0.01):
+
+	debug=False
+	if debug: print ("borderplane",center,normal)
+	syes=[]
+	sno=[]
+	edges={}
+	for f in shape.Faces:
+		# ist flaeche daei
+		ok=True
+#		print f
+		for v in f.Vertexes:
+			p=v.Point
+			dd=abs((p-center).dot(normal))
+			if dd >tol:
+				ok=False
+				sno += [f]
+				break
+		if not ok:
+			continue
+
+		for e in f.Edges:
+			ps=[e.Vertexes[0].Point,e.CenterOfMass,e.Vertexes[-1].Point]
+			tt=np.array(ps).reshape(9)
+			if 1:
+				#dd=abs((ps[0]-center).Length-radius)
+				#dd2=abs((ps[-1]-center).Length-radius)
+				dd=abs((ps[0]-center).dot(normal))
+				dd2=abs((ps[-1]-center).dot(normal))
+				if dd <tol and dd2 < tol:
+					try:
+						edges[tuple(tt)] +=1 
+					except:
+						edges[tuple(tt)] =1 
+	if debug: 
+		print "border"
+		anz=0
+		for e in edges:
+			if edges[e]==1:
+				print np.round(e,1)
+				anz += 1
+		print (len(edges),anz)
+
+	borders=[]
+	for f in shape.Faces:
+
+		for e in f.Edges:
+			ps=[e.Vertexes[0].Point,e.CenterOfMass,e.Vertexes[-1].Point]
+			tt=np.array(ps).reshape(9)
+			try:
+				if edges[tuple(tt)] == 1:
+					borders += [e]
+			except:
+				pass #kante nicht dabei
+
+	return borders
+
+
+
+
+
+def borderSphere(shape,center,radius,tol=0.01):
+
+	debug=False
+	if debug: print ("bordersphere",center,radius)
+	syes=[]
+	sno=[]
+	edges={}
+	for f in shape.Faces:
+		# ist flaeche daei
+		ok=True
+#		print f
+		for v in f.Vertexes:
+			p=v.Point
+			dd=abs((p-center).Length-radius)
+			if dd >tol:
+				ok=False
+				sno += [f]
+				break
+		if not ok:
+			continue
+
+		for e in f.Edges:
+			ps=[e.Vertexes[0].Point,e.CenterOfMass,e.Vertexes[-1].Point]
+			tt=np.array(ps).reshape(9)
+			if 1:
+				dd=abs((ps[0]-center).Length-radius)
+				dd2=abs((ps[-1]-center).Length-radius)
+				if dd <tol and dd2 < tol:
+					try:
+						edges[tuple(tt)] +=1 
+					except:
+						edges[tuple(tt)] =1 
+	if debug: 
+		print "border"
+		anz=0
+		for e in edges:
+			if edges[e]==1:
+				print np.round(e,1)
+				anz += 1
+		print (len(edges),anz)
+
+	borders=[]
+	for f in shape.Faces:
+
+		for e in f.Edges:
+			ps=[e.Vertexes[0].Point,e.CenterOfMass,e.Vertexes[-1].Point]
+			tt=np.array(ps).reshape(9)
+			try:
+				if edges[tuple(tt)] == 1:
+					borders += [e]
+			except:
+				pass #kante nicht dabei
+
+	return borders
+
+
+def borderCylinder(shape,center,axis,r0,tol=0.01):
+
+	debug=False
+
+	if debug: print ("bordersphere",center,axis,r0)
+	syes=[]
+	sno=[]
+	edges={}
+	for f in shape.Faces:
+		# ist flaeche daei
+		ok=True
+#		print f
+		for v in f.Vertexes:
+			p=v.Point
+			#dd=abs((p-center).Length-radius)
+			dd=abs((p-center).cross(axis).Length-r0)
+			if dd >tol:
+				ok=False
+				sno += [f]
+				break
+		if not ok:
+			continue
+
+		for e in f.Edges:
+			ps=[e.Vertexes[0].Point,e.CenterOfMass,e.Vertexes[-1].Point]
+			tt=np.array(ps).reshape(9)
+			if 1:
+				#dd=abs((ps[0]-center).Length-radius)
+				#dd2=abs((ps[-1]-center).Length-radius)
+				dd=abs((ps[0]-center).cross(axis).Length-r0)
+				dd2=abs((ps[-1]-center).cross(axis).Length-r0)
+				if dd <tol and dd2 < tol:
+					try:
+						edges[tuple(tt)] +=1 
+					except:
+						edges[tuple(tt)] =1 
+	if debug: 
+		print "border"
+		anz=0
+		for e in edges:
+			if edges[e]==1:
+				print np.round(e,1)
+				anz += 1
+		print (len(edges),anz)
+
+	borders=[]
+	for f in shape.Faces:
+
+		for e in f.Edges:
+			ps=[e.Vertexes[0].Point,e.CenterOfMass,e.Vertexes[-1].Point]
+			tt=np.array(ps).reshape(9)
+			try:
+				if edges[tuple(tt)] == 1:
+					borders += [e]
+			except:
+				pass #kante nicht dabei
+
+	return borders
+
+
+def borderCylinderV2(shyes):
+
+	debug=False
+
+#	syes=[]
+#	sno=[]
+	edges={}
+	for f in shyes:
+		for e in f.Edges:
+			ps=[e.Vertexes[0].Point,e.CenterOfMass,e.Vertexes[-1].Point]
+			tt=np.array(ps).reshape(9)
+			try:
+				edges[tuple(tt)] +=1 
+			except:
+				edges[tuple(tt)] =1 
+
+	borders=[]
+
+	for f in shyes:
+		for e in f.Edges:
+			ps=[e.Vertexes[0].Point,e.CenterOfMass,e.Vertexes[-1].Point]
+			tt=np.array(ps).reshape(9)
+			if edges[tuple(tt)] == 1 and e not in borders:
+				borders += [e]
+
+	return borders
+
+
+
+def findCylinder(obj):
+		'''find faces which belong to a cylider by selected faces'''
+		print "START FINDCYLINDER-----------------------"
+		aaat=time.time()
+
+		debug=False
+		debug=obj._debug
+		maxradius=obj.Source.Shape.BoundBox.DiagonalLength*0.5
+		maxradius=0
+		
+		
+		pts=[]
+		for (sob,fns) in obj.SourceFaces:
+			for fn in fns:
+				f=getattr(sob.Shape,fn)
+				for v in f.Vertexes:
+					if not v.Point in pts:
+						pts += [v.Point]
+
+		l=len(pts)
+		if debug:
+			print ("find cylinder points in use ",l)
+
+		res=[]
+		auxs=[]
+		display=1
+		for i in range(l-5):
+			pts5=pts[i:i+5]
+			(rc,aux)=nurbswb.points_to_face.run_cylinder5p(pts5,display=display,pointsize=0,maxradius=maxradius)
+			res += rc
+#			print rc
+#			print "!!",rc[2]
+#			if rc[2]<5000:
+#			print aux
+			auxs += aux
+
+		ptsa=[v.Point for v in obj.Source.Shape.Vertexes]
+		l=len(ptsa)
+
+		best=-1
+		bestanz=-1
+		sols=[]
+		FreeCAD.res=res
+		res2=[]
+		for ri,r in enumerate(res):
+
+			[center,axis,r0,l1,l2,i]=r
+			center=center - center.dot(axis)*axis
+			
+			# ignoriere entfernte
+			if center.Length>1000 or r0>1000:
+				if debug:
+					print ("zu gross ---center.Length---radius ---",center.Length,r0)
+				continue
+
+			anz=0 
+			anz2=0
+			dsum=0
+			dds=0
+			ptsok=[]
+			ptserr=[] 
+			for p in ptsa:
+				dd=abs((p-center).cross(axis).Length-r0)
+				
+				if dd >obj.tol:
+					anz2 += 1
+					ptserr += [p]
+				else:
+					anz +=1
+					dds += dd
+					ptsok +=  [p]
+				dsum += dd
+
+			if anz>bestanz:
+				bestanz=anz
+				best=i
+
+			if anz >10:
+				print(ri,anz,np.round(center,2),np.round(axis,2),round(r0,2) )
+			else:
+				if debug:
+					print ("small solution, not used index,count faces",ri,anz)
+
+#			res2 += [[center,axis,r0,anz,obj.tol,ptsok,ptsa]]
+
+			[center,axis,r0,l1,l2,i]=r
+
+
+			if 1 or anz>10:
+				if debug:
+					print "centre",np.round(center,2)
+					print "radius",round(r0,2)
+					print "axis",np.round(axis,2)
+				aata=time.time()
+				(shyes,shno)=splitShapeCylinder(obj.Source.Shape,center,axis,r0,obj.tol)
+				
+				if len(shyes)>2:
+					res2 += [[center,axis,r0,anz,obj.tol,ptsok,ptsa]]
+
+				if debug:
+					print ("Time split Shape",round(time.time()-aata,3))
+
+				borders=[Part.Shape()]
+				if 1: #+# border is time consuming improive
+					aata=time.time()
+					#borders=borderCylinder(obj.Source.Shape,center,axis,r0,obj.tol)
+					borders=borderCylinderV2(shyes)
+					print "TimeXXAATA border",time.time()-aata
+
+				sols +=[[shyes,shno,borders]]
+
+
+		FreeCAD.res2=res2
+		besta=-1
+		ymax=-1
+
+		if debug:
+			print ("found solutions id,good faces, left over faces")
+		for j,s in enumerate(sols):
+				[y,n,b]=s
+				if len(y)>ymax:
+					ymax=len(y)
+					besta=j
+
+				if debug:
+					print (j,len(y),len(n))
+
+		s=sols[besta]
+		[y,n,b]=s
+		print ("best solution:",besta,len(y),len(n))
+		[shyes,shno,borders]=s
+
+		if 1:
+
+				obj.ViewObject.DisplayMode = "Flat Lines"
+				if obj.displayMode=='found':
+					obj.Shape=Part.Compound(shyes)
+				elif obj.displayMode=='leftover':
+					if len(shno)>0:
+						obj.Shape=Part.Compound(shno)
+					else:
+						obj.Shape=Part.Shape()
+				elif obj.displayMode=='borders':
+					obj.Shape=Part.Compound(borders) 
+				elif obj.displayMode=='aux':
+					obj.Shape=Part.Compound(auxs)
+					obj.ViewObject.Transparency=90
+					obj.ViewObject.ShapeColor=(0.7,1.,1.)
+					obj.ViewObject.DisplayMode = "Shaded"
+
+
+				if obj.A== None:
+					_t=App.ActiveDocument.addObject("Part::Feature",obj.Name+"_found_")
+					groupit(_t)
+					obj.A=_t
+					obj.A.ViewObject.ShapeColor=(0.,0.,1.)
+					#obj.A.ViewObject.hide()
+
+				obj.A.Shape=Part.Compound(shyes)
+				obj.A.purgeTouched()
+
+				if obj.B== None:
+					_t=App.ActiveDocument.addObject("Part::Feature",obj.Name+"_leftover_")
+					groupit(_t)
+					obj.B=_t
+					obj.B.ViewObject.ShapeColor=(1.,0.,0.)
+					#obj.B.ViewObject.hide()
+
+				if len(shno)>0:
+					obj.B.Shape=Part.Compound(shno)
+				else:
+					obj.B.Shape=Part.Shape()
+				obj.B.purgeTouched()
+
+				obj.ViewObject.hide()
+
+				print ("FINDCYLINDER done solution",ri)
+
+		print ("findCylinder time",time.time()-aaat)
+
+
+def ReconstructCylinder():
+	'''ReconstructrFace Cylinder'''
+
+	sel=Gui.Selection.getSelection()
+	s=Gui.Selection.getSelectionEx()[0]
+	assert(len(s.SubElementNames)>1)
+
+	yy=App.ActiveDocument.addObject("Part::FeaturePython","ReconstructFace")
+	print yy
+	ReconstructFace(yy)
+	yy._noExecute=True
+	yy.mode='Cylinder'
+	yy.displayMode='borders'
+	#yy.displayMode='found'
+	yy.Source=sel[0]
+	yy.Source.ViewObject.hide()
+
+	for n in s.SubElementNames:
+		yy.SourceFaces +=[(s.Object,n)]
+
+	ViewProvider(yy.ViewObject)
+	yy.ViewObject.ShapeColor=(.9,.0,0.)
+	yy.ViewObject.LineWidth=5
+	yy.ViewObject.LineColor=(.9,.9,0.0)
+
+	yy._noExecute=False
+	print "########################################"
+	# findCylinder(yy)
+	return yy
+
+def ReconstructPlane():
+	'''ReconstructrFace Plane'''
+
+	sel=Gui.Selection.getSelection()
+	s=Gui.Selection.getSelectionEx()[0]
+	assert(len(s.SubElementNames)>0)
+
+	yy=App.ActiveDocument.addObject("Part::FeaturePython","ReconstructFace")
+	ReconstructFace(yy)
+	yy._noExecute=True
+	yy.mode='Plane'
+	yy.displayMode='borders'
+	yy.Source=sel[0]
+	yy.Source.ViewObject.hide()
+
+	for n in s.SubElementNames:
+		yy.SourceFaces +=[(s.Object,n)]
+
+	ViewProvider(yy.ViewObject)
+	yy.ViewObject.ShapeColor=(.9,.0,0.)
+	yy.ViewObject.LineWidth=5
+	yy.ViewObject.LineColor=(.9,.9,0.0)
+
+	yy._noExecute=False
+	#findPlane(yy)
+	return yy
+
+
+
+def findSphere(obj):
+	'''find faces which belong to a Sphere by selected faces'''
+
+	pts=[]
+	for (sob,fns) in obj.SourceFaces:
+		for fn in fns:
+			f=getattr(sob.Shape,fn)
+			for v in f.Vertexes:
+				if not v.Point in pts:
+					pts += [v.Point]
+
+	l=len(pts)
+	if obj._debug:
+		print ("find Sphere points in use",l)
+
+	res=[]
+	if obj.displayMode=='aux':
+		display=1
+	else: 
+		display=0
+	for i in range(l-4):
+		(pp,ra,aux)=nurbswb.points_to_face.run_sphere4p(pts[i:i+4],display=display)
+		res += [(pp,ra)]
+
+	res=np.array(res).swapaxes(0,1)
+
+	if obj._debug:
+		print "Radius: ",np.round(np.mean(res[1]),2)
+		print "Center: ",np.round(np.sum(res[0])/(l-4),2)
+
+	radius = np.mean(res[1])
+	center = np.sum(res[0])/(l-4)
+
+	(shyes,shno)=splitShapeSphere(obj.Source.Shape,center,radius,obj.tol)
+	borders=borderSphere(obj.Source.Shape,center,radius,obj.tol)
+
+	obj.ViewObject.DisplayMode = "Flat Lines"
+	if obj.displayMode=='found':
+		obj.Shape=Part.Compound(shyes)
+	elif obj.displayMode=='leftover':
+		if len(shno)>0:
+			obj.Shape=Part.Compound(shno)
+		else:
+			obj.Shape=Part.Shape()
+	elif obj.displayMode=='borders':
+		obj.Shape=Part.Compound(borders)
+	elif obj.displayMode=='aux':
+		obj.Shape=Part.Compound(aux)
+		obj.ViewObject.Transparency=60
+		obj.ViewObject.ShapeColor=(0.9,0.,0.)
+		obj.ViewObject.DisplayMode = "Shaded"
+
+
+	if obj.A== None:
+		_t=App.ActiveDocument.addObject("Part::Feature",obj.Name+"_found_")
+		groupit(_t)
+		obj.A=_t
+		obj.A.ViewObject.ShapeColor=(0.,0.,1.)
+
+	obj.A.Shape=Part.Compound(shyes)
+	obj.A.purgeTouched()
+
+	if obj.B== None:
+		_t=App.ActiveDocument.addObject("Part::Feature",obj.Name+"_leftover_")
+		groupit(_t)
+		obj.B=_t
+		obj.B.ViewObject.ShapeColor=(1.,0.,0.)
+
+	if len(shno)>0:
+		obj.B.Shape=Part.Compound(shno)
+	else:
+		obj.B.Shape=Part.Shape()
+	obj.B.purgeTouched()
+
+
+def findPlane(obj):
+	'''find faces which belong to a Plane by selected faces'''
+
+	obj._debug=True
+	pts=[]
+	for (sob,fns) in obj.SourceFaces:
+		for fn in fns:
+			f=getattr(sob.Shape,fn)
+			for v in f.Vertexes:
+				if not v.Point in pts:
+					pts += [v.Point]
+
+	l=len(pts)
+	if obj._debug:
+		print ("find Sphere points in use",l)
+
+	res=[]
+	if obj.displayMode=='aux':
+		display=1
+	else: 
+		display=0
+
+	auxs=[]
+	for i in range(l-2):
+		(center,normal,aux)=nurbswb.points_to_face.run_plane3p(pts[i:i+3],display=display)
+		res += [(center,normal)]
+		auxs += [aux]
+
+#	res=np.array(res).swapaxes(0,1)
+
+#	if obj._debug:
+#		print "Center: ",np.round(np.mean(res[0]),2)
+#		print "Normal: ",np.round(np.mean(res[1]),2)
+
+	center=res[0][0]
+	normal=res[0][1]
+
+	if obj._debug:
+		print "Center: ",np.round(center,2)
+		print "Normal: ",np.round(normal,2)
+
+	print auxs
+
+	shyes=shno=[]
+	borders=auxs
+	shyes=auxs
+	shno=auxs
+	
+	(shyes,shno)=splitShapePlane(obj.Source.Shape,center,normal,obj.tol)
+	borders=borderPlane(obj.Source.Shape,center,normal,obj.tol)
+
+	obj.ViewObject.DisplayMode = "Flat Lines"
+	if obj.displayMode=='found':
+		obj.Shape=Part.Compound(shyes)
+	elif obj.displayMode=='leftover':
+		if len(shno)>0:
+			obj.Shape=Part.Compound(shno)
+		else:
+			obj.Shape=Part.Shape()
+	elif obj.displayMode=='borders':
+		obj.Shape=Part.Compound(borders)
+	elif obj.displayMode=='aux':
+		obj.Shape=Part.Compound(aux)
+		obj.ViewObject.Transparency=60
+		obj.ViewObject.ShapeColor=(0.9,0.,0.)
+		obj.ViewObject.DisplayMode = "Shaded"
+
+
+	if obj.A== None:
+		_t=App.ActiveDocument.addObject("Part::Feature",obj.Name+"_found_")
+		groupit(_t)
+		obj.A=_t
+		obj.A.ViewObject.ShapeColor=(0.,0.,1.)
+
+	obj.A.Shape=Part.Compound(shyes)
+	obj.A.purgeTouched()
+
+	if obj.B== None:
+		_t=App.ActiveDocument.addObject("Part::Feature",obj.Name+"_leftover_")
+		groupit(_t)
+		obj.B=_t
+		obj.B.ViewObject.ShapeColor=(1.,0.,0.)
+
+	if len(shno)>0:
+		obj.B.Shape=Part.Compound(shno)
+	else:
+		obj.B.Shape=Part.Shape()
+	obj.B.purgeTouched()
+
+
+
+
+def ReconstructSphere():
+	'''Reconstruct Face Sphere select 2 faces/triangles '''
+
+	sel=Gui.Selection.getSelection()
+	s=Gui.Selection.getSelectionEx()[0]
+	assert (len(s.SubElementNames)>1)
+
+	yy=App.ActiveDocument.addObject("Part::FeaturePython","ReconstructFace")
+	ReconstructFace(yy)
+	yy._noExecute=True
+	yy.mode='Sphere'
+	yy.displayMode='borders'
+	yy.Source=sel[0]
+	yy.Source.ViewObject.hide()
+
+	for n in s.SubElementNames:
+		yy.SourceFaces +=[(s.Object,n)]
+
+	ViewProvider(yy.ViewObject)
+	yy.ViewObject.ShapeColor=(.9,.0,0.)
+	yy.ViewObject.LineWidth=5
+	yy.ViewObject.LineColor=(.9,.9,0.0)
+
+	yy._noExecute=False
+	findSphere(yy)
+	return yy
+
+
+
+
+def noisymesh():
+	'''add some noise to a mesh and create a part of it'''
+
+	import Mesh
+	mesh=Gui.Selection.getSelection()[0]
+	k=1.0 # noise factor in mm
+
+	m=mesh.Mesh
+	[ps,ts]=m.Topology
+	ps2=[p+FreeCAD.Vector(random.random(),random.random(),random.random())*k - FreeCAD.Vector(1,1,1)*0.5*k for p in ps]
+	m2=Mesh.Mesh((ps2,ts))
+
+	tt=App.ActiveDocument.addObject("Part::Feature","M2")
+	__shape__=Part.Shape()
+	__shape__.makeShapeFromMesh(m2.Topology,0.100000)
+	tt.Shape=__shape__
+	tt.purgeTouched()
+
+
+def findCluster():
+	'''build groups of cylinders'''
+
+	def dist(r,r2):
+
+		[ce,ax,ra]=r[0:3]
+		[ce2,ax2,ra2]=r2[0:3]
+
+		dr=(ra/ra2+ra2/ra)*0.5 - 1
+	#	print dr
+		da=1- abs(ax.dot(ax2)) 
+	#	print da
+		
+		try:
+			dc=(ce-ce2).normalize().dot((ax+ax2)*0.5)
+		except:
+			dc=1
+		dc=(ce-ce2).Length/(ce.Length+ce2.Length)
+	#	print dc
+		return (dr+da+dc,dr,da,dc)
+
+
+	res=FreeCAD.res2
+	cr=len(res)
+
+	cluster={}
+
+	for i in range(cr):
+		for j in range(cr):
+	#		if i==j:
+	#			continue
+			r=res[i]
+			r2=res[j]
+			a=np.round(dist(r,r2),2)
+			if a[0]<0.2:
+				ran=min(r[3],r2[3])
+				v=round(a[0]/ran*100000,2)
+				if i<j:
+					print (i,j,v,a,r[3],r2[3])
+				try:
+					cluster[i] += [j]
+				except:
+					cluster[i] = [j]
+
+
+	cluster2=[]
+	for i in cluster:
+#		print cluster[i]
+		#if cluster[i] not in cluster2 and len(cluster[i])>1:
+		if cluster[i] not in cluster2 :
+			cluster2 += [cluster[i]]
+
+	print "cluster2"
+	print cluster2
+	# Berechne Mittelwerte
+	for cl in cluster2:
+		ces=FreeCAD.Vector()
+		axs=FreeCAD.Vector()
+		ras=0
+		cll=len(cl)
+		sanz=0
+		for i in cl:
+			[ce,ax,ra,anz]=res[i][0:4]
+			ces += ce 
+			axs += ax
+			ras += ra
+			sanz += anz
+		ces /= cll
+		axs=axs.normalize()
+		ras /= cll
+		sanz /= cll
+		print (np.round(ces,2), np.round(axs,2),np.round(ras),sanz)
 
 def AA():
-	'''5 Punkte zu cylinder'''
-	PointstoCylinder5P ()
-	
+	findCluster()
+
+
+
+class MultiShape(FeaturePython):
+	'''object with mutltiple shape to switch'''
+
+	def __init__(self, obj):
+		FeaturePython.__init__(self, obj)
+
+		obj.ViewObject.ShapeColor=(1.0,0.0,0.0)
+		self.Shapes=[]
+		obj.addProperty("App::PropertyInteger","number").number=0
+
+
+	def myOnChanged(self,obj,prop):
+
+		if prop in ["Shape","Label","_noExecute"]:
+			return
+		try: 
+			obj.number
+		except:
+			return
+
+		if len(self.Shapes)==0:
+			return
+		n=obj.number % len(self.Shapes)
+		if n!=obj.number:
+			obj.number=n
+		obj.Shape=self.Shapes[n]
+
+
+
+def optimizeCylinder(obj=None,needRecompute=True):
+
+	aatt=time.time()
+
+	debug=obj._debug
+
+	if obj == None:
+		raiseException("not implemented")
+		ms=App.ActiveDocument.addObject("Part::FeaturePython","MS")
+		MultiShape(ms)
+		ViewProvider(ms.ViewObject) 
+		shape=App.ActiveDocument.M2.Shape
+
+	else:
+		ms=obj.A
+		shape=obj.Source.Shape
+
+	if needRecompute:
+		obj.Proxy.Shapes=[]
+		obj.Proxy.ShapesNo=[]
+		obj.Proxy.Borders=[]
+
+		for solnr in range(len(FreeCAD.res2)):
+			[ce,ax,r,anz,tol,pts,ptsa]=FreeCAD.res2[solnr]
+
+			if 1 or debug:
+				print ("Center",np.round(ce,2),"Radius",round(r,2))
+
+
+			def modCe(ce,ax,r,pts):
+				''' optimize center'''
+
+				fs=FreeCAD.Vector()
+				dr=0
+				for p in pts:
+					k=(p-ce).cross(ax)
+					kn=FreeCAD.Vector(k).normalize()
+					f=k -kn*r
+					dr += k.Length
+					fs+=f
+				fs /= len(pts)
+				fg= fs.cross(ax)
+			#	print "Force ",fs
+			#	print "Force ",fs.Length
+			#	print ("DR ",dr,dr/len(pts))
+
+				r2=dr/len(pts)
+				return ce-fg,fg.Length
+
+
+			if 0: # change the center
+				print ("constant radius ->center force",np.round(ce,2))
+				for i in range(10):
+					(ce2,f)=modCe(ce,ax,r,pts)
+#					print (i,np.round(ce2,2),round(f,2))
+					ce=ce2
+
+			rmin=r
+			fmin=10**10
+
+			if 10:
+				#print "###fimnde besten radius#####llll#######################"
+				for i in range(-20,20):
+					#print (i,"Radius",r+i)
+					(ce2,f)=modCe(ce,ax,r+i*0.1,pts)
+					if f<fmin:
+						fmin=f
+						rmin=r+i*0.1
+						cemin=ce2
+					# print (round(r+i,2),np.round(ce2,2),round(f,2))
+					# ce=ce2
+
+			ce=cemin
+			r=rmin
+
+			if debug:
+				print ("rmin,cmin",round(rmin,2),np.round(cemin,2))
+
+			for i in range(10):
+				(ce2,f)=modCe(ce,ax,r,pts)
+				ce=ce2
+
+			print ("solution",solnr,np.round(ce2,2),round(r,2),"force",round(f,4))
+
+			anz=0
+			ptsok=[]
+			tolvs=[]
+
+			for p in ptsa:
+				dd=abs((p-ce).cross(ax).Length-r)
+				if dd<2*tol:
+					tolvs += [dd]
+				
+				if dd < tol:
+					anz +=1
+					ptsok +=  [p]
+
+			if debug:
+				print ("Points in tol",anz,len(pts),len(ptsa))
+
+			(shyes,shno)=splitShapeCylinder(shape,ce,ax,r,tol)
+			borders=borderCylinderV2(shyes)
+			
+			print ("found and leftover faces for solution",solnr,len(shyes),len(shno))
+
+			if debug:
+				print("tol",tol,"Facesok",len(shyes))
+
+			if len(shyes)>=0:
+				obj.Proxy.Shapes  += [Part.Compound(shyes)]
+			else:
+				obj.Proxy.Shapes  += [ Part.makeSphere(10)]
+			if len(shno)>=0:
+				obj.Proxy.ShapesNo  += [Part.Compound(shno)]
+			else:
+				obj.Proxy.ShapesNo  += [ Part.makeSphere(10)]
+			if len(borders)>=0:
+				obj.Proxy.Borders += [Part.Compound(borders)]
+			else:
+				obj.Proxy.Borders += [Part.makeSphere(10)]
+			if 0:
+				n, bins, patches = plt.hist(tolvs,bins=int(round(tol*20)))
+				plt.grid(True)
+				plt.show()
+
+	n=obj.number % len(obj.Proxy.Shapes)
+	if n!=obj.number:
+		obj.number=n
+
+	print ("Display Solution",n)
+	ms.Shape=obj.Proxy.Shapes[n]
+	ms.purgeTouched()
+	obj.B.Shape=obj.Proxy.ShapesNo[n]
+	obj.B.purgeTouched()
+	if obj.displayMode=='borders':
+		obj.Shape=obj.Proxy.Borders[n]
+	print ("Time optimize",round(time.time()-aatt,3))
+
+
+def setSelection(obj,subels):
+	'''set the selection subelements'''
+	Gui.Selection.clearSelection()
+	for f in subels:
+		Gui.Selection.addSelection(obj,f)
+
+
+import cProfile
+
+def AA():
+	'''testcase'''
+
+	setSelection(App.ActiveDocument.M2,['Face560','Face628','Face623'])
+	setSelection(App.ActiveDocument.M2,['Face560','Face628'])
+	# cProfile.run("nurbswb.points_to_face.ReconstructCylinder()")
+	ReconstructCylinder()
+
+
+
+'''
+Idee fuer zurechtschneiden
+f=App.ActiveDocument.Wire.Shape.Face1
+e=App.ActiveDocument.Circle.Shape.Edge1
+e=App.ActiveDocument.Wire001.Shape.Edge1
+e2=App.ActiveDocument.Wire001.Shape.Edge2
+
+e3=App.ActiveDocument.Wire002.Shape.Edge1
+e4=App.ActiveDocument.Wire002.Shape.Edge2
+
+yy=Part.makesplitShapeCylinder(f,[(e,f),(e2,f),(e3,f),(e4,f)])
+for y in yy:
+	Part.show(y[0])
+'''

@@ -203,6 +203,7 @@ class Bering(FeaturePython):
 			ks=range(len(ms))
 			bc.buildFromPolesMultsKnots(pts,ms,ks,True,3)
 			fp.Shape=bc.toShape()
+			
 			return
 
 		if fp.detach: #use the own data instead of the source
@@ -403,6 +404,7 @@ class Bering(FeaturePython):
 			return
 
 		fp.Shape=bc.toShape()
+		#fp.Shape=Part.Wire(bc.toShape())
 
 		if fp.stripmode:
 #			print "stripmode Shape ..."
@@ -441,6 +443,33 @@ class Bering(FeaturePython):
 		fp.Placement=pm
 		
 ##\endcond
+
+
+	def executeHACK(self,fp):
+		
+		print "HACK for DEmo continuity curvature"
+
+		pms=fp.source.Placement
+		pm=fp.Placement
+
+		degree=5
+		bc=Part.BSplineCurve()
+
+		pts=[v.Point for v in fp.source.Shape.Vertexes]
+		assert(len(pts)==11)
+
+		ms=[6,5,6]
+		ks=range(len(ms))
+		print ms
+		print len(pts)
+		print ks
+		
+		bc.buildFromPolesMultsKnots(pts,ms,ks,False,degree)
+		fp.Shape=bc.toShape()
+		
+		return
+
+
 
 class _VPBeface(ViewProvider): 
 	pass
@@ -772,6 +801,8 @@ class Beface(FeaturePython):
 				#tt.ViewObject.ControlPoints = True
 				tt.ViewObject.ShapeColor=(.0,0.0,1.0)
 		##\endcond
+
+
 
 	def createSurface(self,fp):
 		'''default execution method: create the surface only'''
@@ -3889,7 +3920,7 @@ def _checkCurveGUI():
 	checkcurve(curve)
 	pass
 
-
+#
 def FaceToBezierSurface():
 	'''selektierte flaeche in bspline surface umwandeln'''
 	obj=Gui.Selection.getSelection()[0]
@@ -3898,7 +3929,15 @@ def FaceToBezierSurface():
 		print s
 		n=s.toNurbs()
 		sf=n.Face1.Surface
-		sf.increaseDegree(3,3)
+		
+		#sf.increaseDegree(3,3)
+		
+		
+		umd=max(sf.UDegree,3)
+		vmd=max(sf.VDegree,3)
+		sf.increaseDegree(umd,vmd)
+		print ("Degree ist jetzt",sf.UDegree,sf.VDegree)
+
 		print sf.getUKnots()
 		print sf.getVKnots()
 		print sf.getUMultiplicities()

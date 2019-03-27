@@ -1,3 +1,4 @@
+
 '''python objects for freecad'''
 
 # -*- coding: utf-8 -*-
@@ -29,7 +30,7 @@ class FeaturePython:
 
 
 	def attach(self, vobj):
-		print "attached"
+		print ("attached")
 		self.Object = vobj.Object
 
 	def claimChildren(self):
@@ -64,7 +65,7 @@ class FeaturePython:
 		pass
 
 	def onDocumentRestored(self, fp):
-		print "Docu restored"
+		print ("Docu restored")
 		for pn in fp.PropertiesList:
 			if pn.startswith('_show'):
 				self.onChanged(fp,pn)
@@ -80,6 +81,9 @@ class FeaturePython:
 		except: return
 		if not fp._noExecute:
 			self.myExecute(fp)
+
+	def run(self):
+		print ("run test")
 
 class ViewProvider:
 	''' basic defs '''
@@ -146,7 +150,6 @@ class ViewProvider:
 		#self.createDialog()
 		print "huhu"
 		try:
-			print "huhu 32"
 			self.edit()
 #			print "ha 2"
 		except:
@@ -187,10 +190,12 @@ class ViewProvider:
 def _Sketch(FeaturePython):
 
 	def __init__(self,obj):
+		print "huhu"
 		FeaturePython.__init__(self, obj)
 		obj.Proxy = self
 		self.Type = self.__class__.__name__
 		self.obj2 = obj
+		print "!!",obj.Label
 
 def _Sheet(FeaturePython):
 
@@ -204,6 +209,7 @@ def _Sheet(FeaturePython):
 
 def Sketch(name='MySketch'):
 	'''creates a SketchObjectPython'''
+
 
 	obj = FreeCAD.ActiveDocument.addObject("Sketcher::SketchObjectPython",name)
 	obj.addProperty("App::PropertyBool", "off", "Base",)

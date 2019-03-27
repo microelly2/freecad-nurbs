@@ -134,11 +134,3 @@ def sayexc2(title='Fehler', mess=''):
     if l>4 and inspect.stack()[3][3] <>'<module>':
         print inspect.stack()[3][1]," line ",inspect.stack()[2][2]
         print inspect.stack()[3][3]
-
-
-
-
-
-## test dummy
-def runtest():
-    pass

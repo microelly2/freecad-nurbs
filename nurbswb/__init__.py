@@ -22,6 +22,13 @@
 ## @package nurbswb.approximation
 # Methoden für Näherungslösungen für Kurven und Flächen
 
+## @package nurbswb.geodesic2
+# geodätische Linien auf Freifromflächen
+
+
+## @package nurbswb.pattern_v2
+# pattern enthält Methoden zum Erzeugen von Musterflächen planar 2D und abgbildet auf Bspline Flächen
+
 ##\cond
 def sayErr():
 	print("--------------ERROR loading nurbs workbench ---------------------")
