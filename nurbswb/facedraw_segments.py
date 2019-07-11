@@ -175,7 +175,7 @@ class EventFilter(QtCore.QObject):
 						stop()
 
 
-# some key bindings not used at teh moment
+# some key bindings not used at the moment
 #					elif  e.key()== QtCore.Qt.Key_Return:
 #						say("------------Enter-----------------")
 #						self.update()
@@ -280,7 +280,7 @@ class EventFilter(QtCore.QObject):
 		if z == 'PySide.QtCore.QEvent.Type.Enter' or z == 'PySide.QtCore.QEvent.Type.Leave':
 			pass
 
-		# deactive keys in editors context
+		# deactivate keys in editors context
 		if z == 'PySide.QtCore.QEvent.Type.Enter' and \
 			(o.__class__ == QtGui.QPlainTextEdit or o.__class__ == QtGui.QTextEdit):
 			self.editmode=True
@@ -556,7 +556,7 @@ def createnewwire(widget):
 
 
 
-## dialog fpr facedrwaing options
+## dialog for facedrawing options
 
 class MyWidget(QtGui.QWidget):
 	'''dialog for facedrawing '''

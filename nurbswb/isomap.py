@@ -126,7 +126,7 @@ def run_fulltest(obj, mpv=0.5, mpu=0.5, fx=-1, fy=-1, vc=30, uc=30 ):
 		run_test2_2(obj,bs,xy2u,xy2v,fx,fy,refpos)
 
 	if 0:
-		#display gird of circles 
+		#display grid of circles 
 		bs=obj.Shape.Face1.Surface
 		run_test_circle(bs,xy2u,xy2v)
 

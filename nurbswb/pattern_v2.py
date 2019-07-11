@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 '''
 #-------------------------------------------------
-#--create curve/face pattern 
+#--create curve/face pattern
 #--
 #-- microelly 2018  0.3
 #--
@@ -108,12 +108,12 @@ def splitEdges(obj=None,show=True):
 							(cmin,cmax)=c2.ParameterRange
 							cp=c2.Curve.parameter(pp)
 							if (cmin<cp and cp<cmax):
-								pts+=[FreeCAD.Vector(p[0],p[1])]	
+								pts+=[FreeCAD.Vector(p[0],p[1])]
 								cuts[c1i] += [cp1]
 								cuts2[c2i] += [cp]
 								print(("schnitt",c1i,c2i,cp1,cp))
 
-	# use the cutpoints to split all edges 
+	# use the cutpoints to split all edges
 	newedges=[]
 	oldedges=[]
 
@@ -135,7 +135,7 @@ def splitEdges(obj=None,show=True):
 				except:
 					print(("fehler c.segment(cus[i],cus[i+1])",i))
 					continue
-				#display the segement
+				#display the segment
 				if displayEdges:
 					Part.show(c.toShape())
 					#App.ActiveDocument.ActiveObject.ViewObject.hide()
@@ -153,13 +153,13 @@ def splitEdges(obj=None,show=True):
 								random.random(),random.random(),random.random())
 
 	if show:
-		# compound of all splitted esges
+		# compound of all splitted edges
 		Part.show(Part.Compound(newedges+oldedges))
 		App.ActiveDocument.ActiveObject.ViewObject.PointColor=(1.,0.,0.)
 		App.ActiveDocument.ActiveObject.ViewObject.LineColor=(1.,1.,1.)
 		App.ActiveDocument.ActiveObject.ViewObject.PointSize=6
 		obj=App.ActiveDocument.ActiveObject
-		obj.Label="split Edge" 
+		obj.Label="split Edge"
 
 	return newedges+oldedges
 
@@ -257,7 +257,7 @@ def createPattern(obj=None,rx=3,ry=2,sx=200,sy=100,all_faces=None):
 		s1=Part.makeFilledFace(Part.__sortEdges__(comps))
 		if s1.isNull(): raise RuntimeError('Failed to create face')
 		col=[]
-		
+
 		for xc in range(rx):
 			for yc in range(ry):
 				sn=s1.copy()
@@ -312,7 +312,7 @@ def createPattern(obj=None,rx=3,ry=2,sx=200,sy=100,all_faces=None):
 
 	tracks=find_all_segments()
 	sw=all_faces
-	
+
 	sw.Links=tracks
 	for t in tracks:
 		t.purgeTouched()
@@ -440,11 +440,11 @@ def removeEdges():
 
 
 ## Das Pattern Objekt erzeugt aus den Kanten des **obj** ein
-# Compound mit Kanten, welche in den Parametern eingestellte Symmetrien 
+# Compound mit Kanten, welche in den Parametern eingestellte Symmetrien
 # bilden
 #
 # Das Ergebnis ist planar in xy oder auf eine Targetfläche abgebildet
-# 
+#
 
 class Pattern(FeaturePython):
 	''' parametric pattern object'''
@@ -471,7 +471,7 @@ class Pattern(FeaturePython):
 		obj.addProperty("App::PropertyInteger","repeatPlanarY","postPlane","").repeatPlanarY=3
 ##\endcond
 
- 
+
 	def myExecute(self, fp):
 		'''split Edges, optional map curves to a target surface'''
 
@@ -525,7 +525,7 @@ def createPatternV3(obj=None,target=None,createPlanarPattern=False):
 #	a.modeY='mirror'
 #	a.modeX='rotate'
 	a.createPlanarPattern=True
-	
+
 	a.repeatX=5
 	a.repeatY=5
 	a.obj=obj
@@ -542,8 +542,8 @@ def patternV3():
 	obj=s[0]
 #	if len(s)>1:
 #		target=s[1]
-#	else: 
-#		target=None 
+#	else:
+#		target=None
 #	print obj.Label,target.Label
 
 	createPatternV3(obj)

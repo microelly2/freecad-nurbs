@@ -1,4 +1,4 @@
-'''make a perspective tranformation of a bspline curve'''
+'''make a perspective transformation of a bspline curve'''
 from say import *
 import nurbswb.pyob
 

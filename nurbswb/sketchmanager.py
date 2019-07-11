@@ -214,7 +214,7 @@ def ComboViewShowWidget(widget, tabMode=True):
 	'''create a tab widget inside the combo view'''
 
 	widget.tabname="Transportation Sketcher"
-	# stopp to default
+	# stop to default
 	if not tabMode:
 		widget.show()
 		return widget
@@ -558,7 +558,7 @@ def setDatum(sk,datname,datvalue):
 	
 
 def reportSketch(sk):
-	''' report contraints of a sketch'''
+	''' report constraints of a sketch'''
 	#sk=App.ActiveDocument.ufo
 	cs=sk.Constraints
 	datumtypes=['Radius','DistanceX','DistanceY','Distance']

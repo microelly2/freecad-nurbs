@@ -24,18 +24,18 @@ VerticalLayoutTab:
 		HorizontalLayout:
 
 			QtGui.QCheckBox:
-				id: 'polegrid' 
+				id: 'polegrid'
 				setText: 'calculate PoleGrid'
 				stateChanged.connect: app.calculatePoleGrid
 				visibility: False
 
 			QtGui.QCheckBox:
-				id: 'setmode' 
+				id: 'setmode'
 				setText: 'Pole only'
 				setVisible: False
 
 			QtGui.QCheckBox:
-				id: 'relativemode' 
+				id: 'relativemode'
 				setText: 'Height relative'
 				stateChanged.connect: app.relativeMode
 				setChecked: True
@@ -95,7 +95,7 @@ VerticalLayoutTab:
 
 			QtGui.QLabel:
 				setText: "u"
-				
+
 
 			QtGui.QLineEdit:
 				setText: "1"
@@ -175,13 +175,13 @@ VerticalLayoutTab:
 #				clicked.connect: app.setPole2
 
 		QtGui.QCheckBox:
-			id: 'pole1active' 
+			id: 'pole1active'
 			setText: 'Pole 1 in change'
 #			stateChanged.connect: app.relativeMode
 			setChecked: True
 
 		QtGui.QCheckBox:
-			id: 'singlepole' 
+			id: 'singlepole'
 			setText: 'Single Pole mode'
 #			stateChanged.connect: app.relativeMode
 			setChecked: True
@@ -265,7 +265,7 @@ VerticalLayoutTab:
 
 
 class MyApp(object):
-	
+
 	def __init__(self):
 		self.pole1=[1,5]
 		self.pole2=[3,1]
@@ -288,7 +288,7 @@ class MyApp(object):
 
 	def setFocusMode(self):
 		rc=self.root.ids['focusmode'].currentText()
-		print "set Focus Mode is ", rc 
+		print "set Focus Mode is ", rc
 
 
 	def setPole1(self):
@@ -296,7 +296,7 @@ class MyApp(object):
 		v=self.root.ids['vd'].value()
 		self.root.ids['pole1'].setText("Pole 1:" + str([u+1,v+1]))
 		self.pole1=[u,v]
-		if self.root.ids['singlepole'].isChecked(): 
+		if self.root.ids['singlepole'].isChecked():
 			self.pole2=[u,v]
 			self.root.ids['pole2'].setText("Pole 2:" + str([u+1,v+1]))
 		self.obj.Object.Proxy.showSelection(self.pole1,self.pole2)
@@ -306,7 +306,7 @@ class MyApp(object):
 		v=self.root.ids['vd'].value()
 		self.root.ids['pole2'].setText("Pole 2:" + str([u+1,v+1]))
 		self.pole2=[u,v]
-		if self.root.ids['singlepole'].isChecked(): 
+		if self.root.ids['singlepole'].isChecked():
 			self.pole1=[u,v]
 			self.root.ids['pole1'].setText("Pole 1:" + str([u+1,v+1]))
 		self.obj.Object.Proxy.showSelection(self.pole1,self.pole2)
@@ -446,7 +446,7 @@ class MyApp(object):
 		if polnr>uc:
 			v=polnr-uc-1
 		else:
-			u=polnr-1 
+			u=polnr-1
 
 		polnr=int(sn[1][4:])
 		print ("edge number ", polnr)
@@ -454,7 +454,7 @@ class MyApp(object):
 		if polnr>uc:
 			v=polnr-uc-1
 		else:
-			u=polnr-1 
+			u=polnr-1
 
 
 		print("u,v",u,v)
@@ -477,7 +477,7 @@ class MyApp(object):
 			if polnr>uc:
 				v=polnr-uc-1
 			else:
-				u=polnr-1 
+				u=polnr-1
 
 			polnr=int(sn[3][4:])
 			print ("edge number 4 ", polnr)
@@ -485,7 +485,7 @@ class MyApp(object):
 			if polnr>uc:
 				v=polnr-uc-1
 			else:
-				u=polnr-1 
+				u=polnr-1
 
 
 			print("u,v",u,v)
@@ -499,7 +499,7 @@ class MyApp(object):
 				self.setPole2()
 			else:
 				self.setPole1()
-		except: 
+		except:
 			pass
 			# sayexc()
 
@@ -518,10 +518,10 @@ class MyApp(object):
 #			self.root.ids['updateRelative'].hide()
 		print self.obj.Object.Proxy.gBase.shape
 		print "set  relative"
- 
+
 	def calculatePoleGrid(self):
 		self.obj.Object.Proxy.calculatePoleGrid=self.root.ids['polegrid'].isChecked()
- 
+
 
 	def upp(self):
 		''' move pole selection u-axis up '''
@@ -566,7 +566,7 @@ class MyApp(object):
 		''' setDataToNurbs for update '''
 		if not force:
 			try:
-				# dont setDataToNurbs during a locked transaction
+				# don't setDataToNurbs during a locked transaction
 				if self.lock: return
 			except: pass
 		print "setDataToNurbs2"
@@ -581,7 +581,7 @@ class MyApp(object):
 	def updateRelative(self):
 		''' setDataToNurbs for update '''
 		try:
-			# dont setDataToNurbs during a locked transaction
+			# don't setDataToNurbs during a locked transaction
 			if self.lock: return
 		except: pass
 		print "setDataToNurbs2"
@@ -589,7 +589,7 @@ class MyApp(object):
 			print "setze setmode"
 			self.root.ids['setmode'].click()
 			self.setDataToNurbs(True)
-			
+
 			self.obj.Object.Proxy.showSelection(self.pole1,self.pole2)
 
 #			id: 'updateRelative'
@@ -599,7 +599,7 @@ class MyApp(object):
 
 	def setDataToNurbs(self,updateRelative=False):
 		''' setDataToNurbs a change in the dialog for the nurbs '''
-		
+
 
 
 		g=self.obj.Object.Proxy.g
@@ -621,7 +621,7 @@ class MyApp(object):
 		self.root.ids['h'].setText(str(h))
 		self.root.ids['w'].setText(str(w))
 
-		
+
 		rc=self.root.ids['focusmode'].currentText()
 		if rc == 'single Pole':
 			u1=u;u2=u
@@ -651,7 +651,7 @@ class MyApp(object):
 						#	self.obj.Object.Proxy.setpointRelativeZ(u,v,h,w)
 
 					else:
-						print "set absoliute "
+						print "set absolute "
 						self.obj.Object.Proxy.setpointZ(u,v,h,w)
 				else:
 					self.getInfo()
@@ -697,7 +697,7 @@ class MyApp(object):
 #		if rc <> 'Rectangle':
 		if  self.root.ids['pole1active'].isChecked():
 				self.setPole1()
-		else: 
+		else:
 				self.setPole2()
 
 		h=g[v][u][2]
@@ -710,17 +710,17 @@ class MyApp(object):
 		else:
 			self.root.ids['hd'].setValue(h)
 			self.root.ids['h'].setText(str(h))
-		
+
 #		print "hole weight von ",((v)*uc+u)
 #		print "hole weight von ",((v)*uc+u,"uc,vc",uc,vc)
 #		print self.obj.Object.weights
 
-		
+
 
 
 
 		w=self.obj.Object.weights[(v)*uc+u]
-		
+
 		self.root.ids['wd'].setValue(w)
 		self.root.ids['w'].setText(str(w))
 
@@ -731,7 +731,7 @@ class MyApp(object):
 			ss.ViewObject.Transparency=90
 		except:
 			pass
-		
+
 		self.root.ids['setmode'].setChecked(False)
 		self.lock=False
 		print "getDataFromNurbs fertig"
@@ -775,7 +775,7 @@ class MyApp(object):
 		self.lock=True
 		vc=self.root.ids['vcombo']
 		rc=self.root.ids['vcombo'].currentText()
-		print "set vcombo Mode is ", rc 
+		print "set vcombo Mode is ", rc
 		vc.clear()
 		start=2
 		ende=self.obj.Object.nNodes_v
@@ -791,7 +791,7 @@ class MyApp(object):
 		self.lock=True
 		uc=self.root.ids['ucombo']
 		rc=self.root.ids['ucombo'].currentText()
-		print "set ucombo Mode is ", rc 
+		print "set ucombo Mode is ", rc
 		uc.clear()
 		start=2
 		ende=self.obj.Object.nNodes_u
@@ -808,7 +808,7 @@ class MyApp(object):
 		uc=self.root.ids['hcombo']
 		rc=self.root.ids['hcombo'].currentText()
 		if rc=='': rc='0'
-		print "set hcombo Mode is ", rc 
+		print "set hcombo Mode is ", rc
 		uc.clear()
 		start=2
 		ende=self.obj.Object.nNodes_u
@@ -824,14 +824,14 @@ class MyApp(object):
 		self.update(True)
 		print "done"
 		self.lock=False
-		
+
 
 	def processWcombo(self):
 		if self.lock: return
 		self.lock=True
 		uc=self.root.ids['wcombo']
 		rc=self.root.ids['wcombo'].currentText()
-		print "set wcombo Mode is ", rc 
+		print "set wcombo Mode is ", rc
 		uc.clear()
 		start=1
 		ende=20+1
@@ -877,7 +877,7 @@ def mydialog(obj):
 	miki.ids['hcombo'].setCurrentIndex(100)
 	miki.ids['wcombo'].addItems([str(n) for n in range(1,21)])
 	app.getDataFromNurbs()
-	
+
 	miki.ids['polegrid'].hide()
 	miki.ids['focusmode'].hide()
 	miki.ids['relativemode'].hide()
@@ -886,8 +886,8 @@ def mydialog(obj):
 	miki.ids['h'].hide()
 	miki.ids['u'].hide()
 	miki.ids['v'].hide()
-	
-	
+
+
 	return miki
 
 # mydialog(miki)

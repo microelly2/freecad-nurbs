@@ -1,4 +1,4 @@
-'''gui control panel for parametes of different objects'''
+'''gui control panel for parameters of different objects'''
 
 # -*- coding: utf-8 -*-
 #-------------------------------------------------
@@ -82,7 +82,7 @@ def createListWidget(obj=None,propname=None):
 		ref=obj.getPropertyByName(propname+"Source")
 		aa=ref.getPropertyByName(propname)
 
-		# add selected objects if not aready on list
+		# add selected objects if not already on list
 		for s in sels:
 			if s not in aa:
 				print a.Label +"not in aa"
@@ -114,7 +114,7 @@ def createListWidget(obj=None,propname=None):
 
 
 def clear(window):
-	''' delet the window widget '''
+	''' delete the window widget '''
 	#window.deleteLater()
 	# App.ActiveDocument.Spreadsheet.ViewObject.update()
 	App.activeDocument().recompute()
@@ -152,11 +152,11 @@ def hu():
 	FreeCAD.ss.show()
 
 
-## create a Controler Widget for a property
+## create a Controller Widget for a property
  
 
 def createPropWidget(obj,propname):
-	'''create and retur widget fpr obj.propname'''
+	'''create and return widget for obj.propname'''
 
 	w=QtGui.QWidget()
 

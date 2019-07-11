@@ -26,7 +26,7 @@ from nurbswb.say import *
 
 def runa():
 	''' load the data from the first sketch in file fn
-	writes the data intot the spreadsheet 
+	writes the data into the spreadsheet 
 	and recomputes the sole
 	'''
 

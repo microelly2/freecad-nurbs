@@ -911,7 +911,7 @@ class Nurbs(PartFeature):
 		FreeCAD.ActiveDocument.commitTransaction()
 
 	def elevateUline(self,vp,height=40):
-		''' change the height of all poles with teh same u value'''
+		''' change the height of all poles with the same u value'''
 
 		FreeCAD.ActiveDocument.openTransaction("elevate ULine" + str([vp,height]))
 
@@ -1188,7 +1188,7 @@ class ViewProviderNurbs:
 
 	def setDisplayMode(self,mode):
 		''' Map the display mode defined in attach with those defined in getDisplayModes.
-		Since they have the same names nothing needs to be done. This method is optinal.
+		Since they have the same names nothing needs to be done. This method is optional.
 		'''
 		return mode
 

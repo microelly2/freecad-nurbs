@@ -120,7 +120,7 @@ class Geodesic(FeaturePython):
 #			obj.addProperty("App::PropertyLink","face","patch","")
 			obj.addProperty("App::PropertyLink","wire","patch","")
 
-			obj.addProperty("App::PropertyEnumeration","form","patch","layout fo the 3D curve").form=["polygon","bspline1","bspline3",'facecurve','face']
+			obj.addProperty("App::PropertyEnumeration","form","patch","layout for the 3D curve").form=["polygon","bspline1","bspline3",'facecurve','face']
 			obj.form='polygon'
 			obj.addProperty("App::PropertyFloat","tolerance","patch").tolerance=2.0
 			obj.addProperty("App::PropertyBool","closed","patch")
@@ -253,7 +253,7 @@ def createCurvature(obj=None):
 
 
 def colorPath(pts,color='0 1 0',name=None):
-	'''create a colored LineSet for points pts wit colorstring color '''
+	'''create a colored LineSet for points pts with colorstring color '''
 
 	def ivPts(pts):
 		'''  points to iv format '''

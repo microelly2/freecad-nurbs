@@ -461,7 +461,7 @@ class ImagePoints2(FeaturePython):
 				ups=[]
 				for i in range(scu):
 					p=c.parameterAtDistance(l/scu*i)
-					print ("parametr uu",i,p)
+					print ("parameter uu",i,p)
 					try:
 						bs.insertUKnot(p,1,0)
 						ups += [p]

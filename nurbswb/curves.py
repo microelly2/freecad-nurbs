@@ -41,7 +41,7 @@ class _ViewProvider(nurbswb.pyob.ViewProvider):
 
 ##\endcond
 
-## Two Offset curves for a Bspline definded by a Sketcher interpolation polygon
+## Two Offset curves for a Bspline defined by a Sketcher interpolation polygon
 
 class OffsetSpline(nurbswb.pyob.FeaturePython):
 	'''Sketch Object with Python''' 
@@ -106,8 +106,8 @@ class OffsetSpline(nurbswb.pyob.FeaturePython):
 
 ##\cond
 	def execute(self, obj):
-		''' recompuute sketch and than run postprocess: myExecute'''
-		obj.recompute() 
+		''' recompute sketch and than run postprocess: myExecute'''
+		obj.recompute()
 		self.myExecute(obj)
 ##\endcond
 
@@ -127,10 +127,10 @@ class Ufo(nurbswb.pyob.FeaturePython):
 	##\endcond
 
 	def onChanged(proxy,obj,prop):
-		print "ufo cahnged"
+		print "ufo changed"
 		return
 #		'''run myExecute for property prop: "ofin" and "ofout"'''
-#		if prop not in ["ofin","ofout"]: return 
+#		if prop not in ["ofin","ofout"]: return
 #		proxy.myExecute(obj)
 
 
@@ -142,8 +142,8 @@ class Ufo(nurbswb.pyob.FeaturePython):
 
 ##\cond
 	def execute(self, obj):
-		''' recompuute sketch and than run postprocess: myExecute'''
-		obj.recompute() 
+		''' recompute sketch and than run postprocess: myExecute'''
+		obj.recompute()
 		self.myExecute(obj)
 ##\endcond
 
@@ -238,7 +238,7 @@ class Star(nurbswb.pyob.FeaturePython):
 
 
 	def myExecute(proxy,obj):
-		''' positon to parent'''
+		''' position to parent'''
 
 		print ("myExecute",time.time())
 
@@ -269,8 +269,8 @@ class Star(nurbswb.pyob.FeaturePython):
 
 ##\cond
 	def execute(self, obj):
-		''' recompuute sketch and than run postprocess: myExecute'''
-		obj.recompute() 
+		''' recompute sketch and than run postprocess: myExecute'''
+		obj.recompute()
 		self.myExecute(obj)
 ##\endcond
 
@@ -346,4 +346,3 @@ if __name__=='__main__':
 
 
 #\endcond
-

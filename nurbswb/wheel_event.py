@@ -170,7 +170,7 @@ class EventFilter(QtCore.QObject):
 		if z == 'PySide.QtCore.QEvent.Type.Enter' or z == 'PySide.QtCore.QEvent.Type.Leave':
 			pass
 
-		# deactive keys in editors context
+		# deactivate keys in editors context
 		if z == 'PySide.QtCore.QEvent.Type.Enter' and \
 			(o.__class__ == QtGui.QPlainTextEdit or o.__class__ == QtGui.QTextEdit):
 			self.editmode=True

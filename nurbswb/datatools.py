@@ -1,6 +1,6 @@
 ''' a collection of data nodes for floatlists, integerlists, vectorlist, matrixes etc
 these nodes are used as properties in other nodes
-an example is the dynamic offset node which controlls the offset by a floatlist
+an example is the dynamic offset node which controls the offset by a floatlist
 '''
 
 
@@ -53,7 +53,7 @@ class FloatList(nurbswb.pyob.FeaturePython):
 # 
 # *Properties*
 #
-#  - **size** - lenght of the list (default 12,hiddeen)
+#  - **size** - length of the list (default 12,hiddeen)
 #  - **factor** - to scale the values (default 10) 
 #  - **val001 ... val999**
 #  - **datalist**  - all values as list (hidden)
