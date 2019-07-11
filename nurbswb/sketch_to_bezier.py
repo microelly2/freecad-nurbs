@@ -62,7 +62,7 @@ class _VP(ViewProvider):
 	def doubleClicked(self,vobj):
 		print "double clicked"
 		self.myedit(vobj.Object)
-		
+
 		print "Ende double clicked"
 
 
@@ -87,7 +87,7 @@ def clearReportView(name):
 
 
 class BezierSketch(FeaturePython):
-	'''Sketch Object with Python for Bezier Curve''' 
+	'''Sketch Object with Python for Bezier Curve'''
 
 	##\cond
 	def __init__(self, obj, icon='/home/thomas/.FreeCAD/Mod/freecad-nurbs/icons/draw.svg'):
@@ -117,9 +117,9 @@ def run(sk):
 				for i in range(ap-1):
 					rc=sk.addConstraint(Sketcher.Constraint('Parallel',3*i+3,3*i+2))
 #					sk.setVirtualSpace(rc, True)
-					sk.solve() 
+					sk.solve()
 
-			rc=sk.addConstraint(Sketcher.Constraint('Parallel',gc-1,0)) 
+			rc=sk.addConstraint(Sketcher.Constraint('Parallel',gc-1,0))
 #			sk.setVirtualSpace(rc, True)
 
 			sk.init=False
@@ -132,16 +132,16 @@ def run(sk):
 					sk.setDriving(i,False)
 					sk.setVirtualSpace(i, True)
 
-			jj=sk.addConstraint(Sketcher.Constraint('Distance',0,10)) 
+			jj=sk.addConstraint(Sketcher.Constraint('Distance',0,10))
 			sk.setDriving(jj,False)
 			sk.setVirtualSpace(jj, True)
 
-			jj=sk.addConstraint(Sketcher.Constraint('Distance',20,10)) 
+			jj=sk.addConstraint(Sketcher.Constraint('Distance',20,10))
 			sk.setDriving(jj,False)
 			sk.setVirtualSpace(jj, True)
 			print "done"
 
-	except: pass 
+	except: pass
 
 #	for c in range(sk.ConstraintCount):
 #		sk.setVirtualSpace(c, True)
@@ -202,39 +202,39 @@ def init_bezierring(sk,count=5,source=None):
 	for i in range(count):
 			if i <> 0: # connect to the last segment with a connector line
 				lc=sk.addGeometry(Part.LineSegment(pts[3*i-1],pts[3*i]),False)
-				sk.addConstraint(Sketcher.Constraint('Coincident',lb,2,lc,1)) 
+				sk.addConstraint(Sketcher.Constraint('Coincident',lb,2,lc,1))
 
 			la=sk.addGeometry(Part.LineSegment(pts[3*i],pts[3*i+1]),False)
 			lb=sk.addGeometry(Part.LineSegment(pts[3*i+1],pts[3*i+2]),False)
 
-			if 1: # avoid moving of points 
+			if 1: # avoid moving of points
 				p2=sk.getPoint(lb,1)
-				cc=sk.addConstraint(Sketcher.Constraint('DistanceX',lb,1,p2.x)) 
-				sk.addConstraint(Sketcher.Constraint('DistanceY',lb,1,p2.y)) 
+				cc=sk.addConstraint(Sketcher.Constraint('DistanceX',lb,1,p2.x))
+				sk.addConstraint(Sketcher.Constraint('DistanceY',lb,1,p2.y))
 				sk.renameConstraint(cc, u'aa ' + str(i))
 				p2=sk.getPoint(la,1)
-				cc=sk.addConstraint(Sketcher.Constraint('DistanceX',la,1,p2.x)) 
-				sk.addConstraint(Sketcher.Constraint('DistanceY',la,1,p2.y)) 
+				cc=sk.addConstraint(Sketcher.Constraint('DistanceX',la,1,p2.x))
+				sk.addConstraint(Sketcher.Constraint('DistanceY',la,1,p2.y))
 				sk.renameConstraint(cc, u'bb ' + str(i))
 
 			# blocking does not work (unsolvable by sketcher) why?
 #			sk.addConstraint(Sketcher.Constraint('Block',lb))
-			sk.addConstraint(Sketcher.Constraint('Coincident',la,2,lb,1)) 
+			sk.addConstraint(Sketcher.Constraint('Coincident',la,2,lb,1))
 
 			if i <> 0: # connect connector line to the new created segment
-				sk.addConstraint(Sketcher.Constraint('Coincident',lc,2,la,1)) 
+				sk.addConstraint(Sketcher.Constraint('Coincident',lc,2,la,1))
 
 	# close the figure
 	# the last connector
 	la=sk.addGeometry(Part.LineSegment(pts[3*i],pts[0]),False)
 	p2=sk.getPoint(la,1)
-	cc=sk.addConstraint(Sketcher.Constraint('DistanceX',la,1,p2.x)) 
-	sk.addConstraint(Sketcher.Constraint('DistanceY',la,1,p2.y)) 
+	cc=sk.addConstraint(Sketcher.Constraint('DistanceX',la,1,p2.x))
+	sk.addConstraint(Sketcher.Constraint('DistanceY',la,1,p2.y))
 	sk.renameConstraint(cc, u'cc ' + str(i))
 
 	# connect head and foot
-	sk.addConstraint(Sketcher.Constraint('Coincident',lb,2,la,1)) 
-	sk.addConstraint(Sketcher.Constraint('Coincident',la,2,0,1)) 
+	sk.addConstraint(Sketcher.Constraint('Coincident',lb,2,la,1))
+	sk.addConstraint(Sketcher.Constraint('Coincident',la,2,0,1))
 
 
 def createBezierSketch(name="BezierRing",source=None):
@@ -258,7 +258,7 @@ def createBezierRingSketch(name="BezierRing",source=None):
 import time
 
 class FollowerSketch(FeaturePython):
-	'''Sketch Object with Python which puts one point (by named constraints) onto a wire''' 
+	'''Sketch Object with Python which puts one point (by named constraints) onto a wire'''
 
 	##\cond
 	def __init__(self, obj, icon='/home/thomas/.FreeCAD/Mod/freecad-nurbs/icons/draw.svg'):
@@ -276,11 +276,11 @@ class FollowerSketch(FeaturePython):
 		print ("onChange", prop)
 		if len(obj.Geometry)==0: return
 		if not obj.init:return
-		
+
 		if time.time()-self.timestamp<0.1 and prop<>"force":
 			return
 		self.timestamp=time.time()
-		
+
 
 		if prop=='Geometry' or prop=="force":
 			print "Anpassen"
@@ -288,15 +288,15 @@ class FollowerSketch(FeaturePython):
 				print obj.getPoint(0,1)
 			except:
 				print "noch nix da"
-				
+
 				return
 			p=obj.getPoint(0,1)
 			c=App.ActiveDocument.BSpline.Shape.Curve
 			u=c.parameter(p)
 			print "versuche zu setzen"
-			
+
 			p2=c.value(u)
-			
+
 			print p
 			print p2
 			print "##"
@@ -345,7 +345,7 @@ def createFollowerSketch(name="Follower",source=None):
 
 
 class ArcSketch(FeaturePython):
-	'''Sketch Object with Python toi create two smoothing arcs''' 
+	'''Sketch Object with Python to create two smoothing arcs''' 
 
 	##\cond
 	def __init__(self, obj, icon='/home/thomas/.FreeCAD/Mod/freecad-nurbs/icons/draw.svg'):
@@ -358,7 +358,7 @@ class ArcSketch(FeaturePython):
 		obj.addProperty("App::PropertyBool",'displayLast')
 		obj.addProperty("App::PropertyLink",'source')
 		obj.addProperty("App::PropertyInteger",'countArcs').countArcs=2
-		
+
 		_VP(obj.ViewObject)
 		self.timestamp=time.time()
 	##\endcond
@@ -382,7 +382,7 @@ class ArcSketch(FeaturePython):
 
 
 		def run(ag,bg):
-			
+
 			try:
 				p2=sk.getPoint(ag,1)
 				p0=sk.getPoint(bg,2)
@@ -396,7 +396,7 @@ class ArcSketch(FeaturePython):
 
 			print "Richtung ", (p2-ps).normalize().dot((p0-ps).normalize())
 
-			vv=(p2-ps).normalize().cross((p0-ps).normalize()) 
+			vv=(p2-ps).normalize().cross((p0-ps).normalize())
 
 			f= vv.z< 0
 
@@ -421,7 +421,7 @@ class ArcSketch(FeaturePython):
 
 		if obj.countArcs>1:
 			run(5,6)
-			
+
 		if obj.countArcs>2:
 			run(8,9)
 
@@ -467,9 +467,9 @@ def createLabel(obj,ref,ctext):
 	##-----------------------
 	#com=l.Target[0].Shape.CenterOfMass
 	com=l.Target[0].Shape.BoundBox.Center
-	
+
 	xmin=l.Target[0].Shape.BoundBox.XMin
-	
+
 	l.CustomText = ctext
 	l.Label=l.CustomText[0]
 	print l.Target[1][0]
@@ -522,7 +522,7 @@ def createLabels():
 		['Edge2',['line connector to extern 1',]],
 		['Edge5',['line connector of the arcs',]],
 		['Edge8',['line connector to extern 2',]],
-		
+
 	]
 
 
@@ -567,4 +567,3 @@ if __name__ == '__main__':
 #	obj=createFollowerSketch()
 
 	obj=createArcSketch()
-
